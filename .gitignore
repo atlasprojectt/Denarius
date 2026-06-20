@@ -1,0 +1,15 @@
+# Local Claude Code settings
+.claude/settings.local.json
+
+# Node / Next.js (para o build que vem)
+node_modules/
+.next/
+out/
+build/
+.env
+.env*.local
+.vercel/
+
+# OS
+.DS_Store
+Thumbs.db
