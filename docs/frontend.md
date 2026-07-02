@@ -1,7 +1,7 @@
 # Denarius — Frontend & UI spec
 
 > Derives from [prd.md](prd.md) (UX Decisions P1–P15). The static prototype in [`prototype/`](../prototype/) is the **visual contract** — when this doc and the prototype disagree, flag it, don't guess.
-> **Status:** UX decisions locked; implementation decisions being resolved in a grilling session (see §7).
+> **Status:** UX decisions (P1–P15) and implementation decisions (F1–F6, §7) all locked.
 
 ## 1. Principles
 
@@ -60,15 +60,15 @@ Light mode only (P9). Desktop-first; consumption screens legible at mobile width
 - Team/budget bars: HTML/CSS (fill + dashed ghost + marker) — as in prototype.
 - Cumulative line (spend vs budget + dashed projection): lives only in drill-down, not Home.
 
-## 7. Open implementation decisions (grilling in progress)
+## 7. Implementation decisions (F1–F6 — locked)
 
 | # | Question | Status |
 |---|---|---|
-| F1 | Rendering/data strategy: RSC-first + server actions vs client-fetch (React Query) | **open** |
-| F2 | UI copy language strategy (pt-BR hardcoded vs i18n framework now) | open |
-| F3 | Charts: Recharts vs hand-rolled SVG/CSS (prototype is hand-rolled) | open |
-| F4 | Forms & validation: react-hook-form + zod? shared schemas with server? | open |
-| F5 | Component organization: feature folders vs flat shadcn convention | open |
-| F6 | Frontend testing: Playwright e2e scope + RTL component coverage | open |
+| F1 | Rendering/data strategy | **LOCKED — RSC-first + server actions.** Pages are Server Components reading Postgres directly; mutations are server actions; no internal REST layer, no React Query, no global state. `"use client"` only for real interactivity (drawer, modal, collapse, slider). Rationale: data changes 1×/day (daily sync); engine is server-side and deterministic; fewer moving parts = easier due-diligence audit. |
+| F2 | UI copy language strategy | **LOCKED — pt-BR hardcoded, no i18n framework, but isolated.** UI strings live in copy constants at the top of the component file (or a per-screen `copy.ts`), never inline in JSX. Keeps today's cost ~zero while making a future EN build (for an acquirer demo) or i18n extraction a mechanical job. Don't build i18n infra for a customer who doesn't exist yet. |
+| F3 | Charts | **LOCKED — CSS bars + Recharts only for the cumulative line.** Rule: a progress bar is not a chart. Budget bars (fill + budget marker + dashed ghost), the pacing pair, and provider composition are hand-rolled CSS (semantic UI, and Recharts fights the marker/ghost pattern). The only real chart — the cumulative spend-vs-budget line in the team drill-down — uses Recharts for free hover tooltips, axis ticks, and responsive resize. |
+| F4 | Forms & validation | **LOCKED — shared zod + `useActionState`; react-hook-form only if earned.** The zod schema is the single source of validation truth, imported by client and server; the server action validates authoritatively and returns typed errors via `useActionState`. Trivial forms (budget, key, invite, toggles) are native `<form>` + action — progressive enhancement for free. Only the roster-CSV preview (line-by-line errors, US#7) may justify react-hook-form, if it proves complex. |
+| F5 | Component organization | **LOCKED — colocation by route + shadcn convention.** `components/ui/` holds shadcn primitives (untouched); screen-specific components colocate with their route (`app/home/_components/`); cross-screen domain components (BudgetBar, VerdictLine, StatusPill) live in `components/domain/`; display helpers in `lib/`. No barrel files. |
+| F6 | Frontend testing | **LOCKED — lean pyramid.** Unit tests for display helpers (money formatting, bar-width math, verdict copy states). RTL only for logic-bearing components (BudgetBar states, verdict variants, simulator arithmetic). Playwright e2e for 3 critical journeys against seeded DB + fake providers (never live APIs): (1) cold start → connect → set budget → verdict appears; (2) warning → [Investigar] → team detail → contributors; (3) [Simular] drawer → break-even preset closes on budget. |
 
-Decisions get recorded here (and in prd.md if they change product behavior) as the grilling resolves them.
+All F-decisions are locked. When implementation contradicts this table or the prototype, flag it — don't silently diverge.
