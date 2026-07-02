@@ -1,7 +1,7 @@
 # PRD — Denarius (v1)
 
 > **Status:** ready to build (greenfield)
-> **Positioning:** AI-spend governance for tech companies. Denarius connects a company's AI APIs (OpenAI + Anthropic), attributes **token spend in money** by team/person, tracks it **against a budget with explicit margin**, **warns early**, and supports the decision with **scenario planning and advisory pointers** — an executive cockpit for the CEO/CTO who needs to *keep AI cost under control*, not just look at it.
+> **Positioning:** AI-spend governance for tech companies. Denarius connects a company's AI APIs (OpenAI + Anthropic), attributes **token spend in money** by team/person, tracks it **against a budget**, and answers *"am I in control?"* in one line — a **verdict** — backed by **projected margin**, **early warnings**, and **contextual what-if simulation**. An executive cockpit for the CEO/CTO who needs to *keep AI cost under control*, not just look at it.
 > **Exit thesis:** traction (1–3 paying customers) → sale to a strategic acquirer.
 > **Revision note:** this version integrates the founder's focus realignment (margin as first-class metric; planning/scenarios; "apontamentos" decision-support pointers) and resolves internal inconsistencies from earlier pivots.
 
@@ -33,9 +33,9 @@ From the user's perspective:
 3. I **connect OpenAI and Anthropic** (read-only Admin keys). Denarius pulls real token usage **daily** and converts it to money.
 4. I **set budgets** — for the whole company and per team — and Denarius tracks consumption against them on fresh daily data, always showing the **margin**: how much headroom is left now, and how much will be left (or overrun) at the projected close.
 5. Denarius **warns me early**: "Engineering is at 92% of its $3k budget with 8 days left; at the current pace it will land at ~$3.6k (+20%)." Warnings are generated deterministically; the numbers are never invented.
-6. Each warning comes with a **control plan** — a prioritized, advisory set of actions ("review the 3 users driving 70% of the spike", "consider Haiku for non-critical tasks") — and the **Planning** screen lets me **simulate scenarios** ("if Engineering slows 15%, where do we close?") before deciding.
-7. Between warnings, Denarius surfaces **apontamentos** (decision-support pointers): quieter deterministic observations — "HR and Engineering crossed 50% of their limits", "3 teams concentrate 87% of spend" — that help me think without alarming me.
-8. On the **dashboard** I see total spend, budget status + margin, trend over time, and the breakdown **by team** and **by provider/model** — default view by team, with a permissioned per-person drill-down.
+6. Each warning comes with a **control plan** — a prioritized, advisory set of actions ("review the 3 users driving 70% of the spike", "consider Haiku for non-critical tasks") — and from any warning or team I can **simulate a scenario** ("if Engineering slows 15%, where do we close?") in a **side panel**, in context, before deciding.
+7. Between warnings, Denarius surfaces **apontamentos** (decision-support pointers): quieter deterministic observations — "HR and Engineering crossed 50% of their limits", "3 teams concentrate 87% of spend" — in a **calm footer feed on the home**, helping me think without alarming me.
+8. On the **home dashboard** I see a **one-line verdict** (in control / attention / over budget), the total spend vs. budget with a **spend-vs-time pacing pair**, the **projected margin** (how much I'll be over/under at close), the teams **that need attention** (healthy ones collapsed), and where the money goes — default view by team, with a permissioned per-person drill-down.
 9. I get an **executive digest** in natural language summarizing the period (total, change, top drivers, budget status, margin, projection).
 10. *(Secondary)* Denarius flags obvious **waste** — e.g., paying for more seats than the roster has people (seats-vs-roster mismatch).
 
@@ -81,7 +81,7 @@ The headline metric is **spend in money governed against a budget**; tokens are 
 25. As a CEO/CTO, I want to set a monthly budget for the whole company, so that AI spend has a guardrail.
 26. As a CEO/CTO, I want to set a per-team budget, so that each team owns its limit.
 27. As a CEO/CTO, I want to see current spend vs. budget (amount and %) for the company and each team, so that I know where I stand at a glance.
-28. As a CEO/CTO, I want to see the **margin** — current headroom (budget − spend) and projected headroom (budget − projection) — for the company and each team, so that "how much room do I have?" is always answered explicitly, in money.
+28. As a CEO/CTO, I want to see **projected margin** (budget − projection, i.e. how much I'll be over/under at close) as the headline figure for the company and each team, so that "how much room do I have?" is answered by the decision-relevant number — with current headroom (budget − spend) available on drill-down, not competing with it on the home.
 29. As a CEO/CTO, I want a **run-rate projection** for the current period (linear pace), so that I see where I'll land before the period ends.
 30. As a CEO/CTO, I want the projection to appear **only after enough of the period has elapsed** (minimum-days guard), so that day-2 noise doesn't produce absurd numbers or false alarms.
 31. As a CEO/CTO, I want to be **warned** when a team crosses configurable thresholds (e.g., 80% / 100% / projected-to-breach), so that I act before the invoice.
@@ -90,13 +90,14 @@ The headline metric is **spend in money governed against a budget**; tokens are 
 34. As an Admin, I want warnings ordered by budget impact (size of overrun / projected overrun), so that I prioritize the biggest risk.
 35. As a CEO/CTO, I understand Denarius is read-only and **cannot block usage** — it governs by visibility, warning, and recommendation, not enforcement. *(Honesty note baked into the UX copy.)*
 
-**Planning & decision support**
-36. As a CEO/CTO, I want a **scenario simulator** ("what if Engineering slows its pace by X%?") that recomputes the projected close and margin instantly, so that I can compare options before acting.
-37. As a CEO/CTO, I want a feed of **apontamentos** — deterministic decision-support observations (e.g., "HR and Engineering crossed 50% of their limits", "3 teams concentrate 87% of spend", "Marketing accelerated 40% week-over-week") — so that I get food for thought without alarm fatigue.
-38. As a CEO/CTO, I want apontamentos clearly separated from warnings (in-app only, no email, calmer tone), so that the alert channel stays reserved for what's urgent.
+**Verdict, planning & decision support**
+36a. As a CEO/CTO, I want a **one-line verdict** with a status color at the top of the home ("in control" / "attention" / "over budget"), so that I get the conclusion in one glance instead of computing it from the numbers.
+36. As a CEO/CTO, I want to launch a **scenario simulator from a warning or a team** (a side panel, team pre-loaded) that recomputes the projected close and margin instantly, so that I can test a fix in context without leaving the screen.
+37. As a CEO/CTO, I want a calm **"Observations" feed** of apontamentos on the home — deterministic decision-support observations (e.g., "Data, Product and Ops crossed 50%", "3 teams concentrate 87% of spend", "Marketing accelerated 40% week-over-week", "R$ 900 unattributed") — so that I get food for thought without alarm fatigue.
+38. As a CEO/CTO, I want apontamentos clearly separated from warnings (footer, in-app only, no email, calm tone), so that the alert channel stays reserved for what's urgent.
 
 **Visibility (dashboard)**
-39. As a CEO/CTO, I want to see total company AI spend, budget status and margin, so that I have the number and the guardrail that don't exist today.
+39. As a CEO/CTO, I want to see total company AI spend, budget status, the spend-vs-time pacing pair, and projected margin, so that I have the number and the guardrail that don't exist today.
 40. As a CEO/CTO, I want to see the spend trend over time, so that I can notice accelerating growth.
 41. As a CEO/CTO, I want to see the spend breakdown by team, so that I know who consumes the most.
 42. As a CEO/CTO, I want to see the breakdown by provider/model, so that I know where the money goes (and whether a cheaper model would help).
@@ -133,7 +134,8 @@ The headline metric is **spend in money governed against a budget**; tokens are 
 **Scope & product**
 - Focus: **employee** AI consumption (API token spend + manually-seeded seats), **not** the programmatic AI embedded in the company's products (Case B is out).
 - Headline metric: **spend in money, governed against a budget, with explicit margin**; tokens are a drill-down.
-- v1 pillars: **Visibility + Attribution + Budgets/Margin & Control (hero) + Planning (scenarios + apontamentos) + Digest**. Waste (seats-vs-roster) is a **secondary** finding type.
+- v1 pillars: **Verdict + Visibility + Attribution + Budgets/Margin & Control (hero) + contextual Planning (scenario drawer + apontamentos) + Digest**. Waste (seats-vs-roster) is a **secondary** finding type.
+- **Verdict is the product's headline output:** a single deterministic sentence + status color that answers "am I in control?" (green = projection within budget / amber = projected to breach / red = a team already breached), always present on the home. Every other number on the home exists to justify the verdict.
 
 **Ingestion**
 - Mechanism: **read-only connectors + manual seed**. **No proxy/gateway** (doesn't fit the employee case, adds friction, and — critically — means Denarius governs by *warning*, never by *blocking*).
@@ -146,7 +148,7 @@ The headline metric is **spend in money governed against a budget**; tokens are 
 - **A budget governs total tracked AI spend**: API token spend (from connectors) **plus manual seat subscriptions**. Seats **accrue daily** (price ÷ days-in-period) so a monthly invoice doesn't spike day-one pace or distort the run-rate.
 - **Org and team budgets are independent guardrails** — no forced reconciliation. If the sum of team budgets exceeds (or undershoots) the org budget, the UI shows an informational notice, never an error. (Teams may deliberately have headroom the org doesn't, and vice versa.)
 - **Mid-period budget edits are allowed.** Findings recompute on the next sync against the new amount. The `notification_log` is **not reset** — an already-sent (team, level, period) alert never re-fires for the same level, even if the edit re-crosses it. Escalation to a *higher* level still fires.
-- **Margin is a first-class computed metric**: `current_margin = budget − spend` and `projected_margin = budget − projection`, surfaced as headline KPIs (org) and per team. Negative projected margin = the amber/red driver.
+- **Projected margin is the first-class headline metric**: `projected_margin = budget − projection` (how much you'll be over/under at close) is what appears on the home, because it's the decision-relevant number. `current_margin = budget − spend` is **de-emphasized** (mid-period it's almost always positive and reads as false reassurance) — available on drill-down, not on the home. Negative projected margin is the amber/red driver of the verdict.
 
 **Hero = Budgets, Margin & Control**
 - The backend computes, deterministically: current spend vs. budget; **current and projected margin**; **linear run-rate projection** for the current period (spend ÷ days-elapsed × days-in-period); and **threshold crossings** (configurable, default 80% / 100% / projected-to-breach).
@@ -154,10 +156,11 @@ The headline metric is **spend in money governed against a budget**; tokens are 
 - Each crossing becomes a **`finding`** of type `budget_threshold`, carrying: the numbers, the **top drivers** (teams/people/models contributing most to the spend or the delta), and an **advisory control plan** (recommended actions).
 - **Read-only honesty:** Denarius cannot cap or block API usage. Control = visibility + early warning + recommendation. This is stated in the product copy and is a deliberate due-diligence-safe boundary.
 
-**Planning layer (scenarios + apontamentos)**
-- **Scenario simulator:** pure **client-side arithmetic** over the deterministic aggregates already on screen (no LLM, no backend round-trip). v1 lever: adjust a team's projected pace by ±% → recompute org projected close and margin instantly; presets for "current pace" and "close on budget" (the break-even reduction). Multi-variable/ML scenario modeling is **out** (see Out of Scope).
-- **Apontamentos (decision-support pointers):** deterministic observations generated by rules **below the warning threshold** — e.g., crossed 50% of limit, spend concentration ("3 teams = 87%"), week-over-week acceleration, projected margin summary. **In-app only, no email, no severity escalation** — they are food for thought, not alarms. Rendered from templates (LLM narration optional, same guardrail as digest).
-- Distinction is structural: **warnings** = urgent, pushed (email), rare (de-duped); **apontamentos** = ambient, pull-only, refreshed each sync.
+**Planning layer (contextual — not a destination)**
+- **Scenario simulator is a contextual side panel (drawer)**, invoked by a "Simulate" action on a warning or a team — never a standalone nav destination. It opens with that team pre-loaded, so the causal chain (this team is at risk → what fixes it?) is never broken by navigation.
+- Mechanics: pure **client-side arithmetic** over the deterministic aggregates already on screen (no LLM, no backend round-trip). v1 lever: adjust the team's projected pace by ±% → recompute org projected close and margin instantly; presets for "current pace", "close on budget" (the break-even reduction), and a fixed cut. Multi-variable/ML scenario modeling is **out** (see Out of Scope).
+- **Apontamentos (decision-support pointers):** deterministic observations generated by rules **below the warning threshold** — e.g., crossed 50% of limit, spend concentration ("3 teams = 87%"), week-over-week acceleration, unattributed spend nudge. They live in a **calm "Observations" footer section on the home** (no red, no urgency badges). **In-app only, no email, no severity escalation** — food for thought, not alarms. Rendered from templates (LLM narration optional, same guardrail as digest).
+- Distinction is structural: **warnings** = urgent, pushed (email), rare (de-duped), attached to the team row; **apontamentos** = ambient, pull-only, footer, refreshed each sync.
 
 **Attribution**
 - Hierarchy: **Organization → Team/Cost center → Person → Provider/Model**.
@@ -231,23 +234,28 @@ The headline metric is **spend in money governed against a budget**; tokens are 
 
 ## UX Decisions
 
-Resolved in a dedicated UX grilling (P1–P11), then extended by the founder's focus realignment (P12–P14). The product is an **executive cockpit** whose job is to answer *"am I in control of AI spend?"* in seconds, push early warnings, and stay honest about its own limits (read-only, externally-sourced numbers).
+Resolved in a dedicated UX grilling (P1–P11), extended by the founder's focus realignment (P12–P14), then **restructured by a full UX critique (P15) that collapsed navigation to 3 destinations and made the verdict the headline output**. The product is an **executive cockpit** whose job is to answer *"am I in control of AI spend?"* in **≤10 seconds**, push early warnings, and stay honest about its own limits (read-only, externally-sourced numbers).
 
-**Navigation & screens (P1, P2 — updated by P13)**
-- Left sidebar, **5 destinations: Overview / Budgets / Planning / Explore / Settings**.
-- **Overview** — home. Org budget status + **margin (current and projected)** + projection, the digest with active warnings, spend charts. Anchored in **value with graceful degradation**: before any data/budget, the budget status is replaced by a CTA to connect sources / set the first budget (never an empty screen).
-- **Budgets** — the hero. Set org & per-team budgets; spend-vs-budget per team (value, %, margin, run-rate projection); event warnings ordered by impact; open a warning to see top drivers + control plan; seats-vs-roster waste as a secondary footer section.
-- **Planning** — scenario simulator (what-if levers over the projection) + the **apontamentos** feed. Where the CEO thinks before deciding.
-- **Explore** — attribution drill-down by team / person / provider / model (including the **Unattributed** bucket); token detail. Where the CEO goes to answer "who/what inside the team drove this."
+**Navigation & screens (P1, P2 — superseded by P15)**
+- Left sidebar, **3 destinations: Home / Explore / Settings.** A nav slot is earned by *frequency of use*, not importance: observing happens daily (Home), investigating occasionally (Explore), configuring rarely (Settings). Budgets-as-a-tab and Planning-as-a-tab were **removed** — they duplicated the Home or broke the causal chain (see below).
+- **Home** — the cockpit. Top to bottom: **verdict line** → **hero** (spend vs. budget with spend-vs-time pacing pair + projected margin) → **"Needs attention"** (at-risk teams as rich rows, sorted by projected risk) → **"Under control (N) ✓"** (healthy teams, collapsed) → **"Observations"** (apontamentos, calm) → composition by provider. Graceful degradation: before data/budget, the verdict+hero become a CTA to connect / set the first budget (never an empty screen).
+- **Explore** — attribution drill-down. Root = spend by team (incl. the **Unattributed** bucket) and by model; clicking a team lands on its **detail** (pace chart + "contributors to this spike"), with a breadcrumb back. Where the CEO answers "who/what inside the team drove this."
 - **Settings** — connect OpenAI + Anthropic, roster CSV, manual seats, users/roles, privacy toggles, display currency.
+- **Budget editing is inline, not a destination:** a pencil on each team row and on the org hero opens the budget modal. Setting a budget happens once + rare edits — it doesn't deserve a nav slot.
+
+**Verdict & pacing (P15 — new, the headline)**
+- The home opens with a **single verdict sentence + status color** answering "am I in control?": red ("Over budget — Engineering breached; company projects 108%"), amber ("Attention — at this pace, over by R$ 4.2k on Jun 30"), green ("In control — projected to close R$ 3.1k under budget"). Deterministic; the CEO reads a conclusion, not ingredients.
+- The hero pairs **% of budget spent against % of the period elapsed** ("90% spent · day 23 of 30") — a percentage of budget is meaningless without the time context; the pairing is the real control signal (spending faster than time passes = trouble).
+- **All-clear is a designed, affirmative state** (the most common state of a healthy account): green verdict + "✓ Everything under control · next digest Friday", never an empty-looking screen.
 
 **Onboarding (P3)**
-- **Non-blocking checklist** (not a blocking wizard): user lands in Overview; a persistent, dismissible card guides *connect → roster → **set budget***, and the dashboard fills in as steps complete. The **budget step is pushed prominently** (without a budget there is no warning, i.e. no hero). Supports delegating the technical steps (keys) to a CTO without blocking the CEO. A nudge surfaces when meaningful spend sits in **Unattributed**.
+- **Non-blocking checklist** (not a blocking wizard): user lands on Home; a persistent, dismissible card guides *connect → roster → **set budget***, and the dashboard fills in as steps complete. The **budget step is pushed prominently** (without a budget there is no verdict/warning, i.e. no hero). Supports delegating the technical steps (keys) to a CTO without blocking the CEO. On connect, the sync runs **immediately** (not just the daily cron) so the first "we found R$ X this month" moment happens in seconds, not 24h. A nudge surfaces when meaningful spend sits in **Unattributed**.
 
-**Budget visualization (P5, extended by P12)**
-- Overview leads with the **org-level number + margin** + a **per-team progress-bar list** (filled to current spend, marker at budget, dashed "ghost" extension = run-rate projection; green within / amber projected-to-breach / red breached), **ordered by projected risk, not alphabetically**. The glanceable "who's hot."
-- KPI chips include **current margin** and **projected margin** in money — the founder's explicit "how much room, up or down?" question always answered on the first screen (P12).
-- The **cumulative time-series** (spend line vs budget line + dashed projection) lives **one level down** (open a team / Explore) — the "why / what pace," not a 5-second read.
+**Budget visualization (P5, P12 — superseded by P15)**
+- The home leads with the **verdict**, then the **org number + a spend-vs-time pacing pair** + **projected margin in money** as the single headline margin figure. **Current margin was removed from the home** (contradictory signal mid-period — P12 half-reverted).
+- **Per-team bars are split by state**: at-risk teams appear as **rich rows in "Needs attention"** (bar with run-rate "ghost", the warning line, and inline **[Investigate] [Simulate]** actions); healthy teams collapse into **"Under control (N) ✓"**. Ordered by **projected risk, not alphabetically**. The glanceable "who's hot" without the healthy teams as noise.
+- Bars: filled to current spend, black marker at budget, dashed "ghost" extension = run-rate projection; green within / amber projected-to-breach / red breached.
+- The **cumulative time-series** (spend vs budget + dashed projection) lives in **Explore's team detail** — the "why / what pace," not a 5-second read. The home shows **composition by provider as a ranked bar list** (a donut was rejected: low information density, hard to compare).
 
 **Warnings & control plans (P4, P6, P11)**
 - Channel: **in-app + email**. Notification channel built as a **pluggable interface** (Slack deferred to v1.5/v2).
@@ -255,9 +263,9 @@ Resolved in a dedicated UX grilling (P1–P11), then extended by the founder's f
 - **Anti-fatigue (P11):** an event alert fires **once per (team, threshold-level, period)**; escalates only on a **new higher threshold** (80% → 100% → projected-breach); resets next period. Backed by `notification_log` (system state, not user-facing status).
 - **Control plan is read-only (P6):** shows the recommended actions (from a curated, rule-mapped catalog, phrased by the LLM) + top drivers. **No per-action status tracking, no "resolved" state** — findings are stateless/informational. Keeps the MVP lean; the digest does not report follow-through.
 
-**Planning & apontamentos (P13, P14 — new)**
-- **P13 — Planning tab:** the simulator is a *thinking tool*, visually distinct from the reporting surfaces: one lever (team pace ±%), instant recompute of projected close + margin, presets ("current pace", "close on budget"). Copy makes explicit that scenarios are estimates and the system **does not decide** — it shows effects.
-- **P14 — Apontamentos ≠ warnings:** apontamentos render as a calm feed (no red, no badges of urgency, no email). They use observation language ("crossed 50%", "concentrate 87%") rather than alarm language. This division protects the alert channel's signal-to-noise — the founder's explicit framing: *the system points, the CEO decides*.
+**Planning & apontamentos (P13, P14 — restructured by P15)**
+- **Simulator is a contextual drawer, not a tab (P15):** invoked by **[Simulate]** on a warning or a team (also from Explore's team detail). Opens with that team pre-loaded — the causal chain "this team is at risk → what fixes it?" is never broken by navigation. One lever (team pace ±%), instant recompute of projected close + margin, presets ("current pace", "close on budget" = break-even, fixed cut). Copy makes explicit that scenarios are estimates and the system **does not decide** — it shows effects.
+- **P14 — Apontamentos ≠ warnings:** apontamentos render as a calm **"Observations" footer on the home** (no red, no urgency badges, no email). Observation language ("crossed 50%", "concentrate 87%") not alarm language. This division protects the alert channel's signal-to-noise — the founder's framing: *the system points, the CEO decides*. **Warnings** are urgent, pushed by email, and attached to the at-risk team row with [Investigate]/[Simulate] actions.
 
 **Privacy / per-person (P7)**
 - Per-person data is **never a standalone leaderboard**. It appears **only contextually** when drilling into a specific spike/finding, framed as **"contributors to this spike" (cost drivers)**, not a ranking of people. Names **Admin-only**; anonymized for Viewers. Reinforces "control, not surveillance."
@@ -322,7 +330,7 @@ What an acquirer will ask: "how do you know it works?" Small, honest set — mea
 - **Name:** Denarius (founder's decision). Mitigate the "crypto" reading by always pairing it with a descriptor ("Denarius — AI spend governance") and a domain that distances it from crypto (e.g., `denarius.ai`, `getdenarius.com`).
 - **Exit thesis:** traction (1–3 real paying customers) → sale to a strategic acquirer (SaaS spend management like Zylo/Productiv/Vendr/Torii, FinOps, or observability/LLMOps). The lens for every decision: *"does this raise sale value / survive due diligence?"* — not *"does this scale to 10,000 customers?"*.
 - **Infra:** free tier for the MVP (Supabase + Vercel), but DB/secrets treated rigorously from day one (encryption, RLS, `tenant_id` isolation) because that is exactly what an acquirer audits. Likely move off free tier at the first paying customer.
-- **Prototype:** a high-fidelity static frontend with mocked data lives in `prototype/` (index.html + styles.css + app.js, served by `server.js`) — it embodies the UX decisions (P1–P14) and is the visual contract for the real frontend.
+- **Prototype:** a high-fidelity static frontend with mocked data lives in `prototype/` (index.html + styles.css + app.js, served by `server.js`) — it embodies the UX decisions **through P15** (3-destination nav, verdict, pacing pair, projected margin, "Needs attention" rows, contextual simulator drawer, apontamentos footer) and is the visual contract for the real frontend.
 - **Build order (slices / tracer bullets):**
   1. Provision infra (Supabase + Vercel) + live API spike (**OpenAI** Usage/Costs **+ Anthropic** Usage/Cost).
   2. Walking skeleton (Next + Supabase auth/RLS + tenant + Admin + dashboard shell).
@@ -331,9 +339,10 @@ What an acquirer will ask: "how do you know it works?" Small, honest set — mea
   5. OpenAI connector + on-demand sync.
   6. Anthropic connector.
   7. Attribution + per-person cost + daily Cron + reconciliation check.
-  8. **Hero: Budgets, Margin & Control engine** (budgets, margin, run-rate projection + guard, threshold findings, top drivers, control plans, FX freeze).
+  8. **Hero: Budgets, Margin & Control engine** (budgets, projected margin, run-rate projection + guard, threshold findings, top drivers, control plans, FX freeze) — plus the **verdict** (deterministic sentence + status) and the home layout (pacing pair, "Needs attention" rows, "Under control" collapse).
   9. Notifications: event alerts + weekly digest (email via Resend) + `notification_log` de-dup.
-  10. **Planning: scenario simulator + apontamentos.**
+  10. **Contextual planning: scenario simulator drawer (from a warning/team) + apontamentos footer.**
   11. Secondary: seats-vs-roster waste finding.
   12. Privacy & roles controls.
-- **Sales play baked into the order:** slices 2–4 let you demo value with **manual data** before the customer trusts you with keys — reducing the "give me your key" friction. The hero (budgets + margin) lands once real token data flows in slices 5–7; planning (slice 10) is the demo closer.
+- **Navigation is 3 destinations** (Home / Explore / Settings); budget editing is inline; the simulator is a contextual drawer — no Budgets or Planning tab.
+- **Sales play baked into the order:** slices 2–4 let you demo value with **manual data** before the customer trusts you with keys — reducing the "give me your key" friction. The hero (verdict + budgets + projected margin) lands once real token data flows in slices 5–8; contextual planning (slice 10) is the demo closer.

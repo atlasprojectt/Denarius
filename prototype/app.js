@@ -1,37 +1,20 @@
 /* ===========================================================
-   Denarius — protótipo de frontend
-   Camada de dados MOCKADA (simula a resposta da API real).
-   Trocar este objeto por fetch() do backend = app real.
+   Denarius — protótipo de frontend (v2, pós-crítica de UX)
+   Camada de dados MOCKADA (simula a API real).
    =========================================================== */
 const DATA = {
-  company: { name: "Acme Tech", currency: "BRL", fx: 5.40, fxFrozen: "jun", asOf: "23/jun 06:00" },
-  org: { budget: 50000, spent: 44800, proj: 54200, deltaPct: 18 },
+  company: { asOf: "hoje 06:00", dayOfPeriod: 23, daysInPeriod: 30, fx: 5.40 },
+  org: { budget: 50000, spent: 44800, proj: 54200 },
   teams: [
-    { name: "Engineering", budget: 25000, spent: 26000, proj: 30000, deltaPct: 28 },
-    { name: "Marketing",   budget: 5000,  spent: 4600,  proj: 5900,  deltaPct: 22 },
-    { name: "Data",        budget: 10000, spent: 7500,  proj: 9600,  deltaPct: 9  },
-    { name: "Product",     budget: 8000,  spent: 5200,  proj: 6800,  deltaPct: -4 },
-    { name: "Ops",         budget: 2000,  spent: 1500,  proj: 1900,  deltaPct: 3  },
+    { name:"Engineering", budget:25000, spent:26000, proj:30000, deltaPct:28 },
+    { name:"Marketing",   budget:5000,  spent:4600,  proj:5900,  deltaPct:22 },
+    { name:"Data",        budget:10000, spent:7500,  proj:9600,  deltaPct:9  },
+    { name:"Product",     budget:8000,  spent:4300,  proj:5600,  deltaPct:-4 },
+    { name:"Ops",         budget:2000,  spent:1500,  proj:1900,  deltaPct:3  },
   ],
-  // série acumulada diária (junho, R$): empresa e engineering
-  orgCum: [0,2000,4100,6300,8800,11500,14000,16800,19500,22300,25000,27600,30100,32700,35000,37200,39000,40600,42100,43200,44000,44500,44800],
+  unattributed: { spent:900, note:"chave sem projeto mapeado" },
   engCum: [0,1000,2000,3100,4300,5600,7000,8400,9800,11200,12600,14000,15300,16600,18000,19400,20800,22100,23300,24300,25100,25700,26000],
-  warnings: [
-    { sev:"red",  title:"Engineering estourou o orçamento", meta:"104% (R$ 26.000 / R$ 25.000) · projeção R$ 30.000 (+20%)",
-      sent:"alerta por e-mail em 21/jun",
-      drivers:["gpt-4o = 62% do gasto","3 usuários = 71% do pico","+R$ 8.000 vs. maio"],
-      actions:[
-        'Revisar os <b>3 usuários</b> que puxam 71% do gasto — <a href="#" onclick="seePeople();return false"><b>ver em Explore</b></a>',
-        'Avaliar <b>gpt-4o-mini / Haiku</b> para tarefas não-críticas (gpt-4o domina o custo)',
-        'Confirmar se o aumento de uso de agentes neste mês é esperado' ] },
-    { sev:"amber", title:"Marketing a caminho de estourar", meta:"92% agora · projeção 118% (R$ 5.900)",
-      sent:"alerta por e-mail em 22/jun",
-      drivers:["claude-3.5-sonnet = 48%","campanha de conteúdo novo","+R$ 1.300 vs. maio"],
-      actions:[
-        'Acompanhar o ritmo — projeção cruza 100% por volta de 27/jun',
-        'Confirmar se o pico de conteúdo é pontual ou recorrente' ] },
-  ],
-  people: [ // contribuintes do pico em Engineering (P7: contextual, Admin-only)
+  people: [
     { n:"Ana Souza",   m:"gpt-4o",            g:9100, p:35 },
     { n:"Bruno Lima",  m:"gpt-4o",            g:5400, p:21 },
     { n:"Carla Dias",  m:"claude-3.5-sonnet", g:4000, p:15 },
@@ -44,205 +27,265 @@ const DATA = {
     { m:"gpt-4o-mini",       pv:"OpenAI",    tk:"86M",  g:3000,  uncosted:false },
     { m:"o-novo-modelo",     pv:"OpenAI",    tk:"21M",  g:null,  uncosted:true },
   ],
-  // apontamentos = observações de apoio à decisão (NÃO são avisos urgentes)
-  apontamentos: [
-    { ai:"📊", t:"<b>Engineering</b> e <b>Marketing</b> já passaram de <b>90%</b> do limite — concentram o risco do mês." },
-    { ai:"⏱️", t:"<b>Marketing</b> acelerou <b>+40%</b> na última semana; no ritmo, cruza 100% por volta de <b>27/jun</b>." },
-    { ai:"🧩", t:"3 times concentram <b>87%</b> do gasto: Engineering 58%, Data 17%, Product 12%." },
-    { ai:"✅", t:"<b>Data</b>, <b>Product</b> e <b>Ops</b> cruzaram 50% do orçamento na metade do mês — dentro do esperado." },
-    { ai:"🔮", t:"No ritmo atual a empresa fecha <b>+8% acima</b> do orçamento (R$ 54.200). Reduzir Engineering ~14% zera o estouro." },
+  providers: [
+    { n:"OpenAI",    g:27800, pct:62, c:"#10a37f" },
+    { n:"Anthropic", g:14800, pct:33, c:"#d97706" },
+    { n:"Outros",    g:2200,  pct:5,  c:"#94a3b8" },
+  ],
+  obs: [
+    { i:"◔", t:"<b>Data</b>, <b>Product</b> e <b>Ops</b> cruzaram 50% do orçamento na metade do mês — dentro do esperado." },
+    { i:"◱", t:"3 times concentram <b>87%</b> do gasto: Engineering 58%, Data 17%, Product 10%." },
+    { i:"↗", t:"<b>Marketing</b> acelerou <b>+40%</b> na última semana; no ritmo, cruza 100% por volta de 27/jun." },
+    { i:"◇", t:"R$ 900 estão em <b>Não atribuído</b> (chave sem projeto). <a onclick=\"go('explore')\" style=\"cursor:pointer\">Mapear →</a>" },
   ],
 };
 
-// constantes do cenário (mock)
-const SCEN = { orgProjBase: 54200, orgBudget: 50000, engProj: 30000 };
-
-/* ---------- helpers ---------- */
 const $ = s => document.querySelector(s);
-const money = n => "R$ " + Number(n).toLocaleString("pt-BR");
+const money = n => "R$ " + Math.round(n).toLocaleString("pt-BR");
 const pct = t => Math.round(t.spent / t.budget * 100);
+const projPct = t => Math.round(t.proj / t.budget * 100);
 const status = t => t.spent >= t.budget ? "red" : (t.proj > t.budget ? "amber" : "green");
-const statusLabel = s => s === "red" ? "estourou" : (s === "amber" ? "projetado a estourar" : "dentro");
-const sevDot = s => s === "red" ? "🔴" : (s === "amber" ? "🟠" : "🟢");
+const stLabel = s => s==="red" ? "estourou" : (s==="amber" ? "projeta estourar" : "dentro");
+const daysLeft = () => DATA.company.daysInPeriod - DATA.company.dayOfPeriod;
 
-/* ---------- budget bar (hero viz P5) ---------- */
-function bar(t){
-  const scale = 1.30;                       // trilho vai de 0 a 130% do orçamento
-  const w = v => Math.min(v / t.budget / scale * 100, 100);
-  const st = status(t), marker = (1/scale*100).toFixed(1);
-  const fillW = w(t.spent), gA = w(t.spent), gB = w(t.proj);
-  return `<div class="bteam stat-${st}">
-    <div class="hd">
-      <span class="name">${t.name} <span class="pill ${st}">${statusLabel(st)}</span></span>
-      <span class="vals">${money(t.spent)} / ${money(t.budget)} · ${pct(t)}%</span>
-    </div>
-    <div class="track" onclick="drillTeam('${t.name}')" title="Abrir ritmo de ${t.name}">
-      <div class="fill" style="width:${fillW}%"></div>
-      <div class="bghost" style="left:${gA}%;width:${Math.max(gB-gA,0)}%"></div>
-      <div class="marker" style="left:${marker}%"></div>
-    </div>
-    <div class="proj">Projeção ${money(t.proj)} (${Math.round(t.proj/t.budget*100)}%) · run-rate linear</div>
+/* ---------- VEREDITO ---------- */
+function renderVerdict(){
+  const o = DATA.org;
+  const breached = DATA.teams.filter(t=>status(t)==="red");
+  const overMargin = o.proj - o.budget;
+  let sev, icon, title, meta;
+  if (breached.length){
+    sev="red"; icon="●";
+    title = `Fora do orçamento — ${breached.map(t=>t.name).join(", ")} estourou`;
+    meta = `A empresa projeta fechar em ${projPct(o)}% (${money(o.proj)}) · ${daysLeft()} dias restantes`;
+  } else if (overMargin > 0){
+    sev="amber"; icon="◐";
+    title = `Atenção — no ritmo atual, estoura ${money(overMargin)} (${projPct(o)-100}%)`;
+    meta = `Projeção de fechamento ${money(o.proj)} em ${daysLeft()} dias`;
+  } else {
+    sev="green"; icon="○";
+    title = `Sob controle — projeção fecha ${money(-overMargin)} abaixo do orçamento`;
+    meta = `Tudo dentro do previsto · próximo digest sexta-feira`;
+  }
+  $("#verdict").innerHTML = `<div class="verdict ${sev}">
+    <span class="vi">${icon}</span>
+    <div><div class="vt">${title}</div><div class="vm">${meta}</div></div>
   </div>`;
 }
 
-/* ---------- warning + plano (P6 read-only, expansível) ---------- */
-// ns = namespace (ex: "ov" ou "bg") evita IDs duplicados entre painéis
-function warnCard(w, i, ns="ov"){
-  const id = `${ns}_w${i}`;
-  return `<div class="warn" id="${id}">
-    <div class="wh" onclick="document.getElementById('${id}').classList.toggle('open')">
-      <span class="dot">${sevDot(w.sev)}</span>
-      <div><div class="wt">${w.title}</div><div class="tiny muted">${w.meta} · ${w.sent}</div></div>
+/* ---------- HERO: barras pareadas (gasto % × mês %) ---------- */
+function renderHero(){
+  const o = DATA.org, scale=1.15, mk=(1/scale*100).toFixed(1);
+  const spendPct = o.spent/o.budget*100, monthPct = DATA.company.dayOfPeriod/DATA.company.daysInPeriod*100, pPct = o.proj/o.budget*100;
+  const wSpend = Math.min(spendPct/scale,100), wMonth=Math.min(monthPct/scale,100), wProjEnd=Math.min(pPct/scale,100);
+  $("#pair").innerHTML = `
+    <div class="prow"><span class="pl">Gasto</span>
+      <div class="ptrack"><div class="pfill fill-amber" style="width:${wSpend}%"></div><div class="pghost" style="left:${wSpend}%;width:${Math.max(wProjEnd-wSpend,0)}%"></div><div class="pmark" style="left:${mk}%"></div></div>
+      <span class="pv">${Math.round(spendPct)}%</span></div>
+    <div class="prow"><span class="pl">Mês</span>
+      <div class="ptrack"><div class="pfill fill-mut" style="width:${wMonth}%"></div><div class="pmark" style="left:${mk}%"></div></div>
+      <span class="pv">dia ${DATA.company.dayOfPeriod} de ${DATA.company.daysInPeriod}</span></div>`;
+  const over = o.proj - o.budget;
+  $("#hcallout").innerHTML = over>0
+    ? `<span style="color:var(--amber);font-size:16px">◐</span> No ritmo atual, fecha em <b>${money(o.proj)}</b> — <b style="color:var(--red)">estoura ${money(over)} (${projPct(o)-100}%)</b> <span class="tiny muted">· gastando mais rápido que o mês passa</span>`
+    : `<span style="color:var(--green);font-size:16px">○</span> No ritmo atual, fecha em <b>${money(o.proj)}</b> — <b style="color:var(--green)">folga de ${money(-over)}</b>`;
+}
+
+/* ---------- barra de time com ghost ---------- */
+function teamBar(t){
+  const scale=1.30, w=v=>Math.min(v/t.budget/scale*100,100), st=status(t), mk=(1/scale*100).toFixed(1);
+  const a=w(t.spent), b=w(t.proj);
+  return `<div class="tbar"><div class="f fill-${st}" style="width:${a}%"></div><div class="g" style="left:${a}%;width:${Math.max(b-a,0)}%"></div><div class="m" style="left:${mk}%"></div></div>`;
+}
+
+/* ---------- PRECISA DE ATENÇÃO ---------- */
+function renderAttention(){
+  const risk = DATA.teams.filter(t=>status(t)!=="green").sort((x,y)=>projPct(y)-projPct(x));
+  const ok = DATA.teams.filter(t=>status(t)==="green").sort((x,y)=>projPct(y)-projPct(x));
+  $("#attnCount").textContent = `(${risk.length})`;
+
+  $("#attn").innerHTML = risk.map(t=>{
+    const st=status(t);
+    const warn = st==="red"
+      ? `Estourou: ${money(t.spent)} de ${money(t.budget)} (${pct(t)}%) · projeção ${money(t.proj)} (+${projPct(t)-100}%)`
+      : `${pct(t)}% agora · projeção ${money(t.proj)} (${projPct(t)}%) · cruza 100% antes do fim do mês`;
+    return `<div class="trisk ${st}">
+      <div class="hd"><span class="nm">${t.name}</span><span class="pill ${st}">${stLabel(st)}</span>
+        <span class="vals">${money(t.spent)} / ${money(t.budget)}</span></div>
+      <div class="warn">${warn}</div>
+      ${teamBar(t)}
+      <div class="acts">
+        <button class="btn ghost sm" onclick="drillTeam('${t.name}')">Investigar</button>
+        <button class="btn sm" onclick="openSim('${t.name}')">Simular</button>
+        <button class="iconbtn" style="margin-left:auto" title="Editar orçamento" onclick="openBudget('${t.name}')">✎</button>
+      </div>
+    </div>`;
+  }).join("");
+
+  $("#okWrap").innerHTML = ok.length ? `<div class="collapse" id="okc">
+    <div class="ch" onclick="document.getElementById('okc').classList.toggle('open')">
+      <span style="color:var(--green);font-size:15px">✓</span>
+      <b style="font-size:14px">Sob controle</b><span class="ct" style="color:var(--faint);font-weight:600">(${ok.length}) times dentro do previsto</span>
       <span class="chev">›</span>
     </div>
-    <div class="body">
-      <div class="drivers">${w.drivers.map(d=>`<span class="chip">${d}</span>`).join("")}</div>
-      <div class="plan">
-        <b class="h">Plano de controle</b>
-        <span class="tiny muted">o Denarius recomenda e mostra; a execução é sua — read-only</span>
-        <ul>${w.actions.map(a=>`<li>${a}</li>`).join("")}</ul>
-      </div>
-    </div>
-  </div>`;
+    <div class="cb">${ok.map(t=>`<div class="okline">
+        <span class="nm">${t.name} <span class="pill green" style="font-weight:600">${projPct(t)}%</span></span>
+        ${teamBar(t)}
+        <span class="tnum tiny muted" style="text-align:right">${money(t.spent)} / ${money(t.budget)}</span>
+      </div>`).join("")}</div>
+  </div>` : "";
 }
 
-/* ---------- chart SVG (sem dependências) ---------- */
-function lineChart(series, budgetVal, projTo, colors){
-  const W=520, H=170, pad=34, n=series.length;
-  const maxV = Math.max(budgetVal, projTo, ...series) * 1.08;
-  const x = i => pad + i/(n-1) * (W-pad-12);
-  const y = v => H-26 - v/maxV * (H-26-14);
-  const pts = series.map((v,i)=>`${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
-  const last = series[n-1];
-  const budgetY = y(budgetVal).toFixed(1);
-  // projeção: do último ponto real até a borda direita, no valor projetado
-  const projPts = `${x(n-1).toFixed(1)},${y(last).toFixed(1)} ${(W-12).toFixed(1)},${y(projTo).toFixed(1)}`;
-  return `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}">
-    <line x1="${pad}" y1="${H-26}" x2="${W-12}" y2="${H-26}" stroke="var(--line)"/>
-    <line x1="${pad}" y1="14" x2="${pad}" y2="${H-26}" stroke="var(--line)"/>
-    <line x1="${pad}" y1="${budgetY}" x2="${W-12}" y2="${budgetY}" stroke="var(--faint)" stroke-dasharray="4 4"/>
-    <text x="${pad+4}" y="${budgetY-4}" class="chart-x">orçamento ${money(budgetVal)}</text>
-    <polyline fill="none" stroke="${colors.line}" stroke-width="2.5" points="${pts}"/>
-    <polyline fill="none" stroke="${colors.line}" stroke-width="2" stroke-dasharray="5 4" opacity=".55" points="${projPts}"/>
-    <circle cx="${x(n-1).toFixed(1)}" cy="${y(last).toFixed(1)}" r="3.5" fill="${colors.line}"/>
-    <text x="${pad}" y="${H-8}" class="chart-x">1/jun</text>
-    <text x="${W-46}" y="${H-8}" class="chart-x">30/jun</text>
-  </svg>`;
+/* ---------- observações + composição ---------- */
+function renderObs(){
+  $("#obs").innerHTML = DATA.obs.map(o=>`<div class="obs"><span class="oi">${o.i}</span><div>${o.t}</div></div>`).join("");
+  const max = Math.max(...DATA.providers.map(p=>p.g));
+  $("#comp").innerHTML = DATA.providers.map(p=>`<div class="comp">
+    <span class="cn">${p.n}</span>
+    <div class="cbar"><i style="width:${p.g/max*100}%;background:${p.c}"></i></div>
+    <span class="cv">${money(p.g)} · ${p.pct}%</span></div>`).join("");
 }
 
-/* ---------- render ---------- */
-function render(){
-  const sorted = [...DATA.teams].sort((a,b)=> b.spent/b.budget - a.spent/a.budget);
-  $("#ovTeams").innerHTML = sorted.map(bar).join("");
-  $("#bgTeams").innerHTML = sorted.map(bar).join("");
-
-  $("#ovWarn").innerHTML = DATA.warnings.map((w,i) => warnCard(w,i,"ov")).join("");
-  $("#bgWarn").innerHTML = DATA.warnings.map((w,i) => warnCard(w,i,"bg")).join("");
-
-  $("#expTeam").innerHTML = sorted.map(t=>`<tr class="clickable" onclick="drillTeam('${t.name}')">
+/* ================= EXPLORAR ================= */
+function renderExploreRoot(){
+  const rows = [...DATA.teams].sort((a,b)=>b.spent-a.spent).map(t=>`<tr class="clickable" onclick="drillTeam('${t.name}')">
     <td><b>${t.name}</b></td><td class="num">${money(t.spent)}</td>
     <td class="num"><span class="pill ${status(t)}">${pct(t)}%</span></td>
     <td class="num">${money(t.proj)}</td>
-    <td class="num ${t.deltaPct>=0?'':'down'}" style="color:${t.deltaPct>=0?'var(--red)':'var(--green)'}">${t.deltaPct>=0?'▲':'▼'} ${Math.abs(t.deltaPct)}%</td></tr>`).join("");
-
-  $("#expPerson").innerHTML = DATA.people.map(p=>`<tr>
-    <td><b>${p.n}</b></td><td>${p.m}</td><td class="num">${money(p.g)}</td><td class="num">${p.p}%</td></tr>`).join("");
-
-  $("#expModel").innerHTML = DATA.models.map(m=>`<tr>
-    <td><b>${m.m}</b></td><td>${m.pv}</td><td class="num">${m.tk}</td>
-    <td class="num">${m.uncosted?'<span class="uncosted">não precificado</span>':money(m.g)}</td></tr>`).join("");
-
-  $("#orgChart").innerHTML = lineChart(DATA.orgCum, DATA.org.budget, DATA.org.proj, {line:"var(--brand)"});
-  $("#engChart").innerHTML = lineChart(DATA.engCum, 25000, 30000, {line:"var(--red)"});
-
-  $("#apont").innerHTML = DATA.apontamentos.map(a=>`<div class="apont-row"><span class="ai">${a.ai}</span><div>${a.t}</div></div>`).join("");
-}
-
-/* ---------- simulador de cenários (P3 pilar: planejamento + apoio à decisão) ---------- */
-function renderScenario(pctRaw){
-  const pct = Number(pctRaw)||0;
-  $("#scenPct").textContent = pct + "%";
-  const orgProj = Math.round(SCEN.orgProjBase - SCEN.engProj * pct/100);
-  const pctB    = Math.round(orgProj / SCEN.orgBudget * 100);
-  const margin  = SCEN.orgBudget - orgProj;                 // + = folga, - = estoura
-  const st      = orgProj > SCEN.orgBudget ? "red" : "green";
-  const scale=1.30, fillW=Math.min(orgProj/SCEN.orgBudget/scale*100,100), marker=(1/scale*100).toFixed(1);
-  $("#scenOut").innerHTML = `
-    <div class="row between center wrapg" style="margin:14px 0 6px">
-      <div><span style="font-size:25px;font-weight:740">${money(orgProj)}</span> <span class="tiny muted">projeção de fechamento</span></div>
-      <span class="pill ${st}">${pctB}% do orçamento · ${margin>=0?'folga':'estoura'} ${money(Math.abs(margin))}</span>
+    <td class="num" style="color:${t.deltaPct>=0?'var(--muted)':'var(--green)'}">${t.deltaPct>=0?'+':''}${t.deltaPct}%</td>
+    <td class="num muted">›</td></tr>`).join("");
+  const u = DATA.unattributed;
+  $("#expRoot").innerHTML = `
+    <div class="seg" id="expSeg">
+      <button data-view="team" class="active">Por time</button>
+      <button data-view="model">Por modelo</button>
     </div>
-    <div class="scen-bar stat-${st}"><div class="fill" style="width:${fillW}%"></div><div class="marker" style="left:${marker}%"></div></div>
-    <div class="tiny muted mt8">risco preto = orçamento R$ 50.000 · barra = projeção sob o cenário</div>`;
-  const breakeven = Math.ceil((SCEN.orgProjBase - SCEN.orgBudget) / SCEN.engProj * 100); // ~14%
-  $("#scenHint").innerHTML = margin >= 0
-    ? `✓ Cenário fecha <b>dentro do orçamento</b> — folga projetada de <b>${money(margin)}</b>.`
-    : `Reduza o ritmo de Engineering em mais <b>~${breakeven - pct}%</b> para fechar no orçamento.`;
+    <div data-ev="team">
+      <div class="card">
+        <div class="sechd" style="margin-top:0"><h2>Gasto por time — junho</h2><span class="rt tiny muted">clique num time para investigar</span></div>
+        <table><thead><tr><th>Time</th><th class="num">Gasto</th><th class="num">% orç.</th><th class="num">Projeção</th><th class="num">vs. maio</th><th></th></tr></thead>
+        <tbody>${rows}
+          <tr class="unatt"><td>Não atribuído</td><td class="num">${money(u.spent)}</td><td class="num">—</td><td class="num">—</td><td class="num">—</td><td class="num" style="color:var(--amber)">mapear</td></tr>
+        </tbody></table>
+        <div class="tiny muted mt8">Total da empresa = soma dos times + não atribuído = <b>${money(DATA.org.spent)}</b> — sempre reconcilia.</div>
+      </div>
+    </div>
+    <div data-ev="model" style="display:none">
+      <div class="card">
+        <div class="sechd" style="margin-top:0"><h2>Gasto por modelo — empresa</h2></div>
+        <table><thead><tr><th>Modelo</th><th>Provedor</th><th class="num">Tokens</th><th class="num">Gasto</th></tr></thead>
+        <tbody>${DATA.models.map(m=>`<tr><td><b>${m.m}</b></td><td>${m.pv}</td><td class="num">${m.tk}</td>
+          <td class="num">${m.uncosted?'<span class="uncosted">não precificado</span>':money(m.g)}</td></tr>`).join("")}</tbody></table>
+        <div class="tiny muted mt8">Modelos sem preço aparecem como <span class="uncosted">não precificado</span> em vez de sumir do total.</div>
+      </div>
+    </div>`;
+  $("#expSeg").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;
+    document.querySelectorAll("#expSeg button").forEach(x=>x.classList.toggle("active",x===b));
+    document.querySelectorAll("[data-ev]").forEach(p=>p.style.display=p.dataset.ev===b.dataset.view?"block":"none");});
 }
-function setScenario(v){ $("#scenSlider").value = v; renderScenario(v); }
 
-/* ---------- navegação ---------- */
-const titles = {
-  overview:["Overview","Status de orçamento da empresa — junho/2026"],
-  budgets:["Budgets","Orçamentos, avisos e planos de controle"],
-  planning:["Planejamento","Cenários futuros e apontamentos de apoio à decisão"],
-  explore:["Explore","Atribuição e drill-down por time / pessoa / modelo"],
-  settings:["Settings","Conexões, identidade e privacidade"],
-};
-function go(tab){
-  document.querySelectorAll("[data-panel]").forEach(p=> p.style.display = p.dataset.panel===tab ? "block" : "none");
-  document.querySelectorAll(".nav button").forEach(b=> b.classList.toggle("active", b.dataset.tab===tab));
-  $("#ttl").textContent = titles[tab][0];
-  $("#tsub").textContent = titles[tab][1];
+/* drill → detalhe do time (ritmo + drivers + contribuintes) */
+function drillTeam(name){
+  const t = DATA.teams.find(x=>x.name===name) || DATA.teams[0];
+  go("explore");
+  $("#expRoot").style.display="none";
+  const d=$("#expDetail"); d.style.display="block";
+  const st=status(t);
+  d.innerHTML = `
+    <div class="crumb"><a onclick="backToExplore()">Explorar</a> <span>›</span> <b style="color:var(--ink)">${t.name}</b></div>
+    <div class="card" style="margin-bottom:16px">
+      <div class="row between center">
+        <div><span class="lbl">${t.name} · junho</span>
+          <div style="display:flex;align-items:baseline;gap:9px;margin-top:6px"><span style="font-size:26px;font-weight:740">${money(t.spent)}</span>
+          <span class="muted">de ${money(t.budget)} · ${pct(t)}%</span> <span class="pill ${st}">${stLabel(st)}</span></div></div>
+        <button class="btn sm" onclick="openSim('${t.name}')">Simular</button>
+      </div>
+      <div style="margin-top:14px">${teamBar(t)}</div>
+      <div class="tiny muted mt8">Projeção ${money(t.proj)} (${projPct(t)}%) · risco preto = orçamento · tracejado = projeção</div>
+    </div>
+    <div class="card" style="margin-bottom:16px">
+      <div class="sechd" style="margin-top:0"><h2>Ritmo — gasto acumulado vs. orçamento</h2></div>
+      <div id="dChart"></div>
+      <div class="legend"><span><i style="background:var(--red)"></i>gasto</span><span><i style="background:var(--faint)"></i>orçamento ${money(t.budget)}</span><span><i style="background:var(--red);opacity:.5"></i>projeção</span></div>
+    </div>
+    <div class="card">
+      <div class="sechd" style="margin-top:0"><h2>Contribuintes deste pico</h2><span class="rt tiny muted">Admin · drivers de custo, não ranking</span></div>
+      <table><thead><tr><th>Pessoa</th><th>Modelo principal</th><th class="num">Gasto</th><th class="num">% do pico</th></tr></thead>
+      <tbody>${DATA.people.map(p=>`<tr><td><b>${p.n}</b></td><td>${p.m}</td><td class="num">${money(p.g)}</td><td class="num">${p.p}%</td></tr>`).join("")}</tbody></table>
+    </div>`;
+  $("#dChart").innerHTML = lineChart(DATA.engCum, t.budget, t.proj);
   window.scrollTo(0,0);
 }
-document.querySelectorAll(".nav").forEach(nav=>nav.addEventListener("click",e=>{
-  const b = e.target.closest("button"); if(b) go(b.dataset.tab);
-}));
+function backToExplore(){ $("#expDetail").style.display="none"; $("#expRoot").style.display="block"; window.scrollTo(0,0); }
 
-/* drill: barra/linha de time → Explore com a aba certa */
-function drillTeam(name){ go("explore"); setView("team"); }
-function seePeople(){ go("explore"); setView("person"); }
-
-/* segmented control do Explore */
-function setView(v){
-  document.querySelectorAll("#expSeg button").forEach(b=> b.classList.toggle("active", b.dataset.view===v));
-  document.querySelectorAll("[data-exp]").forEach(p=> p.style.display = p.dataset.exp===v ? "block" : "none");
+function lineChart(series, budgetVal, projTo){
+  const W=520,H=150,pad=34,n=series.length,maxV=Math.max(budgetVal,projTo,...series)*1.08;
+  const x=i=>pad+i/(n-1)*(W-pad-12), y=v=>H-24-v/maxV*(H-24-14);
+  const pts=series.map((v,i)=>`${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
+  const by=y(budgetVal).toFixed(1), last=series[n-1];
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}">
+    <line x1="${pad}" y1="${H-24}" x2="${W-12}" y2="${H-24}" stroke="var(--line)"/>
+    <line x1="${pad}" y1="${by}" x2="${W-12}" y2="${by}" stroke="var(--faint)" stroke-dasharray="4 4"/>
+    <text x="${pad+4}" y="${by-4}" font-size="10" fill="var(--faint)">orçamento ${money(budgetVal)}</text>
+    <polyline fill="none" stroke="#dc2626" stroke-width="2.4" points="${pts}"/>
+    <polyline fill="none" stroke="#dc2626" stroke-width="2" stroke-dasharray="5 4" opacity=".55" points="${x(n-1).toFixed(1)},${y(last).toFixed(1)} ${(W-12).toFixed(1)},${y(projTo).toFixed(1)}"/>
+    <text x="${pad}" y="${H-6}" font-size="10" fill="var(--faint)">1 jun</text>
+    <text x="${W-40}" y="${H-6}" font-size="10" fill="var(--faint)">30 jun</text></svg>`;
 }
-$("#expSeg").addEventListener("click",e=>{ const b=e.target.closest("button"); if(b) setView(b.dataset.view); });
 
-/* toggles de privacidade */
-document.querySelectorAll(".toggle").forEach(t=> t.addEventListener("click",()=> t.classList.toggle("off")));
+/* ================= DRAWER: simulador ================= */
+let simTarget = null;
+function openSim(name){
+  simTarget = DATA.teams.find(t=>t.name===name);
+  $("#simTeam").textContent = name; $("#simTitle").textContent = `Simular — ${name}`;
+  const presets=[{l:"Ritmo atual",v:0},{l:"Fechar no orçamento",v:breakeven()},{l:"−30%",v:30}];
+  $("#simPresets").innerHTML = presets.map(p=>`<button class="btn ghost sm" onclick="setSim(${p.v})">${p.l}</button>`).join("");
+  $("#simSlider").value=0; renderSim(0);
+  $("#scrim").classList.add("show"); $("#drawer").classList.add("show");
+}
+function closeSim(){ $("#scrim").classList.remove("show"); $("#drawer").classList.remove("show"); }
+function setSim(v){ $("#simSlider").value=v; renderSim(v); }
+function breakeven(){ if(!simTarget) return 0; return Math.min(50,Math.ceil((DATA.org.proj-DATA.org.budget)/simTarget.proj*100)); }
+function renderSim(pctRaw){
+  const p=Number(pctRaw)||0; $("#simPct").textContent=p+"%";
+  const orgProj=Math.round(DATA.org.proj - simTarget.proj*p/100);
+  const pctB=Math.round(orgProj/DATA.org.budget*100), margin=DATA.org.budget-orgProj;
+  const st=orgProj>DATA.org.budget?"red":"green", scale=1.30, fw=Math.min(orgProj/DATA.org.budget/scale*100,100), mk=(1/scale*100).toFixed(1);
+  $("#simOut").innerHTML=`<div class="row between center wrapg" style="margin:12px 0 4px">
+      <div><span style="font-size:24px;font-weight:740">${money(orgProj)}</span> <span class="tiny muted">projeção da empresa</span></div>
+      <span class="pill ${st}">${pctB}% · ${margin>=0?'folga':'estoura'} ${money(Math.abs(margin))}</span></div>
+    <div class="scen-bar"><div class="f fill-${st}" style="width:${fw}%"></div><div class="m" style="left:${mk}%"></div></div>`;
+  const need=Math.max(0,breakeven()-p);
+  $("#simHint").innerHTML = margin>=0
+    ? `✓ Este cenário fecha <b>dentro do orçamento</b> — folga de <b>${money(margin)}</b>.`
+    : `Reduza <b>${simTarget.name}</b> em mais <b>~${need}%</b> para a empresa fechar no orçamento.`;
+}
 
-/* período (mock) */
-$("#periodBtn").addEventListener("click",()=> alert("Mock: seletor de período (mês atual, últimos 30/90 dias)."));
+/* ================= navegação ================= */
+const titles = {
+  home:["Início","Você está no controle do gasto com IA?"],
+  explore:["Explorar","Atribuição e investigação por time, pessoa e modelo"],
+  settings:["Ajustes","Conexões, identidade e privacidade"],
+};
+function go(tab){
+  document.querySelectorAll("[data-panel]").forEach(p=>p.style.display=p.dataset.panel===tab?"block":"none");
+  document.querySelectorAll(".nav button").forEach(b=>b.classList.toggle("active",b.dataset.tab===tab));
+  $("#ttl").textContent=titles[tab][0]; $("#tsub").textContent=titles[tab][1];
+  if(tab==="explore" && $("#expDetail").style.display!=="block"){ $("#expRoot").style.display="block"; }
+  window.scrollTo(0,0);
+}
+document.querySelector(".nav").addEventListener("click",e=>{const b=e.target.closest("button");if(b)go(b.dataset.tab);});
+document.querySelectorAll(".toggle").forEach(t=>t.addEventListener("click",()=>t.classList.toggle("off")));
+$("#periodBtn").addEventListener("click",()=>alert("Mock: seletor de período (mês atual · 30d · 90d)."));
 
-/* ---------- modal: definir orçamento ---------- */
-function openBudget(){ $("#budgetModal").classList.add("show"); }
+/* modal orçamento */
+function openBudget(scope){ $("#bScope").value=scope; if(scope!=="org"){const t=DATA.teams.find(x=>x.name===scope); if(t)$("#bAmount").value=t.budget;} else $("#bAmount").value=DATA.org.budget; $("#budgetModal").classList.add("show"); }
 function closeBudget(){ $("#budgetModal").classList.remove("show"); }
-function saveBudget(){
-  const scope = $("#bScope").value;
-  const amount = Number($("#bAmount").value);
-  if(scope !== "org"){
-    const t = DATA.teams.find(x=>x.name===scope);
-    if(t){ t.budget = amount; }       // muta o mock e re-renderiza (orçamento "salvo")
-  } else {
-    DATA.org.budget = amount;
-  }
-  render();
-  closeBudget();
-}
-$("#budgetModal").addEventListener("click",e=>{ if(e.target.id==="budgetModal") closeBudget(); });
-
-/* ---------- cenários: presets + slider ---------- */
-const scenPresets = [
-  { l:"Ritmo atual", v:0 },
-  { l:"Eng −14% · fecha no orçamento", v:14 },
-  { l:"Eng −30%", v:30 },
-];
-$("#scenPresets").innerHTML = scenPresets.map(p=>`<button class="btn ghost sm" onclick="setScenario(${p.v})">${p.l}</button>`).join("");
-$("#scenSlider").addEventListener("input", e => renderScenario(e.target.value));
+function saveBudget(){ const s=$("#bScope").value,a=Number($("#bAmount").value);
+  if(s==="org") DATA.org.budget=a; else { const t=DATA.teams.find(x=>x.name===s); if(t)t.budget=a; }
+  renderAll(); closeBudget(); }
+$("#budgetModal").addEventListener("click",e=>{if(e.target.id==="budgetModal")closeBudget();});
 
 /* ---------- boot ---------- */
-render();
-renderScenario(0);
+function renderAll(){ renderVerdict(); renderHero(); renderAttention(); renderObs(); renderExploreRoot(); }
+renderAll();
