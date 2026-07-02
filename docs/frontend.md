@@ -72,3 +72,14 @@ Light mode only (P9). Desktop-first; consumption screens legible at mobile width
 | F6 | Frontend testing | **LOCKED — lean pyramid.** Unit tests for display helpers (money formatting, bar-width math, verdict copy states). RTL only for logic-bearing components (BudgetBar states, verdict variants, simulator arithmetic). Playwright e2e for 3 critical journeys against seeded DB + fake providers (never live APIs): (1) cold start → connect → set budget → verdict appears; (2) warning → [Investigar] → team detail → contributors; (3) [Simular] drawer → break-even preset closes on budget. |
 
 All F-decisions are locked. When implementation contradicts this table or the prototype, flag it — don't silently diverge.
+
+## 8. UI scaffold (issue #12)
+
+shadcn blocks are **starting scaffolding**, adapted into the F5 structure — the block is not the final structure.
+
+- **Sidebar — base `sidebar-07`** ("collapses to icons"). On top of it, compose our two nav groups with `SidebarGroup`: **Cockpit** (Início, Explorar) and **Conta** (Ajustes). Ships as `components/domain/AppSidebar`. Restyle toward the prototype (dark rail, tenant identity in the header, "as of <date> / FX" in the footer). `variant="inset"` is a later aesthetic opt-in, not now. (Chosen over `sidebar-08` because all blocks share the same `Sidebar`/`SidebarGroup` primitives — starting from the cleaner base and composing our own groups beats inheriting 08's secondary-nav rendering.)
+- **Auth — matched pair `login-02` + `signup-02`** (two-column, form + cover image — a premium branded first impression, à la Mercury/Ramp). Live in `app/(auth)/login` and `app/(auth)/signup`. Adaptations (no block ships these):
+  - Both: a **Google** button wired to Supabase Auth (email/password + Google).
+  - Signup: a **company name** field → the submit server action creates the `tenant`.
+  - Cover column: slot for the value prop / a cockpit screenshot.
+- **Placement (F5):** shadcn primitives untouched in `components/ui/`; auth compositions in `app/(auth)/`; screen components in `app/<route>/_components/`; shared domain components (`AppSidebar`, `VerdictLine`, `BudgetBar`, `StatusPill`) in `components/domain/`.
