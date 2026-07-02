@@ -225,7 +225,9 @@ The headline metric is **spend in money governed against a budget**; tokens are 
 **Stack**
 - **TypeScript everywhere** (no Python). **Next.js (App Router)** + **Tailwind** + **shadcn/ui** + **Recharts**.
 - Backend = Next's own **API routes / server actions** (monolith, single deploy).
+- **Single repo, single app — not a monorepo.** No Turborepo/Nx/workspace tooling; the deliberate simplicity favors an auditable due-diligence trail over premature scalability.
 - Hosting **Vercel**; data/auth **Supabase**; cron **Vercel Cron**.
+- **Supabase ↔ GitHub integration**: schema migrations (including RLS policies) live as versioned files in `supabase/migrations`, connected to auto-deploy from the repo — schema-as-code, not dashboard clicks. Directly serves the due-diligence story: an acquirer's engineers can audit the exact history of how tenant isolation was implemented, commit by commit.
 - **Transactional email: Resend** (or equivalent) for event alerts + weekly digest — required by the notification decisions (P4/P11). Free tier is sufficient for MVP volume.
 
 **Business (context that shapes the product)**
