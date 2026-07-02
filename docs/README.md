@@ -1,0 +1,17 @@
+# Denarius — project context (`docs/`)
+
+Everything an engineer or agent needs to work on Denarius. Read in this order:
+
+| Doc | What it holds | Read when |
+|---|---|---|
+| [prd.md](prd.md) | **Source of truth.** Problem, solution, 59 user stories, all product/UX/testing decisions (P1–P15), success metrics, risks, build order (13 issues) | Always first |
+| [architecture.md](architecture.md) | System shape: stack, repo layout, multi-tenancy/RLS, data flow, data model, environments | Before touching any code |
+| [backend.md](backend.md) | Module-by-module backend spec: connectors, sync, budget engine formulas, findings rules, notifications, LLM guardrails, env vars | Before backend issues (#13–#18, #20–#23) |
+| [frontend.md](frontend.md) | Screens, component contracts, design tokens, interaction patterns, UI states | Before frontend issues (#19, UI parts of others) |
+
+Fixed conventions:
+
+- **Docs and code in English**; product copy (UI strings) in **pt-BR**.
+- The **prototype in [`prototype/`](../prototype/)** is the visual contract for the frontend — static HTML/CSS/JS with mocked data, served by `node prototype/server.js` (port 5599).
+- Work is sliced into GitHub issues **#11–#23** (`ready-for-agent`), dependency-ordered; #11 is HITL (founder provisions infra + Admin keys).
+- Every decision passes the exit-thesis filter: *"does this raise sale value / survive due diligence?"* — not "does this scale?".
