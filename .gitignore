@@ -6,8 +6,9 @@ node_modules/
 .next/
 out/
 build/
-.env
-.env*.local
+# Secrets: ignore every .env* file, but keep the committed template
+.env*
+!.env.example
 .vercel/
 
 # OS
