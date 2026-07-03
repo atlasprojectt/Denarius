@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/server";
@@ -17,7 +18,10 @@ const copy = {
     { name: "GitHub Copilot", status: "Planejado para a v1.5" },
   ],
   rosterTitle: "Roster",
-  rosterStatus: "Importação por CSV chega na issue #13.",
+  rosterEmpty: "Nenhum funcionário importado ainda.",
+  rosterCount: (people: number, teams: number) =>
+    `${people} pessoa(s) em ${teams} time(s).`,
+  rosterCta: "Gerenciar roster",
   privacyTitle: "Privacidade",
   privacyBody:
     "Nomes visíveis somente para Admin e minimização de dados por pessoa chegam na issue #23. Prompts e respostas nunca são armazenados — somente metadados de uso.",
@@ -27,10 +31,15 @@ type TenantRow = { name: string; display_currency: string };
 
 export default async function SettingsPage() {
   const supabase = await createClient();
-  const { data } = await supabase
-    .from("tenant")
-    .select("name, display_currency")
-    .maybeSingle();
+  const [{ data }, { count: employeeCount }, { count: teamCount }] =
+    await Promise.all([
+      supabase.from("tenant").select("name, display_currency").maybeSingle(),
+      supabase.from("employee").select("id", { count: "exact", head: true }),
+      supabase
+        .from("team")
+        .select("id", { count: "exact", head: true })
+        .eq("is_unattributed", false),
+    ]);
   const tenant = data as TenantRow | null;
   if (!tenant) redirect("/onboarding");
 
@@ -76,8 +85,22 @@ export default async function SettingsPage() {
       </section>
 
       <section className="rounded-xl border bg-card p-6 shadow-sm">
-        <h2 className="font-semibold">{copy.rosterTitle}</h2>
-        <p className="mt-1 text-sm text-muted-foreground">{copy.rosterStatus}</p>
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <h2 className="font-semibold">{copy.rosterTitle}</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {employeeCount
+                ? copy.rosterCount(employeeCount, teamCount ?? 0)
+                : copy.rosterEmpty}
+            </p>
+          </div>
+          <Link
+            href="/ajustes/roster"
+            className="rounded-md border px-3 py-1.5 text-sm font-medium hover:bg-muted"
+          >
+            {copy.rosterCta}
+          </Link>
+        </div>
       </section>
 
       <section className="rounded-xl border bg-card p-6 shadow-sm">

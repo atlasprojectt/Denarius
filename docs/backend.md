@@ -31,6 +31,7 @@ interface UsageProvider {
 
 - Hierarchy: org → team → person → provider/model. Person only where per-person keys / `user_id` exist; shared keys attribute to team/project, never a person.
 - Roster CSV (employee, email, team) is identity in v1; re-import matched by email.
+- **Roster import contract (implemented in #13):** CSV parsed/validated by the pure function `lib/roster/parse-csv.ts` (delimiter auto-detect `,`/`;`, pt-BR headers, quoted fields, line-numbered errors; zod row schema is the single validation truth). Commit path is the **`roster_import(rows jsonb)` Postgres function** — `security definer`, derives the tenant from `auth.uid()`, enforces the admin role inside, and runs as **one transaction** (a mid-import failure rolls everything back; a file with any error imports nothing). Upserts teams by `(tenant_id, name)` and employees by `(tenant_id, email)`; absent employees are kept (no silent deletions). Direct table writes stay RLS-denied.
 - Manual `subscription` seats **accrue daily** (`price ÷ days_in_period`) into team spend.
 - **Unattributed** is a first-class bucket. Hard invariant everywhere: `org_total = Σ team_totals + unattributed`.
 
