@@ -22,6 +22,11 @@ const copy = {
   rosterCount: (people: number, teams: number) =>
     `${people} pessoa(s) em ${teams} time(s).`,
   rosterCta: "Gerenciar roster",
+  seatsTitle: "Assinaturas e assentos",
+  seatsEmpty: "Nenhuma assinatura registrada ainda.",
+  seatsCount: (subs: number) =>
+    `${subs} assinatura(s) — custo distribuído dia a dia no período.`,
+  seatsCta: "Gerenciar assinaturas",
   privacyTitle: "Privacidade",
   privacyBody:
     "Nomes visíveis somente para Admin e minimização de dados por pessoa chegam na issue #23. Prompts e respostas nunca são armazenados — somente metadados de uso.",
@@ -31,15 +36,20 @@ type TenantRow = { name: string; display_currency: string };
 
 export default async function SettingsPage() {
   const supabase = await createClient();
-  const [{ data }, { count: employeeCount }, { count: teamCount }] =
-    await Promise.all([
-      supabase.from("tenant").select("name, display_currency").maybeSingle(),
-      supabase.from("employee").select("id", { count: "exact", head: true }),
-      supabase
-        .from("team")
-        .select("id", { count: "exact", head: true })
-        .eq("is_unattributed", false),
-    ]);
+  const [
+    { data },
+    { count: employeeCount },
+    { count: teamCount },
+    { count: subscriptionCount },
+  ] = await Promise.all([
+    supabase.from("tenant").select("name, display_currency").maybeSingle(),
+    supabase.from("employee").select("id", { count: "exact", head: true }),
+    supabase
+      .from("team")
+      .select("id", { count: "exact", head: true })
+      .eq("is_unattributed", false),
+    supabase.from("subscription").select("id", { count: "exact", head: true }),
+  ]);
   const tenant = data as TenantRow | null;
   if (!tenant) redirect("/onboarding");
 
@@ -99,6 +109,25 @@ export default async function SettingsPage() {
             className="rounded-md border px-3 py-1.5 text-sm font-medium hover:bg-muted"
           >
             {copy.rosterCta}
+          </Link>
+        </div>
+      </section>
+
+      <section className="rounded-xl border bg-card p-6 shadow-sm">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <h2 className="font-semibold">{copy.seatsTitle}</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {subscriptionCount
+                ? copy.seatsCount(subscriptionCount)
+                : copy.seatsEmpty}
+            </p>
+          </div>
+          <Link
+            href="/ajustes/assinaturas"
+            className="rounded-md border px-3 py-1.5 text-sm font-medium hover:bg-muted whitespace-nowrap"
+          >
+            {copy.seatsCta}
           </Link>
         </div>
       </section>

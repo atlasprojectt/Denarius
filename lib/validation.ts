@@ -45,6 +45,34 @@ export const rosterRowSchema = z.object({
     }),
 });
 
+// Manual seat subscription (issue #14). `teamId` null = shared/company-wide.
+// The server action normalizes an empty team select to null before parsing.
+export const subscriptionSchema = z.object({
+  tool: z
+    .string()
+    .trim()
+    .min(2, "Informe a ferramenta (mínimo 2 caracteres).")
+    .max(80, "Nome da ferramenta muito longo (máximo 80 caracteres)."),
+  seatCount: z.coerce
+    .number()
+    .int("O número de assentos deve ser inteiro.")
+    .min(1, "Pelo menos 1 assento.")
+    .max(100000, "Número de assentos muito alto."),
+  unitPrice: z.coerce
+    .number()
+    .min(0, "O preço não pode ser negativo.")
+    .max(10000000, "Preço muito alto."),
+  teamId: z.uuid("Escolha um time válido.").nullable(),
+});
+
+export const subscriptionUpdateSchema = subscriptionSchema.extend({
+  subscriptionId: z.uuid("Assinatura inválida."),
+});
+
+export const subscriptionDeleteSchema = z.object({
+  subscriptionId: z.uuid("Assinatura inválida."),
+});
+
 export const employeeUpdateSchema = z.object({
   employeeId: z.uuid("funcionário inválido"),
   name: z

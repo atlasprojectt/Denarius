@@ -2,12 +2,14 @@
 
 import { revalidatePath } from "next/cache";
 
+import { requireAdmin } from "@/lib/auth/session";
 import {
   parseRosterCsv,
   type RosterRowError,
 } from "@/lib/roster/parse-csv";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { isOwnedTeam } from "@/lib/teams/queries";
 import { employeeUpdateSchema } from "@/lib/validation";
 
 const MAX_FILE_BYTES = 512 * 1024;
@@ -23,33 +25,6 @@ export type RosterFormState = {
   success?: string;
   preview?: RosterPreview;
 };
-
-type Session = { userId: string; tenantId: string; role: string };
-
-async function requireAdmin(): Promise<
-  | { session: Session; error?: undefined }
-  | { session?: undefined; error: string }
-> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { error: "Sessão expirada — faça login novamente." };
-
-  const { data } = await supabase
-    .from("app_user")
-    .select("tenant_id, role")
-    .eq("id", user.id)
-    .maybeSingle();
-  const row = data as { tenant_id: string; role: string } | null;
-  if (!row) return { error: "Cadastro incompleto — conclua o onboarding." };
-  if (row.role !== "admin") {
-    return { error: "Somente administradores podem gerenciar o roster." };
-  }
-  return {
-    session: { userId: user.id, tenantId: row.tenant_id, role: row.role },
-  };
-}
 
 export async function importRoster(
   _prev: RosterFormState,
@@ -117,14 +92,7 @@ export async function updateEmployee(
   const { tenantId } = auth.session;
   const admin = createAdminClient();
 
-  // The team must belong to this tenant and not be the internal bucket.
-  const { data: team } = await admin
-    .from("team")
-    .select("id, is_unattributed")
-    .eq("id", parsed.data.teamId)
-    .eq("tenant_id", tenantId)
-    .maybeSingle();
-  if (!team || (team as { is_unattributed: boolean }).is_unattributed) {
+  if (!(await isOwnedTeam(admin, tenantId, parsed.data.teamId))) {
     return { error: "Escolha um time válido." };
   }
 
