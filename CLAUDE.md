@@ -166,4 +166,4 @@ After any meaningful decision, ask: **"does this need to enter the documentation
 
 - **`gh` auth quirk (this machine):** the GCM token lacks `read:org`, so `gh auth login` fails. Use:
   `export GH_TOKEN=$(printf 'protocol=https\nhost=github.com\n\n' | git credential fill | sed -n 's/^password=//p')`
-- **Current state (2026-07):** docs + prototype done; PRD hardened (P1–P15, F1–F6 locked). **No application code yet** — next milestone is issue #11 (HITL: Supabase/Vercel provisioning + Admin-key API spike), then #12 (walking skeleton). CodeRabbit is installed and reviews every PR.
+- **Current state (2026-07):** docs + prototype done; PRD hardened (P1–P15, F1–F6 locked). **Walking skeleton (#12) implemented** — Next 16 + Supabase auth (email/senha + Google) + tenant bootstrap + RLS migration + 3-tab shell; awaiting migration apply on Supabase + PR merge. Admin keys for the provider spike (#11) still pending (needs org Owner). CodeRabbit is installed and reviews every PR.
