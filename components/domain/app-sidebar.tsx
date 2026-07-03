@@ -22,6 +22,7 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { logout } from "@/lib/auth/actions";
 
 const copy = {
@@ -87,7 +88,10 @@ export function AppSidebar({
   const pathname = usePathname();
 
   return (
-    <Sidebar collapsible="icon">
+    // This shadcn sidebar version doesn't ship a TooltipProvider inside
+    // SidebarProvider; SidebarMenuButton's tooltip requires one.
+    <TooltipProvider delayDuration={0}>
+      <Sidebar collapsible="icon">
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
@@ -129,7 +133,8 @@ export function AppSidebar({
         </SidebarMenu>
       </SidebarFooter>
 
-      <SidebarRail />
-    </Sidebar>
+        <SidebarRail />
+      </Sidebar>
+    </TooltipProvider>
   );
 }
