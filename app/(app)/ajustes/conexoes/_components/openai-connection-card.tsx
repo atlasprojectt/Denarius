@@ -47,11 +47,12 @@ function statusLabel(status: string | null): string {
   return copy.notConnected;
 }
 
-function KeyForm({ pendingLabel }: { pendingLabel: string }) {
-  const [state, formAction, pending] = useActionState(
-    saveOpenAIKey,
-    initialState,
-  );
+type KeyFormProps = {
+  formAction: (formData: FormData) => void;
+  pending: boolean;
+};
+
+function KeyForm({ formAction, pending }: KeyFormProps) {
   return (
     <form action={formAction} className="mt-4 flex flex-col gap-3">
       <div className="flex flex-col gap-1.5">
@@ -67,26 +68,16 @@ function KeyForm({ pendingLabel }: { pendingLabel: string }) {
         <p className="text-xs text-muted-foreground">{copy.keyHelp}</p>
         <p className="text-xs text-muted-foreground">{copy.projectTip}</p>
       </div>
-      {state.error && (
-        <p role="alert" className="text-sm text-destructive">
-          {state.error}
-        </p>
-      )}
-      {state.success && (
-        <p role="status" className="text-sm font-medium text-foreground">
-          {state.success}
-        </p>
-      )}
       <div>
         <Button type="submit" disabled={pending}>
-          {pending ? pendingLabel : copy.connect}
+          {pending ? copy.connecting : copy.connect}
         </Button>
       </div>
     </form>
   );
 }
 
-function ActiveControls() {
+function ActiveControls({ keyForm }: { keyForm: KeyFormProps }) {
   const [syncState, syncAction, syncing] = useActionState(
     syncOpenAINow,
     initialState,
@@ -138,7 +129,7 @@ function ActiveControls() {
           {syncState.success}
         </p>
       )}
-      {rotating && <KeyForm pendingLabel={copy.connecting} />}
+      {rotating && <KeyForm {...keyForm} />}
     </div>
   );
 }
@@ -152,6 +143,15 @@ export function OpenAIConnectionCard({
   lastSyncAt: string | null;
   lastSyncError: string | null;
 }) {
+  // Save state lives on the card, not inside the form: connecting flips the
+  // card into its connected layout (the form unmounts), and the "we found
+  // $X this month" message must survive that swap.
+  const [saveState, saveAction, savePending] = useActionState(
+    saveOpenAIKey,
+    initialState,
+  );
+  const keyForm: KeyFormProps = { formAction: saveAction, pending: savePending };
+
   const connected = status === "active" || status === "error";
   const stamp = lastSyncAt
     ? new Date(lastSyncAt).toLocaleString("pt-BR", { timeZone: "UTC" }) + " UTC"
@@ -173,8 +173,18 @@ export function OpenAIConnectionCard({
           {lastSyncError}
         </p>
       )}
+      {saveState.error && (
+        <p role="alert" className="mt-2 text-sm text-destructive">
+          {saveState.error}
+        </p>
+      )}
+      {saveState.success && (
+        <p role="status" className="mt-2 text-sm font-medium text-foreground">
+          {saveState.success}
+        </p>
+      )}
 
-      {connected ? <ActiveControls /> : <KeyForm pendingLabel={copy.connecting} />}
+      {connected ? <ActiveControls keyForm={keyForm} /> : <KeyForm {...keyForm} />}
     </section>
   );
 }
