@@ -33,7 +33,31 @@ if (!ready) {
   );
 }
 
-const TABLES = ["tenant", "app_user", "team"] as const;
+// Later migrations get their own readiness flag so this file covers each new
+// table as soon as its migration lands, without failing before that.
+async function tableApplied(table: string): Promise<boolean> {
+  if (!hasEnv) return false;
+  const admin = createClient(url!, serviceKey!, {
+    auth: { persistSession: false },
+  });
+  const { error } = await admin.from(table).select("id").limit(1);
+  return !error;
+}
+
+const subscriptionReady = ready && (await tableApplied("subscription"));
+if (ready && !subscriptionReady) {
+  console.warn(
+    "\n[rls-isolation] subscription table not found — apply " +
+      "supabase/migrations/*_subscriptions.sql to cover it here too.\n",
+  );
+}
+
+const TABLES = [
+  "tenant",
+  "app_user",
+  "team",
+  ...(subscriptionReady ? (["subscription"] as const) : []),
+];
 
 type Seeded = {
   tenantId: string;
@@ -84,6 +108,17 @@ describe.skipIf(!ready)("RLS tenant isolation", () => {
       .select("id")
       .single();
     if (teamError) throw teamError;
+
+    if (subscriptionReady) {
+      const { error: subError } = await admin.from("subscription").insert({
+        tenant_id: tenant.id,
+        tool: `tool-${label}`,
+        seat_count: 5,
+        unit_price: 30,
+        team_id: team.id,
+      });
+      if (subError) throw subError;
+    }
 
     return {
       tenantId: tenant.id,
@@ -180,4 +215,27 @@ describe.skipIf(!ready)("RLS tenant isolation", () => {
       .insert({ tenant_id: a.tenantId, name: "direct-write-should-fail" });
     expect(error).not.toBeNull();
   });
+
+  it.skipIf(!subscriptionReady)(
+    "subscription rows are tenant-isolated (issue #14) and direct writes denied",
+    async () => {
+      const clientA = await signedInClient(a);
+
+      const { data } = await clientA
+        .from("subscription")
+        .select("tenant_id, tool");
+      expect(data?.length).toBeGreaterThan(0);
+      expect(data?.every((r) => r.tenant_id === a.tenantId)).toBe(true);
+      expect(data?.some((r) => r.tool === "tool-b")).toBe(false);
+
+      const { error } = await clientA.from("subscription").insert({
+        tenant_id: a.tenantId,
+        tool: "direct-write-should-fail",
+        seat_count: 1,
+        unit_price: 1,
+        team_id: a.teamId,
+      });
+      expect(error).not.toBeNull();
+    },
+  );
 });

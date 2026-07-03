@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
+import { requireAdmin } from "@/lib/auth/session";
 import {
   parseRosterCsv,
   type RosterRowError,
@@ -23,33 +24,6 @@ export type RosterFormState = {
   success?: string;
   preview?: RosterPreview;
 };
-
-type Session = { userId: string; tenantId: string; role: string };
-
-async function requireAdmin(): Promise<
-  | { session: Session; error?: undefined }
-  | { session?: undefined; error: string }
-> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { error: "Sessão expirada — faça login novamente." };
-
-  const { data } = await supabase
-    .from("app_user")
-    .select("tenant_id, role")
-    .eq("id", user.id)
-    .maybeSingle();
-  const row = data as { tenant_id: string; role: string } | null;
-  if (!row) return { error: "Cadastro incompleto — conclua o onboarding." };
-  if (row.role !== "admin") {
-    return { error: "Somente administradores podem gerenciar o roster." };
-  }
-  return {
-    session: { userId: user.id, tenantId: row.tenant_id, role: row.role },
-  };
-}
 
 export async function importRoster(
   _prev: RosterFormState,
