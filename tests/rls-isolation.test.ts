@@ -52,11 +52,22 @@ if (ready && !subscriptionReady) {
   );
 }
 
+const providersReady = ready && (await tableApplied("provider_connection"));
+if (ready && !providersReady) {
+  console.warn(
+    "\n[rls-isolation] provider tables not found — apply " +
+      "supabase/migrations/*_providers.sql to cover them here too.\n",
+  );
+}
+
 const TABLES = [
   "tenant",
   "app_user",
   "team",
   ...(subscriptionReady ? (["subscription"] as const) : []),
+  ...(providersReady
+    ? (["provider_connection", "usage_daily", "cost_daily"] as const)
+    : []),
 ];
 
 type Seeded = {
@@ -118,6 +129,38 @@ describe.skipIf(!ready)("RLS tenant isolation", () => {
         team_id: team.id,
       });
       if (subError) throw subError;
+    }
+
+    if (providersReady) {
+      const { error: connError } = await admin
+        .from("provider_connection")
+        .insert({
+          tenant_id: tenant.id,
+          provider: "openai",
+          encrypted_credential: `v1.secret-${label}`,
+          status: "active",
+        });
+      if (connError) throw connError;
+      const { error: usageError } = await admin.from("usage_daily").insert({
+        tenant_id: tenant.id,
+        date: "2026-07-01",
+        provider: "openai",
+        project_id: `proj-${label}`,
+        model: "gpt-4o",
+        input_tokens: 1000,
+        output_tokens: 100,
+        derived_cost: 0.0035,
+      });
+      if (usageError) throw usageError;
+      const { error: costError } = await admin.from("cost_daily").insert({
+        tenant_id: tenant.id,
+        date: "2026-07-01",
+        provider: "openai",
+        project_id: `proj-${label}`,
+        line_item: "completions",
+        amount: 1.23,
+      });
+      if (costError) throw costError;
     }
 
     return {
@@ -215,6 +258,55 @@ describe.skipIf(!ready)("RLS tenant isolation", () => {
       .insert({ tenant_id: a.tenantId, name: "direct-write-should-fail" });
     expect(error).not.toBeNull();
   });
+
+  it.skipIf(!providersReady)(
+    "provider tables are tenant-isolated and the encrypted credential is unreadable (issue #15)",
+    async () => {
+      const clientA = await signedInClient(a);
+
+      // Rows: A sees exactly its own connection/usage/cost, never B's.
+      const { data: connections } = await clientA
+        .from("provider_connection")
+        .select("tenant_id, provider, status");
+      expect(connections).toEqual([
+        { tenant_id: a.tenantId, provider: "openai", status: "active" },
+      ]);
+      const { data: usage } = await clientA
+        .from("usage_daily")
+        .select("tenant_id, project_id");
+      expect(usage).toEqual([
+        { tenant_id: a.tenantId, project_id: "proj-a" },
+      ]);
+      const { data: costs } = await clientA
+        .from("cost_daily")
+        .select("tenant_id, project_id");
+      expect(costs).toEqual([
+        { tenant_id: a.tenantId, project_id: "proj-a" },
+      ]);
+
+      // Column-level grant: even the OWN tenant's admin cannot read the
+      // encrypted credential from a browser session.
+      const { error: columnDenied } = await clientA
+        .from("provider_connection")
+        .select("encrypted_credential");
+      expect(columnDenied).not.toBeNull();
+
+      // Writes stay deny-by-default (sync runs server-side only).
+      const { error: writeDenied } = await clientA
+        .from("provider_connection")
+        .insert({ tenant_id: a.tenantId, provider: "anthropic" });
+      expect(writeDenied).not.toBeNull();
+      const { error: usageWriteDenied } = await clientA
+        .from("usage_daily")
+        .insert({
+          tenant_id: a.tenantId,
+          date: "2026-07-02",
+          provider: "openai",
+          model: "gpt-4o",
+        });
+      expect(usageWriteDenied).not.toBeNull();
+    },
+  );
 
   it.skipIf(!subscriptionReady)(
     "subscription rows are tenant-isolated (issue #14) and direct writes denied",
