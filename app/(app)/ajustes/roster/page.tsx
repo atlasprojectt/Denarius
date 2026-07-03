@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { createClient } from "@/lib/supabase/server";
+import { listTeams } from "@/lib/teams/queries";
 
 import { EmployeeTable } from "./_components/employee-table";
 import { RosterUpload } from "./_components/roster-upload";
@@ -22,24 +23,18 @@ type EmployeeRow = {
   email: string;
   team: { name: string } | null;
 };
-type TeamRow = { id: string; name: string };
 
 export default async function RosterPage() {
   const supabase = await createClient();
 
-  const [{ data: employeesData }, { data: teamsData }] = await Promise.all([
+  const [{ data: employeesData }, teams] = await Promise.all([
     supabase
       .from("employee")
       .select("id, name, email, team:team_id(name)")
       .order("name"),
-    supabase
-      .from("team")
-      .select("id, name")
-      .eq("is_unattributed", false)
-      .order("name"),
+    listTeams(),
   ]);
   const employees = (employeesData ?? []) as unknown as EmployeeRow[];
-  const teams = (teamsData ?? []) as TeamRow[];
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">

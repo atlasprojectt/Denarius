@@ -4,7 +4,7 @@ import { seatAccrual } from "@/lib/engine/accrual";
 import { currentPeriod } from "@/lib/engine/period";
 import { money } from "@/lib/money";
 import { listSubscriptions } from "@/lib/subscriptions/queries";
-import { createClient } from "@/lib/supabase/server";
+import { listTeams } from "@/lib/teams/queries";
 
 import { SubscriptionForm } from "./_components/subscription-form";
 import { SubscriptionTable } from "./_components/subscription-table";
@@ -22,21 +22,13 @@ const copy = {
     `Acumulado até hoje — ${label}, dia ${day} de ${days}.`,
 };
 
-type TeamRow = { id: string; name: string };
-
 export default async function SubscriptionsPage() {
-  const supabase = await createClient();
   const period = currentPeriod();
 
-  const [{ subscriptions, currency }, { data: teamsData }] = await Promise.all([
+  const [{ subscriptions, currency }, teams] = await Promise.all([
     listSubscriptions(),
-    supabase
-      .from("team")
-      .select("id, name")
-      .eq("is_unattributed", false)
-      .order("name"),
+    listTeams(),
   ]);
-  const teams = (teamsData ?? []) as TeamRow[];
 
   const rows = subscriptions.map((sub) => ({
     id: sub.id,

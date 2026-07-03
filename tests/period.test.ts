@@ -5,11 +5,9 @@ import { currentPeriod } from "@/lib/engine/period";
 describe("currentPeriod — calendar month in UTC", () => {
   it("reports 31 days and the pt-BR label for July", () => {
     const p = currentPeriod(new Date("2026-07-03T12:00:00Z"));
-    expect(p).toMatchObject({
+    expect(p).toEqual({
       dayOfPeriod: 3,
       daysInPeriod: 31,
-      month: 7,
-      year: 2026,
       monthLabel: "julho",
     });
   });

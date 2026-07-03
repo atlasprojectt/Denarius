@@ -1,11 +1,12 @@
 "use server";
 
-import type { SupabaseClient } from "@supabase/supabase-js";
 import { revalidatePath } from "next/cache";
 
 import { requireAdmin } from "@/lib/auth/session";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { isOwnedTeam } from "@/lib/teams/queries";
 import {
+  subscriptionDeleteSchema,
   subscriptionSchema,
   subscriptionUpdateSchema,
 } from "@/lib/validation";
@@ -17,23 +18,6 @@ function readTeamId(formData: FormData): string | null {
   const raw = formData.get("teamId");
   const value = typeof raw === "string" ? raw.trim() : "";
   return value === "" ? null : value;
-}
-
-/** A team must belong to this tenant and not be the internal Unattributed bucket. */
-async function isOwnedTeam(
-  admin: SupabaseClient,
-  tenantId: string,
-  teamId: string | null,
-): Promise<boolean> {
-  if (teamId === null) return true; // shared/company-wide
-  const { data } = await admin
-    .from("team")
-    .select("id, is_unattributed")
-    .eq("id", teamId)
-    .eq("tenant_id", tenantId)
-    .maybeSingle();
-  const team = data as { is_unattributed: boolean } | null;
-  return Boolean(team) && !team!.is_unattributed;
 }
 
 export async function createSubscription(
@@ -54,16 +38,17 @@ export async function createSubscription(
   const { tenantId } = auth.session;
   const admin = createAdminClient();
 
-  if (!(await isOwnedTeam(admin, tenantId, parsed.data.teamId))) {
-    return { error: "Escolha um time válido." };
-  }
-
-  // Store the amount in the tenant's display currency (day-zero, pre-connectors).
-  const { data: tenant } = await admin
-    .from("tenant")
-    .select("display_currency")
-    .eq("id", tenantId)
-    .maybeSingle();
+  // Independent reads → parallel. Amount is stored in the tenant's display
+  // currency (day-zero, pre-connectors).
+  const [ownedTeam, { data: tenant }] = await Promise.all([
+    isOwnedTeam(admin, tenantId, parsed.data.teamId),
+    admin
+      .from("tenant")
+      .select("display_currency")
+      .eq("id", tenantId)
+      .maybeSingle(),
+  ]);
+  if (!ownedTeam) return { error: "Escolha um time válido." };
   const currency =
     (tenant as { display_currency: string } | null)?.display_currency ?? "BRL";
 
@@ -137,10 +122,10 @@ export async function deleteSubscription(
   const auth = await requireAdmin();
   if (auth.error !== undefined) return { error: auth.error };
 
-  const subscriptionId = formData.get("subscriptionId");
-  if (typeof subscriptionId !== "string" || subscriptionId === "") {
-    return { error: "Assinatura inválida." };
-  }
+  const parsed = subscriptionDeleteSchema.safeParse({
+    subscriptionId: formData.get("subscriptionId"),
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
 
   const { tenantId } = auth.session;
   const admin = createAdminClient();
@@ -148,7 +133,7 @@ export async function deleteSubscription(
   const { error, count } = await admin
     .from("subscription")
     .delete({ count: "exact" })
-    .eq("id", subscriptionId)
+    .eq("id", parsed.data.subscriptionId)
     .eq("tenant_id", tenantId);
   if (error || count === 0) {
     return { error: "Não foi possível remover. Tente novamente." };

@@ -44,11 +44,17 @@ export type AttributionBreakdown = {
   orgTotal: number;
 };
 
+/** Round to whole cents so displayed parts always sum to the displayed total. */
+function roundCents(value: number): number {
+  return Math.round(value * 100) / 100;
+}
+
 /**
  * Attributes accrued seat cost by team, with a first-class Unattributed bucket
  * for shared/company-wide subscriptions. The reconciliation invariant holds by
  * construction: orgTotal is DEFINED as Σ team_totals + unattributed — spend can
- * never silently disappear.
+ * never silently disappear. Parts are rounded to cents and the total is summed
+ * in integer cents, so the on-screen numbers reconcile to the cent, always.
  */
 export function attributeSeats(
   subscriptions: SeatSubscription[],
@@ -80,8 +86,16 @@ export function attributeSeats(
     }
   }
 
-  const teams = [...byTeam.values()].sort((a, b) => b.accrued - a.accrued);
-  const orgTotal =
-    teams.reduce((sum, t) => sum + t.accrued, 0) + unattributed;
-  return { teams, unattributed, orgTotal };
+  const teams = [...byTeam.values()]
+    .map((team) => ({ ...team, accrued: roundCents(team.accrued) }))
+    .sort((a, b) => b.accrued - a.accrued);
+  const roundedUnattributed = roundCents(unattributed);
+  const totalCents =
+    teams.reduce((sum, t) => sum + Math.round(t.accrued * 100), 0) +
+    Math.round(roundedUnattributed * 100);
+  return {
+    teams,
+    unattributed: roundedUnattributed,
+    orgTotal: totalCents / 100,
+  };
 }

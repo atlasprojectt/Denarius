@@ -99,6 +99,19 @@ describe("attributeSeats — team attribution + reconciliation invariant", () =>
     expect(result.orgTotal).toBeCloseTo(sumTeams + result.unattributed, 10);
   });
 
+  it("rounds parts to cents so displayed numbers reconcile exactly", () => {
+    // 100/31 = 3.2258… per team → each part rounds to 3.23; the total must be
+    // the exact sum of the ROUNDED parts (6.46), not the raw sum (6.4516…).
+    const subs: SeatSubscription[] = [
+      { id: "1", tool: "A", seatCount: 1, unitPrice: 100, teamId: "eng", teamName: "Engineering" },
+      { id: "2", tool: "B", seatCount: 1, unitPrice: 100, teamId: null, teamName: null },
+    ];
+    const result = attributeSeats(subs, { dayOfPeriod: 1, daysInPeriod: 31 });
+    expect(result.teams[0].accrued).toBe(3.23);
+    expect(result.unattributed).toBe(3.23);
+    expect(result.orgTotal).toBe(6.46);
+  });
+
   it("empty input reconciles to zero", () => {
     const result = attributeSeats([], period);
     expect(result).toEqual({ teams: [], unattributed: 0, orgTotal: 0 });

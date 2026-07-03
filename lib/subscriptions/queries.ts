@@ -11,14 +11,16 @@ type SubscriptionRow = {
   tool: string;
   seat_count: number;
   unit_price: number;
-  currency: string;
   team_id: string | null;
   team: { name: string } | null;
 };
 
 export type SubscriptionList = {
   subscriptions: SeatSubscription[];
-  /** Tenant display currency — every stored amount is in it (see migration note). */
+  /**
+   * Tenant display currency — every stored amount is in it (the row-level
+   * `currency` column is the audit trail; FX handling arrives with #17).
+   */
   currency: string;
 };
 
@@ -27,9 +29,7 @@ export async function listSubscriptions(): Promise<SubscriptionList> {
   const [{ data: subsData }, { data: tenantData }] = await Promise.all([
     supabase
       .from("subscription")
-      .select(
-        "id, tool, seat_count, unit_price, currency, team_id, team:team_id(name)",
-      )
+      .select("id, tool, seat_count, unit_price, team_id, team:team_id(name)")
       .order("created_at"),
     supabase.from("tenant").select("display_currency").maybeSingle(),
   ]);

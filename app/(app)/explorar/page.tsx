@@ -81,13 +81,15 @@ export default async function ExplorePage() {
                   </td>
                 </tr>
               ))}
-              <tr className="border-t bg-amber-50/60">
+              {/* Prototype contract: the whole row in amber text, no fill
+                  (tr.unatt in prototype/styles.css). */}
+              <tr className="border-t font-medium text-amber-700">
                 <td className="py-2.5 pr-2">
-                  <span className="font-medium">{copy.unattributed}</span>{" "}
+                  {copy.unattributed}{" "}
                   {breakdown.unattributed > 0 && (
                     <Link
                       href="/ajustes/assinaturas"
-                      className="text-xs font-medium text-amber-700 hover:underline"
+                      className="text-xs hover:underline"
                     >
                       {copy.mapIt} →
                     </Link>

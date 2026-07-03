@@ -9,6 +9,7 @@ import {
 } from "@/lib/roster/parse-csv";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { isOwnedTeam } from "@/lib/teams/queries";
 import { employeeUpdateSchema } from "@/lib/validation";
 
 const MAX_FILE_BYTES = 512 * 1024;
@@ -91,14 +92,7 @@ export async function updateEmployee(
   const { tenantId } = auth.session;
   const admin = createAdminClient();
 
-  // The team must belong to this tenant and not be the internal bucket.
-  const { data: team } = await admin
-    .from("team")
-    .select("id, is_unattributed")
-    .eq("id", parsed.data.teamId)
-    .eq("tenant_id", tenantId)
-    .maybeSingle();
-  if (!team || (team as { is_unattributed: boolean }).is_unattributed) {
+  if (!(await isOwnedTeam(admin, tenantId, parsed.data.teamId))) {
     return { error: "Escolha um time válido." };
   }
 

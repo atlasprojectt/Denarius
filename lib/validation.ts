@@ -69,6 +69,10 @@ export const subscriptionUpdateSchema = subscriptionSchema.extend({
   subscriptionId: z.uuid("Assinatura inválida."),
 });
 
+export const subscriptionDeleteSchema = z.object({
+  subscriptionId: z.uuid("Assinatura inválida."),
+});
+
 export const employeeUpdateSchema = z.object({
   employeeId: z.uuid("funcionário inválido"),
   name: z

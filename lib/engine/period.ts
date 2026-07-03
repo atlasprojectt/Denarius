@@ -7,9 +7,6 @@ export type Period = {
   dayOfPeriod: number;
   /** Total days in the calendar month. */
   daysInPeriod: number;
-  /** 1..12 */
-  month: number;
-  year: number;
   /** pt-BR month name, e.g. "julho". */
   monthLabel: string;
 };
@@ -28,8 +25,6 @@ export function currentPeriod(now: Date = new Date()): Period {
   return {
     dayOfPeriod,
     daysInPeriod,
-    month: monthIndex + 1,
-    year,
     monthLabel: MONTH_LABEL.format(now),
   };
 }
