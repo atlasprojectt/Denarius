@@ -1,3 +1,5 @@
+import { LogoMark } from "@/components/domain/logo";
+
 import { BrandPanel } from "../_components/brand-panel";
 import { LoginForm } from "../_components/login-form";
 
@@ -11,8 +13,8 @@ export default function LoginPage() {
       <div className="flex flex-col gap-4 p-6 md:p-10">
         <div className="flex justify-center gap-2 md:justify-start">
           <span className="flex items-center gap-2 font-medium">
-            <span className="flex size-6 items-center justify-center rounded-md bg-primary text-sm font-bold text-primary-foreground">
-              D
+            <span className="flex size-6 items-center justify-center rounded-md bg-primary text-primary-foreground">
+              <LogoMark className="size-3.5" />
             </span>
             {copy.brand}
           </span>

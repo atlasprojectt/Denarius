@@ -1,6 +1,8 @@
 // Right-hand cover column of the auth pages (login-02/signup-02 layout):
 // instead of a stock image, the product's value proposition.
 
+import { LogoWordmark } from "@/components/domain/logo";
+
 const copy = {
   headline: "Você está no controle do gasto com IA?",
   sub: "Orçamentos, projeção de fechamento e avisos antecipados — a resposta em 10 segundos, todos os dias.",
@@ -10,7 +12,7 @@ const copy = {
 export function BrandPanel() {
   return (
     <div className="relative hidden flex-col justify-between bg-[#0c1322] p-10 text-slate-200 lg:flex">
-      <div />
+      <LogoWordmark className="h-6 w-auto text-white" />
       <div className="max-w-md">
         <h2 className="text-3xl font-semibold leading-tight tracking-tight text-white">
           {copy.headline}

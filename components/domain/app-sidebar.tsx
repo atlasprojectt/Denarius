@@ -23,6 +23,7 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { LogoMark } from "@/components/domain/logo";
 import { logout } from "@/lib/auth/actions";
 
 const copy = {
@@ -97,8 +98,8 @@ export function AppSidebar({
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
               <Link href="/">
-                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary font-bold text-primary-foreground">
-                  D
+                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                  <LogoMark className="size-5" />
                 </div>
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-semibold">{copy.brand}</span>
