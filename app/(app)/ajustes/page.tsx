@@ -13,15 +13,17 @@ const copy = {
   connectionsSub:
     "Chaves admin somente-leitura, criptografadas — o Denarius nunca altera nada nos provedores.",
   connectionsCta: "Gerenciar conexões",
-  openAiName: "OpenAI",
-  openAiStatus: {
+  providerNames: { openai: "OpenAI", anthropic: "Anthropic" } as Record<
+    string,
+    string
+  >,
+  providerStatus: {
     active: "Ativo",
     error: "Erro na sincronização",
     revoked: "Revogado",
     none: "Não conectado",
   } as Record<string, string>,
   staticConnections: [
-    { name: "Anthropic", status: "Chega na próxima versão" },
     { name: "GitHub Copilot", status: "Planejado para a v1.5" },
   ],
   rosterTitle: "Roster",
@@ -57,15 +59,16 @@ export default async function SettingsPage() {
       .select("id", { count: "exact", head: true })
       .eq("is_unattributed", false),
     supabase.from("subscription").select("id", { count: "exact", head: true }),
-    supabase
-      .from("provider_connection")
-      .select("status")
-      .eq("provider", "openai")
-      .maybeSingle(),
+    supabase.from("provider_connection").select("provider, status"),
   ]);
   const tenant = data as TenantRow | null;
   if (!tenant) redirect("/onboarding");
-  const openAiStatus = (connectionData as { status: string } | null)?.status;
+  const connections = (connectionData ?? []) as {
+    provider: string;
+    status: string;
+  }[];
+  const statusFor = (provider: string) =>
+    connections.find((c) => c.provider === provider)?.status ?? "none";
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
@@ -104,13 +107,18 @@ export default async function SettingsPage() {
           </Link>
         </div>
         <ul className="mt-4 flex flex-col gap-3">
-          <li className="flex items-center justify-between rounded-lg border p-3 text-sm">
-            <span className="font-medium">{copy.openAiName}</span>
-            <span className="rounded-md bg-muted px-2 py-1 text-xs font-medium text-muted-foreground">
-              {copy.openAiStatus[openAiStatus ?? "none"] ??
-                copy.openAiStatus.none}
-            </span>
-          </li>
+          {(["openai", "anthropic"] as const).map((provider) => (
+            <li
+              key={provider}
+              className="flex items-center justify-between rounded-lg border p-3 text-sm"
+            >
+              <span className="font-medium">{copy.providerNames[provider]}</span>
+              <span className="rounded-md bg-muted px-2 py-1 text-xs font-medium text-muted-foreground">
+                {copy.providerStatus[statusFor(provider)] ??
+                  copy.providerStatus.none}
+              </span>
+            </li>
+          ))}
           {copy.staticConnections.map((connection) => (
             <li
               key={connection.name}

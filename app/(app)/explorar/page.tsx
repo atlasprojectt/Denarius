@@ -15,9 +15,9 @@ const copy = {
     `${label}, dia ${day} de ${days}`,
   emptyTitle: "Sem dados para explorar ainda",
   emptyBody:
-    "Registre assinaturas e assentos ou conecte a OpenAI para ver o gasto atribuído por time.",
+    "Registre assinaturas e assentos ou conecte a OpenAI e a Anthropic para ver o gasto atribuído por time.",
   emptySeatsCta: "Adicionar assinaturas",
-  emptyConnectCta: "Conectar OpenAI",
+  emptyConnectCta: "Conectar provedores",
   seatsTitle: "Assentos por time",
   colTeam: "Time",
   colSpend: "Gasto (acumulado)",
@@ -37,7 +37,7 @@ const copy = {
   uncostedNote:
     "Modelos sem preço na tabela aparecem como “não precificado” em vez de sumir do total.",
   derivedNote: (derived: string, reported: string) =>
-    `Derivado de tokens × preço: ${derived} · reportado pela OpenAI: ${reported}. Valores em US$ — a conversão com câmbio congelado chega com os orçamentos.`,
+    `Derivado de tokens × preço: ${derived} · reportado pelos provedores: ${reported}. Valores em US$ — a conversão com câmbio congelado chega com os orçamentos.`,
 };
 
 const compactTokens = new Intl.NumberFormat("pt-BR", {
@@ -45,7 +45,7 @@ const compactTokens = new Intl.NumberFormat("pt-BR", {
   maximumFractionDigits: 1,
 });
 
-type ConnectionRow = { last_sync_at: string | null };
+type ConnectionRow = { status: string; last_sync_at: string | null };
 
 export default async function ExplorePage() {
   const period = currentPeriod();
@@ -54,14 +54,16 @@ export default async function ExplorePage() {
     await Promise.all([
       listSubscriptions(),
       apiSpendMonthToDate(),
-      supabase
-        .from("provider_connection")
-        .select("last_sync_at")
-        .eq("provider", "openai")
-        .maybeSingle(),
+      supabase.from("provider_connection").select("status, last_sync_at"),
     ]);
   const breakdown = attributeSeats(subscriptions, period);
-  const lastSyncAt = (connectionData as ConnectionRow | null)?.last_sync_at;
+  // Honest stamp across providers: data is only as fresh as the LEAST fresh
+  // active connection, so the oldest last_sync_at wins.
+  const lastSyncAt =
+    ((connectionData ?? []) as ConnectionRow[])
+      .filter((c) => c.status !== "revoked" && c.last_sync_at !== null)
+      .map((c) => c.last_sync_at as string)
+      .sort()[0] ?? null;
 
   const coldStart = subscriptions.length === 0 && !apiSpend.hasData;
 

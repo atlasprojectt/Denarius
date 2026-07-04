@@ -1,21 +1,22 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import type { ZodType } from "zod";
 
 import { requireAdmin } from "@/lib/auth/session";
 import { providerFor } from "@/lib/connectors";
 import { encryptCredential } from "@/lib/crypto";
 import { money } from "@/lib/money";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { runOpenAISync } from "@/lib/sync/openai-sync";
-import { openAiKeySchema } from "@/lib/validation";
+import { runProviderSync, type ProviderName } from "@/lib/sync/provider-sync";
+import { anthropicKeySchema, openAiKeySchema } from "@/lib/validation";
 
 export type ConnectionFormState = { error?: string; success?: string };
 
-const copy = {
-  invalidKey:
-    "A OpenAI recusou esta chave. Confira se é uma Admin Key da organização (somente leitura).",
-  network: "Não foi possível falar com a OpenAI agora. Tente novamente.",
+// Provider-specific copy (pt-BR); the lifecycle logic below is shared.
+const copyFor = (label: string) => ({
+  invalidKey: `A ${label} recusou esta chave. Confira se é uma Admin Key da organização (somente leitura).`,
+  network: `Não foi possível falar com a ${label} agora. Tente novamente.`,
   saveFailed: "Não foi possível salvar a conexão. Tente novamente.",
   syncFailed:
     "Chave salva, mas a primeira sincronização falhou — use “Sincronizar agora” para tentar de novo.",
@@ -26,7 +27,15 @@ const copy = {
   synced: (total: string) => `Sincronizado — ${total} neste mês.`,
   revoked: "Conexão revogada. A chave foi descartada.",
   revokeFailed: "Não foi possível revogar. Tente novamente.",
-  noConnection: "Nenhuma conexão ativa com a OpenAI.",
+  noConnection: `Nenhuma conexão ativa com a ${label}.`,
+});
+
+const providers: Record<
+  ProviderName,
+  { label: string; keySchema: ZodType<{ adminKey: string }> }
+> = {
+  openai: { label: "OpenAI", keySchema: openAiKeySchema },
+  anthropic: { label: "Anthropic", keySchema: anthropicKeySchema },
 };
 
 function revalidateConsumers(): void {
@@ -37,21 +46,22 @@ function revalidateConsumers(): void {
 }
 
 /** Save-or-rotate: upserting the (tenant, provider) row IS the rotation. */
-export async function saveOpenAIKey(
-  _prev: ConnectionFormState,
+async function saveKey(
+  providerName: ProviderName,
   formData: FormData,
 ): Promise<ConnectionFormState> {
+  const { label, keySchema } = providers[providerName];
+  const copy = copyFor(label);
+
   const auth = await requireAdmin();
   if (auth.error !== undefined) return { error: auth.error };
 
-  const parsed = openAiKeySchema.safeParse({
-    adminKey: formData.get("adminKey"),
-  });
+  const parsed = keySchema.safeParse({ adminKey: formData.get("adminKey") });
   if (!parsed.success) return { error: parsed.error.issues[0].message };
   const adminKey = parsed.data.adminKey;
 
   // Test BEFORE storing anything — a bad key never lands in the database.
-  const test = await providerFor("openai", adminKey).testConnection();
+  const test = await providerFor(providerName, adminKey).testConnection();
   if (!test.ok) {
     return {
       error: test.reason === "invalid_key" ? copy.invalidKey : copy.network,
@@ -63,7 +73,7 @@ export async function saveOpenAIKey(
   const { error } = await admin.from("provider_connection").upsert(
     {
       tenant_id: tenantId,
-      provider: "openai",
+      provider: providerName,
       encrypted_credential: encryptCredential(adminKey),
       status: "active",
       last_sync_error: null,
@@ -74,29 +84,29 @@ export async function saveOpenAIKey(
   if (error) return { error: copy.saveFailed };
 
   // The first "we found $X this month" moment — sync immediately, not in 24h.
-  const sync = await runOpenAISync(tenantId);
+  const sync = await runProviderSync(tenantId, providerName);
   revalidateConsumers();
   if (!sync.ok) return { error: copy.syncFailed };
   return { success: copy.connected(money(sync.monthUsd, "USD")) };
 }
 
-export async function syncOpenAINow(
-  _prev: ConnectionFormState,
-  _formData: FormData,
-): Promise<ConnectionFormState> {
+async function syncNow(providerName: ProviderName): Promise<ConnectionFormState> {
+  const copy = copyFor(providers[providerName].label);
+
   const auth = await requireAdmin();
   if (auth.error !== undefined) return { error: auth.error };
 
-  const sync = await runOpenAISync(auth.session.tenantId);
+  const sync = await runProviderSync(auth.session.tenantId, providerName);
   revalidateConsumers();
   if (!sync.ok) return { error: copy.syncNowFailed };
   return { success: copy.synced(money(sync.monthUsd, "USD")) };
 }
 
-export async function revokeOpenAIKey(
-  _prev: ConnectionFormState,
-  _formData: FormData,
+async function revokeKey(
+  providerName: ProviderName,
 ): Promise<ConnectionFormState> {
+  const copy = copyFor(providers[providerName].label);
+
   const auth = await requireAdmin();
   if (auth.error !== undefined) return { error: auth.error };
 
@@ -112,10 +122,55 @@ export async function revokeOpenAIKey(
       { count: "exact" },
     )
     .eq("tenant_id", auth.session.tenantId)
-    .eq("provider", "openai");
+    .eq("provider", providerName);
   if (error) return { error: copy.revokeFailed };
   if (count === 0) return { error: copy.noConnection };
 
   revalidateConsumers();
   return { success: copy.revoked };
+}
+
+// Server actions must be statically exported async functions — one thin
+// wrapper per (provider, operation) over the shared lifecycle above.
+
+export async function saveOpenAIKey(
+  _prev: ConnectionFormState,
+  formData: FormData,
+): Promise<ConnectionFormState> {
+  return saveKey("openai", formData);
+}
+
+export async function syncOpenAINow(
+  _prev: ConnectionFormState,
+  _formData: FormData,
+): Promise<ConnectionFormState> {
+  return syncNow("openai");
+}
+
+export async function revokeOpenAIKey(
+  _prev: ConnectionFormState,
+  _formData: FormData,
+): Promise<ConnectionFormState> {
+  return revokeKey("openai");
+}
+
+export async function saveAnthropicKey(
+  _prev: ConnectionFormState,
+  formData: FormData,
+): Promise<ConnectionFormState> {
+  return saveKey("anthropic", formData);
+}
+
+export async function syncAnthropicNow(
+  _prev: ConnectionFormState,
+  _formData: FormData,
+): Promise<ConnectionFormState> {
+  return syncNow("anthropic");
+}
+
+export async function revokeAnthropicKey(
+  _prev: ConnectionFormState,
+  _formData: FormData,
+): Promise<ConnectionFormState> {
+  return revokeKey("anthropic");
 }
