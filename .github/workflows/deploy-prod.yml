@@ -36,8 +36,12 @@ jobs:
           node-version: 22
           cache: npm
 
+      # npm install, not npm ci: the lockfile is generated on Windows, and
+      # Tailwind v4's native oxide/lightningcss packages resolve different
+      # @emnapi optional-dep versions on Linux — a cross-platform lockfile npm
+      # ci won't accept. npm install reconciles the platform deps on the runner.
       - name: Install dependencies
-        run: npm ci
+        run: npm install --no-audit --no-fund
 
       - name: Lint
         run: npm run lint
