@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { attributeSeats } from "@/lib/engine/accrual";
 import { currentPeriod } from "@/lib/engine/period";
+import { utcStamp } from "@/lib/format";
 import { money } from "@/lib/money";
 import { listSubscriptions } from "@/lib/subscriptions/queries";
 import { createClient } from "@/lib/supabase/server";
@@ -102,11 +103,7 @@ export default async function ExplorePage() {
             </h2>
             {lastSyncAt && (
               <span className="text-xs text-muted-foreground">
-                {copy.apiAsOf(
-                  new Date(lastSyncAt).toLocaleString("pt-BR", {
-                    timeZone: "UTC",
-                  }) + " UTC",
-                )}
+                {copy.apiAsOf(utcStamp(lastSyncAt))}
               </span>
             )}
           </div>

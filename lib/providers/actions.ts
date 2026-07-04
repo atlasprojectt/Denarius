@@ -19,6 +19,8 @@ const copy = {
   saveFailed: "Não foi possível salvar a conexão. Tente novamente.",
   syncFailed:
     "Chave salva, mas a primeira sincronização falhou — use “Sincronizar agora” para tentar de novo.",
+  syncNowFailed:
+    "A sincronização falhou — veja o status da conexão e tente de novo.",
   connected: (total: string) =>
     `Conectado. Encontramos ${total} de uso neste mês.`,
   synced: (total: string) => `Sincronizado — ${total} neste mês.`,
@@ -87,7 +89,7 @@ export async function syncOpenAINow(
 
   const sync = await runOpenAISync(auth.session.tenantId);
   revalidateConsumers();
-  if (!sync.ok) return { error: copy.syncFailed };
+  if (!sync.ok) return { error: copy.syncNowFailed };
   return { success: copy.synced(money(sync.monthUsd, "USD")) };
 }
 

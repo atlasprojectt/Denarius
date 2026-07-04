@@ -1,0 +1,1964 @@
+diff --git a/.env.example b/.env.example
+index c58beb9..ced9586 100644
+--- a/.env.example
++++ b/.env.example
+@@ -9,9 +9,15 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=
+ SUPABASE_SERVICE_ROLE_KEY=
+ 
+ # --- Encryption (needed when connectors land, #15/#16) ---
+-# Encrypts provider Admin keys at rest. Generate a strong 32-byte key.
++# Encrypts provider Admin keys at rest. 32 bytes, base64 or hex:
++#   node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
+ CREDENTIAL_ENCRYPTION_KEY=
+ 
++# --- Dev only, NEVER in production ---
++# "1" lets a key starting with sk-fake use the fixture-backed fake OpenAI
++# backend (demo/e2e without a real Admin key, pending issue #11).
++# ALLOW_FAKE_PROVIDER=
++
+ # --- LLM narration (needed for engine/digest, #18/#20) ---
+ # Claude Haiku 4.5 for narration only (numbers are always injected, never generated).
+ ANTHROPIC_API_KEY=
+diff --git a/CLAUDE.md b/CLAUDE.md
+index 0a8a654..5ab1c64 100644
+--- a/CLAUDE.md
++++ b/CLAUDE.md
+@@ -166,4 +166,4 @@ After any meaningful decision, ask: **"does this need to enter the documentation
+ 
+ - **`gh` auth quirk (this machine):** the GCM token lacks `read:org`, so `gh auth login` fails. Use:
+   `export GH_TOKEN=$(printf 'protocol=https\nhost=github.com\n\n' | git credential fill | sed -n 's/^password=//p')`
+-- **Current state (2026-07):** docs + prototype done; PRD hardened (P1–P15, F1–F6 locked). **Merged: #12 walking skeleton** (auth + tenant + RLS, isolation test 5/5), **#13 roster CSV** (pure parser, atomic `roster_import` RPC, preview UI, inline edit), **#14 manual seats** (subscription CRUD, daily-accrual engine in `lib/engine/accrual.ts`, Explore by-team + Unattributed + reconciliation footer). Migrations #12/#13 applied on Supabase manually via SQL editor; **#14's `*_subscriptions.sql` needs the same manual apply** (check whether the GitHub integration is active before assuming auto-apply). Next: #15 (OpenAI connector). Admin keys for the provider spike (#11) still pending (needs org Owner). `VERCEL_TOKEN` available in `.env.local` for CLI deploys; Vercel project not linked yet. CodeRabbit reviews every PR.
++- **Current state (2026-07):** docs + prototype done; PRD hardened (P1–P15, F1–F6 locked). **Merged: #12 walking skeleton** (auth + tenant + RLS), **#13 roster CSV** (pure parser, atomic `roster_import` RPC), **#14 manual seats** (subscription CRUD, daily-accrual engine, Explore reconciliation), **#15 OpenAI connector** (UsageProvider seam + fake behind `ALLOW_FAKE_PROVIDER`, AES-256-GCM key storage, immediate sync, uncosted models, USD display pending FX in #18). Migrations #12–#14 applied on Supabase manually via SQL editor; **#15's `*_providers.sql` needs the same manual apply**. Next: #16 (Anthropic connector) or #17 (cron + attribution). Real Admin keys (#11) still pending (needs org Owner) — the fake provider covers the demo path meanwhile. `VERCEL_TOKEN` available in `.env.local`; Vercel project not linked yet. CodeRabbit is seatless (Free plan) — PRs get a local 8-angle review instead.
+diff --git a/app/(app)/ajustes/conexoes/_components/openai-connection-card.tsx b/app/(app)/ajustes/conexoes/_components/openai-connection-card.tsx
+new file mode 100644
+index 0000000..586f873
+--- /dev/null
++++ b/app/(app)/ajustes/conexoes/_components/openai-connection-card.tsx
+@@ -0,0 +1,190 @@
++"use client";
++
++import { useActionState, useState } from "react";
++
++import { Button } from "@/components/ui/button";
++import { Input } from "@/components/ui/input";
++import { Label } from "@/components/ui/label";
++import {
++  revokeOpenAIKey,
++  saveOpenAIKey,
++  syncOpenAINow,
++  type ConnectionFormState,
++} from "@/lib/providers/actions";
++
++const copy = {
++  title: "OpenAI",
++  notConnected: "Não conectado",
++  active: "Ativo",
++  error: "Erro na sincronização",
++  revoked: "Revogado",
++  lastSync: (stamp: string) => `Última sincronização: ${stamp}`,
++  neverSynced: "Nunca sincronizado",
++  keyLabel: "Admin Key (somente leitura)",
++  keyPlaceholder: "sk-admin…",
++  keyHelp:
++    "Crie uma Admin Key somente-leitura no painel da organização OpenAI. Ela é criptografada em repouso e nunca aparece em logs.",
++  projectTip:
++    "Dica: crie um projeto OpenAI por time — os custos em dólar saem por projeto, então isso dá o custo exato por time.",
++  connect: "Conectar e sincronizar",
++  connecting: "Testando e sincronizando…",
++  rotate: "Trocar chave",
++  cancelRotate: "Cancelar",
++  syncNow: "Sincronizar agora",
++  syncing: "Sincronizando…",
++  revoke: "Revogar",
++  revoking: "Revogando…",
++  confirmRevoke:
++    "Revogar a conexão? A chave será descartada e o uso deixará de sincronizar.",
++};
++
++const initialState: ConnectionFormState = {};
++
++function statusLabel(status: string | null): string {
++  if (status === "active") return copy.active;
++  if (status === "error") return copy.error;
++  if (status === "revoked") return copy.revoked;
++  return copy.notConnected;
++}
++
++type KeyFormProps = {
++  formAction: (formData: FormData) => void;
++  pending: boolean;
++};
++
++function KeyForm({ formAction, pending }: KeyFormProps) {
++  return (
++    <form action={formAction} className="mt-4 flex flex-col gap-3">
++      <div className="flex flex-col gap-1.5">
++        <Label htmlFor="adminKey">{copy.keyLabel}</Label>
++        <Input
++          id="adminKey"
++          name="adminKey"
++          type="password"
++          placeholder={copy.keyPlaceholder}
++          autoComplete="off"
++          required
++        />
++        <p className="text-xs text-muted-foreground">{copy.keyHelp}</p>
++        <p className="text-xs text-muted-foreground">{copy.projectTip}</p>
++      </div>
++      <div>
++        <Button type="submit" disabled={pending}>
++          {pending ? copy.connecting : copy.connect}
++        </Button>
++      </div>
++    </form>
++  );
++}
++
++function ActiveControls({ keyForm }: { keyForm: KeyFormProps }) {
++  const [syncState, syncAction, syncing] = useActionState(
++    syncOpenAINow,
++    initialState,
++  );
++  const [revokeState, revokeAction, revoking] = useActionState(
++    revokeOpenAIKey,
++    initialState,
++  );
++  const [rotating, setRotating] = useState(false);
++
++  return (
++    <div className="mt-4 flex flex-col gap-3">
++      <div className="flex flex-wrap items-center gap-2">
++        <form action={syncAction}>
++          <Button type="submit" variant="outline" size="sm" disabled={syncing}>
++            {syncing ? copy.syncing : copy.syncNow}
++          </Button>
++        </form>
++        <Button
++          type="button"
++          variant="outline"
++          size="sm"
++          onClick={() => setRotating((value) => !value)}
++        >
++          {rotating ? copy.cancelRotate : copy.rotate}
++        </Button>
++        <form action={revokeAction}>
++          <Button
++            type="submit"
++            variant="ghost"
++            size="sm"
++            disabled={revoking}
++            className="text-destructive hover:text-destructive"
++            onClick={(event) => {
++              if (!confirm(copy.confirmRevoke)) event.preventDefault();
++            }}
++          >
++            {revoking ? copy.revoking : copy.revoke}
++          </Button>
++        </form>
++      </div>
++      {(syncState.error ?? revokeState.error) && (
++        <p role="alert" className="text-sm text-destructive">
++          {syncState.error ?? revokeState.error}
++        </p>
++      )}
++      {syncState.success && (
++        <p role="status" className="text-sm font-medium text-foreground">
++          {syncState.success}
++        </p>
++      )}
++      {rotating && <KeyForm {...keyForm} />}
++    </div>
++  );
++}
++
++export function OpenAIConnectionCard({
++  status,
++  lastSyncAt,
++  lastSyncError,
++}: {
++  status: string | null;
++  lastSyncAt: string | null;
++  lastSyncError: string | null;
++}) {
++  // Save state lives on the card, not inside the form: connecting flips the
++  // card into its connected layout (the form unmounts), and the "we found
++  // $X this month" message must survive that swap.
++  const [saveState, saveAction, savePending] = useActionState(
++    saveOpenAIKey,
++    initialState,
++  );
++  const keyForm: KeyFormProps = { formAction: saveAction, pending: savePending };
++
++  const connected = status === "active" || status === "error";
++  const stamp = lastSyncAt
++    ? new Date(lastSyncAt).toLocaleString("pt-BR", { timeZone: "UTC" }) + " UTC"
++    : null;
++
++  return (
++    <section className="rounded-xl border bg-card p-6 shadow-sm">
++      <div className="flex items-center justify-between gap-4">
++        <h2 className="font-semibold">{copy.title}</h2>
++        <span className="rounded-md bg-muted px-2 py-1 text-xs font-medium text-muted-foreground">
++          {statusLabel(status)}
++        </span>
++      </div>
++      <p className="mt-1 text-xs text-muted-foreground">
++        {stamp ? copy.lastSync(stamp) : copy.neverSynced}
++      </p>
++      {status === "error" && lastSyncError && (
++        <p role="alert" className="mt-2 text-sm text-destructive">
++          {lastSyncError}
++        </p>
++      )}
++      {saveState.error && (
++        <p role="alert" className="mt-2 text-sm text-destructive">
++          {saveState.error}
++        </p>
++      )}
++      {saveState.success && (
++        <p role="status" className="mt-2 text-sm font-medium text-foreground">
++          {saveState.success}
++        </p>
++      )}
++
++      {connected ? <ActiveControls keyForm={keyForm} /> : <KeyForm {...keyForm} />}
++    </section>
++  );
++}
+diff --git a/app/(app)/ajustes/conexoes/page.tsx b/app/(app)/ajustes/conexoes/page.tsx
+new file mode 100644
+index 0000000..dde1d7c
+--- /dev/null
++++ b/app/(app)/ajustes/conexoes/page.tsx
+@@ -0,0 +1,71 @@
++import Link from "next/link";
++
++import { createClient } from "@/lib/supabase/server";
++
++import { OpenAIConnectionCard } from "./_components/openai-connection-card";
++
++const copy = {
++  back: "← Ajustes",
++  title: "Conexões",
++  subtitle:
++    "Chaves admin somente-leitura, criptografadas em repouso. O Denarius observa uso e custo — nunca altera nada nos provedores.",
++  comingSoon: [
++    { name: "Anthropic", status: "Chega na próxima versão" },
++    { name: "GitHub Copilot", status: "Planejado para a v1.5" },
++  ],
++};
++
++type ConnectionRow = {
++  status: string;
++  last_sync_at: string | null;
++  last_sync_error: string | null;
++};
++
++export default async function ConnectionsPage() {
++  const supabase = await createClient();
++  const { data } = await supabase
++    .from("provider_connection")
++    .select("status, last_sync_at, last_sync_error")
++    .eq("provider", "openai")
++    .maybeSingle();
++  const connection = data as ConnectionRow | null;
++
++  return (
++    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
++      <div>
++        <Link
++          href="/ajustes"
++          className="text-sm text-muted-foreground hover:underline"
++        >
++          {copy.back}
++        </Link>
++        <h1 className="mt-1 text-2xl font-semibold tracking-tight">
++          {copy.title}
++        </h1>
++        <p className="text-sm text-muted-foreground">{copy.subtitle}</p>
++      </div>
++
++      <OpenAIConnectionCard
++        status={connection?.status ?? null}
++        lastSyncAt={connection?.last_sync_at ?? null}
++        lastSyncError={connection?.last_sync_error ?? null}
++      />
++
++      <section className="rounded-xl border bg-card p-6 shadow-sm">
++        <ul className="flex flex-col gap-3">
++          {copy.comingSoon.map((item) => (
++            <li
++              key={item.name}
++              className="flex items-center justify-between rounded-lg border p-3 text-sm"
++            >
++              <span className="font-medium">{item.name}</span>
++              <span className="rounded-md bg-muted px-2 py-1 text-xs font-medium text-muted-foreground">
++                {item.status}
++              </span>
++            </li>
++          ))}
++        </ul>
++      </section>
++    </div>
++  );
++}
+diff --git a/app/(app)/ajustes/page.tsx b/app/(app)/ajustes/page.tsx
+index aa7f936..64e6688 100644
+--- a/app/(app)/ajustes/page.tsx
++++ b/app/(app)/ajustes/page.tsx
+@@ -12,9 +12,16 @@ const copy = {
+   connectionsTitle: "Conexões",
+   connectionsSub:
+     "Chaves admin somente-leitura, criptografadas — o Denarius nunca altera nada nos provedores.",
+-  connections: [
+-    { name: "OpenAI", status: "Chega na issue #15" },
+-    { name: "Anthropic", status: "Chega na issue #16" },
++  connectionsCta: "Gerenciar conexões",
++  openAiName: "OpenAI",
++  openAiStatus: {
++    active: "Ativo",
++    error: "Erro na sincronização",
++    revoked: "Revogado",
++    none: "Não conectado",
++  } as Record<string, string>,
++  staticConnections: [
++    { name: "Anthropic", status: "Chega na próxima versão" },
+     { name: "GitHub Copilot", status: "Planejado para a v1.5" },
+   ],
+   rosterTitle: "Roster",
+@@ -41,6 +48,7 @@ export default async function SettingsPage() {
+     { count: employeeCount },
+     { count: teamCount },
+     { count: subscriptionCount },
++    { data: connectionData },
+   ] = await Promise.all([
+     supabase.from("tenant").select("name, display_currency").maybeSingle(),
+     supabase.from("employee").select("id", { count: "exact", head: true }),
+@@ -49,9 +57,15 @@ export default async function SettingsPage() {
+       .select("id", { count: "exact", head: true })
+       .eq("is_unattributed", false),
+     supabase.from("subscription").select("id", { count: "exact", head: true }),
++    supabase
++      .from("provider_connection")
++      .select("status")
++      .eq("provider", "openai")
++      .maybeSingle(),
+   ]);
+   const tenant = data as TenantRow | null;
+   if (!tenant) redirect("/onboarding");
++  const openAiStatus = (connectionData as { status: string } | null)?.status;
+ 
+   return (
+     <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
+@@ -75,12 +89,29 @@ export default async function SettingsPage() {
+       </section>
+ 
+       <section className="rounded-xl border bg-card p-6 shadow-sm">
+-        <h2 className="font-semibold">{copy.connectionsTitle}</h2>
+-        <p className="mt-1 text-sm text-muted-foreground">
+-          {copy.connectionsSub}
+-        </p>
++        <div className="flex items-center justify-between gap-4">
++          <div>
++            <h2 className="font-semibold">{copy.connectionsTitle}</h2>
++            <p className="mt-1 text-sm text-muted-foreground">
++              {copy.connectionsSub}
++            </p>
++          </div>
++          <Link
++            href="/ajustes/conexoes"
++            className="rounded-md border px-3 py-1.5 text-sm font-medium hover:bg-muted whitespace-nowrap"
++          >
++            {copy.connectionsCta}
++          </Link>
++        </div>
+         <ul className="mt-4 flex flex-col gap-3">
+-          {copy.connections.map((connection) => (
++          <li className="flex items-center justify-between rounded-lg border p-3 text-sm">
++            <span className="font-medium">{copy.openAiName}</span>
++            <span className="rounded-md bg-muted px-2 py-1 text-xs font-medium text-muted-foreground">
++              {copy.openAiStatus[openAiStatus ?? "none"] ??
++                copy.openAiStatus.none}
++            </span>
++          </li>
++          {copy.staticConnections.map((connection) => (
+             <li
+               key={connection.name}
+               className="flex items-center justify-between rounded-lg border p-3 text-sm"
+diff --git a/app/(app)/explorar/page.tsx b/app/(app)/explorar/page.tsx
+index 4ce8cd6..900770d 100644
+--- a/app/(app)/explorar/page.tsx
++++ b/app/(app)/explorar/page.tsx
+@@ -4,6 +4,8 @@ import { attributeSeats } from "@/lib/engine/accrual";
+ import { currentPeriod } from "@/lib/engine/period";
+ import { money } from "@/lib/money";
+ import { listSubscriptions } from "@/lib/subscriptions/queries";
++import { createClient } from "@/lib/supabase/server";
++import { apiSpendMonthToDate } from "@/lib/usage/queries";
+ 
+ const copy = {
+   title: "Explorar",
+@@ -12,23 +14,55 @@ const copy = {
+     `${label}, dia ${day} de ${days}`,
+   emptyTitle: "Sem dados para explorar ainda",
+   emptyBody:
+-    "Registre assinaturas e assentos para ver o gasto atribuído por time — sem precisar conectar nenhuma API. Conectores de uso (OpenAI, Anthropic) chegam nas próximas issues.",
+-  emptyCta: "Adicionar assinaturas",
+-  tableTitle: "Gasto por time",
++    "Registre assinaturas e assentos ou conecte a OpenAI para ver o gasto atribuído por time.",
++  emptySeatsCta: "Adicionar assinaturas",
++  emptyConnectCta: "Conectar OpenAI",
++  seatsTitle: "Assentos por time",
+   colTeam: "Time",
+   colSpend: "Gasto (acumulado)",
+   unattributed: "Não atribuído",
+   mapIt: "mapear",
+   reconcile: (total: string) =>
+     `Total da empresa = soma dos times + não atribuído = ${total} — sempre reconcilia.`,
+-  seatsNote:
+-    "Somente assinaturas manuais por enquanto — o gasto por modelo aparece quando um conector de uso for ligado.",
++  apiTitle: (label: string) => `Uso de API — ${label}`,
++  apiHeadline: (total: string) => `${total} neste mês`,
++  apiAsOf: (stamp: string) => `dados de ${stamp}`,
++  apiAttributionNote:
++    "Todo o uso de API está em Não atribuído por enquanto — o mapeamento projeto → time chega em breve.",
++  colModel: "Modelo",
++  colTokens: "Tokens",
++  colDerived: "Gasto derivado",
++  uncosted: "não precificado",
++  uncostedNote:
++    "Modelos sem preço na tabela aparecem como “não precificado” em vez de sumir do total.",
++  derivedNote: (derived: string, reported: string) =>
++    `Derivado de tokens × preço: ${derived} · reportado pela OpenAI: ${reported}. Valores em US$ — a conversão com câmbio congelado chega com os orçamentos.`,
+ };
+ 
++const compactTokens = new Intl.NumberFormat("pt-BR", {
++  notation: "compact",
++  maximumFractionDigits: 1,
++});
++
++type ConnectionRow = { last_sync_at: string | null };
++
+ export default async function ExplorePage() {
+   const period = currentPeriod();
+-  const { subscriptions, currency } = await listSubscriptions();
++  const supabase = await createClient();
++  const [{ subscriptions, currency }, apiSpend, { data: connectionData }] =
++    await Promise.all([
++      listSubscriptions(),
++      apiSpendMonthToDate(),
++      supabase
++        .from("provider_connection")
++        .select("last_sync_at")
++        .eq("provider", "openai")
++        .maybeSingle(),
++    ]);
+   const breakdown = attributeSeats(subscriptions, period);
++  const lastSyncAt = (connectionData as ConnectionRow | null)?.last_sync_at;
++
++  const coldStart = subscriptions.length === 0 && !apiSpend.hasData;
+ 
+   return (
+     <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
+@@ -37,23 +71,101 @@ export default async function ExplorePage() {
+         <p className="text-sm text-muted-foreground">{copy.subtitle}</p>
+       </div>
+ 
+-      {subscriptions.length === 0 ? (
++      {coldStart && (
+         <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed bg-card p-12 text-center">
+           <p className="font-medium">{copy.emptyTitle}</p>
+           <p className="max-w-md text-sm text-muted-foreground">
+             {copy.emptyBody}
+           </p>
+-          <Link
+-            href="/ajustes/assinaturas"
+-            className="mt-1 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"
+-          >
+-            {copy.emptyCta}
+-          </Link>
++          <div className="mt-1 flex gap-3">
++            <Link
++              href="/ajustes/conexoes"
++              className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"
++            >
++              {copy.emptyConnectCta}
++            </Link>
++            <Link
++              href="/ajustes/assinaturas"
++              className="rounded-md border px-4 py-2 text-sm font-medium hover:bg-muted"
++            >
++              {copy.emptySeatsCta}
++            </Link>
++          </div>
+         </div>
+-      ) : (
++      )}
++
++      {apiSpend.hasData && (
++        <section className="rounded-xl border bg-card p-6 shadow-sm">
++          <div className="flex items-baseline justify-between gap-4">
++            <h2 className="font-semibold">
++              {copy.apiTitle(period.monthLabel)}
++            </h2>
++            {lastSyncAt && (
++              <span className="text-xs text-muted-foreground">
++                {copy.apiAsOf(
++                  new Date(lastSyncAt).toLocaleString("pt-BR", {
++                    timeZone: "UTC",
++                  }) + " UTC",
++                )}
++              </span>
++            )}
++          </div>
++          <p className="mt-2 text-2xl font-semibold tabular-nums">
++            {copy.apiHeadline(money(apiSpend.monthUsd, "USD"))}
++          </p>
++          <p className="mt-1 text-xs text-muted-foreground">
++            {copy.apiAttributionNote}
++          </p>
++
++          <table className="mt-4 w-full text-sm">
++            <thead>
++              <tr className="border-b text-left text-xs uppercase tracking-wide text-muted-foreground">
++                <th className="py-2 pr-2 font-medium">{copy.colModel}</th>
++                <th className="py-2 pr-2 text-right font-medium">
++                  {copy.colTokens}
++                </th>
++                <th className="py-2 pr-2 text-right font-medium">
++                  {copy.colDerived}
++                </th>
++              </tr>
++            </thead>
++            <tbody>
++              {apiSpend.byModel.map((row) => (
++                <tr key={row.model} className="border-b last:border-b-0">
++                  <td className="py-2.5 pr-2 font-medium">{row.model}</td>
++                  <td className="py-2.5 pr-2 text-right tabular-nums">
++                    {compactTokens.format(row.inputTokens + row.outputTokens)}
++                  </td>
++                  <td className="py-2.5 pr-2 text-right tabular-nums">
++                    {row.uncosted ? (
++                      <span className="font-medium text-amber-700">
++                        {copy.uncosted}
++                      </span>
++                    ) : (
++                      money(row.derivedCost ?? 0, "USD")
++                    )}
++                  </td>
++                </tr>
++              ))}
++            </tbody>
++          </table>
++
++          <p className="mt-3 text-xs text-muted-foreground">
++            {copy.derivedNote(
++              money(apiSpend.derivedUsd, "USD"),
++              money(apiSpend.monthUsd, "USD"),
++            )}
++          </p>
++          <p className="mt-1 text-xs text-muted-foreground">
++            {copy.uncostedNote}
++          </p>
++        </section>
++      )}
++
++      {subscriptions.length > 0 && (
+         <section className="rounded-xl border bg-card p-6 shadow-sm">
+           <div className="flex items-baseline justify-between gap-4">
+-            <h2 className="font-semibold">{copy.tableTitle}</h2>
++            <h2 className="font-semibold">{copy.seatsTitle}</h2>
+             <span className="text-xs text-muted-foreground">
+               {copy.asOf(
+                 period.monthLabel,
+@@ -105,7 +217,6 @@ export default async function ExplorePage() {
+           <p className="mt-3 text-xs text-muted-foreground">
+             {copy.reconcile(money(breakdown.orgTotal, currency))}
+           </p>
+-          <p className="mt-1 text-xs text-muted-foreground">{copy.seatsNote}</p>
+         </section>
+       )}
+     </div>
+diff --git a/docs/backend.md b/docs/backend.md
+index a2d14ee..13084ea 100644
+--- a/docs/backend.md
++++ b/docs/backend.md
+@@ -19,6 +19,7 @@ interface UsageProvider {
+ - **Anthropic:** Admin API usage/cost by `api_key / workspace / model` — exact endpoints confirmed in the #11 spike.
+ - Key lifecycle: save (encrypt) → test → rotate → revoke. **Immediate sync on connect** (the "we found $X this month" moment), then daily cron.
+ - Tests inject `FakeProvider` with canonical payload fixtures; no live calls in CI.
++- **OpenAI contract (implemented in #15):** `OpenAIProvider` in `lib/connectors/openai.ts` with an **injectable `fetchFn`** — the fake (`lib/connectors/fake.ts`) replaces `fetch` with canonical Usage/Costs pages (pagination included), so tests and the dev demo exercise the real parsing path. Factory `providerFor()` in `lib/connectors/index.ts` only routes `sk-fake*` keys to the fake when server env `ALLOW_FAKE_PROVIDER=1`. Keys AES-256-GCM-encrypted via `lib/crypto.ts` (`CREDENTIAL_ENCRYPTION_KEY`); the `provider_connection.encrypted_credential` column is excluded from the authenticated column grant, so no browser session can read it. Key lifecycle actions in `lib/providers/actions.ts` (save tests the key BEFORE storing; rotate = upsert; revoke discards the ciphertext). Per-tenant sync unit in `lib/sync/openai-sync.ts` (month-to-date, idempotent upserts by natural keys); derived cost is the pure `deriveCost()` in `lib/engine/derive.ts` (newest price ≤ usage date; no price → `uncosted`). API spend displays in **USD** as reported; frozen-FX conversion arrives with budgets (#18). Project→team attribution arrives with #17 — until then API spend sits in Unattributed, disclosed on screen.
+ 
+ ## 2. Sync & normalization — issue #17
+ 
+diff --git a/eslint.config.mjs b/eslint.config.mjs
+index 7b52d66..d2ad8ba 100644
+--- a/eslint.config.mjs
++++ b/eslint.config.mjs
+@@ -5,6 +5,16 @@ import nextTs from "eslint-config-next/typescript";
+ const eslintConfig = defineConfig([
+   ...nextVitals,
+   ...nextTs,
++  {
++    rules: {
++      // Underscore prefix = intentionally unused (e.g. useActionState's
++      // (prevState, formData) signature when an action ignores them).
++      "@typescript-eslint/no-unused-vars": [
++        "warn",
++        { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
++      ],
++    },
++  },
+   // Override default ignores of eslint-config-next.
+   globalIgnores([
+     // Default ignores of eslint-config-next:
+diff --git a/lib/connectors/fake.ts b/lib/connectors/fake.ts
+new file mode 100644
+index 0000000..332a5af
+--- /dev/null
++++ b/lib/connectors/fake.ts
+@@ -0,0 +1,90 @@
++import { OpenAIProvider } from "@/lib/connectors/openai";
++
++// Fake OpenAI backend: serves canonical Usage/Costs API pages through the SAME
++// parsing/pagination code path as production (the fake replaces `fetch`, not
++// the provider). Used by unit tests and — behind ALLOW_FAKE_PROVIDER — by the
++// dev demo while the real Admin key is pending (issue #11).
++//
++// Deterministic daily story, per UTC day in the requested range:
++//   proj_eng        gpt-4o      (Ana)    1.2M in / 0.3M out  → $6.00 derived
++//   proj_eng        gpt-4o-mini (Bruno)  4.0M in / 1.0M out  → $1.20 derived
++//   proj_eng        omni-nova   (Diego)  0.8M in / 0.2M out  → unknown model (uncosted)
++//   proj_marketing  gpt-4o      (Carla)  0.5M in / 0.12M out → $2.45 derived
++// Costs API (provider truth): proj_eng $9.20/day, proj_marketing $2.45/day.
++
++const PAGE_SIZE = 15; // forces pagination on ranges longer than 15 days
++
++const DAILY_USAGE = [
++  { project_id: "proj_eng", user_id: "user_ana", api_key_id: "key_ana", model: "gpt-4o", input_tokens: 1_200_000, output_tokens: 300_000 },
++  { project_id: "proj_eng", user_id: "user_bruno", api_key_id: "key_bruno", model: "gpt-4o-mini", input_tokens: 4_000_000, output_tokens: 1_000_000 },
++  { project_id: "proj_eng", user_id: "user_diego", api_key_id: "key_diego", model: "omni-nova", input_tokens: 800_000, output_tokens: 200_000 },
++  { project_id: "proj_marketing", user_id: "user_carla", api_key_id: "key_carla", model: "gpt-4o", input_tokens: 500_000, output_tokens: 120_000 },
++];
++
++const DAILY_COSTS = [
++  { project_id: "proj_eng", line_item: "completions", amount: { value: 9.2, currency: "usd" } },
++  { project_id: "proj_marketing", line_item: "completions", amount: { value: 2.45, currency: "usd" } },
++];
++
++const DAY_SECONDS = 24 * 3600;
++
++function dayStarts(startTime: number, endTime: number): number[] {
++  const first = Math.floor(startTime / DAY_SECONDS) * DAY_SECONDS;
++  const days: number[] = [];
++  for (let t = first; t < endTime; t += DAY_SECONDS) days.push(t);
++  return days;
++}
++
++function page(
++  days: number[],
++  cursor: number,
++  results: (start: number) => unknown[],
++): unknown {
++  const slice = days.slice(cursor, cursor + PAGE_SIZE);
++  const hasMore = cursor + PAGE_SIZE < days.length;
++  return {
++    object: "page",
++    data: slice.map((start) => ({
++      object: "bucket",
++      start_time: start,
++      end_time: start + DAY_SECONDS,
++      results: results(start),
++    })),
++    has_more: hasMore,
++    next_page: hasMore ? String(cursor + PAGE_SIZE) : null,
++  };
++}
++
++/** Drop-in for fetch: answers the two OpenAI Admin endpoints with fixtures. */
++export const fakeOpenAIFetch = async (
++  url: string,
++  _init: RequestInit,
++): Promise<Response> => {
++  const parsed = new URL(url);
++  const params = parsed.searchParams;
++  const startTime = Number(params.get("start_time") ?? 0);
++  const endTime = Number(params.get("end_time") ?? Date.now() / 1000);
++  const cursor = Number(params.get("page") ?? 0);
++  const days = dayStarts(startTime, endTime);
++
++  let body: unknown;
++  if (parsed.pathname.endsWith("/usage/completions")) {
++    body = page(days, cursor, () =>
++      DAILY_USAGE.map((r) => ({ object: "organization.usage.completions.result", ...r })),
++    );
++  } else if (parsed.pathname.endsWith("/costs")) {
++    body = page(days, cursor, () =>
++      DAILY_COSTS.map((r) => ({ object: "organization.costs.result", ...r })),
++    );
++  } else {
++    return new Response("not found", { status: 404 });
++  }
++  return new Response(JSON.stringify(body), {
++    status: 200,
++    headers: { "Content-Type": "application/json" },
++  });
++};
++
++export function createFakeOpenAIProvider(): OpenAIProvider {
++  return new OpenAIProvider("sk-fake-demo", fakeOpenAIFetch);
++}
+diff --git a/lib/connectors/index.ts b/lib/connectors/index.ts
+new file mode 100644
+index 0000000..2481e23
+--- /dev/null
++++ b/lib/connectors/index.ts
+@@ -0,0 +1,23 @@
++import "server-only";
++
++import { createFakeOpenAIProvider } from "@/lib/connectors/fake";
++import { OpenAIProvider } from "@/lib/connectors/openai";
++import type { UsageProvider } from "@/lib/connectors/types";
++
++/**
++ * Provider factory. The fake backend only ever activates when BOTH the
++ * server-side env flag is set and the key uses the reserved fake prefix —
++ * a real deployment without ALLOW_FAKE_PROVIDER always talks to OpenAI.
++ */
++export function providerFor(
++  _provider: "openai", // Anthropic joins the union in issue #16
++  adminKey: string,
++): UsageProvider {
++  if (
++    process.env.ALLOW_FAKE_PROVIDER === "1" &&
++    adminKey.startsWith("sk-fake")
++  ) {
++    return createFakeOpenAIProvider();
++  }
++  return new OpenAIProvider(adminKey);
++}
+diff --git a/lib/connectors/openai.ts b/lib/connectors/openai.ts
+new file mode 100644
+index 0000000..64a5343
+--- /dev/null
++++ b/lib/connectors/openai.ts
+@@ -0,0 +1,147 @@
++import type {
++  ConnectionTest,
++  CostBucket,
++  DateRange,
++  UsageBucket,
++  UsageProvider,
++} from "@/lib/connectors/types";
++
++// OpenAI Admin API connector (issue #15). Read-only: two GET endpoints.
++//   Usage: /v1/organization/usage/completions — tokens grouped by
++//          project_id/user_id/api_key_id/model, daily UTC buckets.
++//   Costs: /v1/organization/costs — dollars grouped by project_id/line_item
++//          (the API's only grain; that's why onboarding recommends one
++//          project per team).
++// `fetchFn` is injectable: tests and the dev fake serve canonical fixture
++// pages through the exact same parsing/pagination path as production.
++
++const BASE_URL = "https://api.openai.com/v1/organization";
++const PAGE_LIMIT = 31; // one page ≈ one month of daily buckets
++
++type FetchFn = (url: string, init: RequestInit) => Promise<Response>;
++
++type UsageResult = {
++  project_id: string | null;
++  user_id: string | null;
++  api_key_id: string | null;
++  model: string | null;
++  input_tokens: number;
++  output_tokens: number;
++};
++
++type CostResult = {
++  project_id: string | null;
++  line_item: string | null;
++  amount: { value: number; currency: string };
++};
++
++type Page<T> = {
++  data: { start_time: number; results: T[] }[];
++  has_more: boolean;
++  next_page: string | null;
++};
++
++function utcDate(unixSeconds: number): string {
++  return new Date(unixSeconds * 1000).toISOString().slice(0, 10);
++}
++
++export class OpenAIProvider implements UsageProvider {
++  readonly provider = "openai" as const;
++
++  constructor(
++    private readonly adminKey: string,
++    private readonly fetchFn: FetchFn = fetch,
++  ) {}
++
++  private async getPage<T>(path: string, params: URLSearchParams): Promise<Page<T>> {
++    const response = await this.fetchFn(`${BASE_URL}${path}?${params}`, {
++      method: "GET",
++      headers: { Authorization: `Bearer ${this.adminKey}` },
++    });
++    if (!response.ok) {
++      throw new Error(`openai ${path}: HTTP ${response.status}`);
++    }
++    return (await response.json()) as Page<T>;
++  }
++
++  /** Follows `next_page` cursors until the API reports no more buckets. */
++  private async getAllPages<T>(
++    path: string,
++    baseParams: Record<string, string | string[]>,
++  ): Promise<Page<T>["data"]> {
++    const buckets: Page<T>["data"] = [];
++    let cursor: string | null = null;
++    do {
++      const params = new URLSearchParams();
++      for (const [key, value] of Object.entries(baseParams)) {
++        for (const v of Array.isArray(value) ? value : [value]) {
++          params.append(key, v);
++        }
++      }
++      if (cursor) params.set("page", cursor);
++      const page: Page<T> = await this.getPage<T>(path, params);
++      buckets.push(...page.data);
++      cursor = page.has_more ? page.next_page : null;
++    } while (cursor);
++    return buckets;
++  }
++
++  async testConnection(): Promise<ConnectionTest> {
++    try {
++      const params = new URLSearchParams({
++        start_time: String(Math.floor(Date.now() / 1000) - 24 * 3600),
++        limit: "1",
++      });
++      const response = await this.fetchFn(
++        `${BASE_URL}/usage/completions?${params}`,
++        { method: "GET", headers: { Authorization: `Bearer ${this.adminKey}` } },
++      );
++      if (response.ok) return { ok: true };
++      if (response.status === 401 || response.status === 403) {
++        return { ok: false, reason: "invalid_key" };
++      }
++      return { ok: false, reason: "unexpected" };
++    } catch {
++      return { ok: false, reason: "network" };
++    }
++  }
++
++  async fetchUsage(range: DateRange): Promise<UsageBucket[]> {
++    const data = await this.getAllPages<UsageResult>("/usage/completions", {
++      start_time: String(range.startTime),
++      end_time: String(range.endTime),
++      bucket_width: "1d",
++      limit: String(PAGE_LIMIT),
++      "group_by[]": ["project_id", "user_id", "api_key_id", "model"],
++    });
++    return data.flatMap((bucket) =>
++      bucket.results.map((result) => ({
++        date: utcDate(bucket.start_time),
++        projectId: result.project_id ?? "",
++        apiKeyId: result.api_key_id ?? "",
++        userId: result.user_id ?? "",
++        model: result.model ?? "",
++        inputTokens: result.input_tokens,
++        outputTokens: result.output_tokens,
++      })),
++    );
++  }
++
++  async fetchCosts(range: DateRange): Promise<CostBucket[]> {
++    const data = await this.getAllPages<CostResult>("/costs", {
++      start_time: String(range.startTime),
++      end_time: String(range.endTime),
++      limit: String(PAGE_LIMIT),
++      "group_by[]": ["project_id", "line_item"],
++    });
++    return data.flatMap((bucket) =>
++      bucket.results.map((result) => ({
++        date: utcDate(bucket.start_time),
++        projectId: result.project_id ?? "",
++        lineItem: result.line_item ?? "",
++        amount: result.amount.value,
++        currency: result.amount.currency,
++      })),
++    );
++  }
++}
+diff --git a/lib/connectors/types.ts b/lib/connectors/types.ts
+new file mode 100644
+index 0000000..747ff10
+--- /dev/null
++++ b/lib/connectors/types.ts
+@@ -0,0 +1,40 @@
++// The UsageProvider seam (architecture §3): every provider — real or fake —
++// speaks these canonical shapes; everything downstream (sync, engine, UI)
++// never sees a provider-specific payload.
++
++/** Unix seconds, UTC. End is exclusive. */
++export type DateRange = { startTime: number; endTime: number };
++
++/** Tokens for one (day, project, key, user, model) cell. Daily UTC buckets. */
++export type UsageBucket = {
++  /** yyyy-mm-dd (UTC). */
++  date: string;
++  projectId: string;
++  apiKeyId: string;
++  userId: string;
++  model: string;
++  inputTokens: number;
++  outputTokens: number;
++};
++
++/** Provider-reported dollars for one (day, project, line item) cell. */
++export type CostBucket = {
++  /** yyyy-mm-dd (UTC). */
++  date: string;
++  projectId: string;
++  lineItem: string;
++  amount: number;
++  /** Lowercase ISO code as the provider reports it (invariant #4: USD truth). */
++  currency: string;
++};
++
++export type ConnectionTest =
++  | { ok: true }
++  | { ok: false; reason: "invalid_key" | "network" | "unexpected" };
++
++export interface UsageProvider {
++  readonly provider: "openai" | "anthropic";
++  testConnection(): Promise<ConnectionTest>;
++  fetchUsage(range: DateRange): Promise<UsageBucket[]>;
++  fetchCosts(range: DateRange): Promise<CostBucket[]>;
++}
+diff --git a/lib/crypto.ts b/lib/crypto.ts
+new file mode 100644
+index 0000000..5b48b8b
+--- /dev/null
++++ b/lib/crypto.ts
+@@ -0,0 +1,61 @@
++import "server-only";
++
++import {
++  createCipheriv,
++  createDecipheriv,
++  randomBytes,
++} from "node:crypto";
++
++// AES-256-GCM for provider Admin keys at rest (security rule: never plaintext).
++// Blob format: "v1.<iv b64>.<ciphertext b64>.<auth tag b64>" — versioned so a
++// future algorithm change can coexist with old rows.
++
++const VERSION = "v1";
++const IV_BYTES = 12;
++
++function encryptionKey(): Buffer {
++  const raw = process.env.CREDENTIAL_ENCRYPTION_KEY;
++  if (!raw) {
++    throw new Error("CREDENTIAL_ENCRYPTION_KEY is not set");
++  }
++  for (const encoding of ["base64", "hex"] as const) {
++    const key = Buffer.from(raw, encoding);
++    if (key.length === 32) return key;
++  }
++  throw new Error(
++    "CREDENTIAL_ENCRYPTION_KEY must decode to 32 bytes (base64 or hex)",
++  );
++}
++
++export function encryptCredential(plaintext: string): string {
++  const iv = randomBytes(IV_BYTES);
++  const cipher = createCipheriv("aes-256-gcm", encryptionKey(), iv);
++  const ciphertext = Buffer.concat([
++    cipher.update(plaintext, "utf8"),
++    cipher.final(),
++  ]);
++  const tag = cipher.getAuthTag();
++  return [
++    VERSION,
++    iv.toString("base64"),
++    ciphertext.toString("base64"),
++    tag.toString("base64"),
++  ].join(".");
++}
++
++export function decryptCredential(blob: string): string {
++  const [version, ivB64, ciphertextB64, tagB64] = blob.split(".");
++  if (version !== VERSION || !ivB64 || !ciphertextB64 || !tagB64) {
++    throw new Error("credential blob is malformed");
++  }
++  const decipher = createDecipheriv(
++    "aes-256-gcm",
++    encryptionKey(),
++    Buffer.from(ivB64, "base64"),
++  );
++  decipher.setAuthTag(Buffer.from(tagB64, "base64"));
++  return Buffer.concat([
++    decipher.update(Buffer.from(ciphertextB64, "base64")),
++    decipher.final(),
++  ]).toString("utf8");
++}
+diff --git a/lib/engine/derive.ts b/lib/engine/derive.ts
+new file mode 100644
+index 0000000..ebd6f73
+--- /dev/null
++++ b/lib/engine/derive.ts
+@@ -0,0 +1,45 @@
++// Denarius engine — derived cost from tokens × model price (pure, no I/O).
++// Prices are versioned append-only rows; the applicable price for a usage day
++// is the newest one whose effective_date is not after that day. A model with
++// no applicable price is UNCOSTED — surfaced, never dropped (invariant #3).
++
++export type ModelPrice = {
++  provider: string;
++  model: string;
++  /** USD per 1M tokens. */
++  inputPricePer1M: number;
++  outputPricePer1M: number;
++  /** yyyy-mm-dd. */
++  effectiveDate: string;
++};
++
++export type DerivedCost =
++  | { uncosted: false; cost: number }
++  | { uncosted: true; cost: null };
++
++export function deriveCost(
++  usage: {
++    provider: string;
++    model: string;
++    date: string;
++    inputTokens: number;
++    outputTokens: number;
++  },
++  prices: ModelPrice[],
++): DerivedCost {
++  const applicable = prices
++    .filter(
++      (p) =>
++        p.provider === usage.provider &&
++        p.model === usage.model &&
++        p.effectiveDate <= usage.date,
++    )
++    .sort((a, b) => (a.effectiveDate < b.effectiveDate ? 1 : -1))[0];
++
++  if (!applicable) return { uncosted: true, cost: null };
++
++  const cost =
++    (usage.inputTokens / 1_000_000) * applicable.inputPricePer1M +
++    (usage.outputTokens / 1_000_000) * applicable.outputPricePer1M;
++  return { uncosted: false, cost };
++}
+diff --git a/lib/providers/actions.ts b/lib/providers/actions.ts
+new file mode 100644
+index 0000000..ce7df06
+--- /dev/null
++++ b/lib/providers/actions.ts
+@@ -0,0 +1,119 @@
++"use server";
++
++import { revalidatePath } from "next/cache";
++
++import { requireAdmin } from "@/lib/auth/session";
++import { providerFor } from "@/lib/connectors";
++import { encryptCredential } from "@/lib/crypto";
++import { money } from "@/lib/money";
++import { createAdminClient } from "@/lib/supabase/admin";
++import { runOpenAISync } from "@/lib/sync/openai-sync";
++import { openAiKeySchema } from "@/lib/validation";
++
++export type ConnectionFormState = { error?: string; success?: string };
++
++const copy = {
++  invalidKey:
++    "A OpenAI recusou esta chave. Confira se é uma Admin Key da organização (somente leitura).",
++  network: "Não foi possível falar com a OpenAI agora. Tente novamente.",
++  saveFailed: "Não foi possível salvar a conexão. Tente novamente.",
++  syncFailed:
++    "Chave salva, mas a primeira sincronização falhou — use “Sincronizar agora” para tentar de novo.",
++  connected: (total: string) =>
++    `Conectado. Encontramos ${total} de uso neste mês.`,
++  synced: (total: string) => `Sincronizado — ${total} neste mês.`,
++  revoked: "Conexão revogada. A chave foi descartada.",
++  revokeFailed: "Não foi possível revogar. Tente novamente.",
++  noConnection: "Nenhuma conexão ativa com a OpenAI.",
++};
++
++function revalidateConsumers(): void {
++  revalidatePath("/ajustes/conexoes");
++  revalidatePath("/ajustes");
++  revalidatePath("/explorar");
++  revalidatePath("/");
++}
++
++/** Save-or-rotate: upserting the (tenant, provider) row IS the rotation. */
++export async function saveOpenAIKey(
++  _prev: ConnectionFormState,
++  formData: FormData,
++): Promise<ConnectionFormState> {
++  const auth = await requireAdmin();
++  if (auth.error !== undefined) return { error: auth.error };
++
++  const parsed = openAiKeySchema.safeParse({
++    adminKey: formData.get("adminKey"),
++  });
++  if (!parsed.success) return { error: parsed.error.issues[0].message };
++  const adminKey = parsed.data.adminKey;
++
++  // Test BEFORE storing anything — a bad key never lands in the database.
++  const test = await providerFor("openai", adminKey).testConnection();
++  if (!test.ok) {
++    return {
++      error: test.reason === "invalid_key" ? copy.invalidKey : copy.network,
++    };
++  }
++
++  const { tenantId } = auth.session;
++  const admin = createAdminClient();
++  const { error } = await admin.from("provider_connection").upsert(
++    {
++      tenant_id: tenantId,
++      provider: "openai",
++      encrypted_credential: encryptCredential(adminKey),
++      status: "active",
++      last_sync_error: null,
++      updated_at: new Date().toISOString(),
++    },
++    { onConflict: "tenant_id,provider" },
++  );
++  if (error) return { error: copy.saveFailed };
++
++  // The first "we found $X this month" moment — sync immediately, not in 24h.
++  const sync = await runOpenAISync(tenantId);
++  revalidateConsumers();
++  if (!sync.ok) return { error: copy.syncFailed };
++  return { success: copy.connected(money(sync.monthUsd, "USD")) };
++}
++
++export async function syncOpenAINow(
++  _prev: ConnectionFormState,
++  _formData: FormData,
++): Promise<ConnectionFormState> {
++  const auth = await requireAdmin();
++  if (auth.error !== undefined) return { error: auth.error };
++
++  const sync = await runOpenAISync(auth.session.tenantId);
++  revalidateConsumers();
++  if (!sync.ok) return { error: copy.syncFailed };
++  return { success: copy.synced(money(sync.monthUsd, "USD")) };
++}
++
++export async function revokeOpenAIKey(
++  _prev: ConnectionFormState,
++  _formData: FormData,
++): Promise<ConnectionFormState> {
++  const auth = await requireAdmin();
++  if (auth.error !== undefined) return { error: auth.error };
++
++  const admin = createAdminClient();
++  const { error, count } = await admin
++    .from("provider_connection")
++    .update(
++      {
++        status: "revoked",
++        encrypted_credential: null, // the ciphertext is discarded, not kept
++        updated_at: new Date().toISOString(),
++      },
++      { count: "exact" },
++    )
++    .eq("tenant_id", auth.session.tenantId)
++    .eq("provider", "openai");
++  if (error) return { error: copy.revokeFailed };
++  if (count === 0) return { error: copy.noConnection };
++
++  revalidateConsumers();
++  return { success: copy.revoked };
++}
+diff --git a/lib/sync/openai-sync.ts b/lib/sync/openai-sync.ts
+new file mode 100644
+index 0000000..ea84166
+--- /dev/null
++++ b/lib/sync/openai-sync.ts
+@@ -0,0 +1,155 @@
++import "server-only";
++
++import { providerFor } from "@/lib/connectors";
++import { decryptCredential } from "@/lib/crypto";
++import { deriveCost, type ModelPrice } from "@/lib/engine/derive";
++import { createAdminClient } from "@/lib/supabase/admin";
++
++// On-demand sync for ONE tenant's OpenAI connection (connect button / rotate /
++// sync-now). The daily cross-tenant cron arrives with issue #17 and reuses
++// this per-tenant unit. Upserts are idempotent by the natural keys, so a
++// re-sync never duplicates a bucket.
++
++export type SyncResult =
++  | { ok: true; usageRows: number; costRows: number; monthUsd: number }
++  | { ok: false; error: string };
++
++type ConnectionRow = {
++  id: string;
++  encrypted_credential: string | null;
++  status: string;
++};
++
++type PriceRow = {
++  provider: string;
++  model: string;
++  input_price_per_1m: number;
++  output_price_per_1m: number;
++  effective_date: string;
++};
++
++/** Month-to-date, UTC — the "we found $X this month" window. */
++function monthToDateRange(now: Date): { startTime: number; endTime: number } {
++  const start = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1);
++  return {
++    startTime: Math.floor(start / 1000),
++    endTime: Math.floor(now.getTime() / 1000),
++  };
++}
++
++export async function runOpenAISync(tenantId: string): Promise<SyncResult> {
++  const admin = createAdminClient();
++
++  const { data: connectionData } = await admin
++    .from("provider_connection")
++    .select("id, encrypted_credential, status")
++    .eq("tenant_id", tenantId)
++    .eq("provider", "openai")
++    .maybeSingle();
++  const connection = connectionData as ConnectionRow | null;
++  if (!connection || connection.status === "revoked" || !connection.encrypted_credential) {
++    return { ok: false, error: "no active OpenAI connection" };
++  }
++
++  const markError = async (message: string): Promise<SyncResult> => {
++    await admin
++      .from("provider_connection")
++      .update({
++        status: "error",
++        last_sync_error: message,
++        updated_at: new Date().toISOString(),
++      })
++      .eq("id", connection.id);
++    return { ok: false, error: message };
++  };
++
++  try {
++    const provider = providerFor(
++      "openai",
++      decryptCredential(connection.encrypted_credential),
++    );
++    const range = monthToDateRange(new Date());
++
++    const [usage, costs, { data: priceData }] = await Promise.all([
++      provider.fetchUsage(range),
++      provider.fetchCosts(range),
++      admin
++        .from("model_price")
++        .select("provider, model, input_price_per_1m, output_price_per_1m, effective_date"),
++    ]);
++
++    const prices: ModelPrice[] = ((priceData ?? []) as PriceRow[]).map((p) => ({
++      provider: p.provider,
++      model: p.model,
++      inputPricePer1M: p.input_price_per_1m,
++      outputPricePer1M: p.output_price_per_1m,
++      effectiveDate: p.effective_date,
++    }));
++
++    const usageRows = usage.map((bucket) => {
++      const derived = deriveCost(
++        { provider: "openai", model: bucket.model, date: bucket.date, inputTokens: bucket.inputTokens, outputTokens: bucket.outputTokens },
++        prices,
++      );
++      return {
++        tenant_id: tenantId,
++        date: bucket.date,
++        provider: "openai",
++        project_id: bucket.projectId,
++        api_key_id: bucket.apiKeyId,
++        user_id: bucket.userId,
++        model: bucket.model,
++        input_tokens: bucket.inputTokens,
++        output_tokens: bucket.outputTokens,
++        derived_cost: derived.cost,
++        uncosted: derived.uncosted,
++        synced_at: new Date().toISOString(),
++      };
++    });
++
++    const costRows = costs.map((bucket) => ({
++      tenant_id: tenantId,
++      date: bucket.date,
++      provider: "openai",
++      project_id: bucket.projectId,
++      line_item: bucket.lineItem,
++      amount: bucket.amount,
++      currency: bucket.currency,
++      synced_at: new Date().toISOString(),
++    }));
++
++    if (usageRows.length > 0) {
++      const { error } = await admin
++        .from("usage_daily")
++        .upsert(usageRows, {
++          onConflict: "tenant_id,date,provider,project_id,api_key_id,user_id,model",
++        });
++      if (error) return markError(`usage upsert failed: ${error.code}`);
++    }
++    if (costRows.length > 0) {
++      const { error } = await admin
++        .from("cost_daily")
++        .upsert(costRows, {
++          onConflict: "tenant_id,date,provider,project_id,line_item",
++        });
++      if (error) return markError(`cost upsert failed: ${error.code}`);
++    }
++
++    await admin
++      .from("provider_connection")
++      .update({
++        status: "active",
++        last_sync_at: new Date().toISOString(),
++        last_sync_error: null,
++        updated_at: new Date().toISOString(),
++      })
++      .eq("id", connection.id);
++
++    const monthUsd = costs.reduce((sum, c) => sum + c.amount, 0);
++    return { ok: true, usageRows: usageRows.length, costRows: costRows.length, monthUsd };
++  } catch (cause) {
++    // Never leak the key or raw payloads into errors shown/logged.
++    const message = cause instanceof Error ? cause.message : "sync failed";
++    return markError(message);
++  }
++}
+diff --git a/lib/usage/queries.ts b/lib/usage/queries.ts
+new file mode 100644
+index 0000000..60c5764
+--- /dev/null
++++ b/lib/usage/queries.ts
+@@ -0,0 +1,87 @@
++import "server-only";
++
++import { createClient } from "@/lib/supabase/server";
++
++// Month-to-date API usage, read under RLS for the Explore screen. Rows are
++// small daily aggregates (PRD: no time-series DB), so grouping happens here.
++
++export type ModelUsage = {
++  model: string;
++  inputTokens: number;
++  outputTokens: number;
++  /** null when any bucket for this model is uncosted. */
++  derivedCost: number | null;
++  uncosted: boolean;
++};
++
++export type ApiSpend = {
++  /** Provider-reported month total in USD (cost_daily — the headline truth). */
++  monthUsd: number;
++  /** Σ derived costs (tokens × price) for the same window, costed models only. */
++  derivedUsd: number;
++  byModel: ModelUsage[]; // sorted desc by derived cost, uncosted last
++  hasData: boolean;
++};
++
++type UsageRow = {
++  model: string;
++  input_tokens: number;
++  output_tokens: number;
++  derived_cost: number | null;
++  uncosted: boolean;
++};
++
++function monthStartUtc(now: Date): string {
++  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1))
++    .toISOString()
++    .slice(0, 10);
++}
++
++export async function apiSpendMonthToDate(): Promise<ApiSpend> {
++  const supabase = await createClient();
++  const since = monthStartUtc(new Date());
++
++  const [{ data: usageData }, { data: costData }] = await Promise.all([
++    supabase
++      .from("usage_daily")
++      .select("model, input_tokens, output_tokens, derived_cost, uncosted")
++      .gte("date", since),
++    supabase.from("cost_daily").select("amount").gte("date", since),
++  ]);
++
++  const byModelMap = new Map<string, ModelUsage>();
++  for (const row of (usageData ?? []) as UsageRow[]) {
++    const entry = byModelMap.get(row.model) ?? {
++      model: row.model,
++      inputTokens: 0,
++      outputTokens: 0,
++      derivedCost: 0,
++      uncosted: false,
++    };
++    entry.inputTokens += row.input_tokens;
++    entry.outputTokens += row.output_tokens;
++    if (row.uncosted || row.derived_cost === null) {
++      entry.uncosted = true;
++      entry.derivedCost = null;
++    } else if (entry.derivedCost !== null) {
++      entry.derivedCost += row.derived_cost;
++    }
++    byModelMap.set(row.model, entry);
++  }
++
++  const byModel = [...byModelMap.values()].sort((a, b) => {
++    if (a.uncosted !== b.uncosted) return a.uncosted ? 1 : -1;
++    return (b.derivedCost ?? 0) - (a.derivedCost ?? 0);
++  });
++
++  const monthUsd = ((costData ?? []) as { amount: number }[]).reduce(
++    (sum, row) => sum + row.amount,
++    0,
++  );
++  const derivedUsd = byModel.reduce(
++    (sum, m) => sum + (m.derivedCost ?? 0),
++    0,
++  );
++
++  return { monthUsd, derivedUsd, byModel, hasData: byModel.length > 0 };
++}
+diff --git a/lib/validation.ts b/lib/validation.ts
+index e02a03f..e6b4909 100644
+--- a/lib/validation.ts
++++ b/lib/validation.ts
+@@ -73,6 +73,19 @@ export const subscriptionDeleteSchema = z.object({
+   subscriptionId: z.uuid("Assinatura inválida."),
+ });
+ 
++// OpenAI Admin key (issue #15). Loose shape check only — real validity comes
++// from testConnection; the key itself is never logged or echoed back.
++export const openAiKeySchema = z.object({
++  adminKey: z
++    .string()
++    .trim()
++    .min(20, "Cole a Admin Key completa (ela começa com sk-).")
++    .max(400, "Chave longa demais — confira o que foi colado.")
++    .refine((value) => value.startsWith("sk-"), {
++      message: "Uma Admin Key da OpenAI começa com sk-.",
++    }),
++});
++
+ export const employeeUpdateSchema = z.object({
+   employeeId: z.uuid("funcionário inválido"),
+   name: z
+diff --git a/supabase/migrations/20260703160000_providers.sql b/supabase/migrations/20260703160000_providers.sql
+new file mode 100644
+index 0000000..7698809
+--- /dev/null
++++ b/supabase/migrations/20260703160000_providers.sql
+@@ -0,0 +1,142 @@
++-- Denarius — issue #15: OpenAI connector (provider connections + usage/cost grain).
++-- Four tables:
++--   provider_connection  read-only Admin key (encrypted), status, last sync
++--   usage_daily          tokens by key/project/user/model, daily UTC buckets
++--   cost_daily           dollars by project/line_item, daily UTC buckets
++--   model_price          reference price table (versioned, append-only)
++-- Writes flow through server-side sync code (service role); clients only read.
++
++-- ---------------------------------------------------------------------------
++-- provider_connection
++-- The encrypted credential must never reach a browser, even same-tenant:
++-- table-level SELECT is revoked and re-granted column by column WITHOUT
++-- encrypted_credential. RLS still scopes rows to the tenant.
++-- ---------------------------------------------------------------------------
++
++create table public.provider_connection (
++  id uuid primary key default gen_random_uuid(),
++  tenant_id uuid not null references public.tenant (id) on delete cascade,
++  provider text not null check (provider in ('openai', 'anthropic')),
++  encrypted_credential text,
++  status text not null default 'active' check (status in ('active', 'error', 'revoked')),
++  last_sync_at timestamptz,
++  last_sync_error text,
++  created_at timestamptz not null default now(),
++  updated_at timestamptz not null default now(),
++  unique (tenant_id, provider)
++);
++
++create index provider_connection_tenant_idx on public.provider_connection (tenant_id);
++
++alter table public.provider_connection enable row level security;
++
++revoke select on public.provider_connection from anon, authenticated;
++grant select (id, tenant_id, provider, status, last_sync_at, last_sync_error, created_at, updated_at)
++  on public.provider_connection to authenticated;
++
++create policy provider_connection_select_same_tenant
++  on public.provider_connection for select
++  to authenticated
++  using (tenant_id = public.current_tenant_id());
++
++-- ---------------------------------------------------------------------------
++-- usage_daily — idempotent sync upserts by the natural key
++-- (tenant, date, provider, project, key, user, model). Sub-keys default to ''
++-- (not null) so the unique constraint really deduplicates: Postgres treats
++-- NULLs as distinct, which would let re-syncs silently duplicate rows.
++-- derived_cost is null when the model has no price → uncosted, never dropped.
++-- ---------------------------------------------------------------------------
++
++create table public.usage_daily (
++  id uuid primary key default gen_random_uuid(),
++  tenant_id uuid not null references public.tenant (id) on delete cascade,
++  date date not null,
++  provider text not null check (provider in ('openai', 'anthropic')),
++  project_id text not null default '',
++  api_key_id text not null default '',
++  user_id text not null default '',
++  model text not null,
++  input_tokens bigint not null default 0,
++  output_tokens bigint not null default 0,
++  derived_cost numeric(14, 6),
++  uncosted boolean not null default false,
++  synced_at timestamptz not null default now(),
++  unique (tenant_id, date, provider, project_id, api_key_id, user_id, model)
++);
++
++create index usage_daily_tenant_date_idx on public.usage_daily (tenant_id, date);
++
++alter table public.usage_daily enable row level security;
++
++create policy usage_daily_select_same_tenant
++  on public.usage_daily for select
++  to authenticated
++  using (tenant_id = public.current_tenant_id());
++
++-- ---------------------------------------------------------------------------
++-- cost_daily — provider-reported dollars (USD source of truth, invariant #4).
++-- ---------------------------------------------------------------------------
++
++create table public.cost_daily (
++  id uuid primary key default gen_random_uuid(),
++  tenant_id uuid not null references public.tenant (id) on delete cascade,
++  date date not null,
++  provider text not null check (provider in ('openai', 'anthropic')),
++  project_id text not null default '',
++  line_item text not null default '',
++  amount numeric(14, 6) not null,
++  currency text not null default 'usd',
++  synced_at timestamptz not null default now(),
++  unique (tenant_id, date, provider, project_id, line_item)
++);
++
++create index cost_daily_tenant_date_idx on public.cost_daily (tenant_id, date);
++
++alter table public.cost_daily enable row level security;
++
++create policy cost_daily_select_same_tenant
++  on public.cost_daily for select
++  to authenticated
++  using (tenant_id = public.current_tenant_id());
++
++-- ---------------------------------------------------------------------------
++-- model_price — REFERENCE DATA, deliberately tenant-less.
++-- Documented deviation from invariant #1 ("every table has tenant_id"): the
++-- PRD data model defines model_price as provider/model/prices/effective_date —
++-- public catalog pricing shared by all tenants, containing zero tenant data.
++-- RLS is still enabled (read for authenticated, writes only via service role /
++-- migrations) so the deny-by-default posture holds.
++-- Prices are USD per 1M tokens. Append-only: corrections are new rows with a
++-- later effective_date, never updates — the history stays auditable.
++-- ---------------------------------------------------------------------------
++
++create table public.model_price (
++  id uuid primary key default gen_random_uuid(),
++  provider text not null check (provider in ('openai', 'anthropic')),
++  model text not null,
++  input_price_per_1m numeric(12, 6) not null,
++  output_price_per_1m numeric(12, 6) not null,
++  effective_date date not null,
++  created_at timestamptz not null default now(),
++  unique (provider, model, effective_date)
++);
++
++alter table public.model_price enable row level security;
++
++create policy model_price_select_authenticated
++  on public.model_price for select
++  to authenticated
++  using (true);
++
++-- Seed: OpenAI list prices (USD per 1M tokens). Corrections append new rows.
++insert into public.model_price (provider, model, input_price_per_1m, output_price_per_1m, effective_date) values
++  ('openai', 'gpt-4o',       2.50, 10.00, '2026-01-01'),
++  ('openai', 'gpt-4o-mini',  0.15,  0.60, '2026-01-01'),
++  ('openai', 'gpt-4.1',      2.00,  8.00, '2026-01-01'),
++  ('openai', 'gpt-4.1-mini', 0.40,  1.60, '2026-01-01'),
++  ('openai', 'gpt-4.1-nano', 0.10,  0.40, '2026-01-01'),
++  ('openai', 'gpt-5',        1.25, 10.00, '2026-01-01'),
++  ('openai', 'gpt-5-mini',   0.25,  2.00, '2026-01-01'),
++  ('openai', 'gpt-5-nano',   0.05,  0.40, '2026-01-01'),
++  ('openai', 'o3',           2.00,  8.00, '2026-01-01'),
++  ('openai', 'o4-mini',      1.10,  4.40, '2026-01-01');
+diff --git a/tests/crypto.test.ts b/tests/crypto.test.ts
+new file mode 100644
+index 0000000..24f825f
+--- /dev/null
++++ b/tests/crypto.test.ts
+@@ -0,0 +1,50 @@
++import { randomBytes } from "node:crypto";
++
++import { beforeEach, describe, expect, it } from "vitest";
++
++import { decryptCredential, encryptCredential } from "@/lib/crypto";
++
++describe("credential encryption (AES-256-GCM)", () => {
++  beforeEach(() => {
++    process.env.CREDENTIAL_ENCRYPTION_KEY = randomBytes(32).toString("base64");
++  });
++
++  it("round-trips a credential and never stores it in the clear", () => {
++    const secret = "sk-admin-super-secret-0123456789";
++    const blob = encryptCredential(secret);
++    expect(blob).not.toContain(secret);
++    expect(blob.startsWith("v1.")).toBe(true);
++    expect(decryptCredential(blob)).toBe(secret);
++  });
++
++  it("produces a different blob per call (random IV)", () => {
++    const secret = "sk-admin-same-input";
++    expect(encryptCredential(secret)).not.toBe(encryptCredential(secret));
++  });
++
++  it("rejects a tampered blob (GCM auth tag)", () => {
++    const blob = encryptCredential("sk-admin-tamper-me-please");
++    const [v, iv, ct, tag] = blob.split(".");
++    const flipped = Buffer.from(ct, "base64");
++    flipped[0] ^= 0xff;
++    const tampered = [v, iv, flipped.toString("base64"), tag].join(".");
++    expect(() => decryptCredential(tampered)).toThrow();
++  });
++
++  it("rejects decryption under a rotated key", () => {
++    const blob = encryptCredential("sk-admin-old-key");
++    process.env.CREDENTIAL_ENCRYPTION_KEY = randomBytes(32).toString("base64");
++    expect(() => decryptCredential(blob)).toThrow();
++  });
++
++  it("accepts hex keys and refuses keys that are not 32 bytes", () => {
++    process.env.CREDENTIAL_ENCRYPTION_KEY = randomBytes(32).toString("hex");
++    expect(decryptCredential(encryptCredential("ok"))).toBe("ok");
++
++    process.env.CREDENTIAL_ENCRYPTION_KEY = "too-short";
++    expect(() => encryptCredential("nope")).toThrow(/32 bytes/);
++
++    delete process.env.CREDENTIAL_ENCRYPTION_KEY;
++    expect(() => encryptCredential("nope")).toThrow(/not set/);
++  });
++});
+diff --git a/tests/derive.test.ts b/tests/derive.test.ts
+new file mode 100644
+index 0000000..deb0ce2
+--- /dev/null
++++ b/tests/derive.test.ts
+@@ -0,0 +1,58 @@
++import { describe, expect, it } from "vitest";
++
++import { deriveCost, type ModelPrice } from "@/lib/engine/derive";
++
++const prices: ModelPrice[] = [
++  { provider: "openai", model: "gpt-4o", inputPricePer1M: 2.5, outputPricePer1M: 10, effectiveDate: "2026-01-01" },
++  // A later price for the same model — must win for usage on/after its date.
++  { provider: "openai", model: "gpt-4o", inputPricePer1M: 2.0, outputPricePer1M: 8, effectiveDate: "2026-06-15" },
++  { provider: "openai", model: "gpt-4o-mini", inputPricePer1M: 0.15, outputPricePer1M: 0.6, effectiveDate: "2026-01-01" },
++  // Anthropic price for the same model name must never leak across providers.
++  { provider: "anthropic", model: "gpt-4o", inputPricePer1M: 99, outputPricePer1M: 99, effectiveDate: "2026-01-01" },
++];
++
++describe("deriveCost — tokens × versioned model price", () => {
++  it("computes cost = tokens/1M × price for each side", () => {
++    const result = deriveCost(
++      { provider: "openai", model: "gpt-4o-mini", date: "2026-07-01", inputTokens: 4_000_000, outputTokens: 1_000_000 },
++      prices,
++    );
++    // 4 × 0.15 + 1 × 0.60 = 1.20
++    expect(result).toEqual({ uncosted: false, cost: 1.2 });
++  });
++
++  it("picks the newest price whose effective_date is not after the usage day", () => {
++    const before = deriveCost(
++      { provider: "openai", model: "gpt-4o", date: "2026-06-14", inputTokens: 1_000_000, outputTokens: 0 },
++      prices,
++    );
++    const after = deriveCost(
++      { provider: "openai", model: "gpt-4o", date: "2026-06-15", inputTokens: 1_000_000, outputTokens: 0 },
++      prices,
++    );
++    expect(before).toEqual({ uncosted: false, cost: 2.5 });
++    expect(after).toEqual({ uncosted: false, cost: 2.0 });
++  });
++
++  it("marks unknown models as uncosted instead of dropping them", () => {
++    const result = deriveCost(
++      { provider: "openai", model: "omni-nova", date: "2026-07-01", inputTokens: 800_000, outputTokens: 200_000 },
++      prices,
++    );
++    expect(result).toEqual({ uncosted: true, cost: null });
++  });
++
++  it("ignores prices from another provider and prices from the future", () => {
++    const crossProvider = deriveCost(
++      { provider: "anthropic", model: "gpt-4o-mini", date: "2026-07-01", inputTokens: 1, outputTokens: 0 },
++      prices,
++    );
++    expect(crossProvider.uncosted).toBe(true);
++
++    const beforeAnyPrice = deriveCost(
++      { provider: "openai", model: "gpt-4o", date: "2025-12-31", inputTokens: 1, outputTokens: 0 },
++      prices,
++    );
++    expect(beforeAnyPrice.uncosted).toBe(true);
++  });
++});
+diff --git a/tests/openai-connector.test.ts b/tests/openai-connector.test.ts
+new file mode 100644
+index 0000000..ff52378
+--- /dev/null
++++ b/tests/openai-connector.test.ts
+@@ -0,0 +1,80 @@
++import { describe, expect, it } from "vitest";
++
++import { createFakeOpenAIProvider } from "@/lib/connectors/fake";
++import { OpenAIProvider } from "@/lib/connectors/openai";
++
++// The fake serves canonical OpenAI Admin API pages through the REAL parsing
++// and pagination code (it replaces fetch, not the provider) — so these tests
++// cover the production request/normalization path with zero live calls.
++
++const DAY = 24 * 3600;
++// 2026-06-01T00:00:00Z .. 2026-07-01T00:00:00Z — 30 days, forces pagination.
++const RANGE = { startTime: 1780272000, endTime: 1780272000 + 30 * DAY };
++
++describe("OpenAIProvider over canonical fixtures", () => {
++  const provider = createFakeOpenAIProvider();
++
++  it("normalizes usage buckets: daily UTC dates, one row per grouping cell", async () => {
++    const usage = await provider.fetchUsage(RANGE);
++    // 30 days × 4 grouped results/day, across 2 paginated pages.
++    expect(usage).toHaveLength(120);
++
++    const first = usage[0];
++    expect(first.date).toBe("2026-06-01");
++    expect(first).toMatchObject({
++      projectId: "proj_eng",
++      apiKeyId: "key_ana",
++      userId: "user_ana",
++      model: "gpt-4o",
++      inputTokens: 1_200_000,
++      outputTokens: 300_000,
++    });
++
++    const dates = new Set(usage.map((u) => u.date));
++    expect(dates.size).toBe(30);
++    expect(dates.has("2026-06-30")).toBe(true);
++    expect(dates.has("2026-07-01")).toBe(false); // end is exclusive
++
++    // The unknown model rides through normalization untouched (uncosted later).
++    expect(usage.some((u) => u.model === "omni-nova")).toBe(true);
++  });
++
++  it("normalizes cost buckets and preserves the provider-reported USD amounts", async () => {
++    const costs = await provider.fetchCosts(RANGE);
++    expect(costs).toHaveLength(60); // 30 days × 2 project line items
++
++    const total = costs.reduce((sum, c) => sum + c.amount, 0);
++    expect(total).toBeCloseTo(30 * (9.2 + 2.45), 6);
++    expect(costs.every((c) => c.currency === "usd")).toBe(true);
++    expect(costs.every((c) => c.lineItem === "completions")).toBe(true);
++  });
++
++  it("testConnection succeeds against the fake backend", async () => {
++    expect(await provider.testConnection()).toEqual({ ok: true });
++  });
++
++  it("testConnection maps 401/403 to invalid_key and network failure to network", async () => {
++    const denied = new OpenAIProvider("sk-bad", async () =>
++      new Response("unauthorized", { status: 401 }),
++    );
++    expect(await denied.testConnection()).toEqual({
++      ok: false,
++      reason: "invalid_key",
++    });
++
++    const offline = new OpenAIProvider("sk-any", async () => {
++      throw new Error("ECONNREFUSED");
++    });
++    expect(await offline.testConnection()).toEqual({
++      ok: false,
++      reason: "network",
++    });
++  });
++
++  it("fetchUsage surfaces HTTP errors instead of returning partial data", async () => {
++    const flaky = new OpenAIProvider("sk-any", async () =>
++      new Response("rate limited", { status: 429 }),
++    );
++    await expect(flaky.fetchUsage(RANGE)).rejects.toThrow(/429/);
++  });
++});
+diff --git a/tests/rls-isolation.test.ts b/tests/rls-isolation.test.ts
+index fbd9a46..444ee21 100644
+--- a/tests/rls-isolation.test.ts
++++ b/tests/rls-isolation.test.ts
+@@ -52,11 +52,22 @@ if (ready && !subscriptionReady) {
+   );
+ }
+ 
++const providersReady = ready && (await tableApplied("provider_connection"));
++if (ready && !providersReady) {
++  console.warn(
++    "\n[rls-isolation] provider tables not found — apply " +
++      "supabase/migrations/*_providers.sql to cover them here too.\n",
++  );
++}
++
+ const TABLES = [
+   "tenant",
+   "app_user",
+   "team",
+   ...(subscriptionReady ? (["subscription"] as const) : []),
++  ...(providersReady
++    ? (["provider_connection", "usage_daily", "cost_daily"] as const)
++    : []),
+ ];
+ 
+ type Seeded = {
+@@ -120,6 +131,38 @@ describe.skipIf(!ready)("RLS tenant isolation", () => {
+       if (subError) throw subError;
+     }
+ 
++    if (providersReady) {
++      const { error: connError } = await admin
++        .from("provider_connection")
++        .insert({
++          tenant_id: tenant.id,
++          provider: "openai",
++          encrypted_credential: `v1.secret-${label}`,
++          status: "active",
++        });
++      if (connError) throw connError;
++      const { error: usageError } = await admin.from("usage_daily").insert({
++        tenant_id: tenant.id,
++        date: "2026-07-01",
++        provider: "openai",
++        project_id: `proj-${label}`,
++        model: "gpt-4o",
++        input_tokens: 1000,
++        output_tokens: 100,
++        derived_cost: 0.0035,
++      });
++      if (usageError) throw usageError;
++      const { error: costError } = await admin.from("cost_daily").insert({
++        tenant_id: tenant.id,
++        date: "2026-07-01",
++        provider: "openai",
++        project_id: `proj-${label}`,
++        line_item: "completions",
++        amount: 1.23,
++      });
++      if (costError) throw costError;
++    }
++
+     return {
+       tenantId: tenant.id,
+       userId: authUser.user.id,
+@@ -216,6 +259,55 @@ describe.skipIf(!ready)("RLS tenant isolation", () => {
+     expect(error).not.toBeNull();
+   });
+ 
++  it.skipIf(!providersReady)(
++    "provider tables are tenant-isolated and the encrypted credential is unreadable (issue #15)",
++    async () => {
++      const clientA = await signedInClient(a);
++
++      // Rows: A sees exactly its own connection/usage/cost, never B's.
++      const { data: connections } = await clientA
++        .from("provider_connection")
++        .select("tenant_id, provider, status");
++      expect(connections).toEqual([
++        { tenant_id: a.tenantId, provider: "openai", status: "active" },
++      ]);
++      const { data: usage } = await clientA
++        .from("usage_daily")
++        .select("tenant_id, project_id");
++      expect(usage).toEqual([
++        { tenant_id: a.tenantId, project_id: "proj-a" },
++      ]);
++      const { data: costs } = await clientA
++        .from("cost_daily")
++        .select("tenant_id, project_id");
++      expect(costs).toEqual([
++        { tenant_id: a.tenantId, project_id: "proj-a" },
++      ]);
++
++      // Column-level grant: even the OWN tenant's admin cannot read the
++      // encrypted credential from a browser session.
++      const { error: columnDenied } = await clientA
++        .from("provider_connection")
++        .select("encrypted_credential");
++      expect(columnDenied).not.toBeNull();
++
++      // Writes stay deny-by-default (sync runs server-side only).
++      const { error: writeDenied } = await clientA
++        .from("provider_connection")
++        .insert({ tenant_id: a.tenantId, provider: "anthropic" });
++      expect(writeDenied).not.toBeNull();
++      const { error: usageWriteDenied } = await clientA
++        .from("usage_daily")
++        .insert({
++          tenant_id: a.tenantId,
++          date: "2026-07-02",
++          provider: "openai",
++          model: "gpt-4o",
++        });
++      expect(usageWriteDenied).not.toBeNull();
++    },
++  );
++
+   it.skipIf(!subscriptionReady)(
+     "subscription rows are tenant-isolated (issue #14) and direct writes denied",
+     async () => {
+diff --git a/tests/stubs/server-only.ts b/tests/stubs/server-only.ts
+new file mode 100644
+index 0000000..c887b27
+--- /dev/null
++++ b/tests/stubs/server-only.ts
+@@ -0,0 +1,4 @@
++// Vitest stub: `server-only` is a build-time guard for Next.js; in node tests
++// the guarded modules (crypto, sync, queries) are exactly where the logic
++// under test lives, so the marker resolves to this empty module.
++export {};
+diff --git a/vitest.config.ts b/vitest.config.ts
+index 7edd138..8da2768 100644
+--- a/vitest.config.ts
++++ b/vitest.config.ts
+@@ -8,8 +8,12 @@ config({ path: ".env.local", quiet: true });
+ 
+ export default defineConfig({
+   resolve: {
+-    // Mirror tsconfig's "@/*" path alias.
+-    alias: { "@": path.resolve(__dirname) },
++    // Mirror tsconfig's "@/*" path alias; neutralize Next's server-only marker
++    // so node tests can exercise server modules directly.
++    alias: {
++      "@": path.resolve(__dirname),
++      "server-only": path.resolve(__dirname, "tests/stubs/server-only.ts"),
++    },
+   },
+   test: {
+     environment: "node",

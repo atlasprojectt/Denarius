@@ -1,5 +1,6 @@
 import "server-only";
 
+import { monthStartUtc } from "@/lib/engine/period";
 import { createClient } from "@/lib/supabase/server";
 
 // Month-to-date API usage, read under RLS for the Explore screen. Rows are
@@ -31,15 +32,9 @@ type UsageRow = {
   uncosted: boolean;
 };
 
-function monthStartUtc(now: Date): string {
-  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1))
-    .toISOString()
-    .slice(0, 10);
-}
-
 export async function apiSpendMonthToDate(): Promise<ApiSpend> {
   const supabase = await createClient();
-  const since = monthStartUtc(new Date());
+  const since = monthStartUtc();
 
   const [{ data: usageData }, { data: costData }] = await Promise.all([
     supabase

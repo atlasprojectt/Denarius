@@ -5,6 +5,7 @@ import { useActionState, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { utcStamp } from "@/lib/format";
 import {
   revokeOpenAIKey,
   saveOpenAIKey,
@@ -153,9 +154,7 @@ export function OpenAIConnectionCard({
   const keyForm: KeyFormProps = { formAction: saveAction, pending: savePending };
 
   const connected = status === "active" || status === "error";
-  const stamp = lastSyncAt
-    ? new Date(lastSyncAt).toLocaleString("pt-BR", { timeZone: "UTC" }) + " UTC"
-    : null;
+  const stamp = lastSyncAt ? utcStamp(lastSyncAt) : null;
 
   return (
     <section className="rounded-xl border bg-card p-6 shadow-sm">

@@ -17,6 +17,7 @@ import type {
 
 const BASE_URL = "https://api.openai.com/v1/organization";
 const PAGE_LIMIT = 31; // one page ≈ one month of daily buckets
+const MAX_PAGES = 60; // a provider cursor bug must never hang a server action
 
 type FetchFn = (url: string, init: RequestInit) => Promise<Response>;
 
@@ -71,7 +72,7 @@ export class OpenAIProvider implements UsageProvider {
   ): Promise<Page<T>["data"]> {
     const buckets: Page<T>["data"] = [];
     let cursor: string | null = null;
-    do {
+    for (let pageIndex = 0; pageIndex < MAX_PAGES; pageIndex++) {
       const params = new URLSearchParams();
       for (const [key, value] of Object.entries(baseParams)) {
         for (const v of Array.isArray(value) ? value : [value]) {
@@ -82,8 +83,10 @@ export class OpenAIProvider implements UsageProvider {
       const page: Page<T> = await this.getPage<T>(path, params);
       buckets.push(...page.data);
       cursor = page.has_more ? page.next_page : null;
-    } while (cursor);
-    return buckets;
+      if (!cursor) return buckets;
+    }
+    // Incomplete data must fail loudly — never render as a smaller total.
+    throw new Error(`openai ${path}: pagination did not terminate after ${MAX_PAGES} pages`);
   }
 
   async testConnection(): Promise<ConnectionTest> {
@@ -107,12 +110,15 @@ export class OpenAIProvider implements UsageProvider {
   }
 
   async fetchUsage(range: DateRange): Promise<UsageBucket[]> {
+    // Repeated plain `group_by` params (requests-style), NOT `group_by[]` —
+    // the bracket convention is silently ignored by the OpenAI API, which
+    // would collapse every grouping dimension to null.
     const data = await this.getAllPages<UsageResult>("/usage/completions", {
       start_time: String(range.startTime),
       end_time: String(range.endTime),
       bucket_width: "1d",
       limit: String(PAGE_LIMIT),
-      "group_by[]": ["project_id", "user_id", "api_key_id", "model"],
+      group_by: ["project_id", "user_id", "api_key_id", "model"],
     });
     return data.flatMap((bucket) =>
       bucket.results.map((result) => ({
@@ -132,7 +138,7 @@ export class OpenAIProvider implements UsageProvider {
       start_time: String(range.startTime),
       end_time: String(range.endTime),
       limit: String(PAGE_LIMIT),
-      "group_by[]": ["project_id", "line_item"],
+      group_by: ["project_id", "line_item"],
     });
     return data.flatMap((bucket) =>
       bucket.results.map((result) => ({

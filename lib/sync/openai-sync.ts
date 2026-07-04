@@ -3,6 +3,7 @@ import "server-only";
 import { providerFor } from "@/lib/connectors";
 import { decryptCredential } from "@/lib/crypto";
 import { deriveCost, type ModelPrice } from "@/lib/engine/derive";
+import { monthToDateRange } from "@/lib/engine/period";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 // On-demand sync for ONE tenant's OpenAI connection (connect button / rotate /
@@ -27,15 +28,6 @@ type PriceRow = {
   output_price_per_1m: number;
   effective_date: string;
 };
-
-/** Month-to-date, UTC — the "we found $X this month" window. */
-function monthToDateRange(now: Date): { startTime: number; endTime: number } {
-  const start = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1);
-  return {
-    startTime: Math.floor(start / 1000),
-    endTime: Math.floor(now.getTime() / 1000),
-  };
-}
 
 export async function runOpenAISync(tenantId: string): Promise<SyncResult> {
   const admin = createAdminClient();
@@ -68,7 +60,9 @@ export async function runOpenAISync(tenantId: string): Promise<SyncResult> {
       "openai",
       decryptCredential(connection.encrypted_credential),
     );
-    const range = monthToDateRange(new Date());
+    const range = monthToDateRange();
+    // One stamp per sync: every row written by this run carries the same time.
+    const syncedAt = new Date().toISOString();
 
     const [usage, costs, { data: priceData }] = await Promise.all([
       provider.fetchUsage(range),
@@ -103,7 +97,7 @@ export async function runOpenAISync(tenantId: string): Promise<SyncResult> {
         output_tokens: bucket.outputTokens,
         derived_cost: derived.cost,
         uncosted: derived.uncosted,
-        synced_at: new Date().toISOString(),
+        synced_at: syncedAt,
       };
     });
 
@@ -118,30 +112,35 @@ export async function runOpenAISync(tenantId: string): Promise<SyncResult> {
       synced_at: new Date().toISOString(),
     }));
 
-    if (usageRows.length > 0) {
-      const { error } = await admin
-        .from("usage_daily")
-        .upsert(usageRows, {
-          onConflict: "tenant_id,date,provider,project_id,api_key_id,user_id,model",
-        });
-      if (error) return markError(`usage upsert failed: ${error.code}`);
+    // Independent tables — the two upserts run in parallel.
+    const noError = { error: null };
+    const [usageResult, costResult] = await Promise.all([
+      usageRows.length > 0
+        ? admin.from("usage_daily").upsert(usageRows, {
+            onConflict:
+              "tenant_id,date,provider,project_id,api_key_id,user_id,model",
+          })
+        : Promise.resolve(noError),
+      costRows.length > 0
+        ? admin.from("cost_daily").upsert(costRows, {
+            onConflict: "tenant_id,date,provider,project_id,line_item",
+          })
+        : Promise.resolve(noError),
+    ]);
+    if (usageResult.error) {
+      return markError(`usage upsert failed: ${usageResult.error.code}`);
     }
-    if (costRows.length > 0) {
-      const { error } = await admin
-        .from("cost_daily")
-        .upsert(costRows, {
-          onConflict: "tenant_id,date,provider,project_id,line_item",
-        });
-      if (error) return markError(`cost upsert failed: ${error.code}`);
+    if (costResult.error) {
+      return markError(`cost upsert failed: ${costResult.error.code}`);
     }
 
     await admin
       .from("provider_connection")
       .update({
         status: "active",
-        last_sync_at: new Date().toISOString(),
+        last_sync_at: syncedAt,
         last_sync_error: null,
-        updated_at: new Date().toISOString(),
+        updated_at: syncedAt,
       })
       .eq("id", connection.id);
 
