@@ -15,6 +15,11 @@ name: Deploy to Vercel (production)
 on:
   push:
     branches: [main]
+    # Docs/markdown never affect the build — don't redeploy prod for them.
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+      - "LICENSE"
 
 # Never run two production deploys at once; don't cancel one mid-flight.
 concurrency:
