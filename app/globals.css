@@ -129,20 +129,71 @@
   }
 }
 /* ---------------------------------------------------------------------------
-   Denarius theme overrides (tokens in docs/frontend.md §4)
-   Light mode only (P9). Brand indigo + dark sidebar rail.
+   Denarius theme — PROVISIONAL front (tokens documented in docs/frontend.md §4).
+   Brand accent #FF5100 (orange) + dark sidebar rail. Light + dark via the
+   `.dark` class on <html>, toggled client-side
+   (components/domain/theme-toggle.tsx) with a no-FOUC inline script in
+   app/layout.tsx. These blocks come after the shadcn base above, so they win.
 --------------------------------------------------------------------------- */
 :root {
-  --primary: #4f46e5;
+  --background: #f7f8fa;
+  --foreground: #0b1220;
+  --card: #ffffff;
+  --card-foreground: #0b1220;
+  --popover: #ffffff;
+  --popover-foreground: #0b1220;
+
+  --primary: #ff5100;
   --primary-foreground: #ffffff;
-  --ring: #4f46e5;
+  --secondary: #eef0f3;
+  --secondary-foreground: #0b1220;
+  --muted: #eef0f3;
+  --muted-foreground: #64748b;
+  --accent: #eef0f3;
+  --accent-foreground: #0b1220;
+
+  --border: #e5e7eb;
+  --input: #e5e7eb;
+  --ring: #ff5100;
 
   --sidebar: #0c1322;
   --sidebar-foreground: #aeb9cc;
-  --sidebar-primary: #4f46e5;
+  --sidebar-primary: #ff5100;
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: #161f33;
   --sidebar-accent-foreground: #dbe2ee;
   --sidebar-border: #19223a;
-  --sidebar-ring: #4f46e5;
+  --sidebar-ring: #ff5100;
+}
+
+.dark {
+  --background: #0b0c0f;
+  --foreground: #e7e9ee;
+  --card: #15161a;
+  --card-foreground: #e7e9ee;
+  --popover: #15161a;
+  --popover-foreground: #e7e9ee;
+
+  --primary: #ff5100;
+  --primary-foreground: #ffffff;
+  --secondary: #1e2027;
+  --secondary-foreground: #e7e9ee;
+  --muted: #1e2027;
+  --muted-foreground: #9aa1ac;
+  --accent: #1e2027;
+  --accent-foreground: #e7e9ee;
+
+  --destructive: #ef4444;
+  --border: #26282f;
+  --input: #26282f;
+  --ring: #ff5100;
+
+  --sidebar: #0a0b0e;
+  --sidebar-foreground: #aeb9cc;
+  --sidebar-primary: #ff5100;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #16171c;
+  --sidebar-accent-foreground: #dbe2ee;
+  --sidebar-border: #1e2027;
+  --sidebar-ring: #ff5100;
 }

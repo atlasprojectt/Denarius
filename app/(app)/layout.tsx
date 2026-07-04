@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 
 import { AppSidebar } from "@/components/domain/app-sidebar";
+import { ThemeToggle } from "@/components/domain/theme-toggle";
 import { Separator } from "@/components/ui/separator";
 import {
   SidebarInset,
@@ -37,15 +38,13 @@ export default async function AppLayout({
 
   return (
     <SidebarProvider>
-      <AppSidebar
-        tenantName={appUser.tenant?.name ?? ""}
-        userEmail={appUser.email}
-      />
+      <AppSidebar userEmail={appUser.email} />
       <SidebarInset>
         <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4">
           <SidebarTrigger className="-ml-1" />
           <Separator orientation="vertical" className="mr-2 h-4" />
           <span className="text-sm font-medium">{appUser.tenant?.name}</span>
+          <ThemeToggle className="ml-auto" />
         </header>
         <main className="flex-1 p-6">{children}</main>
       </SidebarInset>

@@ -19,6 +19,11 @@ export const metadata: Metadata = {
     "Orçamentos, projeção de fechamento e avisos antecipados para o gasto de IA da sua empresa.",
 };
 
+// Runs before first paint: applies the saved theme (or the OS preference) so
+// the .dark class is present before the body renders — no flash of the wrong
+// theme. Kept as a raw string so it ships inline in <head>. See ThemeToggle.
+const themeScript = `(function(){try{var t=localStorage.getItem('theme');var d=t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme: dark)').matches);if(d)document.documentElement.classList.add('dark');}catch(e){}})();`;
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -27,12 +32,16 @@ export default function RootLayout({
   return (
     <html
       lang="pt-BR"
+      suppressHydrationWarning
       className={cn(
         "h-full antialiased",
         geistSans.variable,
         geistMono.variable,
       )}
     >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
       <body className="flex min-h-full flex-col font-sans">{children}</body>
     </html>
   );

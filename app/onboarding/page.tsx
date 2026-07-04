@@ -1,12 +1,10 @@
 import { redirect } from "next/navigation";
 
+import { LogoWordmark } from "@/components/domain/logo";
+import { ThemeToggle } from "@/components/domain/theme-toggle";
 import { createClient } from "@/lib/supabase/server";
 
 import { OnboardingForm } from "./_components/onboarding-form";
-
-const copy = {
-  brand: "Denarius",
-};
 
 export default async function OnboardingPage() {
   const supabase = await createClient();
@@ -30,13 +28,9 @@ export default async function OnboardingPage() {
       : "";
 
   return (
-    <div className="flex min-h-svh flex-col items-center justify-center gap-8 p-6">
-      <span className="flex items-center gap-2 font-medium">
-        <span className="flex size-6 items-center justify-center rounded-md bg-primary text-sm font-bold text-primary-foreground">
-          D
-        </span>
-        {copy.brand}
-      </span>
+    <div className="relative flex min-h-svh flex-col items-center justify-center gap-8 p-6">
+      <ThemeToggle className="absolute top-6 right-6" />
+      <LogoWordmark className="h-7 w-auto" />
       <div className="w-full max-w-sm">
         <OnboardingForm defaultCompanyName={defaultCompanyName} />
       </div>

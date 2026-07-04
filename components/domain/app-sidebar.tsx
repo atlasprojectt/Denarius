@@ -23,7 +23,7 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { LogoMark } from "@/components/domain/logo";
+import { LogoMark, LogoWordmark } from "@/components/domain/logo";
 import { logout } from "@/lib/auth/actions";
 
 const copy = {
@@ -79,13 +79,7 @@ function NavGroup({
   );
 }
 
-export function AppSidebar({
-  tenantName,
-  userEmail,
-}: {
-  tenantName: string;
-  userEmail: string;
-}) {
+export function AppSidebar({ userEmail }: { userEmail: string }) {
   const pathname = usePathname();
 
   return (
@@ -96,17 +90,16 @@ export function AppSidebar({
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" asChild>
-              <Link href="/">
-                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                  <LogoMark className="size-5" />
-                </div>
-                <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">{copy.brand}</span>
-                  <span className="truncate text-xs text-sidebar-foreground/60">
-                    {tenantName}
-                  </span>
-                </div>
+            <SidebarMenuButton
+              size="lg"
+              asChild
+              className="group-data-[collapsible=icon]:justify-center"
+            >
+              <Link href="/" aria-label={copy.brand}>
+                {/* Expanded: the full wordmark (coin accent + letters). */}
+                <LogoWordmark className="h-6 w-auto pl-1 group-data-[collapsible=icon]:hidden" />
+                {/* Collapsed: just the coin, in the brand accent. */}
+                <LogoMark className="hidden size-6 shrink-0 text-primary group-data-[collapsible=icon]:block" />
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>

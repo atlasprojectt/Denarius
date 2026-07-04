@@ -2,6 +2,8 @@
 
 > Derives from [prd.md](prd.md) (UX Decisions P1–P15). This doc is the **visual contract** for the frontend — the design tokens (§4) and component contracts below. (A static `prototype/` seeded these decisions and was removed once the real screens shipped in #12–#15; the running app is the live reference.)
 > **Status:** UX decisions (P1–P15) and implementation decisions (F1–F6, §7) all locked.
+>
+> ⚠️ **The current visual skin is a PROVISIONAL front — an approximation, not the final UI.** The screens exist to make the product tangible and align everyone a little closer to the intended feel (brand accent, light/dark, logo lockup). Treat colors, spacing, and the theme system as a working draft that will be redone before launch — do **not** read the present look as the locked visual identity. The *structure* (F1–F6, screen contracts, tokens-as-CSS-variables) is what's stable; the *paint* is temporary.
 
 ## 1. Principles
 
@@ -36,17 +38,22 @@ Budget editing is **inline** (pencil on rows / hero) → modal. The **simulator 
 
 ## 4. Design tokens (implemented in `app/globals.css`)
 
+> **Provisional (see the banner at the top).** These values are the current draft skin, not a locked palette. What's stable is the *mechanism*: every color is a CSS variable, redefined under `:root` (light) and `.dark` (dark), so re-skinning is a token edit, not a component rewrite.
+
 | Token | Value |
 |---|---|
-| Brand | `#4f46e5` (indigo) · soft `#eef2ff` |
-| Semaphore | green `#16a34a` · amber `#d97706` · red `#dc2626` (+ soft bgs) |
-| Ink / muted / faint | `#0b1220` / `#64748b` / `#94a3b8` |
-| Surfaces | page `#f7f8fa` · card `#fff` · sidebar `#0c1322` |
+| Brand accent | **`#FF5100` (orange)** — `--primary` / `--ring` / sidebar-primary, both themes |
+| Semaphore | green `#16a34a` · amber `#d97706` · red `#dc2626` (+ soft bgs) — reserved for budget status |
+| Surfaces (light) | page `#f7f8fa` · card `#fff` · ink `#0b1220` · muted `#64748b` |
+| Surfaces (dark) | page `#0b0c0f` · card `#15161a` · ink `#e7e9ee` · muted `#9aa1ac` |
+| Sidebar rail | dark in both themes (`#0c1322` light · `#0a0b0e` dark) |
 | Radii | card 14px · controls 9px |
 | Type | system sans stack; numbers **tabular-nums**; two weights (400/650-740) |
 | Shadows | subtle (`0 1px 2px…`); drawer/modal stronger |
 
-Light mode only (P9). Desktop-first; consumption screens legible at mobile width (email click-through target). Copy: pt-BR, sentence case, observation language for apontamentos, alarm language reserved for warnings.
+**Light + dark** (supersedes the earlier "light only" of P9 for this provisional front — a founder-directed change). The theme is the `.dark` class on `<html>`, toggled by `components/domain/theme-toggle.tsx` (no dependency; reads/writes `localStorage.theme` and is applied pre-paint by a no-FOUC inline script in `app/layout.tsx`, defaulting to the OS preference). Desktop-first; consumption screens legible at mobile width. Copy: pt-BR, sentence case, observation language for apontamentos, alarm language reserved for warnings.
+
+**Brand logo** (`components/domain/logo.tsx`): the wordmark is used **extensively** (auth, onboarding, brand panel, sidebar) and is two-tone — the coin is the brand accent (`var(--primary)`), the letters inherit `currentColor` so they theme with the container. In the sidebar it **collapses to the coin mark alone** when the rail is in icon mode.
 
 ## 5. Interaction patterns
 
