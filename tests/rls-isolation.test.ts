@@ -60,6 +60,14 @@ if (ready && !providersReady) {
   );
 }
 
+const projectMapReady = ready && (await tableApplied("project_map"));
+if (ready && !projectMapReady) {
+  console.warn(
+    "\n[rls-isolation] project_map table not found — apply " +
+      "supabase/migrations/*_attribution.sql to cover it here too.\n",
+  );
+}
+
 const TABLES = [
   "tenant",
   "app_user",
@@ -68,6 +76,7 @@ const TABLES = [
   ...(providersReady
     ? (["provider_connection", "usage_daily", "cost_daily"] as const)
     : []),
+  ...(projectMapReady ? (["project_map"] as const) : []),
 ];
 
 type Seeded = {
@@ -161,6 +170,16 @@ describe.skipIf(!ready)("RLS tenant isolation", () => {
         amount: 1.23,
       });
       if (costError) throw costError;
+    }
+
+    if (projectMapReady) {
+      const { error: mapError } = await admin.from("project_map").insert({
+        tenant_id: tenant.id,
+        provider: "openai",
+        project_id: `proj-${label}`,
+        team_id: team.id,
+      });
+      if (mapError) throw mapError;
     }
 
     return {
