@@ -73,6 +73,19 @@ export const subscriptionDeleteSchema = z.object({
   subscriptionId: z.uuid("Assinatura inválida."),
 });
 
+// OpenAI Admin key (issue #15). Loose shape check only — real validity comes
+// from testConnection; the key itself is never logged or echoed back.
+export const openAiKeySchema = z.object({
+  adminKey: z
+    .string()
+    .trim()
+    .min(20, "Cole a Admin Key completa (ela começa com sk-).")
+    .max(400, "Chave longa demais — confira o que foi colado.")
+    .refine((value) => value.startsWith("sk-"), {
+      message: "Uma Admin Key da OpenAI começa com sk-.",
+    }),
+});
+
 export const employeeUpdateSchema = z.object({
   employeeId: z.uuid("funcionário inválido"),
   name: z

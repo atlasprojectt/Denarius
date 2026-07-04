@@ -28,3 +28,25 @@ export function currentPeriod(now: Date = new Date()): Period {
     monthLabel: MONTH_LABEL.format(now),
   };
 }
+
+/** First day of the calendar month, UTC, as yyyy-mm-dd. */
+export function monthStartUtc(now: Date = new Date()): string {
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1))
+    .toISOString()
+    .slice(0, 10);
+}
+
+/**
+ * Month-to-date window in unix seconds (UTC), end exclusive at `now` —
+ * the "we found $X this month" sync window.
+ */
+export function monthToDateRange(now: Date = new Date()): {
+  startTime: number;
+  endTime: number;
+} {
+  const start = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1);
+  return {
+    startTime: Math.floor(start / 1000),
+    endTime: Math.floor(now.getTime() / 1000),
+  };
+}

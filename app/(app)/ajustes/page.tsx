@@ -12,9 +12,16 @@ const copy = {
   connectionsTitle: "Conexões",
   connectionsSub:
     "Chaves admin somente-leitura, criptografadas — o Denarius nunca altera nada nos provedores.",
-  connections: [
-    { name: "OpenAI", status: "Chega na issue #15" },
-    { name: "Anthropic", status: "Chega na issue #16" },
+  connectionsCta: "Gerenciar conexões",
+  openAiName: "OpenAI",
+  openAiStatus: {
+    active: "Ativo",
+    error: "Erro na sincronização",
+    revoked: "Revogado",
+    none: "Não conectado",
+  } as Record<string, string>,
+  staticConnections: [
+    { name: "Anthropic", status: "Chega na próxima versão" },
     { name: "GitHub Copilot", status: "Planejado para a v1.5" },
   ],
   rosterTitle: "Roster",
@@ -41,6 +48,7 @@ export default async function SettingsPage() {
     { count: employeeCount },
     { count: teamCount },
     { count: subscriptionCount },
+    { data: connectionData },
   ] = await Promise.all([
     supabase.from("tenant").select("name, display_currency").maybeSingle(),
     supabase.from("employee").select("id", { count: "exact", head: true }),
@@ -49,9 +57,15 @@ export default async function SettingsPage() {
       .select("id", { count: "exact", head: true })
       .eq("is_unattributed", false),
     supabase.from("subscription").select("id", { count: "exact", head: true }),
+    supabase
+      .from("provider_connection")
+      .select("status")
+      .eq("provider", "openai")
+      .maybeSingle(),
   ]);
   const tenant = data as TenantRow | null;
   if (!tenant) redirect("/onboarding");
+  const openAiStatus = (connectionData as { status: string } | null)?.status;
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
@@ -75,12 +89,29 @@ export default async function SettingsPage() {
       </section>
 
       <section className="rounded-xl border bg-card p-6 shadow-sm">
-        <h2 className="font-semibold">{copy.connectionsTitle}</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {copy.connectionsSub}
-        </p>
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <h2 className="font-semibold">{copy.connectionsTitle}</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {copy.connectionsSub}
+            </p>
+          </div>
+          <Link
+            href="/ajustes/conexoes"
+            className="rounded-md border px-3 py-1.5 text-sm font-medium hover:bg-muted whitespace-nowrap"
+          >
+            {copy.connectionsCta}
+          </Link>
+        </div>
         <ul className="mt-4 flex flex-col gap-3">
-          {copy.connections.map((connection) => (
+          <li className="flex items-center justify-between rounded-lg border p-3 text-sm">
+            <span className="font-medium">{copy.openAiName}</span>
+            <span className="rounded-md bg-muted px-2 py-1 text-xs font-medium text-muted-foreground">
+              {copy.openAiStatus[openAiStatus ?? "none"] ??
+                copy.openAiStatus.none}
+            </span>
+          </li>
+          {copy.staticConnections.map((connection) => (
             <li
               key={connection.name}
               className="flex items-center justify-between rounded-lg border p-3 text-sm"

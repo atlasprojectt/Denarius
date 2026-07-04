@@ -8,8 +8,12 @@ config({ path: ".env.local", quiet: true });
 
 export default defineConfig({
   resolve: {
-    // Mirror tsconfig's "@/*" path alias.
-    alias: { "@": path.resolve(__dirname) },
+    // Mirror tsconfig's "@/*" path alias; neutralize Next's server-only marker
+    // so node tests can exercise server modules directly.
+    alias: {
+      "@": path.resolve(__dirname),
+      "server-only": path.resolve(__dirname, "tests/stubs/server-only.ts"),
+    },
   },
   test: {
     environment: "node",
