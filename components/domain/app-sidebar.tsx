@@ -100,7 +100,7 @@ export function AppSidebar({ userEmail }: { userEmail: string }) {
           {/* Expanded: the full wordmark (coin accent + letters). */}
           <LogoWordmark className="h-6 w-auto group-data-[collapsible=icon]:hidden" />
           {/* Collapsed: just the coin, in the brand accent. */}
-          <LogoMark className="hidden size-6 shrink-0 text-primary group-data-[collapsible=icon]:block" />
+          <LogoMark className="hidden size-6 shrink-0 text-[#FF5100] group-data-[collapsible=icon]:block" />
         </Link>
       </SidebarHeader>
 
