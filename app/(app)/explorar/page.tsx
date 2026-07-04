@@ -190,8 +190,7 @@ export default async function ExplorePage() {
                   </td>
                 </tr>
               ))}
-              {/* Prototype contract: the whole row in amber text, no fill
-                  (tr.unatt in prototype/styles.css). */}
+              {/* Unattributed row: whole row in amber text, no fill. */}
               <tr className="border-t font-medium text-amber-700">
                 <td className="py-2.5 pr-2">
                   {copy.unattributed}{" "}

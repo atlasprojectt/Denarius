@@ -12,6 +12,6 @@ Everything an engineer or agent needs to work on Denarius. Read in this order:
 Fixed conventions:
 
 - **Docs and code in English**; product copy (UI strings) in **pt-BR**.
-- The **prototype in [`prototype/`](../prototype/)** is the visual contract for the frontend — static HTML/CSS/JS with mocked data, served by `node prototype/server.js` (port 5599).
+- **[frontend.md](frontend.md) is the visual contract** for the frontend (design tokens + component contracts); the running app is the live reference. (A static `prototype/` seeded these decisions and was removed once the real screens shipped in #12–#15.)
 - Work is sliced into GitHub issues **#11–#23** (`ready-for-agent`), dependency-ordered; #11 is HITL (founder provisions infra + Admin keys).
 - Every decision passes the exit-thesis filter: *"does this raise sale value / survive due diligence?"* — not "does this scale?".

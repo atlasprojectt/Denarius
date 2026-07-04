@@ -129,7 +129,7 @@
   }
 }
 /* ---------------------------------------------------------------------------
-   Denarius theme overrides (visual contract: prototype/styles.css)
+   Denarius theme overrides (tokens in docs/frontend.md §4)
    Light mode only (P9). Brand indigo + dark sidebar rail.
 --------------------------------------------------------------------------- */
 :root {

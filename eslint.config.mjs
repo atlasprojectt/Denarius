@@ -22,8 +22,6 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
-    // Static visual-contract artifact (mocked-data prototype), not app code.
-    "prototype/**",
   ]),
 ]);
 

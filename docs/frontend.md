@@ -1,6 +1,6 @@
 # Denarius — Frontend & UI spec
 
-> Derives from [prd.md](prd.md) (UX Decisions P1–P15). The static prototype in [`prototype/`](../prototype/) is the **visual contract** — when this doc and the prototype disagree, flag it, don't guess.
+> Derives from [prd.md](prd.md) (UX Decisions P1–P15). This doc is the **visual contract** for the frontend — the design tokens (§4) and component contracts below. (A static `prototype/` seeded these decisions and was removed once the real screens shipped in #12–#15; the running app is the live reference.)
 > **Status:** UX decisions (P1–P15) and implementation decisions (F1–F6, §7) all locked.
 
 ## 1. Principles
@@ -21,7 +21,7 @@
 
 Budget editing is **inline** (pencil on rows / hero) → modal. The **simulator is a right-side drawer** opened in context ([Simular] on warnings/teams) — never a nav destination.
 
-## 3. Home component contracts (matching prototype)
+## 3. Home component contracts
 
 1. **Onboarding checklist** (dismissible, 4 steps, budget step pushed) — only until complete.
 2. **Stale-data banner** — only when a connector hasn't synced >1 day.
@@ -34,7 +34,7 @@ Budget editing is **inline** (pencil on rows / hero) → modal. The **simulator 
 
 **States that must exist:** cold-start (no data/budget → CTA hero, never empty), collecting-pace (before day 5), **all-clear** ("✓ Tudo sob controle · próximo digest sexta"), stale-data, breached.
 
-## 4. Design tokens (from prototype `styles.css`)
+## 4. Design tokens (implemented in `app/globals.css`)
 
 | Token | Value |
 |---|---|
@@ -57,7 +57,7 @@ Light mode only (P9). Desktop-first; consumption screens legible at mobile width
 
 ## 6. Charts
 
-- Team/budget bars: HTML/CSS (fill + dashed ghost + marker) — as in prototype.
+- Team/budget bars: HTML/CSS (fill + dashed ghost + marker).
 - Cumulative line (spend vs budget + dashed projection): lives only in drill-down, not Home.
 
 ## 7. Implementation decisions (F1–F6 — locked)
@@ -71,13 +71,13 @@ Light mode only (P9). Desktop-first; consumption screens legible at mobile width
 | F5 | Component organization | **LOCKED — colocation by route + shadcn convention.** `components/ui/` holds shadcn primitives (untouched); screen-specific components colocate with their route (`app/home/_components/`); cross-screen domain components (BudgetBar, VerdictLine, StatusPill) live in `components/domain/`; display helpers in `lib/`. No barrel files. |
 | F6 | Frontend testing | **LOCKED — lean pyramid.** Unit tests for display helpers (money formatting, bar-width math, verdict copy states). RTL only for logic-bearing components (BudgetBar states, verdict variants, simulator arithmetic). Playwright e2e for 3 critical journeys against seeded DB + fake providers (never live APIs): (1) cold start → connect → set budget → verdict appears; (2) warning → [Investigar] → team detail → contributors; (3) [Simular] drawer → break-even preset closes on budget. |
 
-All F-decisions are locked. When implementation contradicts this table or the prototype, flag it — don't silently diverge.
+All F-decisions are locked. When implementation contradicts this table, flag it — don't silently diverge.
 
 ## 8. UI scaffold (issue #12)
 
 shadcn blocks are **starting scaffolding**, adapted into the F5 structure — the block is not the final structure.
 
-- **Sidebar — base `sidebar-07`** ("collapses to icons"). On top of it, compose our two nav groups with `SidebarGroup`: **Cockpit** (Início, Explorar) and **Conta** (Ajustes). Ships as `components/domain/AppSidebar`. Restyle toward the prototype (dark rail, tenant identity in the header, "as of <date> / FX" in the footer). `variant="inset"` is a later aesthetic opt-in, not now. (Chosen over `sidebar-08` because all blocks share the same `Sidebar`/`SidebarGroup` primitives — starting from the cleaner base and composing our own groups beats inheriting 08's secondary-nav rendering.)
+- **Sidebar — base `sidebar-07`** ("collapses to icons"). On top of it, compose our two nav groups with `SidebarGroup`: **Cockpit** (Início, Explorar) and **Conta** (Ajustes). Ships as `components/domain/AppSidebar`. Restyle toward the design tokens (dark rail, tenant identity in the header, "as of <date> / FX" in the footer). `variant="inset"` is a later aesthetic opt-in, not now. (Chosen over `sidebar-08` because all blocks share the same `Sidebar`/`SidebarGroup` primitives — starting from the cleaner base and composing our own groups beats inheriting 08's secondary-nav rendering.)
 - **Auth — matched pair `login-02` + `signup-02`** (two-column, form + cover image — a premium branded first impression, à la Mercury/Ramp). Live in `app/(auth)/login` and `app/(auth)/signup`. Adaptations (no block ships these):
   - Both: a **Google** button wired to Supabase Auth (email/password + Google).
   - Signup: a **company name** field → the submit server action creates the `tenant`.

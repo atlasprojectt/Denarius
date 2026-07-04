@@ -56,8 +56,7 @@
 │   └── notify/       channel interface, resend impl, dedup (notification_log)
 ├── supabase/
 │   └── migrations/   schema + RLS policies (versioned, auto-deployed)
-├── docs/             this folder
-└── prototype/        static visual contract (mocked data)
+└── docs/             this folder
 ```
 
 ## 4. Multi-tenancy & security (the due-diligence spine)

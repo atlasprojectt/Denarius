@@ -45,8 +45,7 @@ If a change would require violating #1, **stop and flag it** — updating the PR
 | [docs/prd.md](docs/prd.md) | **Source of truth**: stories, decisions P1–P15, scope, build order |
 | [docs/architecture.md](docs/architecture.md) | System shape, data flow, tenancy, data model |
 | [docs/backend.md](docs/backend.md) | Module contracts, engine formulas, env vars |
-| [docs/frontend.md](docs/frontend.md) | Screens, tokens, patterns, F1–F6 |
-| [`prototype/`](prototype/) | **Visual contract** (`node prototype/server.js` → :5599) |
+| [docs/frontend.md](docs/frontend.md) | Screens, tokens, patterns, F1–F6 — **visual reference** now that the app screens exist |
 
 Never decide alone what a doc has already decided. Docs > memory > instinct.
 
@@ -62,7 +61,7 @@ Work = GitHub issues **#11–#23**, dependency-ordered. Don't start an issue who
 
 ### 6. Checklist — before implementing
 
-- [ ] Is there documentation for this? (docs/, prototype)
+- [ ] Is there documentation for this? (docs/)
 - [ ] Is it inside PRD scope? (the Out of Scope list is a contract)
 - [ ] Is there an existing pattern, component, or service to reuse?
 - [ ] Which issue does this belong to, and are its blockers closed?
@@ -151,7 +150,6 @@ After any meaningful decision, ask: **"does this need to enter the documentation
 | Product behavior / UX / scope | [docs/prd.md](docs/prd.md) (+ the layer doc) |
 | New backend contract or formula | [docs/backend.md](docs/backend.md) |
 | New frontend pattern or token | [docs/frontend.md](docs/frontend.md) |
-| Visual contract | `prototype/` (or flag the divergence) |
 
 ---
 
@@ -159,11 +157,10 @@ After any meaningful decision, ask: **"does this need to enter the documentation
 
 | What | Command |
 |---|---|
-| Prototype (visual contract) | `node prototype/server.js` → http://localhost:5599 |
-| App dev (after issue #12) | `npm run dev` |
+| App dev | `npm run dev` → http://localhost:3000 |
 | Tests | `npm test` · `npm run test:e2e` (Playwright) |
 | DB migration | new file in `supabase/migrations/` → auto-deploys on merge to `main` |
 
 - **`gh` auth quirk (this machine):** the GCM token lacks `read:org`, so `gh auth login` fails. Use:
   `export GH_TOKEN=$(printf 'protocol=https\nhost=github.com\n\n' | git credential fill | sed -n 's/^password=//p')`
-- **Current state (2026-07):** docs + prototype done; PRD hardened (P1–P15, F1–F6 locked). **Merged: #12 walking skeleton** (auth + tenant + RLS), **#13 roster CSV** (pure parser, atomic `roster_import` RPC), **#14 manual seats** (subscription CRUD, daily-accrual engine, Explore reconciliation), **#15 OpenAI connector** (UsageProvider seam + fake behind `ALLOW_FAKE_PROVIDER`, AES-256-GCM key storage, immediate sync, uncosted models, USD display pending FX in #18). Migrations #12–#14 applied on Supabase manually via SQL editor; **#15's `*_providers.sql` needs the same manual apply**. Next: #16 (Anthropic connector) or #17 (cron + attribution). Real Admin keys (#11) still pending (needs org Owner) — the fake provider covers the demo path meanwhile. `VERCEL_TOKEN` available in `.env.local`; Vercel project not linked yet. CodeRabbit is seatless (Free plan) — PRs get a local 8-angle review instead.
+- **Current state (2026-07):** docs done; PRD hardened (P1–P15, F1–F6 locked). The static `prototype/` (its job done once the real screens shipped) was **removed** — docs/frontend.md §4 holds the tokens and the running app is the visual reference. **Merged: #12 walking skeleton** (auth + tenant + RLS), **#13 roster CSV** (pure parser, atomic `roster_import` RPC), **#14 manual seats** (subscription CRUD, daily-accrual engine, Explore reconciliation), **#15 OpenAI connector** (UsageProvider seam + fake behind `ALLOW_FAKE_PROVIDER`, AES-256-GCM key storage, immediate sync, uncosted models, USD display pending FX in #18). Migrations #12–#15 applied on Supabase manually via SQL editor. Next: #16 (Anthropic connector) or #17 (cron + attribution). Real Admin keys (#11) still pending (needs org Owner) — the fake provider covers the demo path meanwhile. **Deployed to Vercel prod** (project `denarius`); prod env has the Supabase + `CREDENTIAL_ENCRYPTION_KEY` vars but deliberately **not** `ALLOW_FAKE_PROVIDER`. CodeRabbit is seatless (Free plan) — PRs get a local 8-angle review instead.
