@@ -97,6 +97,14 @@ export const anthropicKeySchema = z.object({
     }),
 });
 
+// Project/workspace → team mapping (issue #17). One row per provider project
+// id; teamId null means "unmap" → the project falls back to Unattributed.
+export const projectMapEntrySchema = z.object({
+  provider: z.enum(["openai", "anthropic"]),
+  projectId: z.string().trim().min(1).max(200),
+  teamId: z.uuid("Escolha um time válido.").nullable(),
+});
+
 export const employeeUpdateSchema = z.object({
   employeeId: z.uuid("funcionário inválido"),
   name: z

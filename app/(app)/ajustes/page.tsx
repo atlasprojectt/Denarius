@@ -26,6 +26,10 @@ const copy = {
   staticConnections: [
     { name: "GitHub Copilot", status: "Planejado para a v1.5" },
   ],
+  attributionTitle: "Atribuição",
+  attributionSub:
+    "Mapeie projetos e workspaces dos provedores para os times. O que não for mapeado cai em Não atribuído.",
+  attributionCta: "Gerenciar atribuição",
   rosterTitle: "Roster",
   rosterEmpty: "Nenhum funcionário importado ainda.",
   rosterCount: (people: number, teams: number) =>
@@ -131,6 +135,23 @@ export default async function SettingsPage() {
             </li>
           ))}
         </ul>
+      </section>
+
+      <section className="rounded-xl border bg-card p-6 shadow-sm">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <h2 className="font-semibold">{copy.attributionTitle}</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {copy.attributionSub}
+            </p>
+          </div>
+          <Link
+            href="/ajustes/atribuicao"
+            className="rounded-md border px-3 py-1.5 text-sm font-medium hover:bg-muted whitespace-nowrap"
+          >
+            {copy.attributionCta}
+          </Link>
+        </div>
       </section>
 
       <section className="rounded-xl border bg-card p-6 shadow-sm">
