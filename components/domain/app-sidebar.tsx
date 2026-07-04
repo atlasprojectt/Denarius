@@ -88,22 +88,20 @@ export function AppSidebar({ userEmail }: { userEmail: string }) {
     <TooltipProvider delayDuration={0}>
       <Sidebar collapsible="icon">
       <SidebarHeader>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              size="lg"
-              asChild
-              className="group-data-[collapsible=icon]:justify-center"
-            >
-              <Link href="/" aria-label={copy.brand}>
-                {/* Expanded: the full wordmark (coin accent + letters). */}
-                <LogoWordmark className="h-6 w-auto pl-1 group-data-[collapsible=icon]:hidden" />
-                {/* Collapsed: just the coin, in the brand accent. */}
-                <LogoMark className="hidden size-6 shrink-0 text-primary group-data-[collapsible=icon]:block" />
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+        {/* Plain Link, NOT SidebarMenuButton: the button variant forces
+            [&_svg]:size-4 on every descendant svg, which would crush the wide
+            wordmark (2041×408 viewBox) into a 16px box. SidebarHeader itself
+            has no svg sizing rule, so the logo keeps its aspect ratio here. */}
+        <Link
+          href="/"
+          aria-label={copy.brand}
+          className="flex h-10 items-center rounded-md px-2 transition-colors hover:bg-sidebar-accent group-data-[collapsible=icon]:h-8 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
+        >
+          {/* Expanded: the full wordmark (coin accent + letters). */}
+          <LogoWordmark className="h-6 w-auto group-data-[collapsible=icon]:hidden" />
+          {/* Collapsed: just the coin, in the brand accent. */}
+          <LogoMark className="hidden size-6 shrink-0 text-primary group-data-[collapsible=icon]:block" />
+        </Link>
       </SidebarHeader>
 
       <SidebarContent>
