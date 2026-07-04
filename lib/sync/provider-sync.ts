@@ -6,10 +6,13 @@ import { deriveCost, type ModelPrice } from "@/lib/engine/derive";
 import { monthToDateRange } from "@/lib/engine/period";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-// On-demand sync for ONE tenant's OpenAI connection (connect button / rotate /
-// sync-now). The daily cross-tenant cron arrives with issue #17 and reuses
-// this per-tenant unit. Upserts are idempotent by the natural keys, so a
-// re-sync never duplicates a bucket.
+// On-demand sync for ONE tenant's connection to ONE provider (connect button /
+// rotate / sync-now). Provider-agnostic: everything specific lives behind the
+// UsageProvider seam. The daily cross-tenant cron arrives with issue #17 and
+// reuses this per-tenant unit. Upserts are idempotent by the natural keys, so
+// a re-sync never duplicates a bucket.
+
+export type ProviderName = "openai" | "anthropic";
 
 export type SyncResult =
   | { ok: true; usageRows: number; costRows: number; monthUsd: number }
@@ -29,18 +32,21 @@ type PriceRow = {
   effective_date: string;
 };
 
-export async function runOpenAISync(tenantId: string): Promise<SyncResult> {
+export async function runProviderSync(
+  tenantId: string,
+  providerName: ProviderName,
+): Promise<SyncResult> {
   const admin = createAdminClient();
 
   const { data: connectionData } = await admin
     .from("provider_connection")
     .select("id, encrypted_credential, status")
     .eq("tenant_id", tenantId)
-    .eq("provider", "openai")
+    .eq("provider", providerName)
     .maybeSingle();
   const connection = connectionData as ConnectionRow | null;
   if (!connection || connection.status === "revoked" || !connection.encrypted_credential) {
-    return { ok: false, error: "no active OpenAI connection" };
+    return { ok: false, error: `no active ${providerName} connection` };
   }
 
   const markError = async (message: string): Promise<SyncResult> => {
@@ -57,7 +63,7 @@ export async function runOpenAISync(tenantId: string): Promise<SyncResult> {
 
   try {
     const provider = providerFor(
-      "openai",
+      providerName,
       decryptCredential(connection.encrypted_credential),
     );
     const range = monthToDateRange();
@@ -82,13 +88,13 @@ export async function runOpenAISync(tenantId: string): Promise<SyncResult> {
 
     const usageRows = usage.map((bucket) => {
       const derived = deriveCost(
-        { provider: "openai", model: bucket.model, date: bucket.date, inputTokens: bucket.inputTokens, outputTokens: bucket.outputTokens },
+        { provider: providerName, model: bucket.model, date: bucket.date, inputTokens: bucket.inputTokens, outputTokens: bucket.outputTokens },
         prices,
       );
       return {
         tenant_id: tenantId,
         date: bucket.date,
-        provider: "openai",
+        provider: providerName,
         project_id: bucket.projectId,
         api_key_id: bucket.apiKeyId,
         user_id: bucket.userId,
@@ -104,12 +110,12 @@ export async function runOpenAISync(tenantId: string): Promise<SyncResult> {
     const costRows = costs.map((bucket) => ({
       tenant_id: tenantId,
       date: bucket.date,
-      provider: "openai",
+      provider: providerName,
       project_id: bucket.projectId,
       line_item: bucket.lineItem,
       amount: bucket.amount,
       currency: bucket.currency,
-      synced_at: new Date().toISOString(),
+      synced_at: syncedAt,
     }));
 
     // Independent tables — the two upserts run in parallel.
