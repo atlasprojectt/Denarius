@@ -3,12 +3,23 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  CaretUpDownIcon,
   ChartLineUpIcon,
   GearSixIcon,
   HouseIcon,
   SignOutIcon,
 } from "@phosphor-icons/react";
 
+import { LogoMark, LogoWordmark } from "@/components/domain/logo";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Sidebar,
   SidebarContent,
@@ -23,7 +34,6 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { LogoMark, LogoWordmark } from "@/components/domain/logo";
 import { logout } from "@/lib/auth/actions";
 
 const copy = {
@@ -33,6 +43,8 @@ const copy = {
   home: "Início",
   explore: "Explorar",
   settings: "Ajustes",
+  profileMenu: "Perfil",
+  profileSettings: "Configurações",
   logout: "Sair",
 };
 
@@ -41,7 +53,9 @@ const cockpitItems = [
   { title: copy.explore, href: "/explorar", icon: ChartLineUpIcon },
 ];
 
-const accountItems = [{ title: copy.settings, href: "/ajustes", icon: GearSixIcon }];
+const accountItems = [
+  { title: copy.settings, href: "/ajustes", icon: GearSixIcon },
+];
 
 type NavItem = (typeof cockpitItems)[number];
 
@@ -79,51 +93,100 @@ function NavGroup({
   );
 }
 
-export function AppSidebar({ userEmail }: { userEmail: string }) {
+export function AppSidebar({
+  userEmail,
+  userInitials,
+  userLabel,
+}: {
+  userEmail: string;
+  userInitials: string;
+  userLabel: string;
+}) {
   const pathname = usePathname();
 
   return (
-    // This shadcn sidebar version doesn't ship a TooltipProvider inside
-    // SidebarProvider; SidebarMenuButton's tooltip requires one.
     <TooltipProvider delayDuration={0}>
       <Sidebar collapsible="icon">
-      <SidebarHeader>
-        {/* Plain Link, NOT SidebarMenuButton: the button variant forces
-            [&_svg]:size-4 on every descendant svg, which would crush the wide
-            wordmark (2041×408 viewBox) into a 16px box. SidebarHeader itself
-            has no svg sizing rule, so the logo keeps its aspect ratio here. */}
-        <Link
-          href="/"
-          aria-label={copy.brand}
-          className="flex h-10 items-center rounded-md px-2 transition-colors hover:bg-sidebar-accent group-data-[collapsible=icon]:h-8 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
-        >
-          {/* Expanded: the full wordmark (coin accent + letters). */}
-          <LogoWordmark className="h-6 w-auto group-data-[collapsible=icon]:hidden" />
-          {/* Collapsed: just the coin, in the brand accent. */}
-          <LogoMark className="hidden size-6 shrink-0 text-[#FF5100] group-data-[collapsible=icon]:block" />
-        </Link>
-      </SidebarHeader>
+        <SidebarHeader>
+          <Link
+            href="/"
+            aria-label={copy.brand}
+            className="flex h-10 items-center rounded-md px-2 transition-colors hover:bg-sidebar-accent group-data-[collapsible=icon]:h-8 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
+          >
+            <LogoWordmark className="h-6 w-auto group-data-[collapsible=icon]:hidden" />
+            <LogoMark className="hidden size-6 shrink-0 text-[#FF5100] group-data-[collapsible=icon]:block" />
+          </Link>
+        </SidebarHeader>
 
-      <SidebarContent>
-        <NavGroup label={copy.groupCockpit} items={cockpitItems} pathname={pathname} />
-        <NavGroup label={copy.groupAccount} items={accountItems} pathname={pathname} />
-      </SidebarContent>
+        <SidebarContent>
+          <NavGroup
+            label={copy.groupCockpit}
+            items={cockpitItems}
+            pathname={pathname}
+          />
+          <NavGroup
+            label={copy.groupAccount}
+            items={accountItems}
+            pathname={pathname}
+          />
+        </SidebarContent>
 
-      <SidebarFooter>
-        <div className="truncate px-2 text-xs text-sidebar-foreground/60 group-data-[collapsible=icon]:hidden">
-          {userEmail}
-        </div>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <form action={logout}>
-              <SidebarMenuButton type="submit" tooltip={copy.logout}>
-                <SignOutIcon />
-                <span>{copy.logout}</span>
-              </SidebarMenuButton>
-            </form>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarFooter>
+        <SidebarFooter>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <SidebarMenuButton
+                    className="h-12"
+                    tooltip={copy.profileMenu}
+                  >
+                    <Avatar size="sm" className="size-6">
+                      <AvatarFallback className="bg-sidebar-accent text-[10px] font-semibold text-sidebar-accent-foreground">
+                        {userInitials}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="flex min-w-0 flex-1 flex-col">
+                      <span className="truncate font-medium">{userLabel}</span>
+                      {userLabel !== userEmail && (
+                        <span className="truncate text-sidebar-foreground/60">
+                          {userEmail}
+                        </span>
+                      )}
+                    </span>
+                    <CaretUpDownIcon className="ml-auto text-sidebar-foreground/60 group-data-[collapsible=icon]:hidden" />
+                  </SidebarMenuButton>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  side="right"
+                  align="end"
+                  className="w-56 p-1"
+                >
+                  <DropdownMenuLabel className="flex flex-col gap-0.5">
+                    <span className="truncate font-medium text-foreground">
+                      {userLabel}
+                    </span>
+                    <span className="truncate">{userEmail}</span>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link href="/configuracoes">
+                      <GearSixIcon />
+                      <span>{copy.profileSettings}</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <form action={logout}>
+                    <DropdownMenuItem asChild variant="destructive">
+                      <button type="submit" className="w-full">
+                        <SignOutIcon />
+                        <span>{copy.logout}</span>
+                      </button>
+                    </DropdownMenuItem>
+                  </form>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarFooter>
 
         <SidebarRail />
       </Sidebar>

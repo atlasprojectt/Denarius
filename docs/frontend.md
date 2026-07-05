@@ -19,7 +19,7 @@
 |---|---|
 | **Início (Home)** | The cockpit. Verdict → hero (spend vs budget + pacing pair + projected-margin callout) → "Precisa de atenção" (at-risk teams, rich rows) → "Sob controle (N)" collapsed → Observações (apontamentos) → provider composition |
 | **Explorar** | Investigation. Root: by-team table (incl. **Não atribuído**) + by-model; drill → team detail (pace chart, contributors) with breadcrumb. **#17 shipped:** API-by-team table (USD), stale banner + reconciliation notice, and the Admin-only per-person drill at `/explorar/time/[teamId]` (shared keys / Anthropic roll up to the team, never a person). The pace chart lands with budgets (#18). |
-| **Ajustes** | Connections (OpenAI/Anthropic/Copilot-soon), **atribuição (mapa projeto/workspace → time, #17)**, **orçamentos (org + por time, #18)**, roster CSV, manual seats, users/roles, privacy toggles, currency |
+| **Ajustes** | Hub for company and operational setup: company name, read-only display currency, Connections (OpenAI/Anthropic/Copilot-soon), **atribuição (mapa projeto/workspace → time, #17)**, **orçamentos (org + por time, #18)**, roster CSV, manual seats, users/roles, privacy toggles, currency |
 
 Budget editing is **inline** (pencil on rows / hero) → modal. The **simulator is a right-side drawer** opened in context ([Simular] on warnings/teams) — never a nav destination. **#18 shipped** the minimal budget CRUD as a settings page (`/ajustes/orcamentos`, org + per-team `<form>`s, Σ-mismatch informational notice, frozen-FX disclosure). **#19 shipped** the Home cockpit and the inline pencil→modal (`BudgetEditDialog`, a `Dialog` reusing `upsertBudget`); the [Simular] control opens the right-side drawer showing the team's real pacing, with the interactive what-if presets/slider deferred to #21.
 
@@ -55,6 +55,8 @@ Budget editing is **inline** (pencil on rows / hero) → modal. The **simulator 
 
 **Light + dark** (supersedes the earlier "light only" of P9 for this provisional front — a founder-directed change). The theme is the `.dark` class on `<html>`, toggled by `components/domain/theme-toggle.tsx` (no dependency; reads/writes `localStorage.theme` and is applied pre-paint by a no-FOUC inline script in `app/layout.tsx`, defaulting to the OS preference). Desktop-first; consumption screens legible at mobile width. Copy: pt-BR, sentence case, observation language for apontamentos, alarm language reserved for warnings.
 
+**Personal settings:** `/configuracoes` is a real authenticated route, but it is accessed from the profile pop-up in the sidebar footer rather than the main nav. It lets the signed-in user edit their own display name, shows email/role as read-only, renders a profile avatar from initials (no file upload/storage in this slice), and reuses the existing local `ThemeToggle`. Company settings stay in **Ajustes**: Admins can edit the tenant name there, while display currency remains read-only to avoid dishonest FX/budget reinterpretation.
+
 **Brand logo** (`components/domain/logo.tsx`): the wordmark is used **extensively** (auth, onboarding, brand panel, sidebar) and is two-tone — the coin is the brand accent (`var(--primary)`), the letters inherit `currentColor` so they theme with the container. In the sidebar it **collapses to the coin mark alone** when the rail is in icon mode.
 
 ## 5. Interaction patterns
@@ -86,7 +88,7 @@ All F-decisions are locked. When implementation contradicts this table, flag it 
 
 shadcn blocks are **starting scaffolding**, adapted into the F5 structure — the block is not the final structure.
 
-- **Sidebar — base `sidebar-07`** ("collapses to icons"). On top of it, compose our two nav groups with `SidebarGroup`: **Cockpit** (Início, Explorar) and **Conta** (Ajustes). Ships as `components/domain/AppSidebar`. Restyle toward the design tokens (dark rail, tenant identity in the header, "as of <date> / FX" in the footer). `variant="inset"` is a later aesthetic opt-in, not now. (Chosen over `sidebar-08` because all blocks share the same `Sidebar`/`SidebarGroup` primitives — starting from the cleaner base and composing our own groups beats inheriting 08's secondary-nav rendering.)
+- **Sidebar — base `sidebar-07`** ("collapses to icons"). On top of it, compose our two nav groups with `SidebarGroup`: **Cockpit** (Início, Explorar) and **Conta** (Ajustes). Ships as `components/domain/AppSidebar`. The footer is a profile pop-up: the trigger shows initials + name/email when expanded and opens **Configurações** (`/configuracoes`) plus **Sair**. `variant="inset"` is a later aesthetic opt-in, not now. (Chosen over `sidebar-08` because all blocks share the same `Sidebar`/`SidebarGroup` primitives — starting from the cleaner base and composing our own groups beats inheriting 08's secondary-nav rendering.)
 - **Auth — matched pair `login-02` + `signup-02`** (two-column, form + cover image — a premium branded first impression, à la Mercury/Ramp). Live in `app/(auth)/login` and `app/(auth)/signup`. Adaptations (no block ships these):
   - Both: a **Google** button wired to Supabase Auth (email/password + Google).
   - Signup: a **company name** field → the submit server action creates the `tenant`.

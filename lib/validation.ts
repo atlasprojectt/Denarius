@@ -27,6 +27,22 @@ export const onboardingSchema = z.object({
     .max(80, "Nome da empresa muito longo (máximo 80 caracteres)."),
 });
 
+export const profileNameSchema = z.object({
+  displayName: z
+    .string()
+    .trim()
+    .min(2, "Informe seu nome (mínimo 2 caracteres).")
+    .max(80, "Nome muito longo (máximo 80 caracteres)."),
+});
+
+export const companySettingsSchema = z.object({
+  companyName: z
+    .string()
+    .trim()
+    .min(2, "Informe o nome da empresa (mínimo 2 caracteres).")
+    .max(80, "Nome da empresa muito longo (máximo 80 caracteres)."),
+});
+
 export const rosterRowSchema = z.object({
   name: z
     .string()

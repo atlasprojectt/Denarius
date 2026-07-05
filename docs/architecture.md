@@ -81,7 +81,7 @@
 
 See the full table in [prd.md → Data & security](prd.md). Entities: `tenant`, `user`, `employee`, `team` (+ implicit Unattributed), `provider_connection`, `subscription` (daily accrual), `usage_daily`, `cost_daily`, `budget` (thresholds + frozen FX), `model_price` (append-only), `finding`, `notification_log`.
 
-Implementation note: the conceptual `user` entity is the **`app_user`** table (`user` is reserved in Postgres; `auth.users` belongs to Supabase Auth). The Unattributed bucket is a `team` row flagged `is_unattributed` (internal name, UI renders its label from the flag).
+Implementation note: the conceptual `user` entity is the **`app_user`** table (`user` is reserved in Postgres; `auth.users` belongs to Supabase Auth). `app_user.display_name` is presentation-only profile metadata for the Denarius UI; authentication email remains owned by Supabase Auth. The Unattributed bucket is a `team` row flagged `is_unattributed` (internal name, UI renders its label from the flag).
 
 ## 7. Currency & FX
 
