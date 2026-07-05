@@ -6,3 +6,12 @@ export function utcStamp(iso: string): string {
     new Date(iso).toLocaleString("pt-BR", { timeZone: "UTC" }) + " UTC"
   );
 }
+
+/** A fraction (0.9) as a whole-number percent ("90%"). Pair with tabular-nums. */
+export function percent(fraction: number, fractionDigits = 0): string {
+  return new Intl.NumberFormat("pt-BR", {
+    style: "percent",
+    minimumFractionDigits: fractionDigits,
+    maximumFractionDigits: fractionDigits,
+  }).format(fraction);
+}

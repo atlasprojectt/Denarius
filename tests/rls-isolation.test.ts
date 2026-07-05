@@ -68,6 +68,14 @@ if (ready && !projectMapReady) {
   );
 }
 
+const budgetReady = ready && (await tableApplied("budget"));
+if (ready && !budgetReady) {
+  console.warn(
+    "\n[rls-isolation] budget table not found — apply " +
+      "supabase/migrations/*_budgets.sql to cover it here too.\n",
+  );
+}
+
 const TABLES = [
   "tenant",
   "app_user",
@@ -77,6 +85,7 @@ const TABLES = [
     ? (["provider_connection", "usage_daily", "cost_daily"] as const)
     : []),
   ...(projectMapReady ? (["project_map"] as const) : []),
+  ...(budgetReady ? (["budget"] as const) : []),
 ];
 
 type Seeded = {
@@ -180,6 +189,18 @@ describe.skipIf(!ready)("RLS tenant isolation", () => {
         team_id: team.id,
       });
       if (mapError) throw mapError;
+    }
+
+    if (budgetReady) {
+      const { error: budgetError } = await admin.from("budget").insert({
+        tenant_id: tenant.id,
+        scope: "team",
+        team_id: team.id,
+        period_month: "2026-07-01",
+        amount: 1000,
+        currency: "BRL",
+      });
+      if (budgetError) throw budgetError;
     }
 
     return {
@@ -324,6 +345,25 @@ describe.skipIf(!ready)("RLS tenant isolation", () => {
           model: "gpt-4o",
         });
       expect(usageWriteDenied).not.toBeNull();
+    },
+  );
+
+  it.skipIf(!budgetReady)(
+    "budget rows are tenant-isolated (issue #18) and direct writes denied",
+    async () => {
+      const clientA = await signedInClient(a);
+
+      const { data } = await clientA.from("budget").select("tenant_id, amount");
+      expect(data?.length).toBeGreaterThan(0);
+      expect(data?.every((r) => r.tenant_id === a.tenantId)).toBe(true);
+
+      const { error } = await clientA.from("budget").insert({
+        tenant_id: a.tenantId,
+        scope: "org",
+        period_month: "2026-07-01",
+        amount: 999,
+      });
+      expect(error).not.toBeNull();
     },
   );
 
