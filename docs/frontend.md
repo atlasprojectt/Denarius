@@ -47,7 +47,7 @@ Budget editing is **inline** (pencil on rows / hero) → modal. The **simulator 
 | Surfaces (light) | page `#f7f7f8` · card `#fff` · ink `#17181c` · muted `#6b6f76` — **neutral grayscale, no blue/slate cast** |
 | Surfaces (dark) | page `#0c0c0d` · card `#161618` · ink `#e9e9ea` · muted `#9b9ca0` — neutral charcoal |
 | Sidebar rail | **light in light mode** (off-white `#f4f4f5`, ink `#3f4046`), dark neutral charcoal in dark mode (`#0a0a0b`) — the earlier navy tint (`#0c1322`) that read as purple was removed |
-| Radii | card 14px · controls 9px |
+| Radii | **standardized scale** — cards/panels `rounded-xl` (14px) · inner rows/boxes `rounded-lg` (10px) · controls & menus `rounded-md` (8px) · pills/avatars `rounded-full`. The shadcn primitives (button, input, dropdown, tooltip, sidebar, skeleton) were aligned from their `rounded-none` (square) default to `rounded-md` so controls match the rounded card language; only the tooltip arrow stays square (it's a pointer). |
 | Type | system sans stack; numbers **tabular-nums**; two weights (400/650-740) |
 | Shadows | subtle (`0 1px 2px…`); drawer/modal stronger |
 
