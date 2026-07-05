@@ -1,17 +1,18 @@
 import { redirect } from "next/navigation";
 
 import { AppSidebar } from "@/components/domain/app-sidebar";
-import { ThemeToggle } from "@/components/domain/theme-toggle";
 import { Separator } from "@/components/ui/separator";
 import {
   SidebarInset,
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
+import { profileInitials, profileLabel } from "@/lib/settings/account";
 import { createClient } from "@/lib/supabase/server";
 
 type AppUserRow = {
   email: string;
+  display_name: string | null;
   tenant: { name: string } | null;
 };
 
@@ -28,7 +29,7 @@ export default async function AppLayout({
 
   const { data } = await supabase
     .from("app_user")
-    .select("email, tenant:tenant_id(name)")
+    .select("email, display_name, tenant:tenant_id(name)")
     .eq("id", user.id)
     .maybeSingle();
   const appUser = data as AppUserRow | null;
@@ -38,13 +39,22 @@ export default async function AppLayout({
 
   return (
     <SidebarProvider>
-      <AppSidebar userEmail={appUser.email} />
+      <AppSidebar
+        userEmail={appUser.email}
+        userInitials={profileInitials({
+          displayName: appUser.display_name,
+          email: appUser.email,
+        })}
+        userLabel={profileLabel({
+          displayName: appUser.display_name,
+          email: appUser.email,
+        })}
+      />
       <SidebarInset>
         <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4">
           <SidebarTrigger className="-ml-1" />
           <Separator orientation="vertical" className="mr-2 h-4" />
           <span className="text-sm font-medium">{appUser.tenant?.name}</span>
-          <ThemeToggle className="ml-auto" />
         </header>
         <main className="flex-1 p-6">{children}</main>
       </SidebarInset>

@@ -2,17 +2,22 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { monthStartUtc } from "@/lib/engine/period";
+import { canEditCompanySettings } from "@/lib/settings/account";
 import { createClient } from "@/lib/supabase/server";
+import { CompanyForm } from "./_components/company-form";
 
 const copy = {
   title: "Ajustes",
-  subtitle: "Conexões, identidade e privacidade",
+  subtitle: "Empresa, conexões e governança operacional.",
   companyTitle: "Empresa",
-  companyName: "Nome",
+  companySub:
+    "Identidade da empresa usada no topo do app e nas superfícies de governança.",
   companyCurrency: "Moeda de exibição",
+  currencyNote:
+    "A moeda fica travada nesta versão para preservar orçamentos e câmbio congelado já existentes.",
   connectionsTitle: "Conexões",
   connectionsSub:
-    "Chaves admin somente-leitura, criptografadas — o Denarius nunca altera nada nos provedores.",
+    "Chaves admin somente-leitura, criptografadas. O Denarius nunca altera nada nos provedores.",
   connectionsCta: "Gerenciar conexões",
   providerNames: { openai: "OpenAI", anthropic: "Anthropic" } as Record<
     string,
@@ -39,27 +44,33 @@ const copy = {
   seatsTitle: "Assinaturas e assentos",
   seatsEmpty: "Nenhuma assinatura registrada ainda.",
   seatsCount: (subs: number) =>
-    `${subs} assinatura(s) — custo distribuído dia a dia no período.`,
+    `${subs} assinatura(s). Custo distribuído dia a dia no período.`,
   seatsCta: "Gerenciar assinaturas",
   budgetsTitle: "Orçamentos",
   budgetsSet: (org: boolean, teams: number) =>
     org
       ? `Orçamento da empresa definido${teams > 0 ? ` e ${teams} time(s)` : ""}.`
       : teams > 0
-        ? `${teams} time(s) com orçamento — falta o da empresa.`
-        : "Nenhum orçamento definido ainda — sem orçamento não há veredito.",
+        ? `${teams} time(s) com orçamento. Falta o da empresa.`
+        : "Nenhum orçamento definido ainda. Sem orçamento não há veredito.",
   budgetsCta: "Gerenciar orçamentos",
   privacyTitle: "Privacidade",
   privacyBody:
-    "Nomes visíveis somente para Admin e minimização de dados por pessoa chegam na issue #23. Prompts e respostas nunca são armazenados — somente metadados de uso.",
+    "Nomes visíveis somente para Admin e minimização de dados por pessoa chegam na issue #23. Prompts e respostas nunca são armazenados; somente metadados de uso.",
 };
 
 type TenantRow = { name: string; display_currency: string };
+type AppUserRow = { role: string };
 
 export default async function SettingsPage() {
   const supabase = await createClient();
   const period = monthStartUtc();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   const [
+    { data: userData },
     { data },
     { count: employeeCount },
     { count: teamCount },
@@ -67,6 +78,9 @@ export default async function SettingsPage() {
     { data: connectionData },
     { data: budgetData },
   ] = await Promise.all([
+    user
+      ? supabase.from("app_user").select("role").eq("id", user.id).maybeSingle()
+      : Promise.resolve({ data: null }),
     supabase.from("tenant").select("name, display_currency").maybeSingle(),
     supabase.from("employee").select("id", { count: "exact", head: true }),
     supabase
@@ -77,11 +91,14 @@ export default async function SettingsPage() {
     supabase.from("provider_connection").select("provider, status"),
     supabase.from("budget").select("scope").eq("period_month", period),
   ]);
+  const tenant = data as TenantRow | null;
+  if (!tenant) redirect("/onboarding");
+
+  const appUser = userData as AppUserRow | null;
+  const isAdmin = canEditCompanySettings(appUser?.role ?? "viewer");
   const budgets = (budgetData ?? []) as { scope: string }[];
   const hasOrgBudget = budgets.some((b) => b.scope === "org");
   const teamBudgetCount = budgets.filter((b) => b.scope === "team").length;
-  const tenant = data as TenantRow | null;
-  if (!tenant) redirect("/onboarding");
   const connections = (connectionData ?? []) as {
     provider: string;
     status: string;
@@ -97,17 +114,22 @@ export default async function SettingsPage() {
       </div>
 
       <section className="rounded-xl border bg-card p-6 shadow-sm">
-        <h2 className="font-semibold">{copy.companyTitle}</h2>
-        <dl className="mt-4 grid gap-3 text-sm">
-          <div className="flex items-center justify-between border-b pb-3">
-            <dt className="text-muted-foreground">{copy.companyName}</dt>
-            <dd className="font-medium">{tenant.name}</dd>
-          </div>
-          <div className="flex items-center justify-between">
-            <dt className="text-muted-foreground">{copy.companyCurrency}</dt>
-            <dd className="font-medium">{tenant.display_currency}</dd>
-          </div>
-        </dl>
+        <div>
+          <h2 className="font-semibold">{copy.companyTitle}</h2>
+          <p className="mt-1 text-sm text-muted-foreground">{copy.companySub}</p>
+        </div>
+
+        <div className="mt-4">
+          <CompanyForm companyName={tenant.name} isAdmin={isAdmin} />
+        </div>
+
+        <div className="mt-4 rounded-lg border p-3 text-sm">
+          <p className="text-muted-foreground">{copy.companyCurrency}</p>
+          <p className="mt-1 font-medium tabular-nums">
+            {tenant.display_currency}
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">{copy.currencyNote}</p>
+        </div>
       </section>
 
       <section className="rounded-xl border bg-card p-6 shadow-sm">
@@ -120,7 +142,7 @@ export default async function SettingsPage() {
           </div>
           <Link
             href="/ajustes/conexoes"
-            className="rounded-md border px-3 py-1.5 text-sm font-medium hover:bg-muted whitespace-nowrap"
+            className="whitespace-nowrap rounded-md border px-3 py-1.5 text-sm font-medium hover:bg-muted"
           >
             {copy.connectionsCta}
           </Link>
@@ -162,7 +184,7 @@ export default async function SettingsPage() {
           </div>
           <Link
             href="/ajustes/atribuicao"
-            className="rounded-md border px-3 py-1.5 text-sm font-medium hover:bg-muted whitespace-nowrap"
+            className="whitespace-nowrap rounded-md border px-3 py-1.5 text-sm font-medium hover:bg-muted"
           >
             {copy.attributionCta}
           </Link>
@@ -200,7 +222,7 @@ export default async function SettingsPage() {
           </div>
           <Link
             href="/ajustes/assinaturas"
-            className="rounded-md border px-3 py-1.5 text-sm font-medium hover:bg-muted whitespace-nowrap"
+            className="whitespace-nowrap rounded-md border px-3 py-1.5 text-sm font-medium hover:bg-muted"
           >
             {copy.seatsCta}
           </Link>
@@ -217,7 +239,7 @@ export default async function SettingsPage() {
           </div>
           <Link
             href="/ajustes/orcamentos"
-            className="rounded-md border px-3 py-1.5 text-sm font-medium hover:bg-muted whitespace-nowrap"
+            className="whitespace-nowrap rounded-md border px-3 py-1.5 text-sm font-medium hover:bg-muted"
           >
             {copy.budgetsCta}
           </Link>

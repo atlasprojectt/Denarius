@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 
 import { LogoWordmark } from "@/components/domain/logo";
-import { ThemeToggle } from "@/components/domain/theme-toggle";
 import { createClient } from "@/lib/supabase/server";
 
 import { OnboardingForm } from "./_components/onboarding-form";
@@ -29,7 +28,6 @@ export default async function OnboardingPage() {
 
   return (
     <div className="relative flex min-h-svh flex-col items-center justify-center gap-8 p-6">
-      <ThemeToggle className="absolute top-6 right-6" />
       <LogoWordmark className="h-7 w-auto" />
       <div className="w-full max-w-sm">
         <OnboardingForm defaultCompanyName={defaultCompanyName} />
