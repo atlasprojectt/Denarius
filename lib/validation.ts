@@ -105,6 +105,34 @@ export const projectMapEntrySchema = z.object({
   teamId: z.uuid("Escolha um time válido.").nullable(),
 });
 
+// Budgets (issue #18). Amount is in the tenant display currency; the warning
+// threshold is a whole percent (100% + projected-to-breach are implicit). The
+// server action normalizes an empty team select to null before parsing and
+// enforces the scope↔team pairing (org ⇒ no team, team ⇒ a team).
+export const budgetSchema = z
+  .object({
+    scope: z.enum(["org", "team"]),
+    teamId: z.uuid("Escolha um time válido.").nullable(),
+    amount: z.coerce
+      .number()
+      .positive("O valor do orçamento deve ser maior que zero.")
+      .max(1_000_000_000, "Valor muito alto."),
+    warnPct: z.coerce
+      .number()
+      .int("O aviso deve ser um número inteiro.")
+      .min(50, "O aviso deve ser de pelo menos 50%.")
+      .max(99, "O aviso deve ser abaixo de 100%.")
+      .default(80),
+  })
+  .refine(
+    (data) => (data.scope === "team" ? data.teamId !== null : data.teamId === null),
+    { message: "Selecione o time deste orçamento.", path: ["teamId"] },
+  );
+
+export const budgetDeleteSchema = z.object({
+  budgetId: z.uuid("Orçamento inválido."),
+});
+
 export const employeeUpdateSchema = z.object({
   employeeId: z.uuid("funcionário inválido"),
   name: z

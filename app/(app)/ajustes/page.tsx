@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { monthStartUtc } from "@/lib/engine/period";
 import { createClient } from "@/lib/supabase/server";
 
 const copy = {
@@ -40,6 +41,14 @@ const copy = {
   seatsCount: (subs: number) =>
     `${subs} assinatura(s) — custo distribuído dia a dia no período.`,
   seatsCta: "Gerenciar assinaturas",
+  budgetsTitle: "Orçamentos",
+  budgetsSet: (org: boolean, teams: number) =>
+    org
+      ? `Orçamento da empresa definido${teams > 0 ? ` e ${teams} time(s)` : ""}.`
+      : teams > 0
+        ? `${teams} time(s) com orçamento — falta o da empresa.`
+        : "Nenhum orçamento definido ainda — sem orçamento não há veredito.",
+  budgetsCta: "Gerenciar orçamentos",
   privacyTitle: "Privacidade",
   privacyBody:
     "Nomes visíveis somente para Admin e minimização de dados por pessoa chegam na issue #23. Prompts e respostas nunca são armazenados — somente metadados de uso.",
@@ -49,12 +58,14 @@ type TenantRow = { name: string; display_currency: string };
 
 export default async function SettingsPage() {
   const supabase = await createClient();
+  const period = monthStartUtc();
   const [
     { data },
     { count: employeeCount },
     { count: teamCount },
     { count: subscriptionCount },
     { data: connectionData },
+    { data: budgetData },
   ] = await Promise.all([
     supabase.from("tenant").select("name, display_currency").maybeSingle(),
     supabase.from("employee").select("id", { count: "exact", head: true }),
@@ -64,7 +75,11 @@ export default async function SettingsPage() {
       .eq("is_unattributed", false),
     supabase.from("subscription").select("id", { count: "exact", head: true }),
     supabase.from("provider_connection").select("provider, status"),
+    supabase.from("budget").select("scope").eq("period_month", period),
   ]);
+  const budgets = (budgetData ?? []) as { scope: string }[];
+  const hasOrgBudget = budgets.some((b) => b.scope === "org");
+  const teamBudgetCount = budgets.filter((b) => b.scope === "team").length;
   const tenant = data as TenantRow | null;
   if (!tenant) redirect("/onboarding");
   const connections = (connectionData ?? []) as {
@@ -188,6 +203,23 @@ export default async function SettingsPage() {
             className="rounded-md border px-3 py-1.5 text-sm font-medium hover:bg-muted whitespace-nowrap"
           >
             {copy.seatsCta}
+          </Link>
+        </div>
+      </section>
+
+      <section className="rounded-xl border bg-card p-6 shadow-sm">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <h2 className="font-semibold">{copy.budgetsTitle}</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {copy.budgetsSet(hasOrgBudget, teamBudgetCount)}
+            </p>
+          </div>
+          <Link
+            href="/ajustes/orcamentos"
+            className="rounded-md border px-3 py-1.5 text-sm font-medium hover:bg-muted whitespace-nowrap"
+          >
+            {copy.budgetsCta}
           </Link>
         </div>
       </section>

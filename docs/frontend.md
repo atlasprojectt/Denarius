@@ -19,9 +19,9 @@
 |---|---|
 | **Início (Home)** | The cockpit. Verdict → hero (spend vs budget + pacing pair + projected-margin callout) → "Precisa de atenção" (at-risk teams, rich rows) → "Sob controle (N)" collapsed → Observações (apontamentos) → provider composition |
 | **Explorar** | Investigation. Root: by-team table (incl. **Não atribuído**) + by-model; drill → team detail (pace chart, contributors) with breadcrumb. **#17 shipped:** API-by-team table (USD), stale banner + reconciliation notice, and the Admin-only per-person drill at `/explorar/time/[teamId]` (shared keys / Anthropic roll up to the team, never a person). The pace chart lands with budgets (#18). |
-| **Ajustes** | Connections (OpenAI/Anthropic/Copilot-soon), **atribuição (mapa projeto/workspace → time, #17)**, roster CSV, manual seats, users/roles, privacy toggles, currency |
+| **Ajustes** | Connections (OpenAI/Anthropic/Copilot-soon), **atribuição (mapa projeto/workspace → time, #17)**, **orçamentos (org + por time, #18)**, roster CSV, manual seats, users/roles, privacy toggles, currency |
 
-Budget editing is **inline** (pencil on rows / hero) → modal. The **simulator is a right-side drawer** opened in context ([Simular] on warnings/teams) — never a nav destination.
+Budget editing is **inline** (pencil on rows / hero) → modal. The **simulator is a right-side drawer** opened in context ([Simular] on warnings/teams) — never a nav destination. **#18 shipped** the minimal budget CRUD as a settings page (`/ajustes/orcamentos`, org + per-team `<form>`s, Σ-mismatch informational notice, frozen-FX disclosure); the inline pencil→modal on the Home rows/hero arrives with the cockpit in #19.
 
 ## 3. Home component contracts
 
