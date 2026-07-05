@@ -21,7 +21,7 @@
 | **Explorar** | Investigation. Root: by-team table (incl. **Não atribuído**) + by-model; drill → team detail (pace chart, contributors) with breadcrumb. **#17 shipped:** API-by-team table (USD), stale banner + reconciliation notice, and the Admin-only per-person drill at `/explorar/time/[teamId]` (shared keys / Anthropic roll up to the team, never a person). The pace chart lands with budgets (#18). |
 | **Ajustes** | Connections (OpenAI/Anthropic/Copilot-soon), **atribuição (mapa projeto/workspace → time, #17)**, **orçamentos (org + por time, #18)**, roster CSV, manual seats, users/roles, privacy toggles, currency |
 
-Budget editing is **inline** (pencil on rows / hero) → modal. The **simulator is a right-side drawer** opened in context ([Simular] on warnings/teams) — never a nav destination. **#18 shipped** the minimal budget CRUD as a settings page (`/ajustes/orcamentos`, org + per-team `<form>`s, Σ-mismatch informational notice, frozen-FX disclosure); the inline pencil→modal on the Home rows/hero arrives with the cockpit in #19.
+Budget editing is **inline** (pencil on rows / hero) → modal. The **simulator is a right-side drawer** opened in context ([Simular] on warnings/teams) — never a nav destination. **#18 shipped** the minimal budget CRUD as a settings page (`/ajustes/orcamentos`, org + per-team `<form>`s, Σ-mismatch informational notice, frozen-FX disclosure). **#19 shipped** the Home cockpit and the inline pencil→modal (`BudgetEditDialog`, a `Dialog` reusing `upsertBudget`); the [Simular] control opens the right-side drawer showing the team's real pacing, with the interactive what-if presets/slider deferred to #21.
 
 ## 3. Home component contracts
 
@@ -35,6 +35,8 @@ Budget editing is **inline** (pencil on rows / hero) → modal. The **simulator 
 8. **Para onde vai o dinheiro**: ranked provider bar list (no donut) + "tokens no drill-down".
 
 **States that must exist:** cold-start (no data/budget → CTA hero, never empty), collecting-pace (before day 5), **all-clear** ("✓ Tudo sob controle · próximo digest sexta"), stale-data, breached.
+
+**#19 implementation:** the page is a Server Component reading `getHomeData()` (`lib/home/queries.ts`), which gathers raw spend parts under RLS and hands them to the pure engine `buildCockpit()` (`lib/engine/cockpit.ts`) — all arithmetic, the seats+API frozen-FX combine, the verdict, the per-team findings, and the needs-attention/under-control partition live there, not in the components (architecture §9). The org spend headline uses provider-**reported** cost (`cost_daily`, the USD source of truth); per-team spend uses **derived** cost (`usage_daily`, the only grain with team attribution). Provider composition converts each provider's reported USD at the org frozen FX and adds the seat slice; when FX is missing the API cost is dropped from the list and disclosed as unconverted (never mixed currencies). New cross-screen domain components: `VerdictLine`, `StatusPill`, `BudgetBar` (fill + dashed run-rate ghost + budget marker, geometry in the pure `lib/bars.ts`).
 
 ## 4. Design tokens (implemented in `app/globals.css`)
 
