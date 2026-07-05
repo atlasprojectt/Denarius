@@ -136,64 +136,69 @@
    app/layout.tsx. These blocks come after the shadcn base above, so they win.
 --------------------------------------------------------------------------- */
 :root {
-  --background: #f7f8fa;
-  --foreground: #0b1220;
+  /* Neutral, warm-leaning grayscale — no blue/slate cast (was #0b1220 navy
+     ink + #64748b slate; both read cool/purple against the orange accent). */
+  --background: #f7f7f8;
+  --foreground: #17181c;
   --card: #ffffff;
-  --card-foreground: #0b1220;
+  --card-foreground: #17181c;
   --popover: #ffffff;
-  --popover-foreground: #0b1220;
+  --popover-foreground: #17181c;
 
   --primary: #ff5100;
   --primary-foreground: #ffffff;
-  --secondary: #eef0f3;
-  --secondary-foreground: #0b1220;
-  --muted: #eef0f3;
-  --muted-foreground: #64748b;
-  --accent: #eef0f3;
-  --accent-foreground: #0b1220;
+  --secondary: #f1f1f2;
+  --secondary-foreground: #17181c;
+  --muted: #f1f1f2;
+  --muted-foreground: #6b6f76;
+  --accent: #f1f1f2;
+  --accent-foreground: #17181c;
 
-  --border: #e5e7eb;
-  --input: #e5e7eb;
+  --border: #e6e6e8;
+  --input: #e6e6e8;
   --ring: #ff5100;
 
-  --sidebar: #0c1322;
-  --sidebar-foreground: #aeb9cc;
+  /* Light sidebar in light mode: a neutral off-white rail (slightly darker
+     than the page for a soft separation), dark ink, orange accent. No navy. */
+  --sidebar: #f4f4f5;
+  --sidebar-foreground: #3f4046;
   --sidebar-primary: #ff5100;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #161f33;
-  --sidebar-accent-foreground: #dbe2ee;
-  --sidebar-border: #19223a;
+  --sidebar-accent: #e8e8ea;
+  --sidebar-accent-foreground: #17181c;
+  --sidebar-border: #e4e4e7;
   --sidebar-ring: #ff5100;
 }
 
 .dark {
-  --background: #0b0c0f;
-  --foreground: #e7e9ee;
-  --card: #15161a;
-  --card-foreground: #e7e9ee;
-  --popover: #15161a;
-  --popover-foreground: #e7e9ee;
+  /* Neutral charcoal, matching the light theme — no blue/slate cast. */
+  --background: #0c0c0d;
+  --foreground: #e9e9ea;
+  --card: #161618;
+  --card-foreground: #e9e9ea;
+  --popover: #161618;
+  --popover-foreground: #e9e9ea;
 
   --primary: #ff5100;
   --primary-foreground: #ffffff;
-  --secondary: #1e2027;
-  --secondary-foreground: #e7e9ee;
-  --muted: #1e2027;
-  --muted-foreground: #9aa1ac;
-  --accent: #1e2027;
-  --accent-foreground: #e7e9ee;
+  --secondary: #1f1f22;
+  --secondary-foreground: #e9e9ea;
+  --muted: #1f1f22;
+  --muted-foreground: #9b9ca0;
+  --accent: #1f1f22;
+  --accent-foreground: #e9e9ea;
 
   --destructive: #ef4444;
-  --border: #26282f;
-  --input: #26282f;
+  --border: #27282c;
+  --input: #27282c;
   --ring: #ff5100;
 
-  --sidebar: #0a0b0e;
-  --sidebar-foreground: #aeb9cc;
+  --sidebar: #0a0a0b;
+  --sidebar-foreground: #b6b7bb;
   --sidebar-primary: #ff5100;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #16171c;
-  --sidebar-accent-foreground: #dbe2ee;
-  --sidebar-border: #1e2027;
+  --sidebar-accent: #1a1a1d;
+  --sidebar-accent-foreground: #f3f3f4;
+  --sidebar-border: #1f1f22;
   --sidebar-ring: #ff5100;
 }
