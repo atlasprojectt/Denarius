@@ -105,8 +105,9 @@ function pctProjectedOf(evaluation: BudgetEvaluation): number | null {
     : null;
 }
 
-/** Evaluate one scope: combine seats + API (frozen FX) then measure vs budget. */
-function evaluateScope(
+/** Evaluate one scope: combine seats + API (frozen FX) then measure vs budget.
+ *  Exported so the notification path (#20) evaluates the same way the home does. */
+export function evaluateScope(
   scope: ScopeSpend,
   period: PeriodProgress,
 ): { evaluation: BudgetEvaluation; unconvertedUsd: number } {

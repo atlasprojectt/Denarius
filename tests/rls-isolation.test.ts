@@ -76,6 +76,14 @@ if (ready && !budgetReady) {
   );
 }
 
+const notificationLogReady = ready && (await tableApplied("notification_log"));
+if (ready && !notificationLogReady) {
+  console.warn(
+    "\n[rls-isolation] notification_log table not found — apply " +
+      "supabase/migrations/*_notifications.sql to cover it here too.\n",
+  );
+}
+
 const TABLES = [
   "tenant",
   "app_user",
@@ -86,6 +94,7 @@ const TABLES = [
     : []),
   ...(projectMapReady ? (["project_map"] as const) : []),
   ...(budgetReady ? (["budget"] as const) : []),
+  ...(notificationLogReady ? (["notification_log"] as const) : []),
 ];
 
 type Seeded = {
@@ -201,6 +210,19 @@ describe.skipIf(!ready)("RLS tenant isolation", () => {
         currency: "BRL",
       });
       if (budgetError) throw budgetError;
+    }
+
+    if (notificationLogReady) {
+      const { error: logInsertError } = await admin
+        .from("notification_log")
+        .insert({
+          tenant_id: tenant.id,
+          channel: "email",
+          target_id: "org",
+          level: "warning",
+          period_month: "2026-07-01",
+        });
+      if (logInsertError) throw logInsertError;
     }
 
     return {
@@ -364,6 +386,29 @@ describe.skipIf(!ready)("RLS tenant isolation", () => {
         amount: 999,
       });
       expect(error).not.toBeNull();
+    },
+  );
+
+  it.skipIf(!notificationLogReady)(
+    "notification_log is system state: invisible even to the OWN tenant's admin (issue #20)",
+    async () => {
+      const clientA = await signedInClient(a);
+
+      // No select policy at all — a browser session reads nothing, not even
+      // its own tenant's rows (PRD P11: never user-facing).
+      const { data } = await clientA.from("notification_log").select("*");
+      expect(data ?? []).toEqual([]);
+
+      const { error: writeDenied } = await clientA
+        .from("notification_log")
+        .insert({
+          tenant_id: a.tenantId,
+          channel: "email",
+          target_id: "org",
+          level: "breach",
+          period_month: "2026-07-01",
+        });
+      expect(writeDenied).not.toBeNull();
     },
   );
 

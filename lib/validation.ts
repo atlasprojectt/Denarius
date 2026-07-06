@@ -43,6 +43,11 @@ export const companySettingsSchema = z.object({
     .max(80, "Nome da empresa muito longo (máximo 80 caracteres)."),
 });
 
+export const digestPreferenceSchema = z.object({
+  // A checkbox posts "on" or nothing; the action coerces to boolean first.
+  receiveDigest: z.boolean(),
+});
+
 export const rosterRowSchema = z.object({
   name: z
     .string()

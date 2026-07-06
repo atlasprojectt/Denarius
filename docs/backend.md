@@ -75,11 +75,13 @@ interface NotificationChannel { send(msg: RenderedNotification): Promise<void>; 
 
 - **Event alert:** on threshold crossing, **once per (team, level, period)** via `notification_log` (`finding_key = team+level+period`); only escalation to a higher level re-fires; resets next period.
 - **Weekly digest:** to Admins (default on, opt-out): total, change, top drivers, budget status, margin, projection. Deep-links land on Home (mobile-legible).
+- **Implemented in #20:** the channel seam is `lib/notify/channel.ts` — `NotificationChannel { send(RenderedNotification) }` with `ResendChannel` (raw `fetch` + injectable `fetchFn`, no SDK; `emailChannel()` returns null when `RESEND_API_KEY` is unset so delivery is skipped **without** recording the dedup log) and a second fake implementation in tests. `notification_log` (migration `20260706120000_notifications.sql`) keys the dedup on `(tenant, channel, target_id, level, period_month)` — `target_id` is `'org'` or the team uuid — with RLS enabled and **no policies** (system state, invisible to every browser session; service role only). Alert flow: the daily sync cron, after syncing, evaluates **every tenant with a budget this period** (seats-only tenants included) via `lib/notify/snapshot.ts` (service-role sibling of the home read path; all math in the pure engine — `evaluateScope` is exported from `lib/engine/cockpit.ts` for this) → `planAlert()` (`lib/notify/plan.ts`, pure: one email per scope per run carrying the **most severe** newly-crossed level, ALL newly-crossed levels logged so none re-fires) → `renderAlertEmail()` (`lib/notify/render.ts`, pure pt-BR, engine-formatted figures, catalog-only control plan, deep link via `APP_BASE_URL`) → send to Admins → upsert log (`ignoreDuplicates`; log only **after** a successful send, so an undelivered alert retries next run). Digest flow: weekly cron `app/api/cron/digest/route.ts` (`0 11 * * 5`, same `CRON_SECRET` guard) → `sendWeeklyDigest()` per org-budgeted tenant → recipients = Admins minus `app_user.digest_opt_out` (toggle in `/configuracoes`, own-row server action). Alerts have no opt-out (early-warning channel).
 
 ## 7. Narration (`lib/narrate/`) — issues #18, #20
 
 - Haiku 4.5, provider-agnostic client, swappable via env/config.
 - **Guardrail (hard):** every figure is computed by the engine and **injected** into the prompt/template; the LLM phrases, never computes or invents actions (actions come from the catalog). Tests assert output contains no non-injected numbers. LLM mocked in CI.
+- **Implemented in #20:** `lib/narrate/client.ts` — `Narrator { narrate({system, prompt}) }`; `anthropicNarrator()` calls the Messages API by raw `fetch` (injectable `fetchFn`, mocked in tests), model from `NARRATION_MODEL` (default `claude-haiku-4-5`), and resolves **null on any failure** (missing key, HTTP error, refusal) — callers fall back to the deterministic template. `lib/narrate/digest.ts` (pure) assembles `DigestFacts` from engine outputs, renders `digestTemplate()` (the fallback AND the narration's canvas — the prompt asks the LLM to *rephrase* it, never to compute), and enforces the guardrail with `narrationIsSafe(candidate, injectedStrings(facts))`: every digit sequence in the LLM output must appear among the injected formatted strings, else the template ships instead — strict enough to reject re-rounded figures ("R$ 12 mil" for R$ 12.000,00). Week-over-week change is the pure `weekOverWeek()` in `lib/engine/week-change.ts` (USD ratio, no FX needed; null pct against a zero week — no guessed ratios; delta stays neutral per principle #5).
 
 ## 8. Auth & RBAC — issues #12, #23
 
@@ -95,7 +97,10 @@ interface NotificationChannel { send(msg: RenderedNotification): Promise<void>; 
 | `SUPABASE_SERVICE_ROLE_KEY` | server-only (cron crosses tenants) |
 | `CREDENTIAL_ENCRYPTION_KEY` | server-only (provider keys at rest) |
 | `ANTHROPIC_API_KEY` (narration) · `RESEND_API_KEY` | server-only |
-| `CRON_SECRET` | protects the cron route |
+| `CRON_SECRET` | protects the cron routes (daily sync + weekly digest) |
+| `NARRATION_MODEL` | optional; narration model override (default `claude-haiku-4-5`) |
+| `NOTIFY_FROM_EMAIL` | optional; email sender (default Resend onboarding sender) |
+| `APP_BASE_URL` | optional; deep-link base in emails (default the prod URL) |
 
 ## 10. Error handling & data quality
 

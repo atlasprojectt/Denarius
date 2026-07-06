@@ -5,7 +5,11 @@ import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth/session";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
-import { companySettingsSchema, profileNameSchema } from "@/lib/validation";
+import {
+  companySettingsSchema,
+  digestPreferenceSchema,
+  profileNameSchema,
+} from "@/lib/validation";
 
 export type SettingsFormState = { error?: string; success?: string };
 
@@ -46,6 +50,36 @@ export async function updateProfileName(
 
   revalidateAccountSurfaces();
   return { success: "Perfil salvo." };
+}
+
+/** Weekly-digest opt-out (issue #20) — each user controls their own row. */
+export async function updateDigestPreference(
+  _prev: SettingsFormState,
+  formData: FormData,
+): Promise<SettingsFormState> {
+  const parsed = digestPreferenceSchema.safeParse({
+    receiveDigest: formData.get("receiveDigest") === "on",
+  });
+  if (!parsed.success) return { error: firstIssue(parsed.error) };
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Sessão expirada — faça login novamente." };
+
+  const admin = createAdminClient();
+  const { error, count } = await admin
+    .from("app_user")
+    .update({ digest_opt_out: !parsed.data.receiveDigest }, { count: "exact" })
+    .eq("id", user.id);
+
+  if (error || count !== 1) {
+    return { error: "Não foi possível salvar a preferência. Tente novamente." };
+  }
+
+  revalidateAccountSurfaces();
+  return { success: "Preferência salva." };
 }
 
 export async function updateCompanyName(

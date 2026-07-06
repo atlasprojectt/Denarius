@@ -4,6 +4,7 @@ import { ThemeToggle } from "@/components/domain/theme-toggle";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { profileInitials, profileLabel } from "@/lib/settings/account";
 import { createClient } from "@/lib/supabase/server";
+import { DigestForm } from "./_components/digest-form";
 import { ProfileForm } from "./_components/profile-form";
 
 const copy = {
@@ -22,12 +23,16 @@ const copy = {
   appearanceSub:
     "Claro ou escuro fica salvo neste navegador. Não altera dados da empresa.",
   theme: "Tema",
+  notificationsTitle: "Notificações",
+  notificationsSub:
+    "O resumo semanal chega por e-mail às sextas, com os números do período.",
 };
 
 type AccountRow = {
   email: string;
   role: string;
   display_name: string | null;
+  digest_opt_out: boolean;
   tenant: { id: string } | null;
 };
 
@@ -40,7 +45,7 @@ export default async function PersonalSettingsPage() {
 
   const { data } = await supabase
     .from("app_user")
-    .select("email, role, display_name, tenant:tenant_id(id)")
+    .select("email, role, display_name, digest_opt_out, tenant:tenant_id(id)")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -95,6 +100,20 @@ export default async function PersonalSettingsPage() {
           </div>
         </div>
       </section>
+
+      {account.role === "admin" && (
+        <section className="rounded-xl border bg-card p-6 shadow-sm">
+          <div className="flex flex-col gap-4">
+            <div>
+              <h2 className="font-semibold">{copy.notificationsTitle}</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {copy.notificationsSub}
+              </p>
+            </div>
+            <DigestForm receiveDigest={!account.digest_opt_out} />
+          </div>
+        </section>
+      )}
 
       <section className="rounded-xl border bg-card p-6 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-4">

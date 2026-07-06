@@ -2,6 +2,9 @@ import "server-only";
 
 import { NextResponse } from "next/server";
 
+import { monthStartUtc } from "@/lib/engine/period";
+import { sendBudgetAlerts } from "@/lib/notify/alerts";
+import { emailChannel } from "@/lib/notify/channel";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { runProviderSync, type ProviderName } from "@/lib/sync/provider-sync";
 
@@ -9,7 +12,9 @@ import { runProviderSync, type ProviderName } from "@/lib/sync/provider-sync";
 // cross-tenant path (architecture §5.1). Vercel Cron hits this route on the
 // schedule in vercel.json and sends `Authorization: Bearer $CRON_SECRET`; the
 // route runs each tenant's per-provider sync (idempotent upserts, last-sync +
-// error recorded on provider_connection). Never returns secrets or payloads.
+// error recorded on provider_connection), then evaluates event alerts (#20)
+// for every tenant with a budget this period — including seats-only tenants
+// that have no provider connection. Never returns secrets or payloads.
 
 export const dynamic = "force-dynamic";
 // Vercel Hobby caps function duration at 60s. MVP volume (1–3 tenants, a couple
@@ -50,10 +55,30 @@ export async function GET(request: Request) {
     else failed += 1;
   }
 
+  // Event alerts run on budgets, not connections: a threshold can be crossed
+  // by seat accrual alone, so every tenant budgeted this period is checked.
+  const { data: budgetData } = await admin
+    .from("budget")
+    .select("tenant_id")
+    .eq("period_month", monthStartUtc());
+  const budgetTenants = [
+    ...new Set(((budgetData ?? []) as { tenant_id: string }[]).map((b) => b.tenant_id)),
+  ];
+
+  const channel = emailChannel();
+  const alerts = { tenants: budgetTenants.length, sent: 0, failed: 0, undeliverable: 0 };
+  for (const tenantId of budgetTenants) {
+    const result = await sendBudgetAlerts(tenantId, channel);
+    alerts.sent += result.sent;
+    alerts.failed += result.failed;
+    alerts.undeliverable += result.undeliverable;
+  }
+
   return NextResponse.json({
     ran: connections.length,
     synced,
     failed,
+    alerts,
     at: new Date().toISOString(),
   });
 }
