@@ -18,7 +18,7 @@ import { homeCopy } from "./_components/copy";
 // No arithmetic here; buildCockpit already did it (architecture §9).
 
 export default async function HomePage() {
-  const { cockpit, period, stale, apontamentos, seatWaste } = await getHomeData();
+  const { cockpit, period, stale, observations, hasSeatWaste } = await getHomeData();
 
   if (cockpit.state === "cold-start") {
     return (
@@ -106,7 +106,7 @@ export default async function HomePage() {
 
       <UnderControl teams={underControlTeams} currency={currency} />
 
-      <ObservationsFooter items={apontamentos} seatWaste={seatWaste} />
+      <ObservationsFooter items={observations} hasSeatWaste={hasSeatWaste} />
 
       <ProviderComposition entries={cockpit.composition} currency={currency} />
     </div>

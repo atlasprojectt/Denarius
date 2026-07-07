@@ -39,6 +39,12 @@ export type SeatWasteInput = {
   totalPeople: number;
 };
 
+/** Round to whole cents so the sort key and any downstream sum reconcile to
+ *  the cent — the same discipline attributeSeats() uses (invariant #3). */
+function roundCents(value: number): number {
+  return Math.round(value * 100) / 100;
+}
+
 /**
  * One finding per over-provisioned subscription, largest savings first,
  * capped at MAX_SEAT_WASTE. A team-bound subscription compares against that
@@ -59,7 +65,7 @@ export function buildSeatWaste(input: SeatWasteInput): SeatWasteFinding[] {
     const excess = sub.seatCount - people;
     if (excess <= 0) continue;
 
-    const savings = excess * sub.unitPrice;
+    const savings = roundCents(excess * sub.unitPrice);
     const formatted = money(savings, input.currency);
     findings.push({
       id: sub.id,

@@ -87,6 +87,19 @@ describe("denominators", () => {
   });
 });
 
+describe("honest numbers", () => {
+  it("rounds savings to whole cents (no floating-point noise in the sort key)", () => {
+    // 3 × 33.33 = 99.99000000000001 in float — must be exactly 99.99.
+    const out = buildSeatWaste(
+      base({
+        subscriptions: [sub({ seatCount: 13, unitPrice: 33.33 })],
+        totalPeople: 10,
+      }),
+    );
+    expect(out[0].monthlySavings).toBe(99.99);
+  });
+});
+
 describe("secondary discipline", () => {
   it("orders by savings and caps at MAX_SEAT_WASTE", () => {
     const subscriptions = [

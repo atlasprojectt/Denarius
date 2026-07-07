@@ -7,14 +7,8 @@ import { freshness, type ConnectionStatus } from "@/lib/engine/freshness";
 import { currentPeriod, monthStartUtc } from "@/lib/engine/period";
 import { combineTeamSpend } from "@/lib/engine/team-spend";
 import { isoDaysAgo, weekOverWeek } from "@/lib/engine/week-change";
-import {
-  buildApontamentos,
-  type Apontamento,
-} from "@/lib/findings/apontamentos";
-import {
-  buildSeatWaste,
-  type SeatWasteFinding,
-} from "@/lib/findings/seats-vs-roster";
+import { buildApontamentos } from "@/lib/findings/apontamentos";
+import { buildSeatWaste } from "@/lib/findings/seats-vs-roster";
 import { listBudgets } from "@/lib/budgets/queries";
 import { listSubscriptions } from "@/lib/subscriptions/queries";
 import { listTeams } from "@/lib/teams/queries";
@@ -33,12 +27,16 @@ export type CockpitData = {
   stale: ReturnType<typeof freshness>;
 };
 
+/** One calm footer line — the ordering rule (apontamentos, then secondary
+ *  waste) is applied here in the data layer, not in the component. */
+export type Observation = { id: string; text: string };
+
 export type HomeData = CockpitData & {
-  /** Calm observations for the footer — in-app only, never emailed (P14). */
-  apontamentos: Apontamento[];
-  /** Secondary waste findings (#22) — rendered below the apontamentos in the
-   *  same calm footer, absent from every email path. */
-  seatWaste: SeatWasteFinding[];
+  /** The calm "Observações" feed — in-app only, never emailed (P14). Ordered:
+   *  apontamentos first, then the secondary seats-vs-roster waste (#22). */
+  observations: Observation[];
+  /** Whether the seats-vs-roster caveat note should show (any waste line). */
+  hasSeatWaste: boolean;
 };
 
 type ConnectionRow = {
@@ -104,19 +102,17 @@ async function teamWeekChanges(
   }));
 }
 
-/** Roster headcount — the honest denominator for the seats-vs-roster check. */
-async function rosterHeadcount(): Promise<{
-  byTeam: Map<string, number>;
-  total: number;
-}> {
+/** Roster headcount per team — the honest denominator for the seats-vs-roster
+ *  check. `employee.team_id` is NOT NULL, so the whole-roster total is exactly
+ *  Σ byTeam (derived at the call site — one source of truth). */
+async function rosterHeadcount(): Promise<Map<string, number>> {
   const supabase = await createClient();
   const { data } = await supabase.from("employee").select("team_id");
-  const rows = (data ?? []) as { team_id: string }[];
   const byTeam = new Map<string, number>();
-  for (const row of rows) {
+  for (const row of (data ?? []) as { team_id: string }[]) {
     byTeam.set(row.team_id, (byTeam.get(row.team_id) ?? 0) + 1);
   }
-  return { byTeam, total: rows.length };
+  return byTeam;
 }
 
 /** The cockpit plus the raw parts only the footer assemblies need. */
@@ -253,20 +249,27 @@ export async function getHomeData(): Promise<HomeData> {
     }),
   });
 
-  // Secondary waste (#22): seats paid vs roster people — below the
-  // apontamentos, never above a budget item, never emailed.
+  // Secondary waste (#22): seats paid vs roster people. Ordered AFTER the
+  // apontamentos into one feed — waste is secondary by design, and the
+  // "below" rule lives here, not in the JSX. Never above a budget item,
+  // never emailed. Ids are namespaced so React keys can't collide.
   const seatWaste = buildSeatWaste({
     currency: assembly.currency,
     subscriptions: assembly.subscriptions,
-    peopleByTeam: roster.byTeam,
-    totalPeople: roster.total,
+    peopleByTeam: roster,
+    totalPeople: [...roster.values()].reduce((sum, n) => sum + n, 0),
   });
+
+  const observations: Observation[] = [
+    ...apontamentos.map((a) => ({ id: `apontamento:${a.id}`, text: a.text })),
+    ...seatWaste.map((w) => ({ id: `seat:${w.id}`, text: w.text })),
+  ];
 
   return {
     cockpit,
     period: assembly.period,
     stale: assembly.stale,
-    apontamentos,
-    seatWaste,
+    observations,
+    hasSeatWaste: seatWaste.length > 0,
   };
 }
