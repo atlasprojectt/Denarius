@@ -89,5 +89,7 @@ export const homeCopy = {
   observations: {
     title: "Observações",
     subtitle: "Apontamentos do período — para pensar, não para alarmar.",
+    seatsNote:
+      "Comparação com o roster importado — a detecção real de assentos ociosos chega com o conector do Copilot (v1.5).",
   },
 } as const;

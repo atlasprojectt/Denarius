@@ -1,7 +1,7 @@
 import "server-only";
 
 import { attributeSeats } from "@/lib/engine/accrual";
-import type { PeriodProgress } from "@/lib/engine/accrual";
+import type { PeriodProgress, SeatSubscription } from "@/lib/engine/accrual";
 import { buildCockpit, type Cockpit } from "@/lib/engine/cockpit";
 import { freshness, type ConnectionStatus } from "@/lib/engine/freshness";
 import { currentPeriod, monthStartUtc } from "@/lib/engine/period";
@@ -11,6 +11,10 @@ import {
   buildApontamentos,
   type Apontamento,
 } from "@/lib/findings/apontamentos";
+import {
+  buildSeatWaste,
+  type SeatWasteFinding,
+} from "@/lib/findings/seats-vs-roster";
 import { listBudgets } from "@/lib/budgets/queries";
 import { listSubscriptions } from "@/lib/subscriptions/queries";
 import { listTeams } from "@/lib/teams/queries";
@@ -32,6 +36,9 @@ export type CockpitData = {
 export type HomeData = CockpitData & {
   /** Calm observations for the footer — in-app only, never emailed (P14). */
   apontamentos: Apontamento[];
+  /** Secondary waste findings (#22) — rendered below the apontamentos in the
+   *  same calm footer, absent from every email path. */
+  seatWaste: SeatWasteFinding[];
 };
 
 type ConnectionRow = {
@@ -97,11 +104,27 @@ async function teamWeekChanges(
   }));
 }
 
-/** The cockpit plus the raw parts only the apontamentos assembly needs. */
+/** Roster headcount — the honest denominator for the seats-vs-roster check. */
+async function rosterHeadcount(): Promise<{
+  byTeam: Map<string, number>;
+  total: number;
+}> {
+  const supabase = await createClient();
+  const { data } = await supabase.from("employee").select("team_id");
+  const rows = (data ?? []) as { team_id: string }[];
+  const byTeam = new Map<string, number>();
+  for (const row of rows) {
+    byTeam.set(row.team_id, (byTeam.get(row.team_id) ?? 0) + 1);
+  }
+  return { byTeam, total: rows.length };
+}
+
+/** The cockpit plus the raw parts only the footer assemblies need. */
 type CockpitAssembly = CockpitData & {
   currency: string;
   teams: { id: string; name: string }[];
   teamName: Map<string, string>;
+  subscriptions: SeatSubscription[];
   seatByTeam: Map<string, number>;
   apiByTeam: Map<string, number>;
   seatUnattributed: number;
@@ -175,6 +198,7 @@ async function assembleCockpit(): Promise<CockpitAssembly> {
     currency: budgets.currency,
     teams,
     teamName,
+    subscriptions,
     seatByTeam,
     apiByTeam,
     seatUnattributed: seats.unattributed,
@@ -193,10 +217,11 @@ export async function getCockpitData(): Promise<CockpitData> {
 
 export async function getHomeData(): Promise<HomeData> {
   const now = new Date();
-  // The week-change queries need nothing from the cockpit — run both in one go.
-  const [assembly, weekRows] = await Promise.all([
+  // Neither footer read needs anything from the cockpit — one parallel batch.
+  const [assembly, weekRows, roster] = await Promise.all([
     assembleCockpit(),
     teamWeekChanges(now),
+    rosterHeadcount(),
   ]);
   const { cockpit } = assembly;
 
@@ -228,10 +253,20 @@ export async function getHomeData(): Promise<HomeData> {
     }),
   });
 
+  // Secondary waste (#22): seats paid vs roster people — below the
+  // apontamentos, never above a budget item, never emailed.
+  const seatWaste = buildSeatWaste({
+    currency: assembly.currency,
+    subscriptions: assembly.subscriptions,
+    peopleByTeam: roster.byTeam,
+    totalPeople: roster.total,
+  });
+
   return {
     cockpit,
     period: assembly.period,
     stale: assembly.stale,
     apontamentos,
+    seatWaste,
   };
 }
