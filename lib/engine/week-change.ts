@@ -13,7 +13,9 @@ export type WeekChange = {
   pct: number | null;
 };
 
-function isoDaysAgo(now: Date, days: number): string {
+/** yyyy-mm-dd (UTC) `days` ago — exported so date windows never drift between
+ *  the digest, the snapshot and the home's acceleration rule. */
+export function isoDaysAgo(now: Date, days: number): string {
   return new Date(now.getTime() - days * 86_400_000).toISOString().slice(0, 10);
 }
 

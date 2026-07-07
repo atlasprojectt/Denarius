@@ -66,6 +66,28 @@ export const homeCopy = {
     spent: "Gasto até agora",
     projected: "Projeção de fechamento",
     budget: "Orçamento",
-    soon: "A simulação de cenários (fechar no orçamento, −30%, ritmo atual) chega em breve.",
+    lever: "Variação do ritmo do time até o fim do mês",
+    deltaZero: "ritmo atual",
+    deltaSlower: (pct: string) => `${pct} mais devagar`,
+    deltaFaster: (pct: string) => `${pct} mais rápido`,
+    presetCurrent: "Ritmo atual",
+    presetBreakEven: "Fechar no orçamento",
+    presetCut: "−30%",
+    breakEvenUnreachable:
+      "Nem parando este time a empresa fecha no orçamento — o ajuste passa por outros times.",
+    resultTitle: "Neste cenário",
+    teamCloses: "Time fecha em",
+    orgCloses: "Empresa fecha em",
+    marginUnder: (amount: string) => `Fecha ${amount} abaixo do orçamento da empresa.`,
+    marginOver: (amount: string) => `Fecha ${amount} acima do orçamento da empresa.`,
+    collecting:
+      "Coletando ritmo — a simulação usa a projeção de fechamento, disponível a partir do dia 5 do período.",
+    disclaimer:
+      "Estimativa linear sobre o ritmo atual — não é uma previsão. O Denarius aponta; a decisão é sua.",
+  },
+
+  observations: {
+    title: "Observações",
+    subtitle: "Apontamentos do período — para pensar, não para alarmar.",
   },
 } as const;

@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { SimulateDrawer } from "@/app/(app)/_components/simulate-drawer";
 import { requireAdmin } from "@/lib/auth/session";
 import { currentPeriod } from "@/lib/engine/period";
+import { getHomeData } from "@/lib/home/queries";
 import { money } from "@/lib/money";
 import { teamDetail } from "@/lib/usage/attribution";
 
@@ -51,19 +53,48 @@ export default async function TeamDetailPage({
     );
   }
 
-  const detail = await teamDetail(teamId);
+  const [detail, { cockpit }] = await Promise.all([
+    teamDetail(teamId),
+    getHomeData(),
+  ]);
   if (!detail.found) notFound();
 
   const period = currentPeriod();
 
+  // [Simular] in context (#21): pre-loaded with this team's budget evaluation.
+  // Only budgeted teams have a scenario to run against.
+  const cockpitTeam =
+    cockpit.state === "ready"
+      ? [...cockpit.needsAttention, ...cockpit.underControl].find(
+          (t) => t.teamId === teamId,
+        )
+      : undefined;
+
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
-      <div>
-        <Back />
-        <h1 className="mt-1 text-2xl font-semibold tracking-tight">
-          {detail.teamName}
-        </h1>
-        <p className="text-sm text-muted-foreground">{copy.personSub}</p>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <Back />
+          <h1 className="mt-1 text-2xl font-semibold tracking-tight">
+            {detail.teamName}
+          </h1>
+          <p className="text-sm text-muted-foreground">{copy.personSub}</p>
+        </div>
+        {cockpit.state === "ready" && cockpitTeam && (
+          <SimulateDrawer
+            teamName={cockpitTeam.teamName}
+            currency={cockpit.currency}
+            team={{
+              spent: cockpitTeam.evaluation.spent,
+              projection: cockpitTeam.evaluation.projection,
+              budget: cockpitTeam.evaluation.budget,
+            }}
+            org={{
+              projection: cockpit.org.projection,
+              budget: cockpit.org.budget,
+            }}
+          />
+        )}
       </div>
 
       <section className="rounded-xl border bg-card p-6 shadow-sm">

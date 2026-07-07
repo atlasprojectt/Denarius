@@ -36,6 +36,9 @@ export type TeamRowData = {
   warnPct: number;
   controlPlan: ControlAction[];
   currency: string;
+  /** Org aggregates the simulator recomputes against (#21). */
+  orgProjection: number | null;
+  orgBudget: number;
 };
 
 function warningLine(row: TeamRowData): string {
@@ -84,9 +87,9 @@ export function TeamRow({ row }: { row: TeamRowData }) {
         </Button>
         <SimulateDrawer
           teamName={row.teamName}
-          spent={money(row.spent, currency)}
-          projected={row.projection === null ? "—" : money(row.projection, currency)}
-          budget={money(row.budget, currency)}
+          currency={currency}
+          team={{ spent: row.spent, projection: row.projection, budget: row.budget }}
+          org={{ projection: row.orgProjection, budget: row.orgBudget }}
         />
         <BudgetEditDialog
           scope="team"

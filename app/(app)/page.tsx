@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { getHomeData } from "@/lib/home/queries";
 import { AllClear } from "./_components/all-clear";
 import { Hero } from "./_components/hero";
+import { ObservationsFooter } from "./_components/observations-footer";
 import { ProviderComposition } from "./_components/provider-composition";
 import { TeamRow, type TeamRowData } from "./_components/team-row";
 import { UnderControl, type UnderControlTeam } from "./_components/under-control";
@@ -17,7 +18,7 @@ import { homeCopy } from "./_components/copy";
 // No arithmetic here; buildCockpit already did it (architecture §9).
 
 export default async function HomePage() {
-  const { cockpit, period, stale } = await getHomeData();
+  const { cockpit, period, stale, apontamentos } = await getHomeData();
 
   if (cockpit.state === "cold-start") {
     return (
@@ -54,6 +55,8 @@ export default async function HomePage() {
     warnPct: t.warnPct,
     controlPlan: t.finding!.controlPlan,
     currency,
+    orgProjection: org.projection,
+    orgBudget: org.budget,
   }));
 
   const underControlTeams: UnderControlTeam[] = cockpit.underControl.map((t) => ({
@@ -102,6 +105,8 @@ export default async function HomePage() {
       )}
 
       <UnderControl teams={underControlTeams} currency={currency} />
+
+      <ObservationsFooter items={apontamentos} />
 
       <ProviderComposition entries={cockpit.composition} currency={currency} />
     </div>

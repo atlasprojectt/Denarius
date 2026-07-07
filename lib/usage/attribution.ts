@@ -49,8 +49,10 @@ export type ApiAttribution = {
   hasData: boolean;
 };
 
-function mapKey(provider: string, projectId: string): string {
-  // provider is a fixed enum with no spaces, so a space is a safe separator.
+/** The one project_map lookup key — provider is a fixed enum with no spaces,
+ *  so a space is a safe separator. Exported so every attribution consumer
+ *  (Explore, home apontamentos, notifications) keys the same way. */
+export function mapKey(provider: string, projectId: string): string {
   return `${provider} ${projectId}`;
 }
 

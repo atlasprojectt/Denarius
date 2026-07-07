@@ -9,7 +9,9 @@ import {
 } from "@/lib/engine/cockpit";
 import type { BudgetEvaluation } from "@/lib/engine/budget";
 import type { DriverInput } from "@/lib/engine/drivers";
+import { combineTeamSpend } from "@/lib/engine/team-spend";
 import { currentPeriod, monthStartUtc, type Period } from "@/lib/engine/period";
+import { isoDaysAgo } from "@/lib/engine/week-change";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 import type { NotifiableUser } from "./recipients";
@@ -74,10 +76,6 @@ type UsageRow = {
 type MapRow = { provider: string; project_id: string; team_id: string };
 type CostRow = { date: string; provider: string; amount: number };
 type UserRow = { email: string; role: string; digest_opt_out: boolean };
-
-function isoDaysAgo(now: Date, days: number): string {
-  return new Date(now.getTime() - days * 86_400_000).toISOString().slice(0, 10);
-}
 
 export async function tenantSnapshot(
   tenantId: string,
@@ -246,21 +244,22 @@ export async function tenantSnapshot(
     });
   }
 
-  // Org drivers: combined display spend per team. Only honest when the org FX
-  // rate exists — otherwise USD and the display currency can't be summed.
-  const teamSpendDrivers: DriverInput[] = [];
-  if (orgFx !== null) {
-    for (const t of teams) {
-      teamSpendDrivers.push({
-        label: t.name,
-        value: (seatByTeam.get(t.id) ?? 0) + (apiByTeam.get(t.id) ?? 0) * orgFx,
-      });
-    }
-    teamSpendDrivers.push({
-      label: UNATTRIBUTED_LABEL,
-      value: seats.unattributed + apiUnattributed * orgFx,
-    });
-  }
+  // Org drivers: combined display spend per team (shared engine helper —
+  // null when the FX rate is missing, so no dishonest mixed-currency sum).
+  const spendMix = combineTeamSpend({
+    teams,
+    seatByTeam,
+    apiUsdByTeam: apiByTeam,
+    seatUnattributed: seats.unattributed,
+    apiUnattributedUsd: apiUnattributed,
+    fxRate: orgFx,
+  });
+  const teamSpendDrivers: DriverInput[] = spendMix
+    ? [
+        ...spendMix.teamDrivers,
+        { label: UNATTRIBUTED_LABEL, value: spendMix.unattributed },
+      ]
+    : [];
 
   return {
     currency,
