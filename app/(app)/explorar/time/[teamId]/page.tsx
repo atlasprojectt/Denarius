@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { SimulateDrawer } from "@/app/(app)/_components/simulate-drawer";
+import { SimulateDrawer } from "@/components/domain/simulate-drawer";
 import { requireAdmin } from "@/lib/auth/session";
+import { findCockpitTeam } from "@/lib/engine/cockpit";
 import { currentPeriod } from "@/lib/engine/period";
-import { getHomeData } from "@/lib/home/queries";
+import { getCockpitData } from "@/lib/home/queries";
 import { money } from "@/lib/money";
 import { teamDetail } from "@/lib/usage/attribution";
 
@@ -55,7 +56,7 @@ export default async function TeamDetailPage({
 
   const [detail, { cockpit }] = await Promise.all([
     teamDetail(teamId),
-    getHomeData(),
+    getCockpitData(),
   ]);
   if (!detail.found) notFound();
 
@@ -64,11 +65,7 @@ export default async function TeamDetailPage({
   // [Simular] in context (#21): pre-loaded with this team's budget evaluation.
   // Only budgeted teams have a scenario to run against.
   const cockpitTeam =
-    cockpit.state === "ready"
-      ? [...cockpit.needsAttention, ...cockpit.underControl].find(
-          (t) => t.teamId === teamId,
-        )
-      : undefined;
+    cockpit.state === "ready" ? findCockpitTeam(cockpit, teamId) : undefined;
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">

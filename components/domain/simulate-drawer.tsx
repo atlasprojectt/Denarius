@@ -19,14 +19,39 @@ import {
 } from "@/lib/engine/scenario";
 import { money } from "@/lib/money";
 import { percent } from "@/lib/format";
-import { homeCopy } from "./copy";
 
 // The contextual scenario simulator (#21, PRD story 36): a right-side drawer
-// opened from a team row with that team pre-loaded. One lever — the team's
-// remaining pace — recomputed instantly on the client by the pure engine
-// (lib/engine/scenario.ts). No LLM, no round-trip; estimates, disclosed.
+// opened from a team with that team pre-loaded — used by the Home team rows
+// and Explore's team detail (domain component, frontend F5). One lever — the
+// team's remaining pace — recomputed instantly on the client by the pure
+// engine (lib/engine/scenario.ts). No LLM, no round-trip; estimates, disclosed.
 
-const c = homeCopy.simulate;
+const copy = {
+  title: "Simular",
+  subtitle: (team: string) => `Cenário para ${team}`,
+  currentPace: "Ritmo atual",
+  spent: "Gasto até agora",
+  projected: "Projeção de fechamento",
+  budget: "Orçamento",
+  lever: "Variação do ritmo do time até o fim do mês",
+  deltaZero: "ritmo atual",
+  deltaSlower: (pct: string) => `${pct} mais devagar`,
+  deltaFaster: (pct: string) => `${pct} mais rápido`,
+  presetCurrent: "Ritmo atual",
+  presetBreakEven: "Fechar no orçamento",
+  presetCut: "−30%",
+  breakEvenUnreachable:
+    "Nem parando este time a empresa fecha no orçamento — o ajuste passa por outros times.",
+  resultTitle: "Neste cenário",
+  teamCloses: "Time fecha em",
+  orgCloses: "Empresa fecha em",
+  marginUnder: (amount: string) => `Fecha ${amount} abaixo do orçamento da empresa.`,
+  marginOver: (amount: string) => `Fecha ${amount} acima do orçamento da empresa.`,
+  collecting:
+    "Coletando ritmo — a simulação usa a projeção de fechamento, disponível a partir do dia 5 do período.",
+  disclaimer:
+    "Estimativa linear sobre o ritmo atual — não é uma previsão. O Denarius aponta; a decisão é sua.",
+};
 
 const FIXED_CUT = -30; // the "−30%" preset, whole percent
 
@@ -39,8 +64,8 @@ export type SimulateDrawerProps = {
 
 function deltaLabel(deltaPct: number): string {
   const formatted = percent(Math.abs(deltaPct) / 100);
-  if (deltaPct === 0) return c.deltaZero;
-  return deltaPct < 0 ? c.deltaSlower(formatted) : c.deltaFaster(formatted);
+  if (deltaPct === 0) return copy.deltaZero;
+  return deltaPct < 0 ? copy.deltaSlower(formatted) : copy.deltaFaster(formatted);
 }
 
 export function SimulateDrawer(props: SimulateDrawerProps) {
@@ -51,29 +76,31 @@ export function SimulateDrawer(props: SimulateDrawerProps) {
   const collecting = team.projection === null || org.projection === null;
 
   return (
-    <Sheet>
+    // Every open starts a fresh scenario — a stale slider from a previous
+    // session could read as the current state.
+    <Sheet onOpenChange={(open) => open && setDeltaPct(0)}>
       <SheetTrigger asChild>
         <Button variant="outline" size="sm">
           <SlidersHorizontalIcon className="size-4" />
-          {c.title}
+          {copy.title}
         </Button>
       </SheetTrigger>
       <SheetContent className="w-full sm:max-w-md">
         <SheetHeader>
-          <SheetTitle>{c.title}</SheetTitle>
-          <SheetDescription>{c.subtitle(teamName)}</SheetDescription>
+          <SheetTitle>{copy.title}</SheetTitle>
+          <SheetDescription>{copy.subtitle(teamName)}</SheetDescription>
         </SheetHeader>
 
         {collecting ? (
           <div className="flex flex-col gap-3 p-4">
             <Facts
               rows={[
-                [c.spent, money(team.spent, currency)],
-                [c.budget, money(team.budget, currency)],
+                [copy.spent, money(team.spent, currency)],
+                [copy.budget, money(team.budget, currency)],
               ]}
             />
             <p className="rounded-lg bg-muted/50 p-3 text-xs text-muted-foreground">
-              {c.collecting}
+              {copy.collecting}
             </p>
           </div>
         ) : (
@@ -117,16 +144,16 @@ function Simulation({
     <div className="flex flex-col gap-5 p-4">
       <Facts
         rows={[
-          [c.spent, money(input.team.spent, currency)],
-          [c.projected, money(input.team.projection, currency)],
-          [c.budget, money(teamBudget, currency)],
+          [copy.spent, money(input.team.spent, currency)],
+          [copy.projected, money(input.team.projection, currency)],
+          [copy.budget, money(teamBudget, currency)],
         ]}
       />
 
       <div className="flex flex-col gap-2">
         <div className="flex items-baseline justify-between gap-2">
           <label htmlFor="pace-delta" className="text-sm font-medium">
-            {c.lever}
+            {copy.lever}
           </label>
           <span className="text-sm tabular-nums text-muted-foreground">
             {deltaLabel(deltaPct)}
@@ -144,7 +171,7 @@ function Simulation({
         />
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" size="sm" onClick={() => onDeltaChange(0)}>
-            {c.presetCurrent}
+            {copy.presetCurrent}
           </Button>
           <Button
             variant="outline"
@@ -152,34 +179,34 @@ function Simulation({
             disabled={breakEvenPct === null}
             onClick={() => breakEvenPct !== null && onDeltaChange(breakEvenPct)}
           >
-            {c.presetBreakEven}
+            {copy.presetBreakEven}
           </Button>
           <Button
             variant="outline"
             size="sm"
             onClick={() => onDeltaChange(FIXED_CUT)}
           >
-            {c.presetCut}
+            {copy.presetCut}
           </Button>
         </div>
         {breakEvenPct === null && (
-          <p className="text-xs text-muted-foreground">{c.breakEvenUnreachable}</p>
+          <p className="text-xs text-muted-foreground">{copy.breakEvenUnreachable}</p>
         )}
       </div>
 
       <div className="rounded-lg border p-3">
         <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-          {c.resultTitle}
+          {copy.resultTitle}
         </p>
         <dl className="mt-2 flex flex-col gap-2 text-sm">
           <div className="flex justify-between gap-4">
-            <dt className="text-muted-foreground">{c.teamCloses}</dt>
+            <dt className="text-muted-foreground">{copy.teamCloses}</dt>
             <dd className="tabular-nums font-medium">
               {money(result.teamClose, currency)}
             </dd>
           </div>
           <div className="flex justify-between gap-4">
-            <dt className="text-muted-foreground">{c.orgCloses}</dt>
+            <dt className="text-muted-foreground">{copy.orgCloses}</dt>
             <dd className="tabular-nums font-medium">
               {money(result.orgClose, currency)}
             </dd>
@@ -187,12 +214,12 @@ function Simulation({
         </dl>
         <p className="mt-3 text-sm">
           {result.withinBudget
-            ? c.marginUnder(money(result.orgMargin, currency))
-            : c.marginOver(money(-result.orgMargin, currency))}
+            ? copy.marginUnder(money(result.orgMargin, currency))
+            : copy.marginOver(money(-result.orgMargin, currency))}
         </p>
       </div>
 
-      <p className="text-xs text-muted-foreground">{c.disclaimer}</p>
+      <p className="text-xs text-muted-foreground">{copy.disclaimer}</p>
     </div>
   );
 }
@@ -201,7 +228,7 @@ function Facts({ rows }: { rows: [string, string][] }) {
   return (
     <div>
       <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-        {c.currentPace}
+        {copy.currentPace}
       </p>
       <dl className="mt-2 flex flex-col gap-2 text-sm">
         {rows.map(([label, value]) => (

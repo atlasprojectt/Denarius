@@ -157,6 +157,19 @@ function buildComposition(
     .sort((a, b) => b.amount - a.amount);
 }
 
+/** One team's entry regardless of partition — the cockpit owns how its teams
+ *  are bucketed, so callers never spread/merge the arrays themselves. */
+export function findCockpitTeam(
+  cockpit: Cockpit,
+  teamId: string,
+): CockpitTeam | undefined {
+  if (cockpit.state !== "ready") return undefined;
+  return (
+    cockpit.needsAttention.find((t) => t.teamId === teamId) ??
+    cockpit.underControl.find((t) => t.teamId === teamId)
+  );
+}
+
 /** Assembles the full Home cockpit from raw parts. Pure — the hero function. */
 export function buildCockpit(input: CockpitInput): Cockpit {
   if (input.org === null) return { state: "cold-start" };

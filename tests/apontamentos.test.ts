@@ -73,7 +73,7 @@ describe("acceleration rule (week-over-week)", () => {
     expect(out[0].text).toBe("Marketing acelerou 40% em relação à semana anterior.");
   });
 
-  it("orders multiple accelerations by size", () => {
+  it("groups multiple accelerations in descending size", () => {
     const out = buildApontamentos(
       base({
         weekByTeam: [
@@ -82,10 +82,11 @@ describe("acceleration rule (week-over-week)", () => {
         ],
       }),
     );
-    expect(out.map((a) => a.id)).toEqual([
-      "acceleration:Marketing",
-      "acceleration:Data",
-    ]);
+    expect(out).toHaveLength(1);
+    expect(out[0].id).toBe("acceleration");
+    expect(out[0].text).toBe(
+      "Marketing (+120%) e Data (+50%) aceleraram em relação à semana anterior.",
+    );
   });
 });
 
@@ -176,7 +177,7 @@ describe("unattributed nudge", () => {
 });
 
 describe("footer discipline", () => {
-  it("caps the feed at MAX_APONTAMENTOS", () => {
+  it("keeps the calm footer within MAX_APONTAMENTOS", () => {
     const out = buildApontamentos(
       base({
         budgetedTeams: [{ name: "Data", pctSpent: 0.6, hasWarning: false }],
@@ -186,9 +187,25 @@ describe("footer discipline", () => {
           { name: "C", pct: 1 },
           { name: "D", pct: 0.9 },
         ],
+        spendMix: {
+          teamDrivers: [
+            { label: "Eng", value: 5_000 },
+            { label: "Data", value: 2_500 },
+            { label: "Produto", value: 1_200 },
+            { label: "Vendas", value: 800 },
+            { label: "RH", value: 500 },
+          ],
+          unattributed: 900,
+        },
       }),
     );
     expect(out).toHaveLength(MAX_APONTAMENTOS);
+    expect(out.map((a) => a.kind)).toEqual([
+      "halfway",
+      "acceleration",
+      "concentration",
+      "unattributed",
+    ]);
   });
 });
 

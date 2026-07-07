@@ -23,8 +23,10 @@ export const MAX_APONTAMENTOS = 4;
 const copy = {
   halfwayOne: (team: string) => `${team} cruzou 50% do limite do período.`,
   halfwayMany: (teams: string) => `${teams} cruzaram 50% dos seus limites.`,
-  acceleration: (team: string, pct: string) =>
+  accelerationOne: (team: string, pct: string) =>
     `${team} acelerou ${pct} em relação à semana anterior.`,
+  accelerationMany: (teamsWithPct: string) =>
+    `${teamsWithPct} aceleraram em relação à semana anterior.`,
   concentration: (n: number, share: string) =>
     `${n} times concentram ${share} do gasto do período.`,
   unattributed: (amount: string) =>
@@ -84,15 +86,29 @@ export function buildApontamentos(input: ApontamentoInput): Apontamento[] {
 
   // 2. Week-over-week acceleration — a pace observation, distinct from any
   //    budget-threshold event, so it applies to every team. Neutral wording:
-  //    spending more isn't inherently bad (product principle #5).
+  //    spending more isn't inherently bad (product principle #5). ONE line no
+  //    matter how many teams accelerate, so this rule can never crowd the
+  //    other kinds out of the MAX_APONTAMENTOS cap.
   const accelerating = input.weekByTeam
     .filter((t) => t.pct !== null && t.pct >= ACCELERATION_MIN_PCT)
     .sort((a, b) => (b.pct ?? 0) - (a.pct ?? 0));
-  for (const team of accelerating) {
+  if (accelerating.length === 1) {
     out.push({
-      id: `acceleration:${team.name}`,
+      id: "acceleration",
       kind: "acceleration",
-      text: copy.acceleration(team.name, percent(team.pct as number)),
+      text: copy.accelerationOne(
+        accelerating[0].name,
+        percent(accelerating[0].pct as number),
+      ),
+    });
+  } else if (accelerating.length > 1) {
+    const parts = accelerating.map(
+      (t) => `${t.name} (+${percent(t.pct as number)})`,
+    );
+    out.push({
+      id: "acceleration",
+      kind: "acceleration",
+      text: copy.accelerationMany(listNames(parts)),
     });
   }
 

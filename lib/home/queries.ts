@@ -22,11 +22,14 @@ import { mapKey, teamApiSpend } from "@/lib/usage/attribution";
 // (buildCockpit, buildApontamentos) — all arithmetic, ordering and verdict
 // live there, not here and not in the page.
 
-export type HomeData = {
+export type CockpitData = {
   cockpit: Cockpit;
   period: PeriodProgress;
   /** Connection freshness for the stale-data banner (honesty in the chrome). */
   stale: ReturnType<typeof freshness>;
+};
+
+export type HomeData = CockpitData & {
   /** Calm observations for the footer — in-app only, never emailed (P14). */
   apontamentos: Apontamento[];
 };
@@ -64,9 +67,8 @@ type MapRow = { provider: string; project_id: string; team_id: string };
 /** Per-team week-over-week API change (USD ratio — currency-free) for the
  *  acceleration apontamento. Unmapped usage has no team, so it's excluded. */
 async function teamWeekChanges(
-  teamName: Map<string, string>,
   now: Date,
-): Promise<{ name: string; pct: number | null }[]> {
+): Promise<{ teamId: string; pct: number | null }[]> {
   const supabase = await createClient();
   const [{ data: usageData }, { data: mapData }] = await Promise.all([
     supabase
@@ -90,14 +92,25 @@ async function teamWeekChanges(
   }
 
   return [...rowsByTeam.entries()].map(([teamId, rows]) => ({
-    name: teamName.get(teamId) ?? "—",
+    teamId,
     pct: weekOverWeek(rows, now).pct,
   }));
 }
 
-export async function getHomeData(): Promise<HomeData> {
+/** The cockpit plus the raw parts only the apontamentos assembly needs. */
+type CockpitAssembly = CockpitData & {
+  currency: string;
+  teams: { id: string; name: string }[];
+  teamName: Map<string, string>;
+  seatByTeam: Map<string, number>;
+  apiByTeam: Map<string, number>;
+  seatUnattributed: number;
+  apiUnattributedUsd: number;
+  orgFxRate: number | null;
+};
+
+async function assembleCockpit(): Promise<CockpitAssembly> {
   const period = currentPeriod();
-  const now = new Date();
   const supabase = await createClient();
 
   const [budgets, { subscriptions }, apiTeams, teams, providers, { data: connectionData }] =
@@ -155,37 +168,70 @@ export async function getHomeData(): Promise<HomeData> {
     }),
   );
 
+  return {
+    cockpit,
+    period,
+    stale: freshness(connections),
+    currency: budgets.currency,
+    teams,
+    teamName,
+    seatByTeam,
+    apiByTeam,
+    seatUnattributed: seats.unattributed,
+    apiUnattributedUsd: apiTeams.unattributedUsd,
+    orgFxRate: budgets.org?.frozenFxRate ?? null,
+  };
+}
+
+/** The cockpit alone — for screens (Explore team detail) that pre-load the
+ *  simulator but render no observations, so the week-change queries and the
+ *  apontamento rules never run for them. */
+export async function getCockpitData(): Promise<CockpitData> {
+  const { cockpit, period, stale } = await assembleCockpit();
+  return { cockpit, period, stale };
+}
+
+export async function getHomeData(): Promise<HomeData> {
+  const now = new Date();
+  // The week-change queries need nothing from the cockpit — run both in one go.
+  const [assembly, weekRows] = await Promise.all([
+    assembleCockpit(),
+    teamWeekChanges(now),
+  ]);
+  const { cockpit } = assembly;
+
   // Observations footer (#21): pure rules over the same aggregates. A warned
-  // team never re-appears as an apontamento — one event, one channel.
-  const weekByTeam = await teamWeekChanges(teamName, now);
+  // team never re-appears as an apontamento — one event, one channel; the
+  // warning flag comes from the finding itself, the cockpit's source of truth.
   const budgetedTeams =
     cockpit.state === "ready"
-      ? [
-          ...cockpit.needsAttention.map((t) => ({
-            name: t.teamName,
-            pctSpent: t.evaluation.pctSpent,
-            hasWarning: true,
-          })),
-          ...cockpit.underControl.map((t) => ({
-            name: t.teamName,
-            pctSpent: t.evaluation.pctSpent,
-            hasWarning: false,
-          })),
-        ]
+      ? [...cockpit.needsAttention, ...cockpit.underControl].map((t) => ({
+          name: t.teamName,
+          pctSpent: t.evaluation.pctSpent,
+          hasWarning: t.finding !== null,
+        }))
       : [];
   const apontamentos = buildApontamentos({
-    currency: budgets.currency,
+    currency: assembly.currency,
     budgetedTeams,
-    weekByTeam,
+    weekByTeam: weekRows.map((w) => ({
+      name: assembly.teamName.get(w.teamId) ?? "—",
+      pct: w.pct,
+    })),
     spendMix: combineTeamSpend({
-      teams,
-      seatByTeam,
-      apiUsdByTeam: apiByTeam,
-      seatUnattributed: seats.unattributed,
-      apiUnattributedUsd: apiTeams.unattributedUsd,
-      fxRate: budgets.org?.frozenFxRate ?? null,
+      teams: assembly.teams,
+      seatByTeam: assembly.seatByTeam,
+      apiUsdByTeam: assembly.apiByTeam,
+      seatUnattributed: assembly.seatUnattributed,
+      apiUnattributedUsd: assembly.apiUnattributedUsd,
+      fxRate: assembly.orgFxRate,
     }),
   });
 
-  return { cockpit, period, stale: freshness(connections), apontamentos };
+  return {
+    cockpit,
+    period: assembly.period,
+    stale: assembly.stale,
+    apontamentos,
+  };
 }

@@ -12,8 +12,8 @@ import type { ThresholdLevel } from "@/lib/engine/thresholds";
 import type { VerdictStatus } from "@/lib/engine/verdict";
 import { percent } from "@/lib/format";
 import { money } from "@/lib/money";
+import { SimulateDrawer } from "@/components/domain/simulate-drawer";
 import { BudgetEditDialog } from "./budget-edit-dialog";
-import { SimulateDrawer } from "./simulate-drawer";
 import { homeCopy } from "./copy";
 
 // One "needs attention" row (frontend §3.5): name + status pill + values, a bar
