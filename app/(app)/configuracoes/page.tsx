@@ -1,7 +1,16 @@
 import { redirect } from "next/navigation";
 
+import { PageHeader } from "@/components/domain/page-header";
 import { ThemeToggle } from "@/components/domain/theme-toggle";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { profileInitials, profileLabel } from "@/lib/settings/account";
 import { createClient } from "@/lib/supabase/server";
 import { DigestForm } from "./_components/digest-form";
@@ -62,14 +71,11 @@ export default async function PersonalSettingsPage() {
   });
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">{copy.title}</h1>
-        <p className="text-sm text-muted-foreground">{copy.subtitle}</p>
-      </div>
+    <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
+      <PageHeader title={copy.title} description={copy.subtitle} />
 
-      <section className="rounded-xl border bg-card p-6 shadow-sm">
-        <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
+      <Card>
+        <CardContent className="flex flex-col gap-5 sm:flex-row sm:items-start">
           <Avatar size="lg" className="size-14">
             <AvatarFallback className="text-base font-semibold">
               {initials}
@@ -77,8 +83,8 @@ export default async function PersonalSettingsPage() {
           </Avatar>
           <div className="flex flex-1 flex-col gap-4">
             <div>
-              <h2 className="font-semibold">{copy.profileTitle}</h2>
-              <p className="mt-1 text-sm text-muted-foreground">
+              <h2 className="text-sm font-semibold">{copy.profileTitle}</h2>
+              <p className="mt-1 text-sm/relaxed text-muted-foreground">
                 {copy.profileSub}
               </p>
             </div>
@@ -87,48 +93,42 @@ export default async function PersonalSettingsPage() {
 
             <dl className="grid gap-3 text-sm sm:grid-cols-2">
               <div className="rounded-lg border p-3">
-                <dt className="text-muted-foreground">{copy.email}</dt>
+                <dt className="text-xs text-muted-foreground">{copy.email}</dt>
                 <dd className="mt-1 font-medium">{account.email}</dd>
               </div>
               <div className="rounded-lg border p-3">
-                <dt className="text-muted-foreground">{copy.role}</dt>
+                <dt className="text-xs text-muted-foreground">{copy.role}</dt>
                 <dd className="mt-1 font-medium">
                   {copy.roleLabel[account.role] ?? account.role}
                 </dd>
               </div>
             </dl>
           </div>
-        </div>
-      </section>
+        </CardContent>
+      </Card>
 
       {account.role === "admin" && (
-        <section className="rounded-xl border bg-card p-6 shadow-sm">
-          <div className="flex flex-col gap-4">
-            <div>
-              <h2 className="font-semibold">{copy.notificationsTitle}</h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {copy.notificationsSub}
-              </p>
-            </div>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm">{copy.notificationsTitle}</CardTitle>
+            <CardDescription>{copy.notificationsSub}</CardDescription>
+          </CardHeader>
+          <CardContent>
             <DigestForm receiveDigest={!account.digest_opt_out} />
-          </div>
-        </section>
+          </CardContent>
+        </Card>
       )}
 
-      <section className="rounded-xl border bg-card p-6 shadow-sm">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <h2 className="font-semibold">{copy.appearanceTitle}</h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {copy.appearanceSub}
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm">{copy.appearanceTitle}</CardTitle>
+          <CardDescription>{copy.appearanceSub}</CardDescription>
+          <CardAction className="flex items-center gap-3">
             <span className="text-sm text-muted-foreground">{copy.theme}</span>
             <ThemeToggle />
-          </div>
-        </div>
-      </section>
+          </CardAction>
+        </CardHeader>
+      </Card>
     </div>
   );
 }

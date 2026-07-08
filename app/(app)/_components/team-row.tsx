@@ -58,10 +58,10 @@ export function TeamRow({ row }: { row: TeamRowData }) {
   const { currency } = row;
 
   return (
-    <li className="rounded-lg border bg-card p-4">
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <span className="font-medium">{row.teamName}</span>
+    <li className="rounded-xl border bg-card p-5 shadow-xs">
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <span className="truncate text-sm font-semibold">{row.teamName}</span>
           <StatusPill status={row.status} />
         </div>
         <span className="text-sm tabular-nums text-muted-foreground">
@@ -70,18 +70,18 @@ export function TeamRow({ row }: { row: TeamRowData }) {
       </div>
 
       <BudgetBar
-        className="mt-3"
+        className="mt-3.5"
         pctSpent={row.pctSpent}
         pctProjected={row.pctProjected}
         status={row.status}
       />
 
-      <p className="mt-3 text-sm">{warningLine(row)}</p>
+      <p className="mt-3 text-sm/relaxed">{warningLine(row)}</p>
 
-      <div className="mt-3 flex flex-wrap items-center gap-2">
+      <div className="mt-3.5 flex flex-wrap items-center gap-2 border-t pt-3.5">
         <Button variant="outline" size="sm" asChild>
           <Link href={`/explorar/time/${row.teamId}`}>
-            <MagnifyingGlassIcon className="size-4" />
+            <MagnifyingGlassIcon className="size-3.5" />
             {c.investigate}
           </Link>
         </Button>
@@ -99,29 +99,33 @@ export function TeamRow({ row }: { row: TeamRowData }) {
           amount={row.budget}
           warnPct={row.warnPct}
         />
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="sm"
           onClick={() => setShowPlan((v) => !v)}
           aria-expanded={showPlan}
-          className="ml-auto flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+          className="ml-auto text-muted-foreground"
         >
           {showPlan ? c.hidePlan : c.showPlan}
           <CaretDownIcon
             className={`size-3.5 transition-transform ${showPlan ? "rotate-180" : ""}`}
           />
-        </button>
+        </Button>
       </div>
 
       {showPlan && (
-        <div className="mt-3 rounded-lg bg-muted/50 p-3">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+        <div className="mt-3 rounded-lg bg-muted/50 p-4">
+          <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
             {c.planTitle}
           </p>
-          <ul className="mt-2 flex flex-col gap-2">
+          <ul className="mt-2.5 flex flex-col gap-2.5">
             {row.controlPlan.map((action) => (
               <li key={action.id}>
                 <p className="text-sm font-medium">{action.title}</p>
-                <p className="text-xs text-muted-foreground">{action.detail}</p>
+                <p className="mt-0.5 text-xs/relaxed text-muted-foreground">
+                  {action.detail}
+                </p>
               </li>
             ))}
           </ul>

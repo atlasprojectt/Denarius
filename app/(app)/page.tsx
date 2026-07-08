@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CheckIcon, GaugeIcon } from "@phosphor-icons/react/dist/ssr";
 
 import { StaleBanner } from "@/components/domain/stale-banner";
 import { VerdictLine } from "@/components/domain/verdict-line";
@@ -22,17 +23,39 @@ export default async function HomePage() {
 
   if (cockpit.state === "cold-start") {
     return (
-      <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
-        <h1 className="text-2xl font-semibold tracking-tight">{homeCopy.question}</h1>
-        <div className="rounded-xl border bg-card p-6 shadow-sm">
-          <h2 className="text-lg font-semibold">{homeCopy.coldStart.title}</h2>
-          <p className="mt-1 text-sm text-muted-foreground">{homeCopy.coldStart.body}</p>
-          <div className="mt-6 flex flex-wrap gap-3">
+      <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
+        <h1 className="text-2xl font-semibold tracking-tight">
+          {homeCopy.question}
+        </h1>
+        <div className="rounded-xl border bg-card p-8 shadow-xs">
+          <GaugeIcon className="size-8 text-muted-foreground" aria-hidden />
+          <h2 className="mt-4 text-lg font-semibold tracking-tight">
+            {homeCopy.coldStart.title}
+          </h2>
+          <p className="mt-1.5 max-w-xl text-sm/relaxed text-muted-foreground">
+            {homeCopy.coldStart.body}
+          </p>
+          <ul className="mt-5 flex flex-col gap-2">
+            {homeCopy.coldStart.unlocks.map((item) => (
+              <li
+                key={item}
+                className="flex items-center gap-2.5 text-sm text-muted-foreground"
+              >
+                <CheckIcon className="size-4 shrink-0 text-primary" aria-hidden />
+                {item}
+              </li>
+            ))}
+          </ul>
+          <div className="mt-7 flex flex-wrap gap-2.5">
             <Button asChild>
-              <Link href="/ajustes/orcamentos">{homeCopy.coldStart.setBudgetCta}</Link>
+              <Link href="/ajustes/orcamentos">
+                {homeCopy.coldStart.setBudgetCta}
+              </Link>
             </Button>
             <Button variant="outline" asChild>
-              <Link href="/ajustes/conexoes">{homeCopy.coldStart.connectCta}</Link>
+              <Link href="/ajustes/conexoes">
+                {homeCopy.coldStart.connectCta}
+              </Link>
             </Button>
           </div>
         </div>
@@ -69,7 +92,7 @@ export default async function HomePage() {
   }));
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
+    <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
       <h1 className="sr-only">{homeCopy.question}</h1>
 
       {stale.showBanner && <StaleBanner items={stale.needsAttention} />}
@@ -92,7 +115,7 @@ export default async function HomePage() {
       ) : (
         needsAttentionRows.length > 0 && (
           <section className="flex flex-col gap-3">
-            <h2 className="font-semibold">
+            <h2 className="text-sm font-semibold tracking-tight">
               {homeCopy.needsAttention.title(needsAttentionRows.length)}
             </h2>
             <ul className="flex flex-col gap-3">

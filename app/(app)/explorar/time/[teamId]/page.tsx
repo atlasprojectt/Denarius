@@ -1,7 +1,34 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { LockSimpleIcon, UsersThreeIcon } from "@phosphor-icons/react/dist/ssr";
 
+import { EmptyState } from "@/components/domain/empty-state";
 import { SimulateDrawer } from "@/components/domain/simulate-drawer";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { requireAdmin } from "@/lib/auth/session";
 import { findCockpitTeam } from "@/lib/engine/cockpit";
 import { currentPeriod } from "@/lib/engine/period";
@@ -10,8 +37,11 @@ import { money } from "@/lib/money";
 import { teamDetail } from "@/lib/usage/attribution";
 
 const copy = {
-  back: "← Explorar",
-  adminOnly: "Somente administradores podem ver o custo por pessoa.",
+  explore: "Explorar",
+  adminOnlyTitle: "Detalhe restrito a administradores",
+  adminOnlyBody:
+    "O custo por pessoa é visível apenas para administradores — controle, não vigilância. O gasto agregado do time continua disponível em Explorar.",
+  adminOnlyCta: "Voltar para Explorar",
   asOf: (label: string, day: number, days: number) =>
     `${label}, dia ${day} de ${days}`,
   personTitle: "Custo por pessoa",
@@ -19,8 +49,10 @@ const copy = {
     "Contribuintes deste time neste mês. Chaves compartilhadas ficam no time, nunca em uma pessoa.",
   namesHiddenNote:
     "Nomes ocultos pela política de privacidade — os contribuintes aparecem anonimizados.",
-  empty:
-    "Nenhum uso de API atribuído a este time ainda. Mapeie um projeto ou workspace em Ajustes → Atribuição.",
+  emptyTitle: "Nenhum uso atribuído a este time ainda",
+  emptyBody:
+    "O gasto de API é atribuído por projeto ou workspace. Mapeie um projeto para este time em Ajustes → Atribuição para ver os contribuintes aqui.",
+  emptyCta: "Ir para Atribuição",
   colPerson: "Pessoa / chave",
   colTokens: "Tokens",
   colDerived: "Gasto derivado",
@@ -36,6 +68,24 @@ const compactTokens = new Intl.NumberFormat("pt-BR", {
   maximumFractionDigits: 1,
 });
 
+function Crumbs({ current }: { current: string }) {
+  return (
+    <Breadcrumb>
+      <BreadcrumbList>
+        <BreadcrumbItem>
+          <BreadcrumbLink asChild>
+            <Link href="/explorar">{copy.explore}</Link>
+          </BreadcrumbLink>
+        </BreadcrumbItem>
+        <BreadcrumbSeparator />
+        <BreadcrumbItem>
+          <BreadcrumbPage>{current}</BreadcrumbPage>
+        </BreadcrumbItem>
+      </BreadcrumbList>
+    </Breadcrumb>
+  );
+}
+
 export default async function TeamDetailPage({
   params,
 }: {
@@ -47,11 +97,14 @@ export default async function TeamDetailPage({
   const auth = await requireAdmin();
   if (auth.error !== undefined) {
     return (
-      <div className="mx-auto flex w-full max-w-3xl flex-col gap-4">
-        <Back />
-        <p className="rounded-xl border bg-card p-6 text-sm text-muted-foreground">
-          {copy.adminOnly}
-        </p>
+      <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
+        <Crumbs current={copy.adminOnlyTitle} />
+        <EmptyState
+          icon={<LockSimpleIcon />}
+          title={copy.adminOnlyTitle}
+          description={copy.adminOnlyBody}
+          primaryAction={<Link href="/explorar">{copy.adminOnlyCta}</Link>}
+        />
       </div>
     );
   }
@@ -70,14 +123,17 @@ export default async function TeamDetailPage({
     cockpit.state === "ready" ? findCockpitTeam(cockpit, teamId) : undefined;
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <Back />
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight">
+    <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
+      <Crumbs current={detail.teamName} />
+
+      <header className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
+        <div className="min-w-0">
+          <h1 className="text-2xl font-semibold tracking-tight">
             {detail.teamName}
           </h1>
-          <p className="text-sm text-muted-foreground">{copy.personSub}</p>
+          <p className="mt-1 max-w-2xl text-sm/relaxed text-muted-foreground">
+            {copy.personSub}
+          </p>
         </div>
         {cockpit.state === "ready" && cockpitTeam && (
           <SimulateDrawer
@@ -94,45 +150,39 @@ export default async function TeamDetailPage({
             }}
           />
         )}
-      </div>
+      </header>
 
-      <section className="rounded-xl border bg-card p-6 shadow-sm">
-        <div className="flex items-baseline justify-between gap-4">
-          <h2 className="font-semibold">{copy.personTitle}</h2>
-          <span className="text-xs text-muted-foreground">
-            {copy.asOf(period.monthLabel, period.dayOfPeriod, period.daysInPeriod)}
-          </span>
-        </div>
-
-        {detail.namesHidden && detail.persons.some((p) => !p.isShared) && (
-          <p className="mt-3 text-xs text-muted-foreground">
-            {copy.namesHiddenNote}
-          </p>
-        )}
-
-        {detail.persons.length === 0 ? (
-          <p className="mt-4 text-sm text-muted-foreground">{copy.empty}</p>
-        ) : (
-          <>
-            <table className="mt-4 w-full text-sm">
-              <thead>
-                <tr className="border-b text-left text-xs uppercase tracking-wide text-muted-foreground">
-                  <th className="py-2 pr-2 font-medium">{copy.colPerson}</th>
-                  <th className="py-2 pr-2 text-right font-medium">
-                    {copy.colTokens}
-                  </th>
-                  <th className="py-2 pr-2 text-right font-medium">
-                    {copy.colDerived}
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
+      {detail.persons.length === 0 ? (
+        <EmptyState
+          icon={<UsersThreeIcon />}
+          title={copy.emptyTitle}
+          description={copy.emptyBody}
+          primaryAction={<Link href="/ajustes/atribuicao">{copy.emptyCta}</Link>}
+        />
+      ) : (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm">{copy.personTitle}</CardTitle>
+            {detail.namesHidden && detail.persons.some((p) => !p.isShared) && (
+              <CardDescription>{copy.namesHiddenNote}</CardDescription>
+            )}
+            <div className="text-xs text-muted-foreground tabular-nums">
+              {copy.asOf(period.monthLabel, period.dayOfPeriod, period.daysInPeriod)}
+            </div>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{copy.colPerson}</TableHead>
+                  <TableHead className="text-right">{copy.colTokens}</TableHead>
+                  <TableHead className="text-right">{copy.colDerived}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {detail.persons.map((person) => (
-                  <tr
-                    key={person.userId || "__shared__"}
-                    className="border-b last:border-b-0"
-                  >
-                    <td className="py-2.5 pr-2 font-medium">
+                  <TableRow key={person.userId || "__shared__"}>
+                    <TableCell className="font-medium">
                       {person.isShared ? (
                         <span className="text-muted-foreground">
                           {copy.sharedKey}
@@ -140,13 +190,13 @@ export default async function TeamDetailPage({
                       ) : (
                         person.userId
                       )}
-                    </td>
-                    <td className="py-2.5 pr-2 text-right tabular-nums">
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums">
                       {compactTokens.format(
                         person.inputTokens + person.outputTokens,
                       )}
-                    </td>
-                    <td className="py-2.5 pr-2 text-right tabular-nums">
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums">
                       {person.uncosted && person.derivedUsd === 0 ? (
                         <span className="text-muted-foreground">
                           {copy.uncosted}
@@ -154,34 +204,28 @@ export default async function TeamDetailPage({
                       ) : (
                         money(person.derivedUsd, "USD")
                       )}
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
-                <tr className="border-t font-medium">
-                  <td className="py-2.5 pr-2">{copy.total}</td>
-                  <td />
-                  <td className="py-2.5 pr-2 text-right tabular-nums">
+              </TableBody>
+              <TableFooter>
+                <TableRow>
+                  <TableCell>{copy.total}</TableCell>
+                  <TableCell />
+                  <TableCell className="text-right tabular-nums">
                     {money(detail.totalUsd, "USD")}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-            {detail.hasUncosted && (
-              <p className="mt-3 text-xs text-muted-foreground">
-                {copy.uncostedNote}
-              </p>
-            )}
-          </>
-        )}
-      </section>
+                  </TableCell>
+                </TableRow>
+              </TableFooter>
+            </Table>
+          </CardContent>
+          {detail.hasUncosted && (
+            <CardFooter className="text-xs/relaxed text-muted-foreground">
+              <p>{copy.uncostedNote}</p>
+            </CardFooter>
+          )}
+        </Card>
+      )}
     </div>
-  );
-}
-
-function Back() {
-  return (
-    <Link href="/explorar" className="text-sm text-muted-foreground hover:underline">
-      {copy.back}
-    </Link>
   );
 }

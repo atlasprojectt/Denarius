@@ -2,7 +2,17 @@
 
 import { useActionState } from "react";
 
+import { ActionStatus } from "@/components/domain/action-status";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { saveProjectMap, type ProjectMapFormState } from "@/lib/attribution/actions";
 import { money } from "@/lib/money";
 
@@ -33,6 +43,10 @@ export type ProjectRow = {
 
 const initialState: ProjectMapFormState = {};
 
+// The radix Select can't submit an empty-string value, so "Não atribuído" is a
+// sentinel the server action already treats as "no team".
+const UNATTRIBUTED = "";
+
 export function ProjectMapForm({
   projects,
   teams,
@@ -44,63 +58,47 @@ export function ProjectMapForm({
 
   return (
     <form action={formAction} className="flex flex-col gap-4">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b text-left text-xs uppercase tracking-wide text-muted-foreground">
-            <th className="py-2 pr-2 font-medium">{copy.colProject}</th>
-            <th className="py-2 pr-2 text-right font-medium">{copy.colSpend}</th>
-            <th className="py-2 pl-2 font-medium">{copy.colTeam}</th>
-          </tr>
-        </thead>
-        <tbody>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>{copy.colProject}</TableHead>
+            <TableHead className="text-right">{copy.colSpend}</TableHead>
+            <TableHead className="w-56">{copy.colTeam}</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
           {projects.map((project) => {
             const key = `${project.provider}|${project.projectId}`;
             return (
-              <tr key={key} className="border-b last:border-b-0 align-middle">
-                <td className="py-2.5 pr-2">
+              <TableRow key={key}>
+                <TableCell>
                   <input type="hidden" name="project" value={key} />
                   <span className="font-medium">{project.projectId}</span>
-                  <span className="ml-2 rounded-md bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
+                  <Badge variant="secondary" className="ml-2">
                     {providerLabel[project.provider] ?? project.provider}
-                  </span>
-                </td>
-                <td className="py-2.5 pr-2 text-right tabular-nums">
+                  </Badge>
+                </TableCell>
+                <TableCell className="text-right tabular-nums">
                   {project.uncosted ? (
                     <span className="text-muted-foreground">{copy.uncosted}</span>
                   ) : (
                     money(project.derivedUsd, "USD")
                   )}
-                </td>
-                <td className="py-2.5 pl-2">
-                  <select
+                </TableCell>
+                <TableCell>
+                  <TeamSelect
                     name={`team|${key}`}
-                    defaultValue={project.teamId ?? ""}
-                    className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
-                  >
-                    <option value="">{copy.unattributed}</option>
-                    {teams.map((team) => (
-                      <option key={team.id} value={team.id}>
-                        {team.name}
-                      </option>
-                    ))}
-                  </select>
-                </td>
-              </tr>
+                    teams={teams}
+                    defaultTeamId={project.teamId}
+                  />
+                </TableCell>
+              </TableRow>
             );
           })}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
 
-      {state.error && (
-        <p role="alert" className="text-sm text-destructive">
-          {state.error}
-        </p>
-      )}
-      {state.success && (
-        <p role="status" className="text-sm font-medium text-green-700">
-          {state.success}
-        </p>
-      )}
+      <ActionStatus error={state.error} success={state.success} />
 
       <div>
         <Button type="submit" disabled={pending}>
@@ -108,5 +106,32 @@ export function ProjectMapForm({
         </Button>
       </div>
     </form>
+  );
+}
+
+function TeamSelect({
+  name,
+  teams,
+  defaultTeamId,
+}: {
+  name: string;
+  teams: Team[];
+  defaultTeamId: string | null;
+}) {
+  // Native select: dozens of per-row dropdowns inside one form submit reliably
+  // with zero client state; styled to match the shadcn trigger.
+  return (
+    <select
+      name={name}
+      defaultValue={defaultTeamId ?? UNATTRIBUTED}
+      className="h-8 w-full rounded-md border border-input bg-transparent px-2 text-sm transition-colors outline-none focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50 dark:bg-input/30"
+    >
+      <option value={UNATTRIBUTED}>{copy.unattributed}</option>
+      {teams.map((team) => (
+        <option key={team.id} value={team.id}>
+          {team.name}
+        </option>
+      ))}
+    </select>
   );
 }

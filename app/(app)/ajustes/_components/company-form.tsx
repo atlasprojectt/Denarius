@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 
+import { ActionStatus } from "@/components/domain/action-status";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,8 +13,8 @@ import {
 
 const copy = {
   companyName: "Nome da empresa",
-  save: "Salvar empresa",
-  saving: "Salvando...",
+  save: "Salvar",
+  saving: "Salvando…",
   adminOnly: "Somente administradores podem alterar o nome da empresa.",
 };
 
@@ -43,24 +44,16 @@ export function CompanyForm({
           maxLength={80}
           defaultValue={companyName}
           disabled={!isAdmin}
+          className="max-w-sm"
         />
       </div>
 
       {isAdmin ? (
         <div className="flex items-center gap-3">
-          <Button type="submit" disabled={pending}>
+          <Button type="submit" variant="outline" disabled={pending}>
             {pending ? copy.saving : copy.save}
           </Button>
-          {state.error && (
-            <p role="alert" className="text-sm text-destructive">
-              {state.error}
-            </p>
-          )}
-          {state.success && (
-            <p role="status" className="text-sm font-medium text-green-700">
-              {state.success}
-            </p>
-          )}
+          <ActionStatus error={state.error} success={state.success} />
         </div>
       ) : (
         <p className="text-sm text-muted-foreground">{copy.adminOnly}</p>

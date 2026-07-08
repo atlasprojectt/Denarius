@@ -2,8 +2,17 @@
 
 import { useActionState, useState } from "react";
 
+import { ActionStatus } from "@/components/domain/action-status";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import {
   deleteSubscription,
   updateSubscription,
@@ -65,21 +74,21 @@ function SubscriptionRow({
 
   if (!editing) {
     return (
-      <tr className="border-b last:border-b-0">
-        <td className="py-2.5 pr-2 font-medium">{subscription.tool}</td>
-        <td className="py-2.5 pr-2 tabular-nums">{subscription.seatCount}</td>
-        <td className="py-2.5 pr-2">
+      <TableRow>
+        <TableCell className="font-medium">{subscription.tool}</TableCell>
+        <TableCell className="tabular-nums">{subscription.seatCount}</TableCell>
+        <TableCell>
           {subscription.teamName ?? (
             <span className="text-muted-foreground">{copy.shared}</span>
           )}
-        </td>
-        <td className="py-2.5 pr-2 text-right tabular-nums">
+        </TableCell>
+        <TableCell className="text-right tabular-nums">
           {subscription.monthly}
-        </td>
-        <td className="py-2.5 pr-2 text-right tabular-nums">
+        </TableCell>
+        <TableCell className="text-right tabular-nums">
           {subscription.accrued}
-        </td>
-        <td className="py-2.5 text-right">
+        </TableCell>
+        <TableCell className="text-right">
           {deleteState.error && (
             <span role="alert" className="mr-2 text-xs text-destructive">
               {deleteState.error}
@@ -112,14 +121,14 @@ function SubscriptionRow({
               {deleting ? copy.removing : copy.remove}
             </Button>
           </form>
-        </td>
-      </tr>
+        </TableCell>
+      </TableRow>
     );
   }
 
   return (
-    <tr className="border-b bg-muted/30">
-      <td colSpan={6} className="py-3">
+    <TableRow className="bg-muted/30">
+      <TableCell colSpan={6} className="py-3 whitespace-normal">
         <form
           action={updateAction}
           className="flex flex-wrap items-center gap-3"
@@ -133,7 +142,7 @@ function SubscriptionRow({
             name="tool"
             defaultValue={subscription.tool}
             required
-            className="h-9 w-48 bg-background"
+            className="h-8 w-48 bg-background"
           />
           <Input
             name="seatCount"
@@ -142,7 +151,7 @@ function SubscriptionRow({
             step={1}
             defaultValue={subscription.seatCount}
             required
-            className="h-9 w-20 bg-background tabular-nums"
+            className="h-8 w-20 bg-background tabular-nums"
           />
           <Input
             name="unitPrice"
@@ -151,12 +160,12 @@ function SubscriptionRow({
             step="0.01"
             defaultValue={subscription.unitPrice}
             required
-            className="h-9 w-28 bg-background tabular-nums"
+            className="h-8 w-28 bg-background tabular-nums"
           />
           <select
             name="teamId"
             defaultValue={subscription.teamId ?? ""}
-            className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+            className="h-8 rounded-md border border-input bg-transparent px-2 text-sm transition-colors outline-none focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50 dark:bg-input/30"
           >
             <option value="">{copy.shared}</option>
             {teams.map((team) => (
@@ -165,11 +174,7 @@ function SubscriptionRow({
               </option>
             ))}
           </select>
-          {updateState.error && (
-            <p role="alert" className="text-sm text-destructive">
-              {updateState.error}
-            </p>
-          )}
+          <ActionStatus error={updateState.error} />
           <div className="ml-auto flex gap-2">
             <Button
               type="button"
@@ -184,8 +189,8 @@ function SubscriptionRow({
             </Button>
           </div>
         </form>
-      </td>
-    </tr>
+      </TableCell>
+    </TableRow>
   );
 }
 
@@ -197,28 +202,26 @@ export function SubscriptionTable({
   teams: Team[];
 }) {
   return (
-    <div className="mt-4 overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b text-left text-xs uppercase tracking-wide text-muted-foreground">
-            <th className="py-2 pr-2 font-medium">{copy.tool}</th>
-            <th className="py-2 pr-2 font-medium">{copy.seats}</th>
-            <th className="py-2 pr-2 font-medium">{copy.team}</th>
-            <th className="py-2 pr-2 text-right font-medium">{copy.monthly}</th>
-            <th className="py-2 pr-2 text-right font-medium">{copy.accrued}</th>
-            <th className="py-2" />
-          </tr>
-        </thead>
-        <tbody>
-          {subscriptions.map((subscription) => (
-            <SubscriptionRow
-              key={subscription.id}
-              subscription={subscription}
-              teams={teams}
-            />
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>{copy.tool}</TableHead>
+          <TableHead>{copy.seats}</TableHead>
+          <TableHead>{copy.team}</TableHead>
+          <TableHead className="text-right">{copy.monthly}</TableHead>
+          <TableHead className="text-right">{copy.accrued}</TableHead>
+          <TableHead />
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {subscriptions.map((subscription) => (
+          <SubscriptionRow
+            key={subscription.id}
+            subscription={subscription}
+            teams={teams}
+          />
+        ))}
+      </TableBody>
+    </Table>
   );
 }

@@ -1,8 +1,19 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import { LightbulbIcon } from "@phosphor-icons/react";
 
+import { ActionStatus } from "@/components/domain/action-status";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { utcStamp } from "@/lib/format";
@@ -85,6 +96,16 @@ function statusLabel(status: string | null): string {
   return sharedCopy.notConnected;
 }
 
+function StatusBadge({ status }: { status: string | null }) {
+  // Neutral chrome — connection state is data quality, not budget status, so it
+  // never wears the semaphore (product principle #5).
+  return (
+    <Badge variant={status === "active" ? "secondary" : "outline"}>
+      {statusLabel(status)}
+    </Badge>
+  );
+}
+
 type KeyFormProps = {
   provider: Provider;
   formAction: (formData: FormData) => void;
@@ -95,7 +116,7 @@ function KeyForm({ provider, formAction, pending }: KeyFormProps) {
   const copy = providerCopy[provider];
   const inputId = `adminKey-${provider}`;
   return (
-    <form action={formAction} className="mt-4 flex flex-col gap-3">
+    <form action={formAction} className="flex flex-col gap-3">
       <div className="flex flex-col gap-1.5">
         <Label htmlFor={inputId}>{sharedCopy.keyLabel}</Label>
         <Input
@@ -105,10 +126,14 @@ function KeyForm({ provider, formAction, pending }: KeyFormProps) {
           placeholder={copy.keyPlaceholder}
           autoComplete="off"
           required
+          className="max-w-md font-mono"
         />
-        <p className="text-xs text-muted-foreground">{copy.keyHelp}</p>
-        <p className="text-xs text-muted-foreground">{copy.groupingTip}</p>
+        <p className="text-xs/relaxed text-muted-foreground">{copy.keyHelp}</p>
       </div>
+      <p className="flex items-start gap-2 rounded-lg bg-muted/50 p-3 text-xs/relaxed text-muted-foreground">
+        <LightbulbIcon className="mt-0.5 size-4 shrink-0" aria-hidden />
+        {copy.groupingTip}
+      </p>
       <div>
         <Button type="submit" disabled={pending}>
           {pending ? sharedCopy.connecting : sharedCopy.connect}
@@ -131,7 +156,7 @@ function ActiveControls({ keyForm }: { keyForm: KeyFormProps }) {
   const [rotating, setRotating] = useState(false);
 
   return (
-    <div className="mt-4 flex flex-col gap-3">
+    <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-2">
         <form action={syncAction}>
           <Button type="submit" variant="outline" size="sm" disabled={syncing}>
@@ -161,16 +186,10 @@ function ActiveControls({ keyForm }: { keyForm: KeyFormProps }) {
           </Button>
         </form>
       </div>
-      {(syncState.error ?? revokeState.error) && (
-        <p role="alert" className="text-sm text-destructive">
-          {syncState.error ?? revokeState.error}
-        </p>
-      )}
-      {syncState.success && (
-        <p role="status" className="text-sm font-medium text-foreground">
-          {syncState.success}
-        </p>
-      )}
+      <ActionStatus
+        error={syncState.error ?? revokeState.error}
+        success={syncState.success}
+      />
       {rotating && <KeyForm {...keyForm} />}
     </div>
   );
@@ -204,33 +223,23 @@ export function ProviderConnectionCard({
   const stamp = lastSyncAt ? utcStamp(lastSyncAt) : null;
 
   return (
-    <section className="rounded-xl border bg-card p-6 shadow-sm">
-      <div className="flex items-center justify-between gap-4">
-        <h2 className="font-semibold">{providerCopy[provider].title}</h2>
-        <span className="rounded-md bg-muted px-2 py-1 text-xs font-medium text-muted-foreground">
-          {statusLabel(status)}
-        </span>
-      </div>
-      <p className="mt-1 text-xs text-muted-foreground">
-        {stamp ? sharedCopy.lastSync(stamp) : sharedCopy.neverSynced}
-      </p>
-      {status === "error" && lastSyncError && (
-        <p role="alert" className="mt-2 text-sm text-destructive">
-          {lastSyncError}
-        </p>
-      )}
-      {saveState.error && (
-        <p role="alert" className="mt-2 text-sm text-destructive">
-          {saveState.error}
-        </p>
-      )}
-      {saveState.success && (
-        <p role="status" className="mt-2 text-sm font-medium text-foreground">
-          {saveState.success}
-        </p>
-      )}
-
-      {connected ? <ActiveControls keyForm={keyForm} /> : <KeyForm {...keyForm} />}
-    </section>
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-sm">{providerCopy[provider].title}</CardTitle>
+        <CardDescription className="tabular-nums">
+          {stamp ? sharedCopy.lastSync(stamp) : sharedCopy.neverSynced}
+        </CardDescription>
+        <CardAction>
+          <StatusBadge status={status} />
+        </CardAction>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-3">
+        {status === "error" && lastSyncError && (
+          <ActionStatus error={lastSyncError} />
+        )}
+        <ActionStatus error={saveState.error} success={saveState.success} />
+        {connected ? <ActiveControls keyForm={keyForm} /> : <KeyForm {...keyForm} />}
+      </CardContent>
+    </Card>
   );
 }

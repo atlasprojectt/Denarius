@@ -9,11 +9,16 @@ const c = homeCopy.allClear;
 
 export function AllClear() {
   return (
-    <div className="flex items-start gap-3 rounded-xl border border-green-200 bg-green-50 p-5 dark:border-green-900 dark:bg-green-950/40">
-      <CheckCircleIcon className="mt-0.5 size-5 shrink-0 text-green-600" weight="fill" />
+    <div className="flex items-start gap-3 rounded-xl border bg-status-green-soft p-5">
+      <CheckCircleIcon
+        className="mt-0.5 size-5 shrink-0 text-status-green"
+        weight="fill"
+      />
       <div>
-        <p className="font-medium text-green-900 dark:text-green-200">{c.title}</p>
-        <p className="mt-0.5 text-sm text-green-800/80 dark:text-green-300/80">{c.body}</p>
+        <p className="text-sm font-semibold text-status-green-fg">{c.title}</p>
+        <p className="mt-0.5 text-sm/relaxed text-status-green-fg/80">
+          {c.body}
+        </p>
       </div>
     </div>
   );

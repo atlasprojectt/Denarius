@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 
+import { ActionStatus } from "@/components/domain/action-status";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -98,26 +99,22 @@ export function BudgetForm({
       {existing && (
         <form action={deleteAction}>
           <input type="hidden" name="budgetId" value={existing.id} />
-          <button
+          <Button
             type="submit"
+            variant="ghost"
+            size="sm"
             disabled={deleting}
-            className="text-sm text-muted-foreground hover:text-destructive hover:underline disabled:opacity-50"
+            className="-ml-2 text-muted-foreground hover:text-destructive"
           >
             {deleting ? copy.removing : copy.remove}
-          </button>
+          </Button>
         </form>
       )}
 
-      {(state.error || deleteState.error) && (
-        <p role="alert" className="text-sm text-destructive">
-          {state.error ?? deleteState.error}
-        </p>
-      )}
-      {(state.success || deleteState.success) && (
-        <p role="status" className="text-sm font-medium text-green-700">
-          {state.success ?? deleteState.success}
-        </p>
-      )}
+      <ActionStatus
+        error={state.error ?? deleteState.error}
+        success={state.success ?? deleteState.success}
+      />
     </div>
   );
 }

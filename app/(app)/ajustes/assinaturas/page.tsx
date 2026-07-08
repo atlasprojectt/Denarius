@@ -1,5 +1,14 @@
-import Link from "next/link";
+import { CoinsIcon } from "@phosphor-icons/react/dist/ssr";
 
+import { EmptyState } from "@/components/domain/empty-state";
+import { PageHeader } from "@/components/domain/page-header";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { seatAccrual } from "@/lib/engine/accrual";
 import { currentPeriod } from "@/lib/engine/period";
 import { money } from "@/lib/money";
@@ -10,7 +19,7 @@ import { SubscriptionForm } from "./_components/subscription-form";
 import { SubscriptionTable } from "./_components/subscription-table";
 
 const copy = {
-  back: "← Ajustes",
+  back: "Ajustes",
   title: "Assinaturas e assentos",
   subtitle:
     "Registre manualmente os planos por assento que a empresa paga — vê o gasto por time antes de conectar qualquer API. O custo é distribuído dia a dia no período (preço ÷ dias), sem pico no dia 1.",
@@ -50,46 +59,43 @@ export default async function SubscriptionsPage() {
   }));
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
-      <div>
-        <Link
-          href="/ajustes"
-          className="text-sm text-muted-foreground hover:underline"
-        >
-          {copy.back}
-        </Link>
-        <h1 className="mt-1 text-2xl font-semibold tracking-tight">
-          {copy.title}
-        </h1>
-        <p className="text-sm text-muted-foreground">{copy.subtitle}</p>
-      </div>
+    <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
+      <PageHeader
+        title={copy.title}
+        description={copy.subtitle}
+        backHref="/ajustes"
+        backLabel={copy.back}
+      />
 
       <SubscriptionForm teams={teams} currency={currency} />
 
       {rows.length === 0 ? (
-        <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed bg-card p-10 text-center">
-          <p className="font-medium">{copy.emptyTitle}</p>
-          <p className="max-w-md text-sm text-muted-foreground">
-            {copy.emptyBody}
-          </p>
-        </div>
+        <EmptyState
+          icon={<CoinsIcon />}
+          title={copy.emptyTitle}
+          description={copy.emptyBody}
+        />
       ) : (
-        <section className="rounded-xl border bg-card p-6 shadow-sm">
-          <h2 className="font-semibold">
-            {copy.listTitle}{" "}
-            <span className="text-sm font-normal text-muted-foreground">
-              ({rows.length})
-            </span>
-          </h2>
-          <p className="mt-1 text-xs text-muted-foreground">
-            {copy.accruedNote(
-              period.monthLabel,
-              period.dayOfPeriod,
-              period.daysInPeriod,
-            )}
-          </p>
-          <SubscriptionTable subscriptions={rows} teams={teams} />
-        </section>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm">
+              {copy.listTitle}{" "}
+              <span className="font-normal text-muted-foreground">
+                ({rows.length})
+              </span>
+            </CardTitle>
+            <CardDescription className="tabular-nums">
+              {copy.accruedNote(
+                period.monthLabel,
+                period.dayOfPeriod,
+                period.daysInPeriod,
+              )}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <SubscriptionTable subscriptions={rows} teams={teams} />
+          </CardContent>
+        </Card>
       )}
     </div>
   );

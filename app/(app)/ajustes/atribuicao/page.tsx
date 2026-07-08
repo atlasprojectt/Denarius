@@ -1,5 +1,13 @@
 import Link from "next/link";
+import {
+  ChartPieSliceIcon,
+  LightbulbIcon,
+  LockSimpleIcon,
+} from "@phosphor-icons/react/dist/ssr";
 
+import { EmptyState } from "@/components/domain/empty-state";
+import { PageHeader } from "@/components/domain/page-header";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { requireAdmin } from "@/lib/auth/session";
 import { listTeams } from "@/lib/teams/queries";
 import { listMappableProjects } from "@/lib/usage/attribution";
@@ -7,11 +15,12 @@ import { listMappableProjects } from "@/lib/usage/attribution";
 import { ProjectMapForm } from "./_components/project-map-form";
 
 const copy = {
-  back: "← Ajustes",
+  back: "Ajustes",
   title: "Atribuição",
   subtitle:
     "Mapeie cada projeto (OpenAI) ou workspace (Anthropic) para um time. O que ficar sem time cai em Não atribuído.",
-  adminOnly: "Somente administradores podem editar a atribuição.",
+  adminOnlyTitle: "Restrito a administradores",
+  adminOnlyBody: "Somente administradores podem editar a atribuição.",
   emptyTitle: "Nenhum projeto para mapear ainda",
   emptyBody:
     "Conecte a OpenAI ou a Anthropic e sincronize — os projetos e workspaces com uso neste mês aparecem aqui para você atribuir a um time.",
@@ -23,11 +32,18 @@ export default async function AttributionPage() {
   const auth = await requireAdmin();
   if (auth.error !== undefined) {
     return (
-      <div className="mx-auto flex w-full max-w-3xl flex-col gap-4">
-        <Header />
-        <p className="rounded-xl border bg-card p-6 text-sm text-muted-foreground">
-          {copy.adminOnly}
-        </p>
+      <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
+        <PageHeader
+          title={copy.title}
+          description={copy.subtitle}
+          backHref="/ajustes"
+          backLabel={copy.back}
+        />
+        <EmptyState
+          icon={<LockSimpleIcon />}
+          title={copy.adminOnlyTitle}
+          description={copy.adminOnlyBody}
+        />
       </div>
     );
   }
@@ -38,41 +54,34 @@ export default async function AttributionPage() {
   ]);
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
-      <Header />
+    <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
+      <PageHeader
+        title={copy.title}
+        description={copy.subtitle}
+        backHref="/ajustes"
+        backLabel={copy.back}
+      />
 
       {projects.length === 0 ? (
-        <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed bg-card p-12 text-center">
-          <p className="font-medium">{copy.emptyTitle}</p>
-          <p className="max-w-md text-sm text-muted-foreground">{copy.emptyBody}</p>
-          <Link
-            href="/ajustes/conexoes"
-            className="mt-1 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"
-          >
-            {copy.connectCta}
-          </Link>
-        </div>
+        <EmptyState
+          icon={<ChartPieSliceIcon />}
+          title={copy.emptyTitle}
+          description={copy.emptyBody}
+          primaryAction={<Link href="/ajustes/conexoes">{copy.connectCta}</Link>}
+        />
       ) : (
-        <section className="rounded-xl border bg-card p-6 shadow-sm">
-          <ProjectMapForm projects={projects} teams={teams} />
-          <p className="mt-4 text-xs text-muted-foreground">{copy.tip}</p>
-        </section>
+        <Card>
+          <CardContent>
+            <ProjectMapForm projects={projects} teams={teams} />
+          </CardContent>
+          <CardFooter className="text-xs/relaxed text-muted-foreground">
+            <p className="flex items-start gap-2">
+              <LightbulbIcon className="mt-0.5 size-4 shrink-0" aria-hidden />
+              {copy.tip}
+            </p>
+          </CardFooter>
+        </Card>
       )}
-    </div>
-  );
-}
-
-function Header() {
-  return (
-    <div>
-      <Link
-        href="/ajustes"
-        className="text-sm text-muted-foreground hover:underline"
-      >
-        {copy.back}
-      </Link>
-      <h1 className="mt-1 text-2xl font-semibold tracking-tight">{copy.title}</h1>
-      <p className="text-sm text-muted-foreground">{copy.subtitle}</p>
     </div>
   );
 }

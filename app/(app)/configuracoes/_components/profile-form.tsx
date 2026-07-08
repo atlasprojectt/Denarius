@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 
+import { ActionStatus } from "@/components/domain/action-status";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -35,23 +36,15 @@ export function ProfileForm({ displayName }: { displayName: string }) {
           minLength={2}
           maxLength={80}
           defaultValue={displayName}
+          className="max-w-sm"
         />
       </div>
 
       <div className="flex items-center gap-3">
-        <Button type="submit" disabled={pending}>
+        <Button type="submit" variant="outline" disabled={pending}>
           {pending ? copy.saving : copy.save}
         </Button>
-        {state.error && (
-          <p role="alert" className="text-sm text-destructive">
-            {state.error}
-          </p>
-        )}
-        {state.success && (
-          <p role="status" className="text-sm font-medium text-green-700">
-            {state.success}
-          </p>
-        )}
+        <ActionStatus error={state.error} success={state.success} />
       </div>
     </form>
   );

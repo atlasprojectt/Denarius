@@ -1,15 +1,19 @@
 "use client";
 
 import { useActionState } from "react";
+import { ShieldCheckIcon } from "@phosphor-icons/react";
 
+import { ActionStatus } from "@/components/domain/action-status";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import {
   updatePrivacySettings,
   type SettingsFormState,
 } from "@/lib/settings/actions";
 
 const copy = {
-  names: "Mostrar nomes individuais (somente Admin)",
+  names: "Mostrar nomes individuais",
   namesHint:
     "Com isto desligado, ninguém vê nomes — nem Admins. Visualizadores nunca veem nomes.",
   store: "Armazenar dados por pessoa",
@@ -18,11 +22,40 @@ const copy = {
   neverStored:
     "Prompts e respostas nunca são armazenados — somente metadados de uso (tokens, modelos, datas).",
   save: "Salvar privacidade",
-  saving: "Salvando...",
+  saving: "Salvando…",
   adminOnly: "Somente administradores podem alterar a privacidade.",
 };
 
 const initialState: SettingsFormState = {};
+
+function Toggle({
+  name,
+  label,
+  hint,
+  defaultChecked,
+  disabled,
+}: {
+  name: string;
+  label: string;
+  hint: string;
+  defaultChecked: boolean;
+  disabled: boolean;
+}) {
+  return (
+    <div className="flex items-start justify-between gap-4">
+      <div className="flex flex-col gap-0.5">
+        <Label htmlFor={name}>{label}</Label>
+        <p className="text-sm/relaxed text-muted-foreground">{hint}</p>
+      </div>
+      <Switch
+        id={name}
+        name={name}
+        defaultChecked={defaultChecked}
+        disabled={disabled}
+      />
+    </div>
+  );
+}
 
 export function PrivacyForm({
   showNames,
@@ -39,54 +72,33 @@ export function PrivacyForm({
   );
 
   return (
-    <form action={formAction} className="flex flex-col gap-4">
-      <label className="flex items-start gap-3">
-        <input
-          name="showNames"
-          type="checkbox"
-          defaultChecked={showNames}
-          disabled={!isAdmin}
-          className="mt-1 size-4 accent-primary"
-        />
-        <span className="flex flex-col gap-0.5">
-          <span className="text-sm font-medium">{copy.names}</span>
-          <span className="text-sm text-muted-foreground">{copy.namesHint}</span>
-        </span>
-      </label>
+    <form action={formAction} className="flex flex-col gap-5">
+      <Toggle
+        name="showNames"
+        label={copy.names}
+        hint={copy.namesHint}
+        defaultChecked={showNames}
+        disabled={!isAdmin}
+      />
+      <Toggle
+        name="storePerPerson"
+        label={copy.store}
+        hint={copy.storeHint}
+        defaultChecked={storePerPerson}
+        disabled={!isAdmin}
+      />
 
-      <label className="flex items-start gap-3">
-        <input
-          name="storePerPerson"
-          type="checkbox"
-          defaultChecked={storePerPerson}
-          disabled={!isAdmin}
-          className="mt-1 size-4 accent-primary"
-        />
-        <span className="flex flex-col gap-0.5">
-          <span className="text-sm font-medium">{copy.store}</span>
-          <span className="text-sm text-muted-foreground">{copy.storeHint}</span>
-        </span>
-      </label>
-
-      <p className="rounded-lg bg-muted/50 p-3 text-xs text-muted-foreground">
+      <p className="flex items-start gap-2 rounded-lg bg-muted/50 p-3 text-xs/relaxed text-muted-foreground">
+        <ShieldCheckIcon className="mt-0.5 size-4 shrink-0" aria-hidden />
         {copy.neverStored}
       </p>
 
       {isAdmin ? (
         <div className="flex items-center gap-3">
-          <Button type="submit" disabled={pending}>
+          <Button type="submit" variant="outline" disabled={pending}>
             {pending ? copy.saving : copy.save}
           </Button>
-          {state.error && (
-            <p role="alert" className="text-sm text-destructive">
-              {state.error}
-            </p>
-          )}
-          {state.success && (
-            <p role="status" className="text-sm font-medium text-green-700">
-              {state.success}
-            </p>
-          )}
+          <ActionStatus error={state.error} success={state.success} />
         </div>
       ) : (
         <p className="text-sm text-muted-foreground">{copy.adminOnly}</p>

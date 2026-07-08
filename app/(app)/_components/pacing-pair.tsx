@@ -32,9 +32,9 @@ export function PacingPair({
   const at = (v: number) => v * g.marker;
 
   const fill: Record<VerdictStatus, string> = {
-    green: "bg-green-600",
-    amber: "bg-amber-500",
-    red: "bg-red-600",
+    green: "bg-status-green",
+    amber: "bg-status-amber",
+    red: "bg-status-red",
     collecting: "bg-muted-foreground",
   };
 

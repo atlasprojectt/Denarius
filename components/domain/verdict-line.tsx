@@ -6,10 +6,17 @@ import type { Verdict } from "@/lib/engine/verdict";
 // color; "collecting" stays neutral (no judgement before day 5).
 
 const dot: Record<Verdict["status"], string> = {
-  green: "bg-green-600",
-  amber: "bg-amber-500",
-  red: "bg-red-600",
+  green: "bg-status-green",
+  amber: "bg-status-amber",
+  red: "bg-status-red",
   collecting: "bg-muted-foreground",
+};
+
+const halo: Record<Verdict["status"], string> = {
+  green: "bg-status-green/20",
+  amber: "bg-status-amber/20",
+  red: "bg-status-red/20",
+  collecting: "bg-muted-foreground/15",
 };
 
 export function VerdictLine({ verdict }: { verdict: Verdict }) {
@@ -17,9 +24,11 @@ export function VerdictLine({ verdict }: { verdict: Verdict }) {
     <div className="flex items-start gap-3">
       <span
         aria-hidden
-        className={`mt-1.5 size-2.5 shrink-0 rounded-full ${dot[verdict.status]}`}
-      />
-      <p className="text-lg font-semibold leading-snug tracking-tight">
+        className={`mt-1 flex size-4 shrink-0 items-center justify-center rounded-full ${halo[verdict.status]}`}
+      >
+        <span className={`size-2 rounded-full ${dot[verdict.status]}`} />
+      </span>
+      <p className="text-xl/snug font-semibold tracking-tight text-balance">
         {verdict.sentence}
       </p>
     </div>

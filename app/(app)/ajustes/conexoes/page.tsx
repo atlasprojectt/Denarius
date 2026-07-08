@@ -1,15 +1,28 @@
-import Link from "next/link";
-
+import { PageHeader } from "@/components/domain/page-header";
+import { Badge } from "@/components/ui/badge";
+import {
+  Item,
+  ItemContent,
+  ItemDescription,
+  ItemTitle,
+  ItemActions,
+} from "@/components/ui/item";
 import { createClient } from "@/lib/supabase/server";
 
 import { ProviderConnectionCard } from "./_components/provider-connection-card";
 
 const copy = {
-  back: "← Ajustes",
+  back: "Ajustes",
   title: "Conexões",
   subtitle:
     "Chaves admin somente-leitura, criptografadas em repouso. O Denarius observa uso e custo — nunca altera nada nos provedores.",
-  comingSoon: [{ name: "GitHub Copilot", status: "Planejado para a v1.5" }],
+  comingSoon: [
+    {
+      name: "GitHub Copilot",
+      description: "Assentos e uso do Copilot direto da organização GitHub.",
+      status: "Planejado para a v1.5",
+    },
+  ],
 };
 
 const PROVIDERS = ["openai", "anthropic"] as const;
@@ -29,19 +42,13 @@ export default async function ConnectionsPage() {
   const connections = (data ?? []) as ConnectionRow[];
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
-      <div>
-        <Link
-          href="/ajustes"
-          className="text-sm text-muted-foreground hover:underline"
-        >
-          {copy.back}
-        </Link>
-        <h1 className="mt-1 text-2xl font-semibold tracking-tight">
-          {copy.title}
-        </h1>
-        <p className="text-sm text-muted-foreground">{copy.subtitle}</p>
-      </div>
+    <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
+      <PageHeader
+        title={copy.title}
+        description={copy.subtitle}
+        backHref="/ajustes"
+        backLabel={copy.back}
+      />
 
       {PROVIDERS.map((provider) => {
         const connection = connections.find((c) => c.provider === provider);
@@ -56,21 +63,19 @@ export default async function ConnectionsPage() {
         );
       })}
 
-      <section className="rounded-xl border bg-card p-6 shadow-sm">
-        <ul className="flex flex-col gap-3">
-          {copy.comingSoon.map((item) => (
-            <li
-              key={item.name}
-              className="flex items-center justify-between rounded-lg border p-3 text-sm"
-            >
-              <span className="font-medium">{item.name}</span>
-              <span className="rounded-md bg-muted px-2 py-1 text-xs font-medium text-muted-foreground">
-                {item.status}
-              </span>
-            </li>
-          ))}
-        </ul>
-      </section>
+      {copy.comingSoon.map((item) => (
+        <Item key={item.name} variant="outline" className="border-dashed">
+          <ItemContent>
+            <ItemTitle>{item.name}</ItemTitle>
+            <ItemDescription>{item.description}</ItemDescription>
+          </ItemContent>
+          <ItemActions>
+            <Badge variant="outline" className="text-muted-foreground">
+              {item.status}
+            </Badge>
+          </ItemActions>
+        </Item>
+      ))}
     </div>
   );
 }

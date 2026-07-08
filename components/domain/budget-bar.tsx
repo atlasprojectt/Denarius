@@ -8,9 +8,9 @@ import type { VerdictStatus } from "@/lib/engine/verdict";
 // semaphore discipline (product principle #5).
 
 const fillColor: Record<VerdictStatus, string> = {
-  green: "bg-green-600",
-  amber: "bg-amber-500",
-  red: "bg-red-600",
+  green: "bg-status-green",
+  amber: "bg-status-amber",
+  red: "bg-status-red",
   collecting: "bg-muted-foreground",
 };
 

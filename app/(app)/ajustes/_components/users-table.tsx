@@ -2,7 +2,19 @@
 
 import { useActionState } from "react";
 
+import { ActionStatus } from "@/components/domain/action-status";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemDescription,
+  ItemGroup,
+  ItemMedia,
+  ItemTitle,
+} from "@/components/ui/item";
 import { removeUser, type SettingsFormState } from "@/lib/settings/actions";
 
 const copy = {
@@ -12,7 +24,7 @@ const copy = {
     string
   >,
   remove: "Remover",
-  removing: "Removendo...",
+  removing: "Removendo…",
   selfNote: "Não é possível remover a si mesmo.",
   adminOnly: "Somente administradores podem remover usuários.",
 };
@@ -25,19 +37,19 @@ export type TenantUser = {
 
 const initialState: SettingsFormState = {};
 
+function initialsOf(email: string): string {
+  return email.slice(0, 2).toUpperCase();
+}
+
 function RemoveButton({ userId }: { userId: string }) {
   const [state, formAction, pending] = useActionState(removeUser, initialState);
   return (
     <form action={formAction} className="flex items-center gap-2">
       <input type="hidden" name="userId" value={userId} />
-      <Button type="submit" variant="outline" size="sm" disabled={pending}>
+      <ActionStatus error={state.error} />
+      <Button type="submit" variant="destructive" size="sm" disabled={pending}>
         {pending ? copy.removing : copy.remove}
       </Button>
-      {state.error && (
-        <span role="alert" className="text-xs text-destructive">
-          {state.error}
-        </span>
-      )}
     </form>
   );
 }
@@ -52,39 +64,47 @@ export function UsersTable({
   isAdmin: boolean;
 }) {
   return (
-    <ul className="flex flex-col gap-3">
-      {users.map((u) => {
-        const isSelf = u.id === currentUserId;
-        return (
-          <li
-            key={u.id}
-            className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3 text-sm"
-          >
-            <div className="flex flex-col">
-              <span className="font-medium">
-                {u.email}
+    <div className="flex flex-col gap-3">
+      <ItemGroup className="gap-2">
+        {users.map((u) => {
+          const isSelf = u.id === currentUserId;
+          return (
+            <Item key={u.id} variant="outline">
+              <ItemMedia>
+                <Avatar size="sm">
+                  <AvatarFallback className="text-[10px] font-semibold">
+                    {initialsOf(u.email)}
+                  </AvatarFallback>
+                </Avatar>
+              </ItemMedia>
+              <ItemContent>
+                <ItemTitle>
+                  {u.email}
+                  {isSelf && (
+                    <span className="text-xs font-normal text-muted-foreground">
+                      ({copy.you})
+                    </span>
+                  )}
+                </ItemTitle>
+                <ItemDescription>
+                  {copy.roleLabel[u.role] ?? u.role}
+                </ItemDescription>
+              </ItemContent>
+              <ItemActions>
+                {isAdmin && !isSelf && <RemoveButton userId={u.id} />}
                 {isSelf && (
-                  <span className="ml-2 text-xs text-muted-foreground">
-                    ({copy.you})
-                  </span>
+                  <Badge variant="outline" className="text-muted-foreground">
+                    {copy.selfNote}
+                  </Badge>
                 )}
-              </span>
-              <span className="text-xs text-muted-foreground">
-                {copy.roleLabel[u.role] ?? u.role}
-              </span>
-            </div>
-            {isAdmin && !isSelf && <RemoveButton userId={u.id} />}
-            {isSelf && (
-              <span className="text-xs text-muted-foreground">
-                {copy.selfNote}
-              </span>
-            )}
-          </li>
-        );
-      })}
+              </ItemActions>
+            </Item>
+          );
+        })}
+      </ItemGroup>
       {!isAdmin && (
         <p className="text-sm text-muted-foreground">{copy.adminOnly}</p>
       )}
-    </ul>
+    </div>
   );
 }

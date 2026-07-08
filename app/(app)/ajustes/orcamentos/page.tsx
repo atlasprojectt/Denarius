@@ -1,5 +1,15 @@
-import Link from "next/link";
+import { InfoIcon } from "@phosphor-icons/react/dist/ssr";
 
+import { PageHeader } from "@/components/domain/page-header";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { currentPeriod } from "@/lib/engine/period";
 import { money } from "@/lib/money";
 import { listBudgets, type Budget } from "@/lib/budgets/queries";
@@ -8,11 +18,11 @@ import { listTeams } from "@/lib/teams/queries";
 import { BudgetForm, type ExistingBudget } from "./_components/budget-form";
 
 const copy = {
-  back: "← Ajustes",
+  back: "Ajustes",
   title: "Orçamentos",
   subtitle:
-    "Defina o limite mensal da empresa e de cada time. O orçamento governa o gasto total rastreado (APIs + assinaturas) e destrava o veredito, a projeção de fechamento e os avisos antecipados.",
-  periodNote: (label: string) => `Período atual — ${label}.`,
+    "O limite mensal da empresa e de cada time. O orçamento governa o gasto total rastreado (APIs + assinaturas) e destrava o veredito, a projeção de fechamento e os avisos antecipados.",
+  periodNote: (label: string) => `Período atual — ${label}`,
   orgTitle: "Empresa",
   orgSub: "O limite da empresa toda para o período.",
   teamsTitle: "Times",
@@ -53,80 +63,85 @@ export default async function BudgetsPage() {
   const mismatch = org ? teamSum - org.amount : 0;
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
-      <div>
-        <Link
-          href="/ajustes"
-          className="text-sm text-muted-foreground hover:underline"
-        >
-          {copy.back}
-        </Link>
-        <h1 className="mt-1 text-2xl font-semibold tracking-tight">
-          {copy.title}
-        </h1>
-        <p className="text-sm text-muted-foreground">{copy.subtitle}</p>
-        <p className="mt-2 text-xs text-muted-foreground">
-          {copy.periodNote(period.monthLabel)}
-        </p>
-      </div>
+    <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
+      <PageHeader
+        title={copy.title}
+        description={copy.subtitle}
+        backHref="/ajustes"
+        backLabel={copy.back}
+        meta={copy.periodNote(period.monthLabel)}
+      />
 
-      <section className="rounded-xl border bg-card p-6 shadow-sm">
-        <h2 className="font-semibold">{copy.orgTitle}</h2>
-        <p className="mt-1 text-sm text-muted-foreground">{copy.orgSub}</p>
-        <div className="mt-4">
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm">{copy.orgTitle}</CardTitle>
+          <CardDescription>{copy.orgSub}</CardDescription>
+        </CardHeader>
+        <CardContent>
           <BudgetForm
             scope="org"
             teamId={null}
             currency={currency}
             existing={toExisting(org ?? undefined)}
           />
-        </div>
-        {org && org.frozenFxRate !== null && org.currency !== "USD" && (
-          <p className="mt-3 text-xs text-muted-foreground">
-            {copy.fxDisclosure(
-              money(org.frozenFxRate, org.currency),
-              org.fxRateSource ?? "—",
-              org.fxRateDate ?? "—",
-            )}
-          </p>
+        </CardContent>
+        {org && org.currency !== "USD" && (
+          <CardFooter
+            className={`text-xs/relaxed ${
+              org.frozenFxRate === null
+                ? "text-status-amber-fg"
+                : "text-muted-foreground"
+            }`}
+          >
+            <p>
+              {org.frozenFxRate !== null
+                ? copy.fxDisclosure(
+                    money(org.frozenFxRate, org.currency),
+                    org.fxRateSource ?? "—",
+                    org.fxRateDate ?? "—",
+                  )
+                : copy.fxMissing}
+            </p>
+          </CardFooter>
         )}
-        {org && org.frozenFxRate === null && org.currency !== "USD" && (
-          <p className="mt-3 text-xs text-amber-700 dark:text-amber-500">
-            {copy.fxMissing}
-          </p>
-        )}
-      </section>
+      </Card>
 
-      <section className="rounded-xl border bg-card p-6 shadow-sm">
-        <h2 className="font-semibold">{copy.teamsTitle}</h2>
-        <p className="mt-1 text-sm text-muted-foreground">{copy.teamsSub}</p>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm">{copy.teamsTitle}</CardTitle>
+          <CardDescription>{copy.teamsSub}</CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4">
+          {org && mismatch !== 0 && (
+            <Alert>
+              <InfoIcon />
+              <AlertDescription>
+                {mismatch > 0
+                  ? copy.mismatchOver(money(mismatch, currency))
+                  : copy.mismatchUnder(money(-mismatch, currency))}
+              </AlertDescription>
+            </Alert>
+          )}
 
-        {org && mismatch !== 0 && (
-          <p className="mt-3 rounded-md bg-muted px-3 py-2 text-xs text-muted-foreground">
-            {mismatch > 0
-              ? copy.mismatchOver(money(mismatch, currency))
-              : copy.mismatchUnder(money(-mismatch, currency))}
-          </p>
-        )}
-
-        {teams.length === 0 ? (
-          <p className="mt-4 text-sm text-muted-foreground">{copy.noTeams}</p>
-        ) : (
-          <ul className="mt-4 flex flex-col divide-y">
-            {teams.map((team) => (
-              <li key={team.id} className="flex flex-col gap-2 py-4 first:pt-0">
-                <p className="font-medium">{team.name}</p>
-                <BudgetForm
-                  scope="team"
-                  teamId={team.id}
-                  currency={currency}
-                  existing={toExisting(budgetByTeam.get(team.id))}
-                />
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+          {teams.length === 0 ? (
+            <p className="text-sm text-muted-foreground">{copy.noTeams}</p>
+          ) : (
+            <ul className="flex flex-col divide-y">
+              {teams.map((team) => (
+                <li key={team.id} className="flex flex-col gap-2.5 py-5 first:pt-0 last:pb-0">
+                  <p className="text-sm font-medium">{team.name}</p>
+                  <BudgetForm
+                    scope="team"
+                    teamId={team.id}
+                    currency={currency}
+                    existing={toExisting(budgetByTeam.get(team.id))}
+                  />
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

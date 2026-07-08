@@ -2,8 +2,17 @@
 
 import { useActionState, useState } from "react";
 
+import { ActionStatus } from "@/components/domain/action-status";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { updateEmployee, type RosterFormState } from "@/lib/roster/actions";
 
 const copy = {
@@ -44,11 +53,11 @@ function EmployeeRow({
 
   if (!editing) {
     return (
-      <tr className="border-b last:border-b-0">
-        <td className="py-2.5 pr-2 font-medium">{employee.name}</td>
-        <td className="py-2.5 pr-2 text-muted-foreground">{employee.email}</td>
-        <td className="py-2.5 pr-2">{employee.teamName}</td>
-        <td className="py-2.5 text-right">
+      <TableRow>
+        <TableCell className="font-medium">{employee.name}</TableCell>
+        <TableCell className="text-muted-foreground">{employee.email}</TableCell>
+        <TableCell>{employee.teamName}</TableCell>
+        <TableCell className="text-right">
           <Button
             type="button"
             variant="ghost"
@@ -57,21 +66,21 @@ function EmployeeRow({
           >
             {copy.edit}
           </Button>
-        </td>
-      </tr>
+        </TableCell>
+      </TableRow>
     );
   }
 
   return (
-    <tr className="border-b bg-muted/30">
-      <td colSpan={4} className="py-3">
+    <TableRow className="bg-muted/30">
+      <TableCell colSpan={4} className="py-3 whitespace-normal">
         <form action={formAction} className="flex flex-wrap items-center gap-3">
           <input type="hidden" name="employeeId" value={employee.id} />
           <Input
             name="name"
             defaultValue={employee.name}
             required
-            className="h-9 w-56 bg-background"
+            className="h-8 w-56 bg-background"
           />
           <span className="text-sm text-muted-foreground">
             {employee.email}
@@ -82,7 +91,7 @@ function EmployeeRow({
             defaultValue={
               teams.find((team) => team.name === employee.teamName)?.id ?? ""
             }
-            className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+            className="h-8 rounded-md border border-input bg-transparent px-2 text-sm transition-colors outline-none focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50 dark:bg-input/30"
           >
             {teams.map((team) => (
               <option key={team.id} value={team.id}>
@@ -90,11 +99,7 @@ function EmployeeRow({
               </option>
             ))}
           </select>
-          {state.error && (
-            <p role="alert" className="text-sm text-destructive">
-              {state.error}
-            </p>
-          )}
+          <ActionStatus error={state.error} />
           <div className="ml-auto flex gap-2">
             <Button
               type="button"
@@ -109,8 +114,8 @@ function EmployeeRow({
             </Button>
           </div>
         </form>
-      </td>
-    </tr>
+      </TableCell>
+    </TableRow>
   );
 }
 
@@ -122,22 +127,20 @@ export function EmployeeTable({
   teams: Team[];
 }) {
   return (
-    <div className="mt-4">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b text-left text-xs uppercase tracking-wide text-muted-foreground">
-            <th className="py-2 pr-2 font-medium">{copy.name}</th>
-            <th className="py-2 pr-2 font-medium">{copy.email}</th>
-            <th className="py-2 pr-2 font-medium">{copy.team}</th>
-            <th className="py-2" />
-          </tr>
-        </thead>
-        <tbody>
-          {employees.map((employee) => (
-            <EmployeeRow key={employee.id} employee={employee} teams={teams} />
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>{copy.name}</TableHead>
+          <TableHead>{copy.email}</TableHead>
+          <TableHead>{copy.team}</TableHead>
+          <TableHead />
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {employees.map((employee) => (
+          <EmployeeRow key={employee.id} employee={employee} teams={teams} />
+        ))}
+      </TableBody>
+    </Table>
   );
 }

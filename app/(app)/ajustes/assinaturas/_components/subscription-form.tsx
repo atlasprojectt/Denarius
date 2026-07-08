@@ -2,7 +2,14 @@
 
 import { useActionState, useEffect, useRef } from "react";
 
+import { ActionStatus } from "@/components/domain/action-status";
 import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -46,85 +53,76 @@ export function SubscriptionForm({
   }, [state]);
 
   return (
-    <section className="rounded-xl border bg-card p-6 shadow-sm">
-      <h2 className="font-semibold">{copy.title}</h2>
-      <form
-        ref={formRef}
-        action={formAction}
-        className="mt-4 flex flex-col gap-4"
-      >
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="flex flex-col gap-1.5 sm:col-span-2">
-            <Label htmlFor="tool">{copy.tool}</Label>
-            <Input
-              id="tool"
-              name="tool"
-              placeholder={copy.toolPlaceholder}
-              required
-            />
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-sm">{copy.title}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form ref={formRef} action={formAction} className="flex flex-col gap-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="flex flex-col gap-1.5 sm:col-span-2">
+              <Label htmlFor="tool">{copy.tool}</Label>
+              <Input
+                id="tool"
+                name="tool"
+                placeholder={copy.toolPlaceholder}
+                required
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="seatCount">{copy.seats}</Label>
+              <Input
+                id="seatCount"
+                name="seatCount"
+                type="number"
+                min={1}
+                step={1}
+                defaultValue={1}
+                required
+                className="tabular-nums"
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="unitPrice">
+                {copy.price} ({currency})
+              </Label>
+              <Input
+                id="unitPrice"
+                name="unitPrice"
+                type="number"
+                min={0}
+                step="0.01"
+                required
+                className="tabular-nums"
+              />
+            </div>
+            <div className="flex flex-col gap-1.5 sm:col-span-2">
+              <Label htmlFor="teamId">{copy.team}</Label>
+              <select
+                id="teamId"
+                name="teamId"
+                defaultValue=""
+                className="h-8 max-w-sm rounded-md border border-input bg-transparent px-2 text-sm transition-colors outline-none focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50 dark:bg-input/30"
+              >
+                <option value="">{copy.shared}</option>
+                {teams.map((team) => (
+                  <option key={team.id} value={team.id}>
+                    {team.name}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="seatCount">{copy.seats}</Label>
-            <Input
-              id="seatCount"
-              name="seatCount"
-              type="number"
-              min={1}
-              step={1}
-              defaultValue={1}
-              required
-              className="tabular-nums"
-            />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="unitPrice">
-              {copy.price} ({currency})
-            </Label>
-            <Input
-              id="unitPrice"
-              name="unitPrice"
-              type="number"
-              min={0}
-              step="0.01"
-              required
-              className="tabular-nums"
-            />
-          </div>
-          <div className="flex flex-col gap-1.5 sm:col-span-2">
-            <Label htmlFor="teamId">{copy.team}</Label>
-            <select
-              id="teamId"
-              name="teamId"
-              defaultValue=""
-              className="h-9 rounded-md border border-input bg-background px-2 text-sm"
-            >
-              <option value="">{copy.shared}</option>
-              {teams.map((team) => (
-                <option key={team.id} value={team.id}>
-                  {team.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
 
-        {state.error && (
-          <p role="alert" className="text-sm text-destructive">
-            {state.error}
-          </p>
-        )}
-        {state.success && (
-          <p role="status" className="text-sm font-medium text-green-700">
-            {state.success}
-          </p>
-        )}
+          <ActionStatus error={state.error} success={state.success} />
 
-        <div>
-          <Button type="submit" disabled={pending}>
-            {pending ? copy.submitting : copy.submit}
-          </Button>
-        </div>
-      </form>
-    </section>
+          <div>
+            <Button type="submit" disabled={pending}>
+              {pending ? copy.submitting : copy.submit}
+            </Button>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
   );
 }

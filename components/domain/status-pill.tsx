@@ -12,17 +12,25 @@ const copy: Record<VerdictStatus, string> = {
 };
 
 const styles: Record<VerdictStatus, string> = {
-  green: "bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-300",
-  amber: "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300",
-  red: "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300",
+  green: "bg-status-green-soft text-status-green-fg",
+  amber: "bg-status-amber-soft text-status-amber-fg",
+  red: "bg-status-red-soft text-status-red-fg",
   collecting: "bg-muted text-muted-foreground",
+};
+
+const dot: Record<VerdictStatus, string> = {
+  green: "bg-status-green",
+  amber: "bg-status-amber",
+  red: "bg-status-red",
+  collecting: "bg-muted-foreground",
 };
 
 export function StatusPill({ status }: { status: VerdictStatus }) {
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${styles[status]}`}
+      className={`inline-flex h-5 items-center gap-1.5 rounded-full px-2 text-xs font-medium ${styles[status]}`}
     >
+      <span aria-hidden className={`size-1.5 rounded-full ${dot[status]}`} />
       {copy[status]}
     </span>
   );

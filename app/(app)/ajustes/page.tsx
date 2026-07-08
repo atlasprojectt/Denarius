@@ -1,6 +1,34 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import {
+  CaretRightIcon,
+  ChartPieSliceIcon,
+  CoinsIcon,
+  PlugsIcon,
+  UsersFourIcon,
+  WalletIcon,
+} from "@phosphor-icons/react/dist/ssr";
 
+import { PageHeader } from "@/components/domain/page-header";
+import { Badge } from "@/components/ui/badge";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemDescription,
+  ItemGroup,
+  ItemMedia,
+  ItemSeparator,
+  ItemTitle,
+} from "@/components/ui/item";
+import { Separator } from "@/components/ui/separator";
 import { monthStartUtc } from "@/lib/engine/period";
 import { canEditCompanySettings } from "@/lib/settings/account";
 import { createClient } from "@/lib/supabase/server";
@@ -11,14 +39,16 @@ import { UsersTable, type TenantUser } from "./_components/users-table";
 
 const copy = {
   title: "Ajustes",
-  subtitle: "Empresa, conexões e governança operacional.",
-  companyTitle: "Empresa",
+  subtitle: "Empresa, fontes de gasto e governança operacional.",
+  groupCompany: "Empresa",
+  groupSources: "Fontes de gasto",
+  groupGovernance: "Governança",
+  companyTitle: "Identidade",
   companySub:
-    "Identidade da empresa usada no topo do app e nas superfícies de governança.",
+    "Nome usado no topo do app e nas superfícies de governança, e a moeda em que os valores aparecem.",
   connectionsTitle: "Conexões",
   connectionsSub:
     "Chaves admin somente-leitura, criptografadas. O Denarius nunca altera nada nos provedores.",
-  connectionsCta: "Gerenciar conexões",
   providerNames: { openai: "OpenAI", anthropic: "Anthropic" } as Record<
     string,
     string
@@ -29,23 +59,18 @@ const copy = {
     revoked: "Revogado",
     none: "Não conectado",
   } as Record<string, string>,
-  staticConnections: [
-    { name: "GitHub Copilot", status: "Planejado para a v1.5" },
-  ],
+  connectionsNone: "Nenhum provedor conectado ainda.",
   attributionTitle: "Atribuição",
   attributionSub:
     "Mapeie projetos e workspaces dos provedores para os times. O que não for mapeado cai em Não atribuído.",
-  attributionCta: "Gerenciar atribuição",
   rosterTitle: "Roster",
   rosterEmpty: "Nenhum funcionário importado ainda.",
   rosterCount: (people: number, teams: number) =>
     `${people} pessoa(s) em ${teams} time(s).`,
-  rosterCta: "Gerenciar roster",
   seatsTitle: "Assinaturas e assentos",
   seatsEmpty: "Nenhuma assinatura registrada ainda.",
   seatsCount: (subs: number) =>
     `${subs} assinatura(s). Custo distribuído dia a dia no período.`,
-  seatsCta: "Gerenciar assinaturas",
   budgetsTitle: "Orçamentos",
   budgetsSet: (org: boolean, teams: number) =>
     org
@@ -53,7 +78,6 @@ const copy = {
       : teams > 0
         ? `${teams} time(s) com orçamento. Falta o da empresa.`
         : "Nenhum orçamento definido ainda. Sem orçamento não há veredito.",
-  budgetsCta: "Gerenciar orçamentos",
   privacyTitle: "Privacidade",
   privacySub:
     "Controles de confiança: quem vê nomes, minimização de dados por pessoa (LGPD).",
@@ -69,6 +93,46 @@ type TenantRow = {
   store_per_person: boolean;
 };
 type AppUserRow = { role: string };
+
+function GroupLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <h2 className="text-xs font-medium tracking-wider text-muted-foreground uppercase">
+      {children}
+    </h2>
+  );
+}
+
+function SettingsLink({
+  href,
+  icon,
+  title,
+  description,
+  status,
+}: {
+  href: string;
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  status?: React.ReactNode;
+}) {
+  return (
+    <Item asChild>
+      <Link href={href}>
+        <ItemMedia variant="icon" className="text-muted-foreground">
+          {icon}
+        </ItemMedia>
+        <ItemContent>
+          <ItemTitle>{title}</ItemTitle>
+          <ItemDescription>{description}</ItemDescription>
+        </ItemContent>
+        <ItemActions>
+          {status}
+          <CaretRightIcon className="size-4 text-muted-foreground" aria-hidden />
+        </ItemActions>
+      </Link>
+    </Item>
+  );
+}
 
 export default async function SettingsPage() {
   const supabase = await createClient();
@@ -123,174 +187,133 @@ export default async function SettingsPage() {
     provider: string;
     status: string;
   }[];
-  const statusFor = (provider: string) =>
-    connections.find((c) => c.provider === provider)?.status ?? "none";
+  const connected = connections.filter((c) => c.status === "active");
+  const connectionsSummary =
+    connections.length === 0
+      ? copy.connectionsNone
+      : connections
+          .map(
+            (c) =>
+              `${copy.providerNames[c.provider] ?? c.provider}: ${
+                copy.providerStatus[c.status] ?? c.status
+              }`,
+          )
+          .join(" · ");
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">{copy.title}</h1>
-        <p className="text-sm text-muted-foreground">{copy.subtitle}</p>
-      </div>
+    <div className="mx-auto flex w-full max-w-4xl flex-col gap-8">
+      <PageHeader title={copy.title} description={copy.subtitle} />
 
-      <section className="rounded-xl border bg-card p-6 shadow-sm">
-        <div>
-          <h2 className="font-semibold">{copy.companyTitle}</h2>
-          <p className="mt-1 text-sm text-muted-foreground">{copy.companySub}</p>
-        </div>
-
-        <div className="mt-4">
-          <CompanyForm companyName={tenant.name} isAdmin={isAdmin} />
-        </div>
-
-        <div className="mt-4">
-          <CurrencyForm
-            currency={tenant.display_currency}
-            editable={currencyEditable}
-          />
-        </div>
+      <section className="flex flex-col gap-3">
+        <GroupLabel>{copy.groupCompany}</GroupLabel>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm">{copy.companyTitle}</CardTitle>
+            <CardDescription>{copy.companySub}</CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-5">
+            <CompanyForm companyName={tenant.name} isAdmin={isAdmin} />
+            <Separator />
+            <CurrencyForm
+              currency={tenant.display_currency}
+              editable={currencyEditable}
+            />
+          </CardContent>
+        </Card>
       </section>
 
-      <section className="rounded-xl border bg-card p-6 shadow-sm">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <h2 className="font-semibold">{copy.connectionsTitle}</h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {copy.connectionsSub}
-            </p>
-          </div>
-          <Link
-            href="/ajustes/conexoes"
-            className="whitespace-nowrap rounded-md border px-3 py-1.5 text-sm font-medium hover:bg-muted"
-          >
-            {copy.connectionsCta}
-          </Link>
-        </div>
-        <ul className="mt-4 flex flex-col gap-3">
-          {(["openai", "anthropic"] as const).map((provider) => (
-            <li
-              key={provider}
-              className="flex items-center justify-between rounded-lg border p-3 text-sm"
-            >
-              <span className="font-medium">{copy.providerNames[provider]}</span>
-              <span className="rounded-md bg-muted px-2 py-1 text-xs font-medium text-muted-foreground">
-                {copy.providerStatus[statusFor(provider)] ??
-                  copy.providerStatus.none}
-              </span>
-            </li>
-          ))}
-          {copy.staticConnections.map((connection) => (
-            <li
-              key={connection.name}
-              className="flex items-center justify-between rounded-lg border p-3 text-sm"
-            >
-              <span className="font-medium">{connection.name}</span>
-              <span className="rounded-md bg-muted px-2 py-1 text-xs font-medium text-muted-foreground">
-                {connection.status}
-              </span>
-            </li>
-          ))}
-        </ul>
+      <section className="flex flex-col gap-3">
+        <GroupLabel>{copy.groupSources}</GroupLabel>
+        <Card size="sm" className="py-2">
+          <CardContent className="px-2">
+            <ItemGroup className="gap-0">
+              <SettingsLink
+                href="/ajustes/conexoes"
+                icon={<PlugsIcon />}
+                title={copy.connectionsTitle}
+                description={connectionsSummary}
+                status={
+                  connected.length > 0 ? (
+                    <Badge variant="secondary" className="tabular-nums">
+                      {connected.length} ativa(s)
+                    </Badge>
+                  ) : undefined
+                }
+              />
+              <ItemSeparator className="my-0" />
+              <SettingsLink
+                href="/ajustes/atribuicao"
+                icon={<ChartPieSliceIcon />}
+                title={copy.attributionTitle}
+                description={copy.attributionSub}
+              />
+              <ItemSeparator className="my-0" />
+              <SettingsLink
+                href="/ajustes/roster"
+                icon={<UsersFourIcon />}
+                title={copy.rosterTitle}
+                description={
+                  employeeCount
+                    ? copy.rosterCount(employeeCount, teamCount ?? 0)
+                    : copy.rosterEmpty
+                }
+              />
+              <ItemSeparator className="my-0" />
+              <SettingsLink
+                href="/ajustes/assinaturas"
+                icon={<CoinsIcon />}
+                title={copy.seatsTitle}
+                description={
+                  subscriptionCount
+                    ? copy.seatsCount(subscriptionCount)
+                    : copy.seatsEmpty
+                }
+              />
+            </ItemGroup>
+          </CardContent>
+        </Card>
       </section>
 
-      <section className="rounded-xl border bg-card p-6 shadow-sm">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <h2 className="font-semibold">{copy.attributionTitle}</h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {copy.attributionSub}
-            </p>
-          </div>
-          <Link
-            href="/ajustes/atribuicao"
-            className="whitespace-nowrap rounded-md border px-3 py-1.5 text-sm font-medium hover:bg-muted"
-          >
-            {copy.attributionCta}
-          </Link>
-        </div>
-      </section>
+      <section className="flex flex-col gap-3">
+        <GroupLabel>{copy.groupGovernance}</GroupLabel>
+        <Card size="sm" className="py-2">
+          <CardContent className="px-2">
+            <SettingsLink
+              href="/ajustes/orcamentos"
+              icon={<WalletIcon />}
+              title={copy.budgetsTitle}
+              description={copy.budgetsSet(hasOrgBudget, teamBudgetCount)}
+            />
+          </CardContent>
+        </Card>
 
-      <section className="rounded-xl border bg-card p-6 shadow-sm">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <h2 className="font-semibold">{copy.rosterTitle}</h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {employeeCount
-                ? copy.rosterCount(employeeCount, teamCount ?? 0)
-                : copy.rosterEmpty}
-            </p>
-          </div>
-          <Link
-            href="/ajustes/roster"
-            className="rounded-md border px-3 py-1.5 text-sm font-medium hover:bg-muted"
-          >
-            {copy.rosterCta}
-          </Link>
-        </div>
-      </section>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm">{copy.privacyTitle}</CardTitle>
+            <CardDescription>{copy.privacySub}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <PrivacyForm
+              showNames={tenant.show_names}
+              storePerPerson={tenant.store_per_person}
+              isAdmin={isAdmin}
+            />
+          </CardContent>
+        </Card>
 
-      <section className="rounded-xl border bg-card p-6 shadow-sm">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <h2 className="font-semibold">{copy.seatsTitle}</h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {subscriptionCount
-                ? copy.seatsCount(subscriptionCount)
-                : copy.seatsEmpty}
-            </p>
-          </div>
-          <Link
-            href="/ajustes/assinaturas"
-            className="whitespace-nowrap rounded-md border px-3 py-1.5 text-sm font-medium hover:bg-muted"
-          >
-            {copy.seatsCta}
-          </Link>
-        </div>
-      </section>
-
-      <section className="rounded-xl border bg-card p-6 shadow-sm">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <h2 className="font-semibold">{copy.budgetsTitle}</h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {copy.budgetsSet(hasOrgBudget, teamBudgetCount)}
-            </p>
-          </div>
-          <Link
-            href="/ajustes/orcamentos"
-            className="whitespace-nowrap rounded-md border px-3 py-1.5 text-sm font-medium hover:bg-muted"
-          >
-            {copy.budgetsCta}
-          </Link>
-        </div>
-      </section>
-
-      <section className="rounded-xl border bg-card p-6 shadow-sm">
-        <div>
-          <h2 className="font-semibold">{copy.privacyTitle}</h2>
-          <p className="mt-1 text-sm text-muted-foreground">{copy.privacySub}</p>
-        </div>
-        <div className="mt-4">
-          <PrivacyForm
-            showNames={tenant.show_names}
-            storePerPerson={tenant.store_per_person}
-            isAdmin={isAdmin}
-          />
-        </div>
-      </section>
-
-      <section className="rounded-xl border bg-card p-6 shadow-sm">
-        <div>
-          <h2 className="font-semibold">{copy.usersTitle}</h2>
-          <p className="mt-1 text-sm text-muted-foreground">{copy.usersSub}</p>
-        </div>
-        <div className="mt-4">
-          <UsersTable
-            users={users}
-            currentUserId={user?.id ?? ""}
-            isAdmin={isAdmin}
-          />
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm">{copy.usersTitle}</CardTitle>
+            <CardDescription>{copy.usersSub}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <UsersTable
+              users={users}
+              currentUserId={user?.id ?? ""}
+              isAdmin={isAdmin}
+            />
+          </CardContent>
+        </Card>
       </section>
     </div>
   );

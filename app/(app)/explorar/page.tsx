@@ -1,6 +1,26 @@
 import Link from "next/link";
+import { CompassIcon } from "@phosphor-icons/react/dist/ssr";
 
+import { EmptyState } from "@/components/domain/empty-state";
+import { PageHeader } from "@/components/domain/page-header";
 import { StaleBanner } from "@/components/domain/stale-banner";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { attributeSeats } from "@/lib/engine/accrual";
 import { freshness, type ConnectionStatus } from "@/lib/engine/freshness";
 import { currentPeriod } from "@/lib/engine/period";
@@ -13,15 +33,17 @@ import { apiSpendMonthToDate } from "@/lib/usage/queries";
 
 const copy = {
   title: "Explorar",
-  subtitle: "Atribuição e investigação por time, pessoa e modelo",
+  subtitle:
+    "Para onde o gasto vai: por time, por modelo e por assinatura. Controle, não vigilância — pessoas só aparecem no detalhamento de um time, quando permitido.",
   asOf: (label: string, day: number, days: number) =>
     `${label}, dia ${day} de ${days}`,
   emptyTitle: "Sem dados para explorar ainda",
   emptyBody:
-    "Registre assinaturas e assentos ou conecte a OpenAI e a Anthropic para ver o gasto atribuído por time.",
+    "Conecte a OpenAI e a Anthropic para importar o gasto real de API, ou registre assinaturas e assentos para acompanhar o custo fixo por time.",
   emptySeatsCta: "Adicionar assinaturas",
   emptyConnectCta: "Conectar provedores",
   seatsTitle: "Assentos por time",
+  seatsSub: "Custo de assinaturas distribuído dia a dia no período.",
   colTeam: "Time",
   colSpend: "Gasto (acumulado)",
   unattributed: "Não atribuído",
@@ -29,7 +51,8 @@ const copy = {
   reconcile: (total: string) =>
     `Total da empresa = soma dos times + não atribuído = ${total} — sempre reconcilia.`,
   apiTeamTitle: "Gasto de API por time",
-  apiTeamSub: "Custo derivado (tokens × preço), em US$. Clique em um time para o custo por pessoa.",
+  apiTeamSub:
+    "Custo derivado (tokens × preço), em US$. Clique em um time para investigar.",
   apiTeamAsOf: (stamp: string) => `dados de ${stamp}`,
   apiTeamReconcile: (total: string) =>
     `Empresa = soma dos times + não atribuído = ${total} — sempre reconcilia.`,
@@ -47,7 +70,7 @@ const copy = {
   uncostedNote:
     "Modelos sem preço na tabela aparecem como “não precificado” em vez de sumir do total.",
   derivedNote: (derived: string, reported: string) =>
-    `Derivado de tokens × preço: ${derived} · reportado pelos provedores: ${reported}. Valores em US$ — a conversão com câmbio congelado chega com os orçamentos.`,
+    `Derivado de tokens × preço: ${derived} · reportado pelos provedores: ${reported}. Valores em US$ — a conversão usa o câmbio congelado do orçamento.`,
 };
 
 const compactTokens = new Intl.NumberFormat("pt-BR", {
@@ -109,224 +132,212 @@ export default async function ExplorePage() {
       : null;
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">{copy.title}</h1>
-        <p className="text-sm text-muted-foreground">{copy.subtitle}</p>
-      </div>
+    <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
+      <PageHeader
+        title={copy.title}
+        description={copy.subtitle}
+        meta={copy.asOf(period.monthLabel, period.dayOfPeriod, period.daysInPeriod)}
+      />
 
       {fresh.showBanner && <StaleBanner items={fresh.needsAttention} />}
 
       {coldStart && (
-        <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed bg-card p-12 text-center">
-          <p className="font-medium">{copy.emptyTitle}</p>
-          <p className="max-w-md text-sm text-muted-foreground">
-            {copy.emptyBody}
-          </p>
-          <div className="mt-1 flex gap-3">
-            <Link
-              href="/ajustes/conexoes"
-              className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"
-            >
-              {copy.emptyConnectCta}
-            </Link>
-            <Link
-              href="/ajustes/assinaturas"
-              className="rounded-md border px-4 py-2 text-sm font-medium hover:bg-muted"
-            >
-              {copy.emptySeatsCta}
-            </Link>
-          </div>
-        </div>
+        <EmptyState
+          icon={<CompassIcon />}
+          title={copy.emptyTitle}
+          description={copy.emptyBody}
+          primaryAction={
+            <Link href="/ajustes/conexoes">{copy.emptyConnectCta}</Link>
+          }
+          secondaryAction={
+            <Link href="/ajustes/assinaturas">{copy.emptySeatsCta}</Link>
+          }
+        />
       )}
 
       {apiTeams.hasData && (
-        <section className="rounded-xl border bg-card p-6 shadow-sm">
-          <div className="flex items-baseline justify-between gap-4">
-            <h2 className="font-semibold">{copy.apiTeamTitle}</h2>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm">{copy.apiTeamTitle}</CardTitle>
+            <CardDescription>{copy.apiTeamSub}</CardDescription>
             {lastSyncAt && (
-              <span className="text-xs text-muted-foreground">
-                {copy.apiTeamAsOf(utcStamp(lastSyncAt))}
-              </span>
+              <CardAsOf>{copy.apiTeamAsOf(utcStamp(lastSyncAt))}</CardAsOf>
             )}
-          </div>
-          <p className="mt-1 text-xs text-muted-foreground">{copy.apiTeamSub}</p>
-
-          <table className="mt-4 w-full text-sm">
-            <thead>
-              <tr className="border-b text-left text-xs uppercase tracking-wide text-muted-foreground">
-                <th className="py-2 pr-2 font-medium">{copy.colTeam}</th>
-                <th className="py-2 pr-2 text-right font-medium">
-                  {copy.colDerived}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {apiTeams.teams.map((team) => (
-                <tr key={team.teamId} className="border-b last:border-b-0">
-                  <td className="py-2.5 pr-2 font-medium">
-                    <Link
-                      href={`/explorar/time/${team.teamId}`}
-                      className="hover:underline"
-                    >
-                      {team.teamName}
-                    </Link>
-                  </td>
-                  <td className="py-2.5 pr-2 text-right tabular-nums">
-                    {money(team.derivedUsd, "USD")}
-                    {team.uncosted && (
-                      <span className="ml-1 text-xs text-muted-foreground">
-                        (+{copy.uncosted})
-                      </span>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{copy.colTeam}</TableHead>
+                  <TableHead className="text-right">{copy.colDerived}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {apiTeams.teams.map((team) => (
+                  <TableRow key={team.teamId}>
+                    <TableCell className="p-0 font-medium">
+                      <Link
+                        href={`/explorar/time/${team.teamId}`}
+                        className="block px-2 py-2.5 transition-colors hover:text-primary"
+                      >
+                        {team.teamName}
+                      </Link>
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {money(team.derivedUsd, "USD")}
+                      {team.uncosted && (
+                        <span className="ml-1 text-xs text-muted-foreground">
+                          (+{copy.uncosted})
+                        </span>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+              <TableFooter>
+                <TableRow>
+                  <TableCell className="text-muted-foreground">
+                    {copy.unattributed}{" "}
+                    {apiTeams.unattributedUsd > 0 && (
+                      <Link
+                        href="/ajustes/atribuicao"
+                        className="text-xs underline-offset-4 hover:underline"
+                      >
+                        {copy.mapIt} →
+                      </Link>
                     )}
-                  </td>
-                </tr>
-              ))}
-              <tr className="border-t font-medium text-muted-foreground">
-                <td className="py-2.5 pr-2">
-                  {copy.unattributed}{" "}
-                  {apiTeams.unattributedUsd > 0 && (
-                    <Link
-                      href="/ajustes/atribuicao"
-                      className="text-xs hover:underline"
-                    >
-                      {copy.mapIt} →
-                    </Link>
-                  )}
-                </td>
-                <td className="py-2.5 pr-2 text-right tabular-nums">
-                  {money(apiTeams.unattributedUsd, "USD")}
-                </td>
-              </tr>
-            </tbody>
-          </table>
-
-          {driftNotice && (
-            <p className="mt-3 text-xs text-muted-foreground">{driftNotice}</p>
-          )}
-          <p className="mt-1 text-xs text-muted-foreground">
-            {copy.apiTeamReconcile(money(apiTeams.orgTotalUsd, "USD"))}
-          </p>
-        </section>
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums text-muted-foreground">
+                    {money(apiTeams.unattributedUsd, "USD")}
+                  </TableCell>
+                </TableRow>
+              </TableFooter>
+            </Table>
+          </CardContent>
+          <CardFooter className="flex-col items-start gap-1 text-xs/relaxed text-muted-foreground">
+            {driftNotice && <p>{driftNotice}</p>}
+            <p>{copy.apiTeamReconcile(money(apiTeams.orgTotalUsd, "USD"))}</p>
+          </CardFooter>
+        </Card>
       )}
 
       {apiSpend.hasData && (
-        <section className="rounded-xl border bg-card p-6 shadow-sm">
-          <div className="flex items-baseline justify-between gap-4">
-            <h2 className="font-semibold">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm">
               {copy.apiTitle(period.monthLabel)}
-            </h2>
+            </CardTitle>
+            <CardDescription className="text-xl font-semibold tabular-nums text-foreground">
+              {copy.apiHeadline(money(apiSpend.monthUsd, "USD"))}
+            </CardDescription>
             {lastSyncAt && (
-              <span className="text-xs text-muted-foreground">
-                {copy.apiAsOf(utcStamp(lastSyncAt))}
-              </span>
+              <CardAsOf>{copy.apiAsOf(utcStamp(lastSyncAt))}</CardAsOf>
             )}
-          </div>
-          <p className="mt-2 text-2xl font-semibold tabular-nums">
-            {copy.apiHeadline(money(apiSpend.monthUsd, "USD"))}
-          </p>
-
-          <table className="mt-4 w-full text-sm">
-            <thead>
-              <tr className="border-b text-left text-xs uppercase tracking-wide text-muted-foreground">
-                <th className="py-2 pr-2 font-medium">{copy.colModel}</th>
-                <th className="py-2 pr-2 text-right font-medium">
-                  {copy.colTokens}
-                </th>
-                <th className="py-2 pr-2 text-right font-medium">
-                  {copy.colDerived}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {apiSpend.byModel.map((row) => (
-                <tr key={row.model} className="border-b last:border-b-0">
-                  <td className="py-2.5 pr-2 font-medium">{row.model}</td>
-                  <td className="py-2.5 pr-2 text-right tabular-nums">
-                    {compactTokens.format(row.inputTokens + row.outputTokens)}
-                  </td>
-                  <td className="py-2.5 pr-2 text-right tabular-nums">
-                    {row.uncosted ? (
-                      <span className="font-medium text-muted-foreground">
-                        {copy.uncosted}
-                      </span>
-                    ) : (
-                      money(row.derivedCost ?? 0, "USD")
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-
-          <p className="mt-3 text-xs text-muted-foreground">
-            {copy.derivedNote(
-              money(apiSpend.derivedUsd, "USD"),
-              money(apiSpend.monthUsd, "USD"),
-            )}
-          </p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            {copy.uncostedNote}
-          </p>
-        </section>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{copy.colModel}</TableHead>
+                  <TableHead className="text-right">{copy.colTokens}</TableHead>
+                  <TableHead className="text-right">{copy.colDerived}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {apiSpend.byModel.map((row) => (
+                  <TableRow key={row.model}>
+                    <TableCell className="font-medium">{row.model}</TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {compactTokens.format(row.inputTokens + row.outputTokens)}
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {row.uncosted ? (
+                        <span className="font-medium text-muted-foreground">
+                          {copy.uncosted}
+                        </span>
+                      ) : (
+                        money(row.derivedCost ?? 0, "USD")
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+          <CardFooter className="flex-col items-start gap-1 text-xs/relaxed text-muted-foreground">
+            <p>
+              {copy.derivedNote(
+                money(apiSpend.derivedUsd, "USD"),
+                money(apiSpend.monthUsd, "USD"),
+              )}
+            </p>
+            <p>{copy.uncostedNote}</p>
+          </CardFooter>
+        </Card>
       )}
 
       {subscriptions.length > 0 && (
-        <section className="rounded-xl border bg-card p-6 shadow-sm">
-          <div className="flex items-baseline justify-between gap-4">
-            <h2 className="font-semibold">{copy.seatsTitle}</h2>
-            <span className="text-xs text-muted-foreground">
-              {copy.asOf(
-                period.monthLabel,
-                period.dayOfPeriod,
-                period.daysInPeriod,
-              )}
-            </span>
-          </div>
-
-          <table className="mt-4 w-full text-sm">
-            <thead>
-              <tr className="border-b text-left text-xs uppercase tracking-wide text-muted-foreground">
-                <th className="py-2 pr-2 font-medium">{copy.colTeam}</th>
-                <th className="py-2 pr-2 text-right font-medium">
-                  {copy.colSpend}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {breakdown.teams.map((team) => (
-                <tr key={team.teamId} className="border-b last:border-b-0">
-                  <td className="py-2.5 pr-2 font-medium">{team.teamName}</td>
-                  <td className="py-2.5 pr-2 text-right tabular-nums">
-                    {money(team.accrued, currency)}
-                  </td>
-                </tr>
-              ))}
-              {/* Unattributed row: whole row in amber text, no fill. */}
-              <tr className="border-t font-medium text-amber-700">
-                <td className="py-2.5 pr-2">
-                  {copy.unattributed}{" "}
-                  {breakdown.unattributed > 0 && (
-                    <Link
-                      href="/ajustes/assinaturas"
-                      className="text-xs hover:underline"
-                    >
-                      {copy.mapIt} →
-                    </Link>
-                  )}
-                </td>
-                <td className="py-2.5 pr-2 text-right tabular-nums">
-                  {money(breakdown.unattributed, currency)}
-                </td>
-              </tr>
-            </tbody>
-          </table>
-
-          <p className="mt-3 text-xs text-muted-foreground">
-            {copy.reconcile(money(breakdown.orgTotal, currency))}
-          </p>
-        </section>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm">{copy.seatsTitle}</CardTitle>
+            <CardDescription>{copy.seatsSub}</CardDescription>
+            <CardAsOf>
+              {copy.asOf(period.monthLabel, period.dayOfPeriod, period.daysInPeriod)}
+            </CardAsOf>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{copy.colTeam}</TableHead>
+                  <TableHead className="text-right">{copy.colSpend}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {breakdown.teams.map((team) => (
+                  <TableRow key={team.teamId}>
+                    <TableCell className="font-medium">{team.teamName}</TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {money(team.accrued, currency)}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+              <TableFooter>
+                <TableRow>
+                  <TableCell className="text-muted-foreground">
+                    {copy.unattributed}{" "}
+                    {breakdown.unattributed > 0 && (
+                      <Link
+                        href="/ajustes/assinaturas"
+                        className="text-xs underline-offset-4 hover:underline"
+                      >
+                        {copy.mapIt} →
+                      </Link>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums text-muted-foreground">
+                    {money(breakdown.unattributed, currency)}
+                  </TableCell>
+                </TableRow>
+              </TableFooter>
+            </Table>
+          </CardContent>
+          <CardFooter className="text-xs/relaxed text-muted-foreground">
+            <p>{copy.reconcile(money(breakdown.orgTotal, currency))}</p>
+          </CardFooter>
+        </Card>
       )}
     </div>
+  );
+}
+
+/**
+ * "As of" honesty stamp inside a CardHeader (principle #3). Normal flow, under
+ * the description — never competes with the title for width.
+ */
+function CardAsOf({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="text-xs text-muted-foreground tabular-nums">{children}</div>
   );
 }

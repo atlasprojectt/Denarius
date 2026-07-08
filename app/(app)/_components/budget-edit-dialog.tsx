@@ -74,13 +74,15 @@ export function BudgetEditDialog({
             {triggerLabel}
           </Button>
         ) : (
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="icon-sm"
             aria-label={scope === "org" ? copy.editOrg : copy.editTeam(teamName ?? "")}
-            className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+            className="text-muted-foreground"
           >
             <PencilSimpleIcon className="size-4" />
-          </button>
+          </Button>
         )}
       </DialogTrigger>
 

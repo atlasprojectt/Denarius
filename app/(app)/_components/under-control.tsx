@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CaretDownIcon } from "@phosphor-icons/react";
+import { CaretDownIcon, CheckCircleIcon } from "@phosphor-icons/react";
 
 import { BudgetBar } from "@/components/domain/budget-bar";
 import {
@@ -40,13 +40,15 @@ export function UnderControl({
     <Collapsible
       open={open}
       onOpenChange={setOpen}
-      className="rounded-xl border bg-card p-4 shadow-sm"
+      className="rounded-xl border bg-card shadow-xs"
     >
-      <CollapsibleTrigger className="flex w-full items-center justify-between gap-2 text-left">
-        <span className="flex items-center gap-2 font-medium">
-          <span className="text-green-600" aria-hidden>
-            ✓
-          </span>
+      <CollapsibleTrigger className="group flex w-full items-center justify-between gap-2 rounded-xl p-5 text-left transition-colors hover:bg-muted/40">
+        <span className="flex items-center gap-2.5 text-sm font-semibold">
+          <CheckCircleIcon
+            aria-hidden
+            weight="fill"
+            className="size-4.5 text-status-green"
+          />
           {c.title(teams.length)}
         </span>
         <span className="flex items-center gap-1 text-sm text-muted-foreground">
@@ -57,12 +59,12 @@ export function UnderControl({
         </span>
       </CollapsibleTrigger>
 
-      <CollapsibleContent className="mt-3 flex flex-col gap-3">
+      <CollapsibleContent className="flex flex-col gap-4 border-t px-5 pt-4 pb-5">
         {teams.map((team) => (
           <div key={team.teamId} className="flex flex-col gap-1.5">
             <div className="flex items-baseline justify-between gap-2 text-sm">
-              <span>{team.teamName}</span>
-              <span className="tabular-nums text-muted-foreground">
+              <span className="truncate font-medium">{team.teamName}</span>
+              <span className="shrink-0 tabular-nums text-muted-foreground">
                 {c.ofBudget(money(team.spent, currency), money(team.budget, currency))}
               </span>
             </div>

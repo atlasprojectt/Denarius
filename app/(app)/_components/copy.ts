@@ -8,6 +8,11 @@ export const homeCopy = {
   hero: {
     spentLabel: "Gasto no período",
     ofBudget: (budget: string) => `de ${budget}`,
+    kpiProjection: "Projeção de fechamento",
+    kpiMargin: "Margem projetada",
+    kpiPace: "Mês",
+    kpiPaceValue: (day: number, days: number) => `dia ${day} de ${days}`,
+    collectingShort: "coletando ritmo",
     pacingSpend: "Gasto",
     pacingTime: (day: number, days: number) => `Mês: dia ${day} de ${days}`,
     projectedOver: (over: string) => `No ritmo atual, ${over} acima do orçamento no fim do mês.`,
@@ -54,9 +59,14 @@ export const homeCopy = {
 
   coldStart: {
     title: "Configure o Denarius para ter a resposta",
-    body: "O veredito — dentro ou fora do orçamento, com projeção de fechamento — aparece assim que houver um orçamento definido e uma fonte conectada.",
+    body: "O veredito — dentro ou fora do orçamento, com projeção de fechamento — aparece assim que houver um orçamento definido e uma fonte de gasto.",
     setBudgetCta: "Definir orçamento",
     connectCta: "Conectar provedores",
+    unlocks: [
+      "Veredito diário: dentro ou fora do orçamento, em uma frase",
+      "Projeção de fechamento do mês no ritmo atual",
+      "Avisos antecipados antes de o orçamento estourar",
+    ],
   },
 
   simulate: {

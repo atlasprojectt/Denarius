@@ -92,14 +92,14 @@ export function SimulateDrawer(props: SimulateDrawerProps) {
         </SheetHeader>
 
         {collecting ? (
-          <div className="flex flex-col gap-3 p-4">
+          <div className="flex flex-col gap-4 overflow-y-auto p-4">
             <Facts
               rows={[
                 [copy.spent, money(team.spent, currency)],
                 [copy.budget, money(team.budget, currency)],
               ]}
             />
-            <p className="rounded-lg bg-muted/50 p-3 text-xs text-muted-foreground">
+            <p className="rounded-lg bg-muted/50 p-3 text-xs/relaxed text-muted-foreground">
               {copy.collecting}
             </p>
           </div>
@@ -141,7 +141,7 @@ function Simulation({
       : null;
 
   return (
-    <div className="flex flex-col gap-5 p-4">
+    <div className="flex flex-col gap-6 overflow-y-auto p-4">
       <Facts
         rows={[
           [copy.spent, money(input.team.spent, currency)],
@@ -194,32 +194,32 @@ function Simulation({
         )}
       </div>
 
-      <div className="rounded-lg border p-3">
+      <div className="rounded-lg border bg-muted/40 p-4">
         <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
           {copy.resultTitle}
         </p>
-        <dl className="mt-2 flex flex-col gap-2 text-sm">
-          <div className="flex justify-between gap-4">
+        <dl className="mt-3 flex flex-col gap-2.5 text-sm">
+          <div className="flex items-baseline justify-between gap-4">
             <dt className="text-muted-foreground">{copy.teamCloses}</dt>
-            <dd className="tabular-nums font-medium">
+            <dd className="text-base font-semibold tabular-nums">
               {money(result.teamClose, currency)}
             </dd>
           </div>
-          <div className="flex justify-between gap-4">
+          <div className="flex items-baseline justify-between gap-4">
             <dt className="text-muted-foreground">{copy.orgCloses}</dt>
-            <dd className="tabular-nums font-medium">
+            <dd className="text-base font-semibold tabular-nums">
               {money(result.orgClose, currency)}
             </dd>
           </div>
         </dl>
-        <p className="mt-3 text-sm">
+        <p className="mt-3 border-t pt-3 text-sm/relaxed">
           {result.withinBudget
             ? copy.marginUnder(money(result.orgMargin, currency))
             : copy.marginOver(money(-result.orgMargin, currency))}
         </p>
       </div>
 
-      <p className="text-xs text-muted-foreground">{copy.disclaimer}</p>
+      <p className="text-xs/relaxed text-muted-foreground">{copy.disclaimer}</p>
     </div>
   );
 }

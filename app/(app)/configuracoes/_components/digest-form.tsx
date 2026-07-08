@@ -2,8 +2,10 @@
 
 import { useActionState } from "react";
 
+import { ActionStatus } from "@/components/domain/action-status";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import {
   updateDigestPreference,
   type SettingsFormState,
@@ -25,35 +27,24 @@ export function DigestForm({ receiveDigest }: { receiveDigest: boolean }) {
   );
 
   return (
-    <form action={formAction} className="flex flex-col gap-3">
-      <div className="flex items-start gap-3">
-        <input
-          id="receiveDigest"
-          name="receiveDigest"
-          type="checkbox"
-          defaultChecked={receiveDigest}
-          className="mt-1 size-4 accent-primary"
-        />
+    <form action={formAction} className="flex flex-col gap-4">
+      <div className="flex items-start justify-between gap-4">
         <div className="flex flex-col gap-0.5">
           <Label htmlFor="receiveDigest">{copy.label}</Label>
-          <p className="text-sm text-muted-foreground">{copy.hint}</p>
+          <p className="text-sm/relaxed text-muted-foreground">{copy.hint}</p>
         </div>
+        <Switch
+          id="receiveDigest"
+          name="receiveDigest"
+          defaultChecked={receiveDigest}
+        />
       </div>
 
       <div className="flex items-center gap-3">
-        <Button type="submit" disabled={pending}>
+        <Button type="submit" variant="outline" disabled={pending}>
           {pending ? copy.saving : copy.save}
         </Button>
-        {state.error && (
-          <p role="alert" className="text-sm text-destructive">
-            {state.error}
-          </p>
-        )}
-        {state.success && (
-          <p role="status" className="text-sm font-medium text-green-700">
-            {state.success}
-          </p>
-        )}
+        <ActionStatus error={state.error} success={state.success} />
       </div>
     </form>
   );

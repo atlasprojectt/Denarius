@@ -3,7 +3,7 @@
 > Derives from [prd.md](prd.md) (UX Decisions P1–P15). This doc is the **visual contract** for the frontend — the design tokens (§4) and component contracts below. (A static `prototype/` seeded these decisions and was removed once the real screens shipped in #12–#15; the running app is the live reference.)
 > **Status:** UX decisions (P1–P15) and implementation decisions (F1–F6, §7) all locked.
 >
-> ⚠️ **The current visual skin is a PROVISIONAL front — an approximation, not the final UI.** The screens exist to make the product tangible and align everyone a little closer to the intended feel (brand accent, light/dark, logo lockup). Treat colors, spacing, and the theme system as a working draft that will be redone before launch — do **not** read the present look as the locked visual identity. The *structure* (F1–F6, screen contracts, tokens-as-CSS-variables) is what's stable; the *paint* is temporary.
+> **The provisional skin was replaced by the v1 product UI** (2026-07-08, founder-directed): shadcn primitives used extensively, a formalized semaphore token set, shared PageHeader/EmptyState/ActionStatus domain components, consistent empty/loading/error states, and a full pass over Home/Explorar/Ajustes. The *structure* (F1–F6, screen contracts, tokens-as-CSS-variables) is unchanged. Brand identity (logo, accent, final type choices) may still be tuned before launch, but the present look is the product baseline — no longer a throwaway approximation. §9 lists what's still pending.
 
 ## 1. Principles
 
@@ -40,18 +40,19 @@ Budget editing is **inline** (pencil on rows / hero) → modal. The **simulator 
 
 ## 4. Design tokens (implemented in `app/globals.css`)
 
-> **Provisional (see the banner at the top).** These values are the current draft skin, not a locked palette. What's stable is the *mechanism*: every color is a CSS variable, redefined under `:root` (light) and `.dark` (dark), so re-skinning is a token edit, not a component rewrite.
+> Every color is a CSS variable, redefined under `:root` (light) and `.dark` (dark), so re-skinning is a token edit, not a component rewrite.
 
 | Token | Value |
 |---|---|
 | Brand accent | **`#FF5100` (orange)** — `--primary` / `--ring` / sidebar-primary, both themes |
-| Semaphore | green `#16a34a` · amber `#d97706` · red `#dc2626` (+ soft bgs) — reserved for budget status |
+| Semaphore | **formalized as tokens, three roles per color** (`--status-{green,amber,red}` strong = bar fills/dots · `-soft` = pill/callout backgrounds · `-fg` = text on a soft background), exposed as Tailwind utilities (`bg-status-green`, `text-status-red-fg`, …) via `@theme`. Light: green `#16a34a` · amber `#d97706` · red `#dc2626`; dark uses brighter fills (`#22c55e`/`#f59e0b`/`#ef4444`) for legibility. Reserved for budget status (principle #5) — form success messages are **neutral**, never green (see `ActionStatus`). |
 | Surfaces (light) | page `#f7f7f8` · card `#fff` · ink `#17181c` · muted `#6b6f76` — **neutral grayscale, no blue/slate cast** |
 | Surfaces (dark) | page `#0c0c0d` · card `#161618` · ink `#e9e9ea` · muted `#9b9ca0` — neutral charcoal |
-| Sidebar rail | **light in light mode** (off-white `#f4f4f5`, ink `#3f4046`), dark neutral charcoal in dark mode (`#0a0a0b`) — the earlier navy tint (`#0c1322`) that read as purple was removed |
-| Radii | **standardized scale** — cards/panels `rounded-xl` (14px) · inner rows/boxes `rounded-lg` (10px) · controls & menus `rounded-md` (8px) · pills/avatars `rounded-full`. The shadcn primitives (button, input, dropdown, tooltip, sidebar, skeleton) were aligned from their `rounded-none` (square) default to `rounded-md` so controls match the rounded card language; only the tooltip arrow stays square (it's a pointer). |
-| Type | system sans stack; numbers **tabular-nums**; two weights (400/650-740) |
-| Shadows | subtle (`0 1px 2px…`); drawer/modal stronger |
+| Sidebar rail | **light in light mode** (off-white `#f4f4f5`, ink `#3f4046`), dark neutral charcoal in dark mode (`#0a0a0b`) — the earlier navy tint (`#0c1322`) that read as purple was removed (the auth brand panel likewise moved to neutral charcoal `#0e0e10`) |
+| Radii | **standardized scale** — cards/panels `rounded-xl` (14px) · inner rows/boxes `rounded-lg` (10px) · controls & menus `rounded-md` (8px) · pills/avatars `rounded-full`. All shadcn primitives are aligned to this scale (the `radix-lyra` registry style ships square `rounded-none`; card/badge/alert/table/select/progress/empty/item were realigned on add, same as button/input/dropdown before them); only the tooltip arrow stays square (it's a pointer). |
+| Type | Geist Sans everywhere (`--font-sans`; `--font-heading` maps to sans — the registry's mono-heading default was removed); Geist Mono (`--font-mono`) only for key-like strings (Admin key input); numbers **tabular-nums**; two weights (400/600) |
+| Shadows | cards `shadow-xs`; drawer/modal stronger |
+| Content column | pages are `max-w-4xl mx-auto` inside `main` (`px-4 py-8 md:px-8`); app header is sticky with backdrop blur and hosts the `ThemeToggle` |
 
 **Light + dark** (supersedes the earlier "light only" of P9 for this provisional front — a founder-directed change). The theme is the `.dark` class on `<html>`, toggled by `components/domain/theme-toggle.tsx` (no dependency; reads/writes `localStorage.theme` and is applied pre-paint by a no-FOUC inline script in `app/layout.tsx`, defaulting to the OS preference). Desktop-first; consumption screens legible at mobile width. Copy: pt-BR, sentence case, observation language for apontamentos, alarm language reserved for warnings.
 
@@ -94,3 +95,40 @@ shadcn blocks are **starting scaffolding**, adapted into the F5 structure — th
   - Signup: a **company name** field → the submit server action creates the `tenant`.
   - Cover column: slot for the value prop / a cockpit screenshot.
 - **Placement (F5):** shadcn primitives untouched in `components/ui/`; auth compositions in `app/(auth)/`; screen components in `app/<route>/_components/`; shared domain components (`AppSidebar`, `VerdictLine`, `BudgetBar`, `StatusPill`) in `components/domain/`.
+
+## 9. v1 product UI (2026-07) — inventory, state patterns, pendências
+
+### 9.1 shadcn primitives (`components/ui/`)
+
+Base set from #12 (button, input, label, dialog, sheet, dropdown-menu, tooltip, sidebar, skeleton, separator, collapsible, avatar, breadcrumb, field) plus, added in the v1 UI pass: **card, badge, alert, table, select, switch, progress, empty, item**. Primitives stay registry-shaped except the documented alignment (§4 radii/type) — treat that alignment as part of "adding" a primitive, not as forking it. `breadcrumb.tsx` imports Phosphor icons from `dist/ssr` so it stays server-safe (the default entry calls `createContext` and breaks RSC pages).
+
+### 9.2 Cross-screen domain components (`components/domain/`)
+
+| Component | Job |
+|---|---|
+| `PageHeader` | Every screen's opening: optional back link, title, one-line description, right-aligned action slot, optional "as of" honesty stamp (`meta`) |
+| `EmptyState` | The one way to render "no data": icon + title + one useful sentence + primary/secondary CTA, composed from the shadcn `Empty` primitives |
+| `ActionStatus` | Inline result line for `useActionState` forms — error in `destructive` with icon, **success neutral** (green is budget-only, principle #5) |
+| `VerdictLine` | Status dot (with soft halo) + the engine's deterministic sentence, semaphore tokens |
+| `StatusPill` | Budget status pill: dot + label on the soft/fg token pair |
+| `BudgetBar` | Fill + dashed run-rate ghost + budget marker (geometry in `lib/bars.ts`), semaphore fills |
+| `StaleBanner` | Data-quality notice on shadcn `Alert` — deliberately neutral, never semaphore |
+| `SimulateDrawer` | Contextual what-if drawer (Sheet), presets + slider, result panel on muted surface |
+| `AppSidebar`, `ThemeToggle`, `Logo` | Shell chrome (unchanged contracts from #12/#19) |
+
+Screen-local compositions stay colocated (F5): the cockpit pieces (`Hero` with its KPI strip, `TeamRow`, `UnderControl`, `AllClear`, `ObservationsFooter`, `ProviderComposition`, `BudgetEditDialog`) in `app/(app)/_components/`, settings forms under their routes.
+
+### 9.3 State patterns (required states, §3, now uniform)
+
+- **Empty**: always `EmptyState` (or an affirmative panel) — never a bare table or "no data". Cold-start Home is a CTA hero listing what a budget + a source unlock; Explore/atribuição/roster/assinaturas/drill-down each have a contextual empty with the obvious next action; Admin-gated screens show a lock-icon `EmptyState` explaining "controle, não vigilância".
+- **Loading**: `app/(app)/loading.tsx` — one route-group skeleton mirroring the cockpit rhythm (RSC streaming, no client spinners, F1). Per-route skeletons only if a screen's shape diverges enough to jump.
+- **Error / data quality**: `StaleBanner` for stale/failed syncs; `Alert` for informational notices (Σ-mismatch); `ActionStatus` for mutation results; uncosted/unattributed/FX-missing always disclosed in card footers ("as of" stamps, reconciliation lines).
+- **All-clear**: affirmative soft-green panel (`AllClear`), never a blank section.
+- **Settings hub**: `/ajustes` is grouped (Empresa · Fontes de gasto · Governança) with uppercase group labels; link-out areas are `Item` rows (icon + status line + chevron) inside cards; inline areas (privacy switches, users list) are cards with `Switch`/`Item` primitives.
+
+### 9.4 Pendências (deliberately deferred)
+
+- **Cumulative spend-vs-budget line** (Recharts) in the team drill-down — still not implemented (F3 contract unchanged).
+- **Onboarding checklist** on Home (§3.1) — the cold-start hero covers the gap meanwhile.
+- **Brand identity final pass** (logo refinement, accent audit, marketing surfaces) — the v1 skin is the product baseline, not necessarily the launch brand.
+- **Roster-CSV react-hook-form upgrade** (F4) — the native preview flow proved sufficient so far.
