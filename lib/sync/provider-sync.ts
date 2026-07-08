@@ -3,7 +3,7 @@ import "server-only";
 import { providerFor } from "@/lib/connectors";
 import { decryptCredential } from "@/lib/crypto";
 import { deriveCost, type ModelPrice } from "@/lib/engine/derive";
-import { monthToDateRange } from "@/lib/engine/period";
+import { monthStartUtc, monthToDateRange } from "@/lib/engine/period";
 import { collapsePersonGrain } from "@/lib/privacy/minimize";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -74,6 +74,7 @@ export async function runProviderSync(
       decryptCredential(connection.encrypted_credential),
     );
     const range = monthToDateRange();
+    const monthStart = monthStartUtc();
     // One stamp per sync: every row written by this run carries the same time.
     const syncedAt = new Date().toISOString();
 
@@ -129,7 +130,21 @@ export async function runProviderSync(
       synced_at: syncedAt,
     }));
 
-    // Independent tables — the two upserts run in parallel.
+    // Usage is fetched month-to-date, so replace the current provider/month
+    // slice before inserting. This prevents stale person-grain rows from
+    // surviving after store_per_person is turned off, and prevents stale shared
+    // rows from double-counting if it is turned back on.
+    const { error: usageDeleteError } = await admin
+      .from("usage_daily")
+      .delete()
+      .eq("tenant_id", tenantId)
+      .eq("provider", providerName)
+      .gte("date", monthStart);
+    if (usageDeleteError) {
+      return markError(`usage cleanup failed: ${usageDeleteError.code}`);
+    }
+
+    // Independent tables — after usage cleanup, the two upserts run in parallel.
     const noError = { error: null };
     const [usageResult, costResult] = await Promise.all([
       usageRows.length > 0
