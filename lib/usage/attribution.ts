@@ -2,6 +2,7 @@ import "server-only";
 
 import { monthStartUtc } from "@/lib/engine/period";
 import { reconcile, type Reconciliation } from "@/lib/engine/reconcile";
+import { anonymousLabel, canSeeNames } from "@/lib/privacy/policy";
 import { createClient } from "@/lib/supabase/server";
 
 // Attribution of API usage → team, read under RLS for the Explore screens.
@@ -183,7 +184,8 @@ export async function listMappableProjects(): Promise<MappableProject[]> {
 }
 
 export type PersonSpend = {
-  /** provider user id, or "" for a shared key. Admin-only display. */
+  /** provider user id, a "Colaborador N" label when names are hidden, or ""
+   *  for a shared key. */
   userId: string;
   /** true when this row is a shared key rolled up to the team, never a person. */
   isShared: boolean;
@@ -201,6 +203,9 @@ export type TeamDetail = {
   persons: PersonSpend[]; // sorted desc by derived cost, shared keys last
   totalUsd: number;
   hasUncosted: boolean;
+  /** true when names were withheld (Viewer, or the tenant names switch off) —
+   *  person rows carry anonymous labels, disclosed in the UI. */
+  namesHidden: boolean;
 };
 
 /**
@@ -214,7 +219,11 @@ export async function teamDetail(teamId: string): Promise<TeamDetail> {
   const supabase = await createClient();
   const since = monthStartUtc();
 
-  const [{ data: teamRow }, { data: mapData }, { data: usageData }] =
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const [{ data: teamRow }, { data: mapData }, { data: usageData }, { data: viewer }, { data: tenantRow }] =
     await Promise.all([
       supabase
         .from("team")
@@ -227,11 +236,29 @@ export async function teamDetail(teamId: string): Promise<TeamDetail> {
         .from("usage_daily")
         .select("provider, project_id, user_id, input_tokens, output_tokens, derived_cost, uncosted")
         .gte("date", since),
+      user
+        ? supabase.from("app_user").select("role").eq("id", user.id).maybeSingle()
+        : Promise.resolve({ data: null }),
+      supabase.from("tenant").select("show_names").maybeSingle(),
     ]);
+
+  // Privacy decision at the data layer (#23): names never leave the server
+  // when the viewer isn't an Admin, or the tenant names switch is off.
+  const role = (viewer as { role: string } | null)?.role ?? "viewer";
+  const showNames = (tenantRow as { show_names: boolean } | null)?.show_names ?? true;
+  const namesHidden = !canSeeNames({ role, showNames });
 
   const team = teamRow as { name: string } | null;
   if (!team) {
-    return { teamId, teamName: "—", found: false, persons: [], totalUsd: 0, hasUncosted: false };
+    return {
+      teamId,
+      teamName: "—",
+      found: false,
+      persons: [],
+      totalUsd: 0,
+      hasUncosted: false,
+      namesHidden,
+    };
   }
 
   const mappedProjects = new Set(
@@ -266,11 +293,20 @@ export async function teamDetail(teamId: string): Promise<TeamDetail> {
     byUser.set(key, entry);
   }
 
-  const persons = [...byUser.values()].sort((a, b) => {
+  const sorted = [...byUser.values()].sort((a, b) => {
     if (a.isShared !== b.isShared) return a.isShared ? 1 : -1;
     return b.derivedUsd - a.derivedUsd;
   });
+  // When names are hidden, replace each identified person's id with a stable
+  // anonymous label BEFORE returning — the real id never reaches the client.
+  // Shared-key rows are already person-free and keep their own labeling.
+  let personIndex = 0;
+  const persons = sorted.map((p) =>
+    namesHidden && !p.isShared
+      ? { ...p, userId: anonymousLabel(personIndex++) }
+      : p,
+  );
   const totalUsd = persons.reduce((sum, p) => sum + p.derivedUsd, 0);
 
-  return { teamId, teamName: team.name, found: true, persons, totalUsd, hasUncosted };
+  return { teamId, teamName: team.name, found: true, persons, totalUsd, hasUncosted, namesHidden };
 }

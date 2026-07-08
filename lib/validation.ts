@@ -48,6 +48,24 @@ export const digestPreferenceSchema = z.object({
   receiveDigest: z.boolean(),
 });
 
+// Privacy toggles (#23) — the action coerces the two checkboxes to booleans.
+export const privacySettingsSchema = z.object({
+  showNames: z.boolean(),
+  storePerPerson: z.boolean(),
+});
+
+export const removeUserSchema = z.object({
+  userId: z.uuid("Usuário inválido."),
+});
+
+// Supported display currencies — editable only at day zero (no budgets/seats),
+// so a frozen-FX budget can never be silently re-denominated.
+export const displayCurrencySchema = z.object({
+  currency: z.enum(["BRL", "USD", "EUR", "GBP"], {
+    message: "Escolha uma moeda válida.",
+  }),
+});
+
 export const rosterRowSchema = z.object({
   name: z
     .string()

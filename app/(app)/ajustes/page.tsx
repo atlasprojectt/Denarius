@@ -5,6 +5,9 @@ import { monthStartUtc } from "@/lib/engine/period";
 import { canEditCompanySettings } from "@/lib/settings/account";
 import { createClient } from "@/lib/supabase/server";
 import { CompanyForm } from "./_components/company-form";
+import { CurrencyForm } from "./_components/currency-form";
+import { PrivacyForm } from "./_components/privacy-form";
+import { UsersTable, type TenantUser } from "./_components/users-table";
 
 const copy = {
   title: "Ajustes",
@@ -12,9 +15,6 @@ const copy = {
   companyTitle: "Empresa",
   companySub:
     "Identidade da empresa usada no topo do app e nas superfícies de governança.",
-  companyCurrency: "Moeda de exibição",
-  currencyNote:
-    "A moeda fica travada nesta versão para preservar orçamentos e câmbio congelado já existentes.",
   connectionsTitle: "Conexões",
   connectionsSub:
     "Chaves admin somente-leitura, criptografadas. O Denarius nunca altera nada nos provedores.",
@@ -55,11 +55,19 @@ const copy = {
         : "Nenhum orçamento definido ainda. Sem orçamento não há veredito.",
   budgetsCta: "Gerenciar orçamentos",
   privacyTitle: "Privacidade",
-  privacyBody:
-    "Nomes visíveis somente para Admin e minimização de dados por pessoa chegam na issue #23. Prompts e respostas nunca são armazenados; somente metadados de uso.",
+  privacySub:
+    "Controles de confiança: quem vê nomes, minimização de dados por pessoa (LGPD).",
+  usersTitle: "Usuários",
+  usersSub:
+    "Quem tem acesso a este espaço. Remover revoga o acesso imediatamente.",
 };
 
-type TenantRow = { name: string; display_currency: string };
+type TenantRow = {
+  name: string;
+  display_currency: string;
+  show_names: boolean;
+  store_per_person: boolean;
+};
 type AppUserRow = { role: string };
 
 export default async function SettingsPage() {
@@ -75,21 +83,28 @@ export default async function SettingsPage() {
     { count: employeeCount },
     { count: teamCount },
     { count: subscriptionCount },
+    { count: budgetTotalCount },
     { data: connectionData },
     { data: budgetData },
+    { data: usersData },
   ] = await Promise.all([
     user
       ? supabase.from("app_user").select("role").eq("id", user.id).maybeSingle()
       : Promise.resolve({ data: null }),
-    supabase.from("tenant").select("name, display_currency").maybeSingle(),
+    supabase
+      .from("tenant")
+      .select("name, display_currency, show_names, store_per_person")
+      .maybeSingle(),
     supabase.from("employee").select("id", { count: "exact", head: true }),
     supabase
       .from("team")
       .select("id", { count: "exact", head: true })
       .eq("is_unattributed", false),
     supabase.from("subscription").select("id", { count: "exact", head: true }),
+    supabase.from("budget").select("id", { count: "exact", head: true }),
     supabase.from("provider_connection").select("provider, status"),
     supabase.from("budget").select("scope").eq("period_month", period),
+    supabase.from("app_user").select("id, email, role").order("email"),
   ]);
   const tenant = data as TenantRow | null;
   if (!tenant) redirect("/onboarding");
@@ -99,6 +114,11 @@ export default async function SettingsPage() {
   const budgets = (budgetData ?? []) as { scope: string }[];
   const hasOrgBudget = budgets.some((b) => b.scope === "org");
   const teamBudgetCount = budgets.filter((b) => b.scope === "team").length;
+  const users = (usersData ?? []) as TenantUser[];
+  // Day-zero: currency is safe to change only before anything is denominated
+  // in it (frozen-FX budgets / seat costs). Mirrors the server-action guard.
+  const currencyEditable =
+    isAdmin && (budgetTotalCount ?? 0) === 0 && (subscriptionCount ?? 0) === 0;
   const connections = (connectionData ?? []) as {
     provider: string;
     status: string;
@@ -123,12 +143,11 @@ export default async function SettingsPage() {
           <CompanyForm companyName={tenant.name} isAdmin={isAdmin} />
         </div>
 
-        <div className="mt-4 rounded-lg border p-3 text-sm">
-          <p className="text-muted-foreground">{copy.companyCurrency}</p>
-          <p className="mt-1 font-medium tabular-nums">
-            {tenant.display_currency}
-          </p>
-          <p className="mt-1 text-xs text-muted-foreground">{copy.currencyNote}</p>
+        <div className="mt-4">
+          <CurrencyForm
+            currency={tenant.display_currency}
+            editable={currencyEditable}
+          />
         </div>
       </section>
 
@@ -247,8 +266,31 @@ export default async function SettingsPage() {
       </section>
 
       <section className="rounded-xl border bg-card p-6 shadow-sm">
-        <h2 className="font-semibold">{copy.privacyTitle}</h2>
-        <p className="mt-1 text-sm text-muted-foreground">{copy.privacyBody}</p>
+        <div>
+          <h2 className="font-semibold">{copy.privacyTitle}</h2>
+          <p className="mt-1 text-sm text-muted-foreground">{copy.privacySub}</p>
+        </div>
+        <div className="mt-4">
+          <PrivacyForm
+            showNames={tenant.show_names}
+            storePerPerson={tenant.store_per_person}
+            isAdmin={isAdmin}
+          />
+        </div>
+      </section>
+
+      <section className="rounded-xl border bg-card p-6 shadow-sm">
+        <div>
+          <h2 className="font-semibold">{copy.usersTitle}</h2>
+          <p className="mt-1 text-sm text-muted-foreground">{copy.usersSub}</p>
+        </div>
+        <div className="mt-4">
+          <UsersTable
+            users={users}
+            currentUserId={user?.id ?? ""}
+            isAdmin={isAdmin}
+          />
+        </div>
       </section>
     </div>
   );

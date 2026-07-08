@@ -4,6 +4,7 @@ import { providerFor } from "@/lib/connectors";
 import { decryptCredential } from "@/lib/crypto";
 import { deriveCost, type ModelPrice } from "@/lib/engine/derive";
 import { monthToDateRange } from "@/lib/engine/period";
+import { collapsePersonGrain } from "@/lib/privacy/minimize";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 // On-demand sync for ONE tenant's connection to ONE provider (connect button /
@@ -38,13 +39,19 @@ export async function runProviderSync(
 ): Promise<SyncResult> {
   const admin = createAdminClient();
 
-  const { data: connectionData } = await admin
-    .from("provider_connection")
-    .select("id, encrypted_credential, status")
-    .eq("tenant_id", tenantId)
-    .eq("provider", providerName)
-    .maybeSingle();
+  const [{ data: connectionData }, { data: tenantData }] = await Promise.all([
+    admin
+      .from("provider_connection")
+      .select("id, encrypted_credential, status")
+      .eq("tenant_id", tenantId)
+      .eq("provider", providerName)
+      .maybeSingle(),
+    admin.from("tenant").select("store_per_person").eq("id", tenantId).maybeSingle(),
+  ]);
   const connection = connectionData as ConnectionRow | null;
+  // Data minimization (#23): default on if the tenant row is somehow missing.
+  const storePerPerson =
+    (tenantData as { store_per_person: boolean } | null)?.store_per_person ?? true;
   if (!connection || connection.status === "revoked" || !connection.encrypted_credential) {
     return { ok: false, error: `no active ${providerName} connection` };
   }
@@ -70,13 +77,17 @@ export async function runProviderSync(
     // One stamp per sync: every row written by this run carries the same time.
     const syncedAt = new Date().toISOString();
 
-    const [usage, costs, { data: priceData }] = await Promise.all([
+    const [rawUsage, costs, { data: priceData }] = await Promise.all([
       provider.fetchUsage(range),
       provider.fetchCosts(range),
       admin
         .from("model_price")
         .select("provider, model, input_price_per_1m, output_price_per_1m, effective_date"),
     ]);
+
+    // "Store per-person data" off → collapse to team/project grain before any
+    // person-grain row is derived or persisted (aggregates stay exact).
+    const usage = storePerPerson ? rawUsage : collapsePersonGrain(rawUsage);
 
     const prices: ModelPrice[] = ((priceData ?? []) as PriceRow[]).map((p) => ({
       provider: p.provider,

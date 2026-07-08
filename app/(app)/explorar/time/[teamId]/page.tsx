@@ -17,6 +17,8 @@ const copy = {
   personTitle: "Custo por pessoa",
   personSub:
     "Contribuintes deste time neste mês. Chaves compartilhadas ficam no time, nunca em uma pessoa.",
+  namesHiddenNote:
+    "Nomes ocultos pela política de privacidade — os contribuintes aparecem anonimizados.",
   empty:
     "Nenhum uso de API atribuído a este time ainda. Mapeie um projeto ou workspace em Ajustes → Atribuição.",
   colPerson: "Pessoa / chave",
@@ -101,6 +103,12 @@ export default async function TeamDetailPage({
             {copy.asOf(period.monthLabel, period.dayOfPeriod, period.daysInPeriod)}
           </span>
         </div>
+
+        {detail.namesHidden && detail.persons.some((p) => !p.isShared) && (
+          <p className="mt-3 text-xs text-muted-foreground">
+            {copy.namesHiddenNote}
+          </p>
+        )}
 
         {detail.persons.length === 0 ? (
           <p className="mt-4 text-sm text-muted-foreground">{copy.empty}</p>
