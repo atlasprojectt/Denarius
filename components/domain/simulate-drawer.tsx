@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { SlidersHorizontalIcon } from "@phosphor-icons/react";
+import { IconAdjustmentsHorizontal } from "@tabler/icons-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -81,7 +81,7 @@ export function SimulateDrawer(props: SimulateDrawerProps) {
     <Sheet onOpenChange={(open) => open && setDeltaPct(0)}>
       <SheetTrigger asChild>
         <Button variant="outline" size="sm">
-          <SlidersHorizontalIcon className="size-4" />
+          <IconAdjustmentsHorizontal className="size-4" />
           {copy.title}
         </Button>
       </SheetTrigger>

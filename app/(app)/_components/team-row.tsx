@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { CaretDownIcon, MagnifyingGlassIcon } from "@phosphor-icons/react";
+import { IconChevronDown, IconSearch } from "@tabler/icons-react";
 
 import { BudgetBar } from "@/components/domain/budget-bar";
 import { StatusPill } from "@/components/domain/status-pill";
@@ -81,7 +81,7 @@ export function TeamRow({ row }: { row: TeamRowData }) {
       <div className="mt-3.5 flex flex-wrap items-center gap-2 border-t pt-3.5">
         <Button variant="outline" size="sm" asChild>
           <Link href={`/explorar/time/${row.teamId}`}>
-            <MagnifyingGlassIcon className="size-3.5" />
+            <IconSearch className="size-3.5" />
             {c.investigate}
           </Link>
         </Button>
@@ -108,7 +108,7 @@ export function TeamRow({ row }: { row: TeamRowData }) {
           className="ml-auto text-muted-foreground"
         >
           {showPlan ? c.hidePlan : c.showPlan}
-          <CaretDownIcon
+          <IconChevronDown
             className={`size-3.5 transition-transform ${showPlan ? "rotate-180" : ""}`}
           />
         </Button>

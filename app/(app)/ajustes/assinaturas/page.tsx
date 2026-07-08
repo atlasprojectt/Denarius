@@ -1,4 +1,4 @@
-import { CoinsIcon } from "@phosphor-icons/react/dist/ssr";
+import { IconCoins } from "@tabler/icons-react";
 
 import { EmptyState } from "@/components/domain/empty-state";
 import { PageHeader } from "@/components/domain/page-header";
@@ -71,7 +71,7 @@ export default async function SubscriptionsPage() {
 
       {rows.length === 0 ? (
         <EmptyState
-          icon={<CoinsIcon />}
+          icon={<IconCoins />}
           title={copy.emptyTitle}
           description={copy.emptyBody}
         />

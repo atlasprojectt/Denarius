@@ -100,7 +100,7 @@ shadcn blocks are **starting scaffolding**, adapted into the F5 structure — th
 
 ### 9.1 shadcn primitives (`components/ui/`)
 
-Base set from #12 (button, input, label, dialog, sheet, dropdown-menu, tooltip, sidebar, skeleton, separator, collapsible, avatar, breadcrumb, field) plus, added in the v1 UI pass: **card, badge, alert, table, select, switch, progress, empty, item**. Primitives stay registry-shaped except the documented alignment (§4 radii/type) — treat that alignment as part of "adding" a primitive, not as forking it. `breadcrumb.tsx` imports Phosphor icons from `dist/ssr` so it stays server-safe (the default entry calls `createContext` and breaks RSC pages).
+Base set from #12 (button, input, label, dialog, sheet, dropdown-menu, tooltip, sidebar, skeleton, separator, collapsible, avatar, breadcrumb, field) plus, added in the v1 UI pass: **card, badge, alert, table, select, switch, progress, empty, item**. Primitives stay registry-shaped except the documented alignment (§4 radii/type) — treat that alignment as part of "adding" a primitive, not as forking it. App icons are standardized on **Tabler Icons** via `@tabler/icons-react`.
 
 ### 9.2 Cross-screen domain components (`components/domain/`)
 

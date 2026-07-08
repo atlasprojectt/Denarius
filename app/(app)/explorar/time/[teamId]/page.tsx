@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { LockSimpleIcon, UsersThreeIcon } from "@phosphor-icons/react/dist/ssr";
+import { IconLock, IconUsersGroup } from "@tabler/icons-react";
 
 import { EmptyState } from "@/components/domain/empty-state";
 import { SimulateDrawer } from "@/components/domain/simulate-drawer";
@@ -100,7 +100,7 @@ export default async function TeamDetailPage({
       <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
         <Crumbs current={copy.adminOnlyTitle} />
         <EmptyState
-          icon={<LockSimpleIcon />}
+          icon={<IconLock />}
           title={copy.adminOnlyTitle}
           description={copy.adminOnlyBody}
           primaryAction={<Link href="/explorar">{copy.adminOnlyCta}</Link>}
@@ -154,7 +154,7 @@ export default async function TeamDetailPage({
 
       {detail.persons.length === 0 ? (
         <EmptyState
-          icon={<UsersThreeIcon />}
+          icon={<IconUsersGroup />}
           title={copy.emptyTitle}
           description={copy.emptyBody}
           primaryAction={<Link href="/ajustes/atribuicao">{copy.emptyCta}</Link>}

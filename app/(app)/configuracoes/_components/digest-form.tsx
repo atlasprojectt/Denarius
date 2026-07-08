@@ -27,8 +27,8 @@ export function DigestForm({ receiveDigest }: { receiveDigest: boolean }) {
   );
 
   return (
-    <form action={formAction} className="flex flex-col gap-4">
-      <div className="flex items-start justify-between gap-4">
+    <form action={formAction} className="flex w-full flex-col gap-4">
+      <div className="flex w-full items-start justify-between gap-4 rounded-xl border bg-muted/30 p-4">
         <div className="flex flex-col gap-0.5">
           <Label htmlFor="receiveDigest">{copy.label}</Label>
           <p className="text-sm/relaxed text-muted-foreground">{copy.hint}</p>
@@ -40,7 +40,7 @@ export function DigestForm({ receiveDigest }: { receiveDigest: boolean }) {
         />
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <Button type="submit" variant="outline" disabled={pending}>
           {pending ? copy.saving : copy.save}
         </Button>

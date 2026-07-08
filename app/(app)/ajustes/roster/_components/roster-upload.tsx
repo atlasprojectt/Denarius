@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { CheckCircleIcon, DownloadSimpleIcon } from "@phosphor-icons/react";
+import { IconCircleCheck, IconDownload } from "@tabler/icons-react";
 
 import { ActionStatus } from "@/components/domain/action-status";
 import { Button } from "@/components/ui/button";
@@ -58,7 +58,7 @@ export function RosterUpload() {
               href={`data:text/csv;charset=utf-8,${encodeURIComponent(TEMPLATE_CSV)}`}
               download="roster-modelo.csv"
             >
-              <DownloadSimpleIcon className="size-3.5" />
+              <IconDownload className="size-3.5" />
               {copy.template}
             </a>
           </Button>
@@ -97,7 +97,7 @@ export function RosterUpload() {
               ) : (
                 <>
                   <p className="flex items-center gap-1.5 font-medium">
-                    <CheckCircleIcon className="size-4 shrink-0" aria-hidden />
+                    <IconCircleCheck className="size-4 shrink-0" aria-hidden />
                     {copy.previewOk(preview.validCount)}
                   </p>
                   {preview.newTeams.length > 0 && (

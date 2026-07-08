@@ -1,4 +1,4 @@
-import { UsersFourIcon } from "@phosphor-icons/react/dist/ssr";
+import { IconUsersGroup } from "@tabler/icons-react";
 
 import { EmptyState } from "@/components/domain/empty-state";
 import { PageHeader } from "@/components/domain/page-header";
@@ -59,7 +59,7 @@ export default async function RosterPage() {
 
       {employees.length === 0 ? (
         <EmptyState
-          icon={<UsersFourIcon />}
+          icon={<IconUsersGroup />}
           title={copy.emptyTitle}
           description={copy.emptyBody}
         />

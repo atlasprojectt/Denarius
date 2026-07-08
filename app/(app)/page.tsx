@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CheckIcon, GaugeIcon } from "@phosphor-icons/react/dist/ssr";
+import { IconCheck, IconGauge } from "@tabler/icons-react";
 
 import { StaleBanner } from "@/components/domain/stale-banner";
 import { VerdictLine } from "@/components/domain/verdict-line";
@@ -28,7 +28,7 @@ export default async function HomePage() {
           {homeCopy.question}
         </h1>
         <div className="rounded-xl border bg-card p-8 shadow-xs">
-          <GaugeIcon className="size-8 text-muted-foreground" aria-hidden />
+          <IconGauge className="size-8 text-muted-foreground" aria-hidden />
           <h2 className="mt-4 text-lg font-semibold tracking-tight">
             {homeCopy.coldStart.title}
           </h2>
@@ -41,7 +41,7 @@ export default async function HomePage() {
                 key={item}
                 className="flex items-center gap-2.5 text-sm text-muted-foreground"
               >
-                <CheckIcon className="size-4 shrink-0 text-primary" aria-hidden />
+                <IconCheck className="size-4 shrink-0 text-primary" aria-hidden />
                 {item}
               </li>
             ))}
@@ -92,46 +92,50 @@ export default async function HomePage() {
   }));
 
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
+    <div className="flex w-full flex-col gap-5">
       <h1 className="sr-only">{homeCopy.question}</h1>
 
       {stale.showBanner && <StaleBanner items={stale.needsAttention} />}
 
       <VerdictLine verdict={cockpit.verdict} />
 
-      <Hero
-        org={org}
-        status={cockpit.verdict.status}
-        orgWarnPct={cockpit.orgWarnPct}
-        unconvertedUsd={cockpit.orgUnconvertedUsd}
-        pctProjected={cockpit.orgPctProjected}
-        currency={currency}
-        dayOfPeriod={period.dayOfPeriod}
-        daysInPeriod={period.daysInPeriod}
-      />
+      <div className="grid w-full items-start gap-5 xl:grid-cols-[minmax(0,1.65fr)_minmax(360px,0.75fr)]">
+        <section className="flex min-w-0 flex-col gap-5">
+          <Hero
+            org={org}
+            status={cockpit.verdict.status}
+            orgWarnPct={cockpit.orgWarnPct}
+            unconvertedUsd={cockpit.orgUnconvertedUsd}
+            pctProjected={cockpit.orgPctProjected}
+            currency={currency}
+            dayOfPeriod={period.dayOfPeriod}
+            daysInPeriod={period.daysInPeriod}
+          />
 
-      {cockpit.allClear ? (
-        <AllClear />
-      ) : (
-        needsAttentionRows.length > 0 && (
-          <section className="flex flex-col gap-3">
-            <h2 className="text-sm font-semibold tracking-tight">
-              {homeCopy.needsAttention.title(needsAttentionRows.length)}
-            </h2>
-            <ul className="flex flex-col gap-3">
-              {needsAttentionRows.map((row) => (
-                <TeamRow key={row.teamId} row={row} />
-              ))}
-            </ul>
-          </section>
-        )
-      )}
+          {!cockpit.allClear && needsAttentionRows.length > 0 && (
+            <section className="flex flex-col gap-3">
+              <h2 className="text-sm font-semibold tracking-tight">
+                {homeCopy.needsAttention.title(needsAttentionRows.length)}
+              </h2>
+              <ul className="grid gap-3 2xl:grid-cols-2">
+                {needsAttentionRows.map((row) => (
+                  <TeamRow key={row.teamId} row={row} />
+                ))}
+              </ul>
+            </section>
+          )}
+        </section>
 
-      <UnderControl teams={underControlTeams} currency={currency} />
+        <aside className="flex min-w-0 flex-col gap-5 xl:sticky xl:top-[76px]">
+          {cockpit.allClear && <AllClear />}
 
-      <ObservationsFooter items={observations} hasSeatWaste={hasSeatWaste} />
+          <UnderControl teams={underControlTeams} currency={currency} />
 
-      <ProviderComposition entries={cockpit.composition} currency={currency} />
+          <ObservationsFooter items={observations} hasSeatWaste={hasSeatWaste} />
+
+          <ProviderComposition entries={cockpit.composition} currency={currency} />
+        </aside>
+      </div>
     </div>
   );
 }

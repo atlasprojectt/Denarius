@@ -1,4 +1,4 @@
-import { InfoIcon } from "@phosphor-icons/react/dist/ssr";
+import { IconInfoCircle } from "@tabler/icons-react";
 
 import { PageHeader } from "@/components/domain/page-header";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -114,7 +114,7 @@ export default async function BudgetsPage() {
         <CardContent className="flex flex-col gap-4">
           {org && mismatch !== 0 && (
             <Alert>
-              <InfoIcon />
+              <IconInfoCircle />
               <AlertDescription>
                 {mismatch > 0
                   ? copy.mismatchOver(money(mismatch, currency))

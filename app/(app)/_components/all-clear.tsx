@@ -1,4 +1,4 @@
-import { CheckCircleIcon } from "@phosphor-icons/react/dist/ssr";
+import { IconCircleCheck } from "@tabler/icons-react";
 
 import { homeCopy } from "./copy";
 
@@ -10,9 +10,8 @@ const c = homeCopy.allClear;
 export function AllClear() {
   return (
     <div className="flex items-start gap-3 rounded-xl border bg-status-green-soft p-5">
-      <CheckCircleIcon
+      <IconCircleCheck
         className="mt-0.5 size-5 shrink-0 text-status-green"
-        weight="fill"
       />
       <div>
         <p className="text-sm font-semibold text-status-green-fg">{c.title}</p>

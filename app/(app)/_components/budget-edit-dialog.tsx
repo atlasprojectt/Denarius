@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { PencilSimpleIcon } from "@phosphor-icons/react";
+import { IconPencil } from "@tabler/icons-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -70,7 +70,7 @@ export function BudgetEditDialog({
       <DialogTrigger asChild>
         {triggerLabel ? (
           <Button variant="outline" size="sm">
-            <PencilSimpleIcon className="size-4" />
+            <IconPencil className="size-4" />
             {triggerLabel}
           </Button>
         ) : (
@@ -81,7 +81,7 @@ export function BudgetEditDialog({
             aria-label={scope === "org" ? copy.editOrg : copy.editTeam(teamName ?? "")}
             className="text-muted-foreground"
           >
-            <PencilSimpleIcon className="size-4" />
+            <IconPencil className="size-4" />
           </Button>
         )}
       </DialogTrigger>

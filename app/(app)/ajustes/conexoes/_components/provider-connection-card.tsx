@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { LightbulbIcon } from "@phosphor-icons/react";
+import { IconBulb } from "@tabler/icons-react";
 
 import { ActionStatus } from "@/components/domain/action-status";
 import { Badge } from "@/components/ui/badge";
@@ -131,7 +131,7 @@ function KeyForm({ provider, formAction, pending }: KeyFormProps) {
         <p className="text-xs/relaxed text-muted-foreground">{copy.keyHelp}</p>
       </div>
       <p className="flex items-start gap-2 rounded-lg bg-muted/50 p-3 text-xs/relaxed text-muted-foreground">
-        <LightbulbIcon className="mt-0.5 size-4 shrink-0" aria-hidden />
+        <IconBulb className="mt-0.5 size-4 shrink-0" aria-hidden />
         {copy.groupingTip}
       </p>
       <div>

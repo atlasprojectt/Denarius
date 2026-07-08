@@ -1,4 +1,4 @@
-import { ClockCounterClockwiseIcon } from "@phosphor-icons/react/dist/ssr";
+import { IconHistory } from "@tabler/icons-react";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import type { ConnectionFreshness } from "@/lib/engine/freshness";
@@ -35,7 +35,7 @@ export function StaleBanner({ items }: { items: ConnectionFreshness[] }) {
   if (items.length === 0) return null;
   return (
     <Alert role="status" className="bg-muted/50">
-      <ClockCounterClockwiseIcon />
+      <IconHistory />
       <AlertTitle>{copy.title}</AlertTitle>
       <AlertDescription>
         {items.map((item) => (

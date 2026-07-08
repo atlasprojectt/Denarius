@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CompassIcon } from "@phosphor-icons/react/dist/ssr";
+import { IconCompass } from "@tabler/icons-react";
 
 import { EmptyState } from "@/components/domain/empty-state";
 import { PageHeader } from "@/components/domain/page-header";
@@ -143,7 +143,7 @@ export default async function ExplorePage() {
 
       {coldStart && (
         <EmptyState
-          icon={<CompassIcon />}
+          icon={<IconCompass />}
           title={copy.emptyTitle}
           description={copy.emptyBody}
           primaryAction={

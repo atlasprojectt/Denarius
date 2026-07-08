@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CaretDownIcon, CheckCircleIcon } from "@phosphor-icons/react";
+import { IconChevronDown, IconCircleCheck } from "@tabler/icons-react";
 
 import { BudgetBar } from "@/components/domain/budget-bar";
 import {
@@ -44,16 +44,15 @@ export function UnderControl({
     >
       <CollapsibleTrigger className="group flex w-full items-center justify-between gap-2 rounded-xl p-5 text-left transition-colors hover:bg-muted/40">
         <span className="flex items-center gap-2.5 text-sm font-semibold">
-          <CheckCircleIcon
+          <IconCircleCheck
             aria-hidden
-            weight="fill"
             className="size-4.5 text-status-green"
           />
           {c.title(teams.length)}
         </span>
         <span className="flex items-center gap-1 text-sm text-muted-foreground">
           {open ? c.collapse : c.expand}
-          <CaretDownIcon
+          <IconChevronDown
             className={`size-3.5 transition-transform ${open ? "rotate-180" : ""}`}
           />
         </span>

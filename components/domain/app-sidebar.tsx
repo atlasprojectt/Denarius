@@ -3,12 +3,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  CaretUpDownIcon,
-  ChartLineUpIcon,
-  GearSixIcon,
-  HouseIcon,
-  SignOutIcon,
-} from "@phosphor-icons/react";
+  IconSelector,
+  IconChartLine,
+  IconSettings,
+  IconHome,
+  IconLogout,
+} from "@tabler/icons-react";
 
 import { LogoMark, LogoWordmark } from "@/components/domain/logo";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -49,12 +49,12 @@ const copy = {
 };
 
 const cockpitItems = [
-  { title: copy.home, href: "/", icon: HouseIcon },
-  { title: copy.explore, href: "/explorar", icon: ChartLineUpIcon },
+  { title: copy.home, href: "/", icon: IconHome },
+  { title: copy.explore, href: "/explorar", icon: IconChartLine },
 ];
 
 const accountItems = [
-  { title: copy.settings, href: "/ajustes", icon: GearSixIcon },
+  { title: copy.settings, href: "/ajustes", icon: IconSettings },
 ];
 
 type NavItem = (typeof cockpitItems)[number];
@@ -153,31 +153,45 @@ export function AppSidebar({
                         </span>
                       )}
                     </span>
-                    <CaretUpDownIcon className="ml-auto text-sidebar-foreground/60 group-data-[collapsible=icon]:hidden" />
+                    <IconSelector className="ml-auto text-sidebar-foreground/60 group-data-[collapsible=icon]:hidden" />
                   </SidebarMenuButton>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
                   side="right"
                   align="end"
-                  className="w-56 p-1"
+                  sideOffset={10}
+                  className="w-72 rounded-xl p-2"
                 >
-                  <DropdownMenuLabel className="flex flex-col gap-0.5">
-                    <span className="truncate font-medium text-foreground">
-                      {userLabel}
+                  <DropdownMenuLabel className="flex items-center gap-3 rounded-lg bg-muted/40 p-3">
+                    <Avatar size="sm" className="size-9">
+                      <AvatarFallback className="text-xs font-semibold">
+                        {userInitials}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="flex min-w-0 flex-col gap-0.5">
+                      <span className="truncate text-sm font-semibold text-foreground">
+                        {userLabel}
+                      </span>
+                      <span className="truncate text-xs font-normal text-muted-foreground">
+                        {userEmail}
+                      </span>
                     </span>
-                    <span className="truncate">{userEmail}</span>
                   </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
+                  <DropdownMenuSeparator className="my-2" />
+                  <DropdownMenuItem asChild className="h-10 px-3 text-sm">
                     <Link href="/configuracoes">
-                      <GearSixIcon />
+                      <IconSettings />
                       <span>{copy.profileSettings}</span>
                     </Link>
                   </DropdownMenuItem>
                   <form action={logout}>
-                    <DropdownMenuItem asChild variant="destructive">
+                    <DropdownMenuItem
+                      asChild
+                      variant="destructive"
+                      className="h-10 px-3 text-sm"
+                    >
                       <button type="submit" className="w-full">
-                        <SignOutIcon />
+                        <IconLogout />
                         <span>{copy.logout}</span>
                       </button>
                     </DropdownMenuItem>

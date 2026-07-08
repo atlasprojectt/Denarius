@@ -1,13 +1,13 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
-  CaretRightIcon,
-  ChartPieSliceIcon,
-  CoinsIcon,
-  PlugsIcon,
-  UsersFourIcon,
-  WalletIcon,
-} from "@phosphor-icons/react/dist/ssr";
+  IconChevronRight,
+  IconChartPie,
+  IconCoins,
+  IconPlug,
+  IconUsersGroup,
+  IconWallet,
+} from "@tabler/icons-react";
 
 import { PageHeader } from "@/components/domain/page-header";
 import { Badge } from "@/components/ui/badge";
@@ -127,7 +127,7 @@ function SettingsLink({
         </ItemContent>
         <ItemActions>
           {status}
-          <CaretRightIcon className="size-4 text-muted-foreground" aria-hidden />
+          <IconChevronRight className="size-4 text-muted-foreground" aria-hidden />
         </ItemActions>
       </Link>
     </Item>
@@ -229,7 +229,7 @@ export default async function SettingsPage() {
             <ItemGroup className="gap-0">
               <SettingsLink
                 href="/ajustes/conexoes"
-                icon={<PlugsIcon />}
+                icon={<IconPlug />}
                 title={copy.connectionsTitle}
                 description={connectionsSummary}
                 status={
@@ -243,14 +243,14 @@ export default async function SettingsPage() {
               <ItemSeparator className="my-0" />
               <SettingsLink
                 href="/ajustes/atribuicao"
-                icon={<ChartPieSliceIcon />}
+                icon={<IconChartPie />}
                 title={copy.attributionTitle}
                 description={copy.attributionSub}
               />
               <ItemSeparator className="my-0" />
               <SettingsLink
                 href="/ajustes/roster"
-                icon={<UsersFourIcon />}
+                icon={<IconUsersGroup />}
                 title={copy.rosterTitle}
                 description={
                   employeeCount
@@ -261,7 +261,7 @@ export default async function SettingsPage() {
               <ItemSeparator className="my-0" />
               <SettingsLink
                 href="/ajustes/assinaturas"
-                icon={<CoinsIcon />}
+                icon={<IconCoins />}
                 title={copy.seatsTitle}
                 description={
                   subscriptionCount
@@ -280,7 +280,7 @@ export default async function SettingsPage() {
           <CardContent className="px-2">
             <SettingsLink
               href="/ajustes/orcamentos"
-              icon={<WalletIcon />}
+              icon={<IconWallet />}
               title={copy.budgetsTitle}
               description={copy.budgetsSet(hasOrgBudget, teamBudgetCount)}
             />
