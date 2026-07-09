@@ -49,8 +49,8 @@ Budget editing is **inline** (pencil on rows / hero) → modal. The **simulator 
 | Surfaces (light) | page `#f7f7f8` · card `#fff` · ink `#17181c` · muted `#6b6f76` — **neutral grayscale, no blue/slate cast** |
 | Surfaces (dark) | page `#0c0c0d` · card `#161618` · ink `#e9e9ea` · muted `#9b9ca0` — neutral charcoal |
 | Sidebar rail | **light in light mode** (off-white `#f4f4f5`, ink `#3f4046`), dark neutral charcoal in dark mode (`#0a0a0b`) — the earlier navy tint (`#0c1322`) that read as purple was removed (the auth brand panel likewise moved to neutral charcoal `#0e0e10`) |
-| Radii | **standardized scale** — cards/panels `rounded-xl` (14px) · inner rows/boxes `rounded-lg` (10px) · controls & menus `rounded-md` (8px) · pills/avatars `rounded-full`. All shadcn primitives are aligned to this scale (the `radix-lyra` registry style ships square `rounded-none`; card/badge/alert/table/select/progress/empty/item were realigned on add, same as button/input/dropdown before them); only the tooltip arrow stays square (it's a pointer). |
-| Type | Geist Sans everywhere (`--font-sans`; `--font-heading` maps to sans — the registry's mono-heading default was removed); Geist Mono (`--font-mono`) only for key-like strings (Admin key input); numbers **tabular-nums**; two weights (400/600) |
+| Radii | **standardized scale** — cards/panels `rounded-xl` (14px) · inner rows/boxes `rounded-lg` (10px) · controls & menus `rounded-md` (8px) · pills/avatars `rounded-full`. shadcn primitives now use the `base-mira` preset (2026-07-08 founder-directed) with local compatibility for the app's existing `asChild` call sites. |
+| Type | DM Sans for app text (`--font-sans`; `--font-heading` maps to sans); Geist Mono (`--font-mono`) only for key-like strings (Admin key input); numbers **tabular-nums**; two weights (400/600) |
 | Shadows | cards `shadow-xs`; drawer/modal stronger |
 | Content column | pages are `max-w-4xl mx-auto` inside `main` (`px-4 py-8 md:px-8`); app header is sticky with backdrop blur and hosts the `ThemeToggle` |
 
@@ -101,7 +101,7 @@ shadcn blocks are **starting scaffolding**, adapted into the F5 structure — th
 
 ### 9.1 shadcn primitives (`components/ui/`)
 
-Base set from #12 (button, input, label, dialog, sheet, dropdown-menu, tooltip, sidebar, skeleton, separator, collapsible, avatar, breadcrumb, field) plus, added in the v1 UI pass: **card, badge, alert, table, select, switch, progress, empty, item**. Primitives stay registry-shaped except the documented alignment (§4 radii/type) — treat that alignment as part of "adding" a primitive, not as forking it. App icons are standardized on **Tabler Icons** via `@tabler/icons-react`.
+Base set from #12 (button, input, label, dialog, sheet, dropdown-menu, tooltip, sidebar, skeleton, separator, collapsible, avatar, breadcrumb, field) plus, added in the v1 UI pass: **card, badge, alert, table, select, switch, progress, empty, item, chart**. Primitives are generated from shadcn `base-mira`; local changes are limited to compatibility shims required by existing app contracts (`asChild`, tooltip delay alias) and the documented token/type alignment. App icons are standardized on **Tabler Icons** via `@tabler/icons-react`.
 
 ### 9.2 Cross-screen domain components (`components/domain/`)
 

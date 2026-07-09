@@ -13,7 +13,6 @@ export function useIsMobile() {
   return React.useSyncExternalStore(
     subscribe,
     () => window.matchMedia(QUERY).matches,
-    // Server snapshot: desktop-first (P9) — no mobile chrome during SSR.
     () => false,
   )
 }
