@@ -1,3 +1,5 @@
+"use client";
+
 import {
   Card,
   CardContent,
@@ -5,20 +7,41 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  type ChartConfig,
+} from "@/components/ui/chart";
 import type { BudgetEvaluation } from "@/lib/engine/budget";
 import { percent } from "@/lib/format";
 import { money } from "@/lib/money";
+import {
+  CartesianGrid,
+  Line,
+  LineChart,
+  ReferenceLine,
+  XAxis,
+  YAxis,
+} from "recharts";
 import { homeCopy } from "./copy";
 
 const c = homeCopy.monthlyPace;
 
-function point(x: number, value: number, max: number): { x: number; y: number } {
-  const y = 112 - (value / max) * 88;
-  return { x, y: Math.max(12, Math.min(112, y)) };
-}
+const chartConfig = {
+  spent: { label: c.spent, color: "var(--primary)" },
+  projected: { label: c.projected, color: "color-mix(in oklab, var(--primary) 55%, transparent)" },
+  budget: { label: c.budget, color: "var(--muted-foreground)" },
+} satisfies ChartConfig;
 
-function serialize(points: { x: number; y: number }[]): string {
-  return points.map((p) => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(" ");
+function buildPaceData(org: BudgetEvaluation) {
+  const projection = org.projection ?? org.spent;
+  const close = org.collecting ? null : projection;
+  return [
+    { marker: c.start, x: 0, spent: 0, projected: null },
+    { marker: c.today, x: org.pctElapsed, spent: org.spent, projected: org.spent },
+    { marker: c.close, x: 1, spent: null, projected: close },
+  ];
 }
 
 export function MonthlyPaceChart({
@@ -28,63 +51,86 @@ export function MonthlyPaceChart({
   org: BudgetEvaluation;
   currency: string;
 }) {
-  const projection = org.projection ?? org.spent;
-  const max = Math.max(org.budget, org.spent, projection, 1) * 1.08;
-  const todayX = Math.max(8, Math.min(148, 8 + org.pctElapsed * 140));
-  const start = point(8, 0, max);
-  const today = point(todayX, org.spent, max);
-  const close = point(148, projection, max);
-  const budget = point(8, org.budget, max);
+  const data = buildPaceData(org);
+  const maxY = Math.max(org.budget, org.spent, org.projection ?? 0, 1) * 1.08;
+  const ticks = [0, org.pctElapsed, 1];
+  const tickLabel = (value: number) => {
+    if (value === 0) return c.start;
+    if (value === 1) return c.close;
+    return c.today;
+  };
 
   return (
-    <Card>
+    <Card className="min-h-full">
       <CardHeader>
         <CardTitle className="text-sm">{c.title}</CardTitle>
         <CardDescription>{c.subtitle}</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
-        <svg
-          viewBox="0 0 156 124"
-          role="img"
-          aria-label={c.aria}
-          className="h-48 w-full overflow-visible"
+        <ChartContainer
+          config={chartConfig}
+          className="h-[210px] w-full"
         >
-          <line
-            x1="8"
-            x2="148"
-            y1={budget.y}
-            y2={budget.y}
-            className="stroke-muted-foreground/40"
-            strokeWidth="1"
-            strokeDasharray="4 4"
-          />
-          <polyline
-            points={serialize([start, today])}
-            fill="none"
-            className="stroke-primary"
-            strokeWidth="4"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-          {!org.collecting && (
-            <polyline
-              points={serialize([today, close])}
-              fill="none"
-              className="stroke-primary/55"
-              strokeWidth="4"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeDasharray="6 6"
+          <LineChart
+            accessibilityLayer
+            data={data}
+            margin={{ top: 12, right: 12, bottom: 4, left: 0 }}
+          >
+            <CartesianGrid vertical={false} />
+            <XAxis
+              dataKey="x"
+              type="number"
+              domain={[0, 1]}
+              ticks={ticks}
+              tickFormatter={tickLabel}
+              tickLine={false}
+              axisLine={false}
+              tickMargin={8}
             />
-          )}
-          <circle
-            cx={today.x}
-            cy={today.y}
-            r="4"
-            className="fill-card stroke-primary"
-            strokeWidth="3"
-          />
-        </svg>
+            <YAxis hide domain={[0, maxY]} />
+            <ReferenceLine
+              y={org.budget}
+              stroke="var(--muted-foreground)"
+              strokeDasharray="4 4"
+              strokeOpacity={0.45}
+            />
+            <ChartTooltip
+              cursor={false}
+              content={
+                <ChartTooltipContent
+                  indicator="line"
+                  formatter={(value, name) => (
+                    <div className="flex min-w-[10rem] items-center justify-between gap-4">
+                      <span className="text-muted-foreground">
+                        {String(name) === "projected" ? c.projected : c.spent}
+                      </span>
+                      <span className="font-mono font-medium tabular-nums">
+                        {money(Number(value), currency)}
+                      </span>
+                    </div>
+                  )}
+                />
+              }
+            />
+            <Line
+              dataKey="spent"
+              type="monotone"
+              stroke="var(--color-spent)"
+              strokeWidth={3}
+              dot={false}
+              connectNulls={false}
+            />
+            <Line
+              dataKey="projected"
+              type="monotone"
+              stroke="var(--color-projected)"
+              strokeWidth={3}
+              strokeDasharray="6 6"
+              dot={false}
+              connectNulls={false}
+            />
+          </LineChart>
+        </ChartContainer>
 
         <dl className="grid grid-cols-3 gap-3 border-t pt-4 text-xs">
           <div>

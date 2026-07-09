@@ -32,7 +32,7 @@ Budget editing is **inline** (pencil on rows / hero) → modal. The **simulator 
 5. **Precisa de atenção (N)**: teams with `status ≠ green`, ordered by projected risk; each row = name + status pill + values, bar with ghost + marker, warning line, actions **[Investigar] [Simular] [✎]**.
 6. **Sob controle (N) ✓**: collapsed list, expandable; compact bars.
 7. **Observações**: calm feed (no red, no urgency), includes unattributed nudge.
-8. **Dashboard panels**: team spend circle, monthly pace line (current spend + linear projection, clearly labeled), and ranked provider bar list + "tokens no drill-down".
+8. **Dashboard panels**: monthly pace line (current spend + linear projection, clearly labeled) and "Para onde vai o dinheiro" as a provider/seat donut + ranked legend + "tokens no drill-down". Team distribution stays in the risk/under-control rows, not as a second donut.
 
 **States that must exist:** cold-start (no data/budget → CTA hero, never empty), collecting-pace (before day 5), **all-clear** ("✓ Tudo sob controle · próximo digest sexta"), stale-data, breached.
 
@@ -70,7 +70,7 @@ Budget editing is **inline** (pencil on rows / hero) → modal. The **simulator 
 ## 6. Charts
 
 - Team/budget bars: HTML/CSS (fill + dashed ghost + marker).
-- Home dashboard visuals: CSS/SVG only. The team-spend circle uses already computed team spend shares; the monthly pace line is explicitly current spend plus linear projection, not a historical series.
+- Home dashboard visuals use shadcn Chart + Recharts: the provider/seat donut uses already computed composition shares; the monthly pace line is explicitly current spend plus linear projection, not a historical series.
 - Cumulative historical line (spend vs budget + dashed projection): lives in drill-down once implemented.
 
 ## 7. Implementation decisions (F1–F6 — locked)

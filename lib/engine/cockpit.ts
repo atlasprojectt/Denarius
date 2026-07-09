@@ -72,16 +72,6 @@ export type CompositionEntry = {
   share: number;
 };
 
-export type TeamSpendEntry = {
-  teamId: string;
-  label: string;
-  /** Amount in the display currency. */
-  amount: number;
-  /** amount divided by total (0..1). */
-  share: number;
-  status: VerdictStatus;
-};
-
 export type Cockpit =
   | { state: "cold-start" }
   | {
@@ -98,7 +88,6 @@ export type Cockpit =
       needsAttention: CockpitTeam[];
       underControl: CockpitTeam[];
       composition: CompositionEntry[];
-      teamSpend: TeamSpendEntry[];
       /** True when nothing needs attention and the verdict is green — the affirmative state. */
       allClear: boolean;
       currency: string;
@@ -165,20 +154,6 @@ function buildComposition(
   const total = entries.reduce((sum, e) => sum + e.amount, 0);
   return entries
     .map((e) => ({ ...e, share: total > 0 ? e.amount / total : 0 }))
-    .sort((a, b) => b.amount - a.amount);
-}
-
-function buildTeamSpend(teams: CockpitTeam[]): TeamSpendEntry[] {
-  const total = teams.reduce((sum, t) => sum + t.evaluation.spent, 0);
-  return teams
-    .filter((t) => t.evaluation.spent > 0)
-    .map((t) => ({
-      teamId: t.teamId,
-      label: t.teamName,
-      amount: t.evaluation.spent,
-      share: total > 0 ? t.evaluation.spent / total : 0,
-      status: t.status,
-    }))
     .sort((a, b) => b.amount - a.amount);
 }
 
@@ -254,7 +229,6 @@ export function buildCockpit(input: CockpitInput): Cockpit {
     needsAttention,
     underControl,
     composition: buildComposition(input.org.seatDisplay, input.composition, input.org.fxRate),
-    teamSpend: buildTeamSpend(teams),
     allClear: needsAttention.length === 0 && verdict.status === "green",
     currency,
     periodEndLabel,

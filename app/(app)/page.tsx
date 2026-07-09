@@ -10,7 +10,6 @@ import { Hero } from "./_components/hero";
 import { MonthlyPaceChart } from "./_components/monthly-pace-chart";
 import { ObservationsFooter } from "./_components/observations-footer";
 import { ProviderComposition } from "./_components/provider-composition";
-import { TeamSpendDonut } from "./_components/team-spend-donut";
 import { TeamRow, type TeamRowData } from "./_components/team-row";
 import { UnderControl, type UnderControlTeam } from "./_components/under-control";
 import { homeCopy } from "./_components/copy";
@@ -101,21 +100,19 @@ export default async function HomePage() {
 
       <VerdictLine verdict={cockpit.verdict} />
 
-      <div className="grid w-full items-start gap-5 xl:grid-cols-[minmax(0,1.65fr)_minmax(360px,0.75fr)]">
+      <div className="grid w-full items-start gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(360px,0.9fr)]">
         <section className="flex min-w-0 flex-col gap-5">
-          <Hero
-            org={org}
-            status={cockpit.verdict.status}
-            orgWarnPct={cockpit.orgWarnPct}
-            unconvertedUsd={cockpit.orgUnconvertedUsd}
-            pctProjected={cockpit.orgPctProjected}
-            currency={currency}
-            dayOfPeriod={period.dayOfPeriod}
-            daysInPeriod={period.daysInPeriod}
-          />
-
-          <div className="grid gap-5 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
-            <TeamSpendDonut entries={cockpit.teamSpend} currency={currency} />
+          <div className="grid gap-5 2xl:grid-cols-[minmax(0,1.08fr)_minmax(340px,0.92fr)]">
+            <Hero
+              org={org}
+              status={cockpit.verdict.status}
+              orgWarnPct={cockpit.orgWarnPct}
+              unconvertedUsd={cockpit.orgUnconvertedUsd}
+              pctProjected={cockpit.orgPctProjected}
+              currency={currency}
+              dayOfPeriod={period.dayOfPeriod}
+              daysInPeriod={period.daysInPeriod}
+            />
             <MonthlyPaceChart org={org} currency={currency} />
           </div>
 
@@ -136,11 +133,11 @@ export default async function HomePage() {
         <aside className="flex min-w-0 flex-col gap-5 xl:sticky xl:top-[76px]">
           {cockpit.allClear && <AllClear />}
 
-          <UnderControl teams={underControlTeams} currency={currency} />
+          <ProviderComposition entries={cockpit.composition} currency={currency} />
 
           <ObservationsFooter items={observations} hasSeatWaste={hasSeatWaste} />
 
-          <ProviderComposition entries={cockpit.composition} currency={currency} />
+          <UnderControl teams={underControlTeams} currency={currency} />
         </aside>
       </div>
     </div>

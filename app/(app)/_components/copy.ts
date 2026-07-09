@@ -55,14 +55,8 @@ export const homeCopy = {
     title: "Para onde vai o dinheiro",
     drillNote: "Tokens e modelos ficam no detalhamento em Explorar.",
     empty: "Sem gasto de API convertido ainda neste período.",
-  },
-
-  teamSpend: {
-    title: "Gasto por equipe",
-    subtitle: "Participação dos times com orçamento neste período.",
-    total: "Total",
-    empty: "Sem gasto atribuído a equipes com orçamento neste período.",
-    more: (n: number) => `+ ${n} equipes menores`,
+    total: "Total convertido",
+    amount: "Gasto",
   },
 
   monthlyPace: {
@@ -70,8 +64,12 @@ export const homeCopy = {
     subtitle: "Linha cheia = gasto atual; tracejada = projeção linear.",
     aria: "Gráfico de linha do gasto atual, orçamento e projeção do mês",
     spent: "Gasto",
+    projected: "Projeção",
     budget: "Orçamento",
     elapsed: "Mês",
+    start: "Início",
+    today: "Hoje",
+    close: "Fechamento",
   },
 
   coldStart: {
