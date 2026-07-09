@@ -7,8 +7,10 @@ import { Button } from "@/components/ui/button";
 import { getHomeData } from "@/lib/home/queries";
 import { AllClear } from "./_components/all-clear";
 import { Hero } from "./_components/hero";
+import { MonthlyPaceChart } from "./_components/monthly-pace-chart";
 import { ObservationsFooter } from "./_components/observations-footer";
 import { ProviderComposition } from "./_components/provider-composition";
+import { TeamSpendDonut } from "./_components/team-spend-donut";
 import { TeamRow, type TeamRowData } from "./_components/team-row";
 import { UnderControl, type UnderControlTeam } from "./_components/under-control";
 import { homeCopy } from "./_components/copy";
@@ -111,6 +113,11 @@ export default async function HomePage() {
             dayOfPeriod={period.dayOfPeriod}
             daysInPeriod={period.daysInPeriod}
           />
+
+          <div className="grid gap-5 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
+            <TeamSpendDonut entries={cockpit.teamSpend} currency={currency} />
+            <MonthlyPaceChart org={org} currency={currency} />
+          </div>
 
           {!cockpit.allClear && needsAttentionRows.length > 0 && (
             <section className="flex flex-col gap-3">

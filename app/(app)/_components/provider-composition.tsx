@@ -10,9 +10,9 @@ import { percent } from "@/lib/format";
 import { money } from "@/lib/money";
 import { homeCopy } from "./copy";
 
-// "Para onde vai o dinheiro" (frontend §3.8): a ranked provider bar list, NOT a
-// donut. Neutral bars — this is composition, not budget status, so no semaphore
-// colors (product principle #5). Tokens/models stay in the Explore drill-down.
+// "Para onde vai o dinheiro" (frontend §3.8): a ranked provider bar list.
+// Neutral bars — this is composition, not budget status, so no semaphore colors
+// (product principle #5). Tokens/models stay in the Explore drill-down.
 
 const c = homeCopy.composition;
 

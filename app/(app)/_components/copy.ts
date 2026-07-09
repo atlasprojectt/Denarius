@@ -57,6 +57,23 @@ export const homeCopy = {
     empty: "Sem gasto de API convertido ainda neste período.",
   },
 
+  teamSpend: {
+    title: "Gasto por equipe",
+    subtitle: "Participação dos times com orçamento neste período.",
+    total: "Total",
+    empty: "Sem gasto atribuído a equipes com orçamento neste período.",
+    more: (n: number) => `+ ${n} equipes menores`,
+  },
+
+  monthlyPace: {
+    title: "Ritmo do mês",
+    subtitle: "Linha cheia = gasto atual; tracejada = projeção linear.",
+    aria: "Gráfico de linha do gasto atual, orçamento e projeção do mês",
+    spent: "Gasto",
+    budget: "Orçamento",
+    elapsed: "Mês",
+  },
+
   coldStart: {
     title: "Configure o Denarius para ter a resposta",
     body: "O veredito — dentro ou fora do orçamento, com projeção de fechamento — aparece assim que houver um orçamento definido e uma fonte de gasto.",
