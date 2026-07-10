@@ -132,6 +132,42 @@ export async function teamApiSpend(): Promise<ApiAttribution> {
   };
 }
 
+/** Costed derived USD per day for one team's mapped projects, this month —
+ *  feeds the drill-down cumulative chart (engine does the combine). */
+export async function teamDailyApiUsd(
+  teamId: string,
+): Promise<{ date: string; usd: number }[]> {
+  const supabase = await createClient();
+  const since = monthStartUtc();
+
+  const [{ data: mapData }, { data: usageData }] = await Promise.all([
+    supabase
+      .from("project_map")
+      .select("provider, project_id")
+      .eq("team_id", teamId),
+    supabase
+      .from("usage_daily")
+      .select("date, provider, project_id, derived_cost, uncosted")
+      .gte("date", since),
+  ]);
+
+  const mapped = new Set(
+    ((mapData ?? []) as { provider: string; project_id: string }[]).map((m) =>
+      mapKey(m.provider, m.project_id),
+    ),
+  );
+
+  type DailyRow = UsageRow & { date: string };
+  const byDate = new Map<string, number>();
+  for (const row of (usageData ?? []) as DailyRow[]) {
+    if (row.uncosted || row.derived_cost === null) continue;
+    if (!mapped.has(mapKey(row.provider, row.project_id))) continue;
+    byDate.set(row.date, (byDate.get(row.date) ?? 0) + row.derived_cost);
+  }
+
+  return [...byDate.entries()].map(([date, usd]) => ({ date, usd }));
+}
+
 export type MappableProject = {
   provider: string;
   projectId: string;

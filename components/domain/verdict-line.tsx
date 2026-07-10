@@ -20,13 +20,15 @@ const halo: Record<Verdict["status"], string> = {
 };
 
 export function VerdictLine({ verdict }: { verdict: Verdict }) {
+  const blink = verdict.status === "red" ? "motion-safe:animate-pulse" : "";
+
   return (
     <div className="flex items-start gap-3">
       <span
         aria-hidden
-        className={`mt-1 flex size-4 shrink-0 items-center justify-center rounded-full ${halo[verdict.status]}`}
+        className={`mt-1 flex size-4 shrink-0 items-center justify-center rounded-full ${halo[verdict.status]} ${blink}`}
       >
-        <span className={`size-2 rounded-full ${dot[verdict.status]}`} />
+        <span className={`size-2 rounded-full ${dot[verdict.status]} ${blink}`} />
       </span>
       <p className="text-xl/snug font-semibold tracking-tight text-balance">
         {verdict.sentence}

@@ -50,8 +50,8 @@ export default async function AppLayout({
         })}
       />
       <SidebarInset>
-        <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2 border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/80">
-          <SidebarTrigger className="-ml-1 size-9 [&_svg]:size-5" />
+        <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2.5 border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+          <SidebarTrigger className="-ml-1.5 size-10" />
           <span className="truncate text-sm font-medium">
             {appUser.tenant?.name}
           </span>

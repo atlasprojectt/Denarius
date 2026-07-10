@@ -4,14 +4,14 @@
 
 export const homeCopy = {
   question: "Você está no controle do gasto com IA?",
+  meta: (day: number, days: number, pctElapsed: string) =>
+    `dia ${day} de ${days} · ${pctElapsed} do mês`,
 
   hero: {
     spentLabel: "Gasto no período",
     ofBudget: (budget: string) => `de ${budget}`,
     kpiProjection: "Projeção de fechamento",
     kpiMargin: "Margem projetada",
-    kpiPace: "Mês",
-    kpiPaceValue: (day: number, days: number) => `dia ${day} de ${days}`,
     collectingShort: "coletando ritmo",
     pacingSpend: "Gasto",
     pacingTime: (day: number, days: number) => `Mês: dia ${day} de ${days}`,
@@ -20,30 +20,35 @@ export const homeCopy = {
     collecting: "Coletando ritmo — a projeção de fechamento aparece a partir do dia 5.",
     unconverted: (usd: string) =>
       `+ ${usd} de API ainda sem câmbio congelado — fora do total até o câmbio ser capturado.`,
-    editBudget: "Editar orçamento",
   },
 
-  needsAttention: {
-    title: (n: number) => `Precisa de atenção (${n})`,
-    investigate: "Investigar",
-    simulate: "Simular",
-    editBudget: "Editar orçamento",
-    ofBudget: (spent: string, budget: string) => `${spent} de ${budget}`,
+  teams: {
+    title: "Orçamentos por time",
+    subtitleAttention: (n: number, total: number) =>
+      n === 1
+        ? `1 de ${total} times precisa de atenção neste mês.`
+        : `${n} de ${total} times precisam de atenção neste mês.`,
+    subtitleAllOk: (total: number) =>
+      total === 1
+        ? "O único time com orçamento está dentro do ritmo."
+        : `Todos os ${total} times com orçamento estão dentro do ritmo.`,
+    manage: "Gerenciar orçamentos",
+    colTeam: "Time",
+    colStatus: "Situação",
+    colSpent: "Gasto",
+    colBudget: "Orçamento",
+    colUsage: "Consumo",
+    colProjection: "Projeção",
+    detail: (team: string) => `Ver detalhe de ${team}`,
+    collecting: "—",
     warnBreach: (spent: string, budget: string, pct: string) =>
       `Estourou o orçamento: ${spent} de ${budget} (${pct}).`,
     warnProjected: (projection: string, over: string) =>
       `No ritmo atual, fecha em ${projection} — ${over} acima do orçamento.`,
     warnThreshold: (pct: string) => `Já em ${pct} do orçamento neste ponto do mês.`,
-    planTitle: "O que dá para fazer",
-    showPlan: "Ver plano",
-    hidePlan: "Ocultar plano",
-  },
-
-  underControl: {
-    title: (n: number) => `Sob controle (${n})`,
-    expand: "Mostrar",
-    collapse: "Ocultar",
-    ofBudget: (spent: string, budget: string) => `${spent} de ${budget}`,
+    emptyBody:
+      "Defina orçamentos por time para ver aqui quem está dentro do ritmo e quem precisa de atenção.",
+    emptyCta: "Definir orçamentos por time",
   },
 
   allClear: {
@@ -61,12 +66,13 @@ export const homeCopy = {
 
   monthlyPace: {
     title: "Ritmo do mês",
-    subtitle: "Linha cheia = gasto atual; tracejada = projeção linear.",
+    subtitle:
+      "Gasto acumulado contra o tempo do período — a linha tracejada é a projeção linear.",
+    empty: "Sem gasto registrado neste período ainda.",
     aria: "Gráfico de linha do gasto atual, orçamento e projeção do mês",
     spent: "Gasto",
     projected: "Projeção",
     budget: "Orçamento",
-    elapsed: "Mês",
     start: "Início",
     today: "Hoje",
     close: "Fechamento",
@@ -82,33 +88,6 @@ export const homeCopy = {
       "Projeção de fechamento do mês no ritmo atual",
       "Avisos antecipados antes de o orçamento estourar",
     ],
-  },
-
-  simulate: {
-    title: "Simular",
-    subtitle: (team: string) => `Cenário para ${team}`,
-    currentPace: "Ritmo atual",
-    spent: "Gasto até agora",
-    projected: "Projeção de fechamento",
-    budget: "Orçamento",
-    lever: "Variação do ritmo do time até o fim do mês",
-    deltaZero: "ritmo atual",
-    deltaSlower: (pct: string) => `${pct} mais devagar`,
-    deltaFaster: (pct: string) => `${pct} mais rápido`,
-    presetCurrent: "Ritmo atual",
-    presetBreakEven: "Fechar no orçamento",
-    presetCut: "−30%",
-    breakEvenUnreachable:
-      "Nem parando este time a empresa fecha no orçamento — o ajuste passa por outros times.",
-    resultTitle: "Neste cenário",
-    teamCloses: "Time fecha em",
-    orgCloses: "Empresa fecha em",
-    marginUnder: (amount: string) => `Fecha ${amount} abaixo do orçamento da empresa.`,
-    marginOver: (amount: string) => `Fecha ${amount} acima do orçamento da empresa.`,
-    collecting:
-      "Coletando ritmo — a simulação usa a projeção de fechamento, disponível a partir do dia 5 do período.",
-    disclaimer:
-      "Estimativa linear sobre o ritmo atual — não é uma previsão. O Denarius aponta; a decisão é sua.",
   },
 
   observations: {

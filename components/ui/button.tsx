@@ -57,6 +57,10 @@ function Button({
       data-slot="button"
       className={cn(buttonVariants({ variant, size, className }))}
       render={render}
+      // Base UI defaults nativeButton to true and logs an error whenever the
+      // rendered element isn't a real <button> (every `asChild` + <Link>).
+      // Declare what we actually render so the console stays clean.
+      nativeButton={render ? render.type === "button" : true}
       {...props}
     >
       {render ? null : children}

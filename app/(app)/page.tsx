@@ -4,20 +4,23 @@ import { IconCheck, IconGauge } from "@tabler/icons-react";
 import { StaleBanner } from "@/components/domain/stale-banner";
 import { VerdictLine } from "@/components/domain/verdict-line";
 import { Button } from "@/components/ui/button";
+import { percent } from "@/lib/format";
 import { getHomeData } from "@/lib/home/queries";
 import { AllClear } from "./_components/all-clear";
 import { Hero } from "./_components/hero";
 import { MonthlyPaceChart } from "./_components/monthly-pace-chart";
 import { ObservationsFooter } from "./_components/observations-footer";
 import { ProviderComposition } from "./_components/provider-composition";
-import { TeamRow, type TeamRowData } from "./_components/team-row";
-import { UnderControl, type UnderControlTeam } from "./_components/under-control";
+import { TeamBudgetTable } from "./_components/team-budget-table";
 import { homeCopy } from "./_components/copy";
 
-// The Home cockpit (#19). Server Component: reads the engine-assembled cockpit
-// and renders it. Verdict-first — the one-line answer on top, then the hero, the
-// teams that need attention, the calm ones collapsed, and where the money goes.
-// No arithmetic here; buildCockpit already did it (architecture §9).
+// The Home cockpit (#19, redesigned 2026-07): a stable, read-mostly overview in
+// full-width rows — verdict (the answer), hero (the money headline), pace +
+// composition (analysis), the teams table (drill-down entry), observations
+// (ambient). Nothing on this screen expands, opens drawers or edits; simulation
+// and control plans live in /explorar/time/[id], budget editing in
+// /ajustes/orcamentos. No arithmetic here; buildCockpit already did it
+// (architecture §9).
 
 export default async function HomePage() {
   const { cockpit, period, stale, observations, hasSeatWaste } = await getHomeData();
@@ -65,81 +68,51 @@ export default async function HomePage() {
   }
 
   const { org, currency } = cockpit;
-
-  const needsAttentionRows: TeamRowData[] = cockpit.needsAttention.map((t) => ({
-    teamId: t.teamId,
-    teamName: t.teamName,
-    status: t.status,
-    level: t.finding!.level,
-    pctSpent: t.evaluation.pctSpent,
-    pctProjected: t.pctProjected,
-    budget: t.evaluation.budget,
-    spent: t.evaluation.spent,
-    projection: t.evaluation.projection,
-    warnPct: t.warnPct,
-    controlPlan: t.finding!.controlPlan,
-    currency,
-    orgProjection: org.projection,
-    orgBudget: org.budget,
-  }));
-
-  const underControlTeams: UnderControlTeam[] = cockpit.underControl.map((t) => ({
-    teamId: t.teamId,
-    teamName: t.teamName,
-    pctSpent: t.evaluation.pctSpent,
-    pctProjected: t.pctProjected,
-    spent: t.evaluation.spent,
-    budget: t.evaluation.budget,
-  }));
+  const allTeams = [...cockpit.needsAttention, ...cockpit.underControl];
 
   return (
-    <div className="flex w-full flex-col gap-5">
+    <div className="flex w-full flex-col gap-6">
       <h1 className="sr-only">{homeCopy.question}</h1>
 
       {stale.showBanner && <StaleBanner items={stale.needsAttention} />}
 
-      <VerdictLine verdict={cockpit.verdict} />
-
-      <div className="grid w-full items-start gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(360px,0.9fr)]">
-        <section className="flex min-w-0 flex-col gap-5">
-          <div className="grid gap-5 2xl:grid-cols-[minmax(0,1.08fr)_minmax(340px,0.92fr)]">
-            <Hero
-              org={org}
-              status={cockpit.verdict.status}
-              orgWarnPct={cockpit.orgWarnPct}
-              unconvertedUsd={cockpit.orgUnconvertedUsd}
-              pctProjected={cockpit.orgPctProjected}
-              currency={currency}
-              dayOfPeriod={period.dayOfPeriod}
-              daysInPeriod={period.daysInPeriod}
-            />
-            <MonthlyPaceChart org={org} currency={currency} />
-          </div>
-
-          {!cockpit.allClear && needsAttentionRows.length > 0 && (
-            <section className="flex flex-col gap-3">
-              <h2 className="text-sm font-semibold tracking-tight">
-                {homeCopy.needsAttention.title(needsAttentionRows.length)}
-              </h2>
-              <ul className="grid gap-3 2xl:grid-cols-2">
-                {needsAttentionRows.map((row) => (
-                  <TeamRow key={row.teamId} row={row} />
-                ))}
-              </ul>
-            </section>
+      <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-2">
+        <VerdictLine verdict={cockpit.verdict} />
+        <p className="mt-1 shrink-0 text-sm text-muted-foreground tabular-nums">
+          {homeCopy.meta(
+            period.dayOfPeriod,
+            period.daysInPeriod,
+            percent(org.pctElapsed),
           )}
-        </section>
-
-        <aside className="flex min-w-0 flex-col gap-5 xl:sticky xl:top-[76px]">
-          {cockpit.allClear && <AllClear />}
-
-          <ProviderComposition entries={cockpit.composition} currency={currency} />
-
-          <ObservationsFooter items={observations} hasSeatWaste={hasSeatWaste} />
-
-          <UnderControl teams={underControlTeams} currency={currency} />
-        </aside>
+        </p>
       </div>
+
+      {cockpit.allClear && <AllClear />}
+
+      <div className="grid items-stretch gap-6 xl:grid-cols-3">
+        <div className="xl:col-span-2">
+          <Hero
+            org={org}
+            status={cockpit.verdict.status}
+            pctProjected={cockpit.orgPctProjected}
+            unconvertedUsd={cockpit.orgUnconvertedUsd}
+            currency={currency}
+            dayOfPeriod={period.dayOfPeriod}
+            daysInPeriod={period.daysInPeriod}
+          />
+        </div>
+        <ProviderComposition entries={cockpit.composition} currency={currency} />
+      </div>
+
+      <MonthlyPaceChart org={org} currency={currency} />
+
+      <TeamBudgetTable
+        teams={allTeams}
+        attentionCount={cockpit.needsAttention.length}
+        currency={currency}
+      />
+
+      <ObservationsFooter items={observations} hasSeatWaste={hasSeatWaste} />
     </div>
   );
 }

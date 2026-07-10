@@ -68,15 +68,22 @@ function Item({
   VariantProps<typeof itemVariants> & {
     asChild?: boolean
   }) {
+  // Base UI's useRender only renders children it receives via `props`. When not
+  // composing through `asChild`/`render`, forward the JSX children explicitly —
+  // otherwise a plain <Item>…</Item> renders an empty <div> (this dropped the
+  // whole /configuracoes card). Mirrors the SidebarMenuButton pattern.
+  const childRender =
+    asChild && React.isValidElement(children) ? children : render
   return useRender({
     defaultTagName: "div",
     props: mergeProps<"div">(
       {
         className: cn(itemVariants({ variant, size, className })),
+        children: childRender ? undefined : children,
       },
       props
     ),
-    render: asChild && React.isValidElement(children) ? children : render,
+    render: childRender,
     state: {
       slot: "item",
       variant,

@@ -8,6 +8,7 @@ import {
   IconSettings,
   IconHome,
   IconLogout,
+  IconUserCircle,
 } from "@tabler/icons-react";
 
 import { LogoMark, LogoWordmark } from "@/components/domain/logo";
@@ -16,7 +17,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -59,6 +59,13 @@ const accountItems = [
 
 type NavItem = (typeof cockpitItems)[number];
 
+// "/" only matches exactly; sections stay lit on their subroutes
+// (/explorar/time/[id] keeps Explorar active).
+function isActivePath(pathname: string, href: string): boolean {
+  if (href === "/") return pathname === "/";
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
 function NavGroup({
   label,
   items,
@@ -77,8 +84,9 @@ function NavGroup({
             <SidebarMenuItem key={item.href}>
               <SidebarMenuButton
                 asChild
-                isActive={pathname === item.href}
+                isActive={isActivePath(pathname, item.href)}
                 tooltip={item.title}
+                className="h-9 gap-2.5 px-2.5 [&_svg]:size-4.5"
               >
                 <Link href={item.href}>
                   <item.icon />
@@ -107,14 +115,14 @@ export function AppSidebar({
   return (
     <TooltipProvider delayDuration={0}>
       <Sidebar collapsible="icon">
-        <SidebarHeader>
+        <SidebarHeader className="px-3 pt-3">
           <Link
             href="/"
             aria-label={copy.brand}
-            className="flex h-10 items-center rounded-md px-2 transition-colors hover:bg-sidebar-accent group-data-[collapsible=icon]:h-8 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
+            className="flex h-11 items-center rounded-md px-1.5 transition-colors hover:bg-sidebar-accent group-data-[collapsible=icon]:h-10 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
           >
-            <LogoWordmark className="h-6 w-auto group-data-[collapsible=icon]:hidden" />
-            <LogoMark className="hidden size-6 shrink-0 text-[#FF5100] group-data-[collapsible=icon]:block" />
+            <LogoWordmark className="h-7 w-auto group-data-[collapsible=icon]:hidden" />
+            <LogoMark className="hidden size-7 shrink-0 text-[#FF5100] group-data-[collapsible=icon]:block" />
           </Link>
         </SidebarHeader>
 
@@ -135,52 +143,59 @@ export function AppSidebar({
           <SidebarMenu>
             <SidebarMenuItem>
               <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <SidebarMenuButton
-                    className="h-12"
-                    tooltip={copy.profileMenu}
-                  >
-                    <Avatar size="sm" className="size-6">
-                      <AvatarFallback className="bg-sidebar-accent text-[10px] font-semibold text-sidebar-accent-foreground">
-                        {userInitials}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span className="flex min-w-0 flex-1 flex-col">
-                      <span className="truncate font-medium">{userLabel}</span>
-                      {userLabel !== userEmail && (
-                        <span className="truncate text-sidebar-foreground/60">
-                          {userEmail}
-                        </span>
-                      )}
-                    </span>
-                    <IconSelector className="ml-auto text-sidebar-foreground/60 group-data-[collapsible=icon]:hidden" />
-                  </SidebarMenuButton>
+                {/* Plain trigger, not asChild: composing Base UI's Menu.Trigger
+                    through SidebarMenuButton's render chain swallowed the
+                    open/close handlers — the menu never opened. Styled to match
+                    SidebarMenuButton. */}
+                <DropdownMenuTrigger
+                  aria-label={copy.profileMenu}
+                  className="flex h-12 w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left outline-hidden ring-sidebar-ring transition-[width,height,padding] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 data-open:bg-sidebar-accent data-open:text-sidebar-accent-foreground group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-0!"
+                >
+                  <Avatar className="size-8 shrink-0 group-data-[collapsible=icon]:size-7">
+                    <AvatarFallback className="bg-sidebar-accent text-xs font-semibold text-sidebar-accent-foreground">
+                      {userInitials}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="grid min-w-0 flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
+                    <span className="truncate font-medium">{userLabel}</span>
+                    {userLabel !== userEmail && (
+                      <span className="truncate text-xs text-sidebar-foreground/60">
+                        {userEmail}
+                      </span>
+                    )}
+                  </span>
+                  <IconSelector className="ml-auto size-4 shrink-0 text-sidebar-foreground/60 group-data-[collapsible=icon]:hidden" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
                   side="right"
                   align="end"
                   sideOffset={10}
-                  className="w-72 rounded-xl p-2"
+                  className="w-64 rounded-xl"
                 >
-                  <DropdownMenuLabel className="flex items-center gap-3 rounded-lg bg-muted/40 p-3">
-                    <Avatar size="sm" className="size-9">
+                  {/* Identity header as a plain div: Base UI's GroupLabel
+                      (DropdownMenuLabel) throws outside <Menu.Group>, which
+                      crashed this menu the moment it opened. */}
+                  <div className="flex items-center gap-3 px-2 py-2">
+                    <Avatar className="size-8">
                       <AvatarFallback className="text-xs font-semibold">
                         {userInitials}
                       </AvatarFallback>
                     </Avatar>
-                    <span className="flex min-w-0 flex-col gap-0.5">
+                    <span className="grid min-w-0 leading-tight">
                       <span className="truncate text-sm font-semibold text-foreground">
                         {userLabel}
                       </span>
-                      <span className="truncate text-xs font-normal text-muted-foreground">
-                        {userEmail}
-                      </span>
+                      {userLabel !== userEmail && (
+                        <span className="truncate text-xs font-normal text-muted-foreground">
+                          {userEmail}
+                        </span>
+                      )}
                     </span>
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator className="my-2" />
-                  <DropdownMenuItem asChild className="h-10 px-3 text-sm">
+                  </div>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild className="h-9">
                     <Link href="/configuracoes">
-                      <IconSettings />
+                      <IconUserCircle />
                       <span>{copy.profileSettings}</span>
                     </Link>
                   </DropdownMenuItem>
@@ -188,7 +203,7 @@ export function AppSidebar({
                     <DropdownMenuItem
                       asChild
                       variant="destructive"
-                      className="h-10 px-3 text-sm"
+                      className="h-9"
                     >
                       <button type="submit" className="w-full">
                         <IconLogout />

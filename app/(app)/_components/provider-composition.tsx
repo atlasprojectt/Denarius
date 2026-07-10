@@ -55,7 +55,7 @@ export function ProviderComposition({
   }));
 
   return (
-    <Card>
+    <Card className="min-h-full">
       <CardHeader>
         <CardTitle className="text-sm">{c.title}</CardTitle>
         <CardDescription>{c.drillNote}</CardDescription>
@@ -64,10 +64,10 @@ export function ProviderComposition({
         {entries.length === 0 ? (
           <p className="text-sm text-muted-foreground">{c.empty}</p>
         ) : (
-          <div className="grid gap-5 sm:grid-cols-[190px_minmax(0,1fr)] xl:grid-cols-1 2xl:grid-cols-[190px_minmax(0,1fr)]">
+          <div className="grid items-center gap-5 sm:grid-cols-[170px_minmax(0,1fr)]">
             <ChartContainer
               config={chartConfig}
-              className="mx-auto aspect-square h-[190px]"
+              className="mx-auto aspect-square h-[160px]"
             >
               <PieChart>
                 <ChartTooltip
@@ -91,8 +91,8 @@ export function ProviderComposition({
                   data={chartData}
                   dataKey="amount"
                   nameKey="label"
-                  innerRadius={54}
-                  outerRadius={82}
+                  innerRadius={48}
+                  outerRadius={74}
                   paddingAngle={2}
                   strokeWidth={0}
                 >

@@ -61,7 +61,7 @@ const copy = {
   driftWarn: (drift: string, pct: string) =>
     `Atenção: o gasto derivado difere do reportado pelos provedores em ${drift} (${pct}) — confira a tabela de preços.`,
   apiTitle: (label: string) => `Uso de API por modelo — ${label}`,
-  apiHeadline: (total: string) => `${total} neste mês`,
+  apiHeadlineSuffix: "neste mês",
   apiAsOf: (stamp: string) => `dados de ${stamp}`,
   colModel: "Modelo",
   colTokens: "Tokens",
@@ -227,14 +227,17 @@ export default async function ExplorePage() {
             <CardTitle className="text-sm">
               {copy.apiTitle(period.monthLabel)}
             </CardTitle>
-            <CardDescription className="text-xl font-semibold tabular-nums text-foreground">
-              {copy.apiHeadline(money(apiSpend.monthUsd, "USD"))}
-            </CardDescription>
             {lastSyncAt && (
               <CardAsOf>{copy.apiAsOf(utcStamp(lastSyncAt))}</CardAsOf>
             )}
           </CardHeader>
-          <CardContent>
+          <CardContent className="flex flex-col gap-3">
+            <p className="text-2xl font-semibold tracking-tight tabular-nums">
+              {money(apiSpend.monthUsd, "USD")}
+              <span className="ml-2 text-sm font-normal tracking-normal text-muted-foreground">
+                {copy.apiHeadlineSuffix}
+              </span>
+            </p>
             <Table>
               <TableHeader>
                 <TableRow>

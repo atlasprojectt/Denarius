@@ -3,6 +3,7 @@
 
 # Node / Next.js (para o build que vem)
 node_modules/
+.pnpm-store/
 .next/
 out/
 build/

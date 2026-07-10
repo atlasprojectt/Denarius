@@ -17,22 +17,21 @@
 
 | Screen | Job |
 |---|---|
-| **Início (Home)** | The cockpit. Verdict → hero (spend vs budget + pacing pair + projected-margin callout) → "Precisa de atenção" (at-risk teams, rich rows) → "Sob controle (N)" collapsed → Observações (apontamentos) → provider composition |
-| **Explorar** | Investigation. Root: by-team table (incl. **Não atribuído**) + by-model; drill → team detail (pace chart, contributors) with breadcrumb. **#17 shipped:** API-by-team table (USD), stale banner + reconciliation notice, and the Admin-only per-person drill at `/explorar/time/[teamId]` (shared keys / Anthropic roll up to the team, never a person). The pace chart lands with budgets (#18). |
+| **Início (Home)** | The cockpit — a stable, read-only overview (redesigned 2026-07-09). Full-width rows: verdict → hero (spend vs budget + pacing pair + projected-margin callout) + provider composition donut (2/3 · 1/3) → monthly-pace line → **one stable teams table** (all budgeted teams, at-risk first, no expanding rows) → Observações (apontamentos). Nothing on Home expands, opens drawers or edits — acting on a team is a click through to its drill-down; editing budgets is a click to `/ajustes/orcamentos` |
+| **Explorar** | Investigation. Root: by-team table (incl. **Não atribuído**) + by-model; drill → team detail (breadcrumb). **#17 shipped:** API-by-team table (USD), stale banner + reconciliation notice, and the Admin-only per-person drill at `/explorar/time/[teamId]` (shared keys / Anthropic roll up to the team, never a person). **Redesign 2026-07-09:** the team drill-down is now where a team's situation is *acted on* — it carries a **budget context card** (status pill + bar + spend/budget/projection + warning line + "editar em Ajustes"), the **control plan card** (`finding.controlPlan`, catalog-only, moved off Home), and the **[Simular] drawer** in its header. |
 | **Ajustes** | Hub for company and operational setup: company name, read-only display currency, Connections (OpenAI/Anthropic/Copilot-soon), **atribuição (mapa projeto/workspace → time, #17)**, **orçamentos (org + por time, #18)**, roster CSV, manual seats, users/roles, privacy toggles, currency |
 
-Budget editing is **inline** (pencil on rows / hero) → modal. The **simulator is a right-side drawer** opened in context ([Simular] on warnings/teams) — never a nav destination. **#18 shipped** the minimal budget CRUD as a settings page (`/ajustes/orcamentos`, org + per-team `<form>`s, Σ-mismatch informational notice, frozen-FX disclosure). **#19 shipped** the Home cockpit and the inline pencil→modal (`BudgetEditDialog`, a `Dialog` reusing `upsertBudget`); the [Simular] control opens the right-side drawer showing the team's real pacing, with the interactive what-if presets/slider deferred to #21.
+Budget editing lives on the **`/ajustes/orcamentos`** settings page (org + per-team `<form>`s, Σ-mismatch notice, frozen-FX disclosure) — reached from the Home teams table's "Gerenciar orçamentos" action and the drill-down's "editar em Ajustes" link. The **simulator is a right-side drawer** opened in context ([Simular] in the team drill-down header) — never a nav destination. **#18 shipped** the budget CRUD page. **#19 shipped** the Home cockpit; its inline pencil→modal (`BudgetEditDialog`) was **removed in the 2026-07-09 redesign** — Home is read-only, so editing is one click away on the settings page rather than a per-row dialog. The [Simular] drawer (interactive presets/slider from #21) now opens only from the team drill-down, not from Home rows.
 
 ## 3. Home component contracts
 
 1. **Onboarding checklist** (dismissible, 4 steps, budget step pushed) — only until complete.
 2. **Stale-data banner** — only when a connector hasn't synced >1 day.
 3. **Verdict line** — always present; green/amber/red; sentence + meta (days left, projection).
-4. **Hero**: org spend big number; paired bars **Gasto % × Mês (dia N de M)** with aligned budget marker; ghost extension = projection; callout = projected margin.
-5. **Precisa de atenção (N)**: teams with `status ≠ green`, ordered by projected risk; each row = name + status pill + values, bar with ghost + marker, warning line, actions **[Investigar] [Simular] [✎]**.
-6. **Sob controle (N) ✓**: collapsed list, expandable; compact bars.
-7. **Observações**: calm feed (no red, no urgency), includes unattributed nudge.
-8. **Dashboard panels**: monthly pace line (current spend + linear projection, clearly labeled) and "Para onde vai o dinheiro" as a provider/seat donut + ranked legend + "tokens no drill-down". Team distribution stays in the risk/under-control rows, not as a second donut.
+4. **Hero**: org spend big number (the product's identity — never demote it to a KPI tile); paired bars **Gasto % × Mês (dia N de M)** with aligned budget marker; ghost extension = projection; KPI strip (projection / projected margin / day of month) + projected-margin callout. **Read-only** since 2026-07-09 — no inline pencil.
+5. **Orçamentos por time (table)**: ONE stable table for every budgeted team, at-risk first (cockpit ordering). Columns: Time (+ muted warning line for at-risk) · Situação (status pill) · Gasto · Orçamento · Consumo (bar + %) · Projeção · chevron → drill-down. No expanding rows, no collapsed "Sob controle" group, no inline actions — the whole row links to `/explorar/time/[id]`; a single "Gerenciar orçamentos" action heads to `/ajustes/orcamentos`. (Replaced the rich `TeamRow` + `UnderControl` collapse.)
+6. **Observações**: calm feed (no red, no urgency), includes unattributed nudge.
+7. **Dashboard panels**: "Para onde vai o dinheiro" (provider/seat donut + ranked legend, beside the hero) and the monthly pace line (full-width, current spend + linear projection). Team distribution stays in the teams table, not as a second donut.
 
 **States that must exist:** cold-start (no data/budget → CTA hero, never empty), collecting-pace (before day 5), **all-clear** ("✓ Tudo sob controle · próximo digest sexta"), stale-data, breached.
 
@@ -52,7 +51,7 @@ Budget editing is **inline** (pencil on rows / hero) → modal. The **simulator 
 | Radii | **standardized scale** — cards/panels `rounded-xl` (14px) · inner rows/boxes `rounded-lg` (10px) · controls & menus `rounded-md` (8px) · pills/avatars `rounded-full`. shadcn primitives now use the `base-mira` preset (2026-07-08 founder-directed) with local compatibility for the app's existing `asChild` call sites. |
 | Type | DM Sans for app text (`--font-sans`; `--font-heading` maps to sans); Geist Mono (`--font-mono`) only for key-like strings (Admin key input); numbers **tabular-nums**; two weights (400/600) |
 | Shadows | cards `shadow-xs`; drawer/modal stronger |
-| Content column | pages are `max-w-4xl mx-auto` inside `main` (`px-4 py-8 md:px-8`); app header is sticky with backdrop blur and hosts the `ThemeToggle` |
+| Content column | pages are `max-w-4xl mx-auto` inside `main` (`px-4 py-8 md:px-8`); **Home is full-width** (`w-full`, founder-directed 2026-07-09 — the cockpit uses the whole monitor, no dead margins); app header is sticky with backdrop blur and holds only the sidebar trigger + tenant name. Theme is chosen in `/configuracoes` (the `ThemePicker`), **not** the header — a header toggle was tried and removed (2026-07-09, founder-directed: it read as clutter and duplicated the settings control) |
 
 **Light + dark** (supersedes the earlier "light only" of P9 for this provisional front — a founder-directed change). The theme is the `.dark` class on `<html>`, toggled by `components/domain/theme-toggle.tsx` (no dependency; reads/writes `localStorage.theme` and is applied pre-paint by a no-FOUC inline script in `app/layout.tsx`, defaulting to the OS preference). Desktop-first; consumption screens legible at mobile width. Copy: pt-BR, sentence case, observation language for apontamentos, alarm language reserved for warnings.
 
@@ -64,14 +63,13 @@ Budget editing is **inline** (pencil on rows / hero) → modal. The **simulator 
 
 - **Drawer** (right, 420px): simulator — pre-loaded team, presets (ritmo atual / fechar no orçamento / −30%), slider, instant recompute. Scrim click closes.
 - **Modal**: budget create/edit (scope, amount, thresholds) — prefilled when opened from a row.
-- **Collapse**: "Sob controle" group; warning rows expand to show drivers + control plan (read-only).
-- **Drill**: any team (bar, row, [Investigar]) → Explore team detail; breadcrumb back. Person data only inside a drill, framed as "contribuintes deste pico".
+- **Drill**: any team row on Home → Explore team detail; breadcrumb back. The drill-down carries the budget context, the control plan (read-only) and the [Simular] drawer — Home itself never expands or opens a drawer (redesign 2026-07-09). Person data only inside a drill, framed as "contribuintes deste pico".
 
 ## 6. Charts
 
 - Team/budget bars: HTML/CSS (fill + dashed ghost + marker).
 - Home dashboard visuals use shadcn Chart + Recharts: the provider/seat donut uses already computed composition shares; the monthly pace line is explicitly current spend plus linear projection, not a historical series.
-- Cumulative historical line (spend vs budget + dashed projection): lives in drill-down once implemented.
+- Cumulative historical line (spend vs budget + dashed projection): **implemented 2026-07-09** in the team drill-down — `CumulativeChart` (colocated in `explorar/time/[teamId]/_components/`) over the pure `buildCumulativeSpend()` (`lib/engine/cumulative.ts`, unit-tested): real day-by-day series using the same combine as the evaluation (frozen FX, FX-missing drops API, seats spread evenly), so the line's last point IS the card's "Gasto"; dashed tail to `evaluation.projection`; budget `ReferenceLine` labeled.
 
 ## 7. Implementation decisions (F1–F6 — locked)
 
@@ -103,6 +101,12 @@ shadcn blocks are **starting scaffolding**, adapted into the F5 structure — th
 
 Base set from #12 (button, input, label, dialog, sheet, dropdown-menu, tooltip, sidebar, skeleton, separator, collapsible, avatar, breadcrumb, field) plus, added in the v1 UI pass: **card, badge, alert, table, select, switch, progress, empty, item, chart**. Primitives are generated from shadcn `base-mira`; local changes are limited to compatibility shims required by existing app contracts (`asChild`, tooltip delay alias) and the documented token/type alignment. App icons are standardized on **Tabler Icons** via `@tabler/icons-react`.
 
+**Base UI dropdown gotchas** (found 2026-07-09 fixing the sidebar profile menu): (1) `DropdownMenuLabel` wraps Base UI `Menu.GroupLabel`, which **throws "MenuGroupContext is missing" outside a `<Menu.Group>`** — for a plain identity header inside the menu, use a styled `<div>`, not `DropdownMenuLabel`. (2) Composing `DropdownMenuTrigger asChild` through another render-prop component (e.g. `SidebarMenuButton`, itself a `TooltipTrigger`) **swallows the trigger's open/close handlers and the menu never opens** — use a plain `DropdownMenuTrigger` (it renders its own native button) styled to match, with an `aria-label` for the collapsed rail.
+
+**Button icon-size gotcha** (found 2026-07-09 — the header sidebar toggle rendered a 12px speck): the `Button` base carries `[&_svg:not([class*='size-'])]:size-3`, whose `:not([class*=…])` gives it **higher specificity than any parent `[&_svg]:size-*` override** — such overrides silently lose. The intended escape hatch is a `size-*` class **on the svg itself** (that's what the `:not()` guard checks). Any icon inside a `Button` that should not be 12px must carry its own size class (e.g. `SidebarTrigger` now renders `<IconLayoutSidebar className="size-5" />`).
+
+**`Item` primitive gotcha** (found 2026-07-09 — `/configuracoes` rendered a blank card): `Item` is built on Base UI `useRender`, which only renders children it receives via `props`. The generated component destructured `children` out and never forwarded it, so a plain `<Item>…</Item>` (no `asChild`) rendered an empty `<div>` — dropping the whole card content. `/ajustes` was unaffected only because its Items all use `asChild` (children come from the `<Link>` in `render`). Fixed by forwarding `children: childRender ? undefined : children` into the `useRender` props, mirroring `SidebarMenuButton`. Any `useRender`-based primitive here must forward children the same way.
+
 ### 9.2 Cross-screen domain components (`components/domain/`)
 
 | Component | Job |
@@ -117,19 +121,18 @@ Base set from #12 (button, input, label, dialog, sheet, dropdown-menu, tooltip, 
 | `SimulateDrawer` | Contextual what-if drawer (Sheet), presets + slider, result panel on muted surface |
 | `AppSidebar`, `ThemeToggle`, `Logo` | Shell chrome (unchanged contracts from #12/#19) |
 
-Screen-local compositions stay colocated (F5): the cockpit pieces (`Hero` with its KPI strip, `TeamRow`, `UnderControl`, `AllClear`, `ObservationsFooter`, `ProviderComposition`, `BudgetEditDialog`) in `app/(app)/_components/`, settings forms under their routes.
+Screen-local compositions stay colocated (F5): the cockpit pieces (`Hero` with its KPI strip, `TeamBudgetTable`, `MonthlyPaceChart`, `AllClear`, `ObservationsFooter`, `ProviderComposition`, `PacingPair`) in `app/(app)/_components/`, settings forms under their routes. **Retired in the 2026-07-09 redesign:** `TeamRow` (per-team expanding card with 4 inline actions), `UnderControl` (collapsible healthy-teams group) and `BudgetEditDialog` (inline pencil→modal) — their jobs moved to the stable `TeamBudgetTable` on Home and to the team drill-down / `/ajustes/orcamentos` for acting.
 
 ### 9.3 State patterns (required states, §3, now uniform)
 
 - **Empty**: always `EmptyState` (or an affirmative panel) — never a bare table or "no data". Cold-start Home is a CTA hero listing what a budget + a source unlock; Explore/atribuição/roster/assinaturas/drill-down each have a contextual empty with the obvious next action; Admin-gated screens show a lock-icon `EmptyState` explaining "controle, não vigilância".
-- **Loading**: `app/(app)/loading.tsx` — one route-group skeleton mirroring the cockpit rhythm (RSC streaming, no client spinners, F1). Per-route skeletons only if a screen's shape diverges enough to jump.
+- **Loading**: per-route skeletons that mirror each screen's real shape and column width (RSC streaming, no client spinners, F1) — `app/(app)/loading.tsx` mirrors the full-width Home cockpit; `explorar/loading.tsx`, `explorar/time/[teamId]/loading.tsx`, `ajustes/loading.tsx` (also covers the `/ajustes/*` subpages) and `configuracoes/loading.tsx` mirror their own layouts, so no screen jumps between skeleton and content (refinement 2026-07-09).
 - **Error / data quality**: `StaleBanner` for stale/failed syncs; `Alert` for informational notices (Σ-mismatch); `ActionStatus` for mutation results; uncosted/unattributed/FX-missing always disclosed in card footers ("as of" stamps, reconciliation lines).
 - **All-clear**: affirmative soft-green panel (`AllClear`), never a blank section.
 - **Settings hub**: `/ajustes` is grouped (Empresa · Fontes de gasto · Governança) with uppercase group labels; link-out areas are `Item` rows (icon + status line + chevron) inside cards; inline areas (privacy switches, users list) are cards with `Switch`/`Item` primitives.
 
 ### 9.4 Pendências (deliberately deferred)
 
-- **Cumulative spend-vs-budget line** (Recharts) in the team drill-down — still not implemented (F3 contract unchanged).
 - **Onboarding checklist** on Home (§3.1) — the cold-start hero covers the gap meanwhile.
 - **Brand identity final pass** (logo refinement, accent audit, marketing surfaces) — the v1 skin is the product baseline, not necessarily the launch brand.
 - **Roster-CSV react-hook-form upgrade** (F4) — the native preview flow proved sufficient so far.

@@ -2,8 +2,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { IconLock, IconUsersGroup } from "@tabler/icons-react";
 
+import { BudgetBar } from "@/components/domain/budget-bar";
 import { EmptyState } from "@/components/domain/empty-state";
 import { SimulateDrawer } from "@/components/domain/simulate-drawer";
+import { StatusPill } from "@/components/domain/status-pill";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -30,11 +32,17 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { requireAdmin } from "@/lib/auth/session";
-import { findCockpitTeam } from "@/lib/engine/cockpit";
+import { listBudgets } from "@/lib/budgets/queries";
+import { attributeSeats } from "@/lib/engine/accrual";
+import { findCockpitTeam, type CockpitTeam } from "@/lib/engine/cockpit";
+import { buildCumulativeSpend } from "@/lib/engine/cumulative";
 import { currentPeriod } from "@/lib/engine/period";
 import { getCockpitData } from "@/lib/home/queries";
+import { percent } from "@/lib/format";
 import { money } from "@/lib/money";
-import { teamDetail } from "@/lib/usage/attribution";
+import { listSubscriptions } from "@/lib/subscriptions/queries";
+import { teamDailyApiUsd, teamDetail } from "@/lib/usage/attribution";
+import { CumulativeChart } from "./_components/cumulative-chart";
 
 const copy = {
   explore: "Explorar",
@@ -42,8 +50,24 @@ const copy = {
   adminOnlyBody:
     "O custo por pessoa é visível apenas para administradores — controle, não vigilância. O gasto agregado do time continua disponível em Explorar.",
   adminOnlyCta: "Voltar para Explorar",
+  subtitle:
+    "Orçamento, plano de contenção e contribuintes deste time no período.",
   asOf: (label: string, day: number, days: number) =>
     `${label}, dia ${day} de ${days}`,
+  budgetTitle: "Orçamento do time",
+  budgetSub: "Assentos + API convertidos no câmbio congelado do período.",
+  budgetSpent: "Gasto",
+  budgetAmount: "Orçamento",
+  budgetProjection: "Projeção de fechamento",
+  collecting: "coletando ritmo",
+  editBudget: "Editar em Ajustes",
+  planTitle: "O que dá para fazer",
+  planSub: "Plano de contenção sugerido — o Denarius aponta, a decisão é sua.",
+  warnBreach: (spent: string, budget: string, pct: string) =>
+    `Estourou o orçamento: ${spent} de ${budget} (${pct}).`,
+  warnProjected: (projection: string, over: string) =>
+    `No ritmo atual, fecha em ${projection} — ${over} acima do orçamento.`,
+  warnThreshold: (pct: string) => `Já em ${pct} do orçamento neste ponto do mês.`,
   personTitle: "Custo por pessoa",
   personSub:
     "Contribuintes deste time neste mês. Chaves compartilhadas ficam no time, nunca em uma pessoa.",
@@ -86,6 +110,123 @@ function Crumbs({ current }: { current: string }) {
   );
 }
 
+function budgetWarningLine(team: CockpitTeam, currency: string): string | null {
+  const f = team.finding;
+  if (f === null) return null;
+  const ev = team.evaluation;
+  if (f.level === "breach") {
+    return copy.warnBreach(
+      money(ev.spent, currency),
+      money(ev.budget, currency),
+      percent(ev.pctSpent),
+    );
+  }
+  if (f.level === "projected_breach" && ev.projection !== null) {
+    const over = money(ev.projection - ev.budget, currency);
+    return copy.warnProjected(money(ev.projection, currency), over);
+  }
+  return copy.warnThreshold(percent(ev.pctSpent));
+}
+
+/** Budget context (redesign 2026-07): the situation the Home table pointed at,
+ *  in full — pill, bar, the three numbers and the warning sentence. */
+function TeamBudgetCard({
+  team,
+  currency,
+}: {
+  team: CockpitTeam;
+  currency: string;
+}) {
+  const ev = team.evaluation;
+  const warning = budgetWarningLine(team, currency);
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2.5 text-sm">
+          {copy.budgetTitle}
+          <StatusPill status={team.status} />
+        </CardTitle>
+        <CardDescription>{copy.budgetSub}</CardDescription>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-4">
+        <div className="flex items-center gap-3">
+          <BudgetBar
+            className="flex-1"
+            pctSpent={ev.pctSpent}
+            pctProjected={team.pctProjected}
+            status={team.status}
+          />
+          <span className="shrink-0 text-sm tabular-nums text-muted-foreground">
+            {percent(ev.pctSpent)}
+          </span>
+        </div>
+        <dl className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+          <div>
+            <dt className="text-xs text-muted-foreground">{copy.budgetSpent}</dt>
+            <dd className="mt-0.5 text-sm font-medium tabular-nums">
+              {money(ev.spent, currency)}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-xs text-muted-foreground">{copy.budgetAmount}</dt>
+            <dd className="mt-0.5 text-sm font-medium tabular-nums">
+              {money(ev.budget, currency)}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-xs text-muted-foreground">
+              {copy.budgetProjection}
+            </dt>
+            <dd className="mt-0.5 text-sm font-medium tabular-nums">
+              {ev.projection === null
+                ? `— ${copy.collecting}`
+                : money(ev.projection, currency)}
+            </dd>
+          </div>
+        </dl>
+        {warning && <p className="text-sm/relaxed">{warning}</p>}
+      </CardContent>
+      <CardFooter>
+        <Link
+          href="/ajustes/orcamentos"
+          className="text-xs text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline"
+        >
+          {copy.editBudget} →
+        </Link>
+      </CardFooter>
+    </Card>
+  );
+}
+
+/** The curated control plan (redesign 2026-07: moved here from the Home rows —
+ *  acting on a warning is investigation, not overview). Catalog-only, read-only. */
+function ControlPlanCard({ team }: { team: CockpitTeam }) {
+  if (team.finding === null || team.finding.controlPlan.length === 0) {
+    return null;
+  }
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-sm">{copy.planTitle}</CardTitle>
+        <CardDescription>{copy.planSub}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <ul className="flex flex-col gap-3.5">
+          {team.finding.controlPlan.map((action) => (
+            <li key={action.id}>
+              <p className="text-sm font-medium">{action.title}</p>
+              <p className="mt-0.5 text-xs/relaxed text-muted-foreground">
+                {action.detail}
+              </p>
+            </li>
+          ))}
+        </ul>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default async function TeamDetailPage({
   params,
 }: {
@@ -109,10 +250,14 @@ export default async function TeamDetailPage({
     );
   }
 
-  const [detail, { cockpit }] = await Promise.all([
-    teamDetail(teamId),
-    getCockpitData(),
-  ]);
+  const [detail, { cockpit }, dailyUsd, budgets, { subscriptions }] =
+    await Promise.all([
+      teamDetail(teamId),
+      getCockpitData(),
+      teamDailyApiUsd(teamId),
+      listBudgets(),
+      listSubscriptions(),
+    ]);
   if (!detail.found) notFound();
 
   const period = currentPeriod();
@@ -121,6 +266,24 @@ export default async function TeamDetailPage({
   // Only budgeted teams have a scenario to run against.
   const cockpitTeam =
     cockpit.state === "ready" ? findCockpitTeam(cockpit, teamId) : undefined;
+
+  // Cumulative series (F3 chart): same combine as the evaluation — the team
+  // budget's frozen FX and the accrued seat slice — so the line's last point
+  // IS the card's "Gasto". Only budgeted teams have a budget to chart against.
+  const teamFxRate =
+    budgets.teams.find((b) => b.teamId === teamId)?.frozenFxRate ?? null;
+  const teamSeatAccrued =
+    attributeSeats(subscriptions, period).teams.find(
+      (t) => t.teamId === teamId,
+    )?.accrued ?? 0;
+  const cumulativePoints = cockpitTeam
+    ? buildCumulativeSpend({
+        apiByDay: dailyUsd,
+        fxRate: teamFxRate,
+        seatAccrued: teamSeatAccrued,
+        dayOfPeriod: period.dayOfPeriod,
+      })
+    : [];
 
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
@@ -132,7 +295,7 @@ export default async function TeamDetailPage({
             {detail.teamName}
           </h1>
           <p className="mt-1 max-w-2xl text-sm/relaxed text-muted-foreground">
-            {copy.personSub}
+            {copy.subtitle}
           </p>
         </div>
         {cockpit.state === "ready" && cockpitTeam && (
@@ -152,6 +315,21 @@ export default async function TeamDetailPage({
         )}
       </header>
 
+      {cockpit.state === "ready" && cockpitTeam && (
+        <>
+          <TeamBudgetCard team={cockpitTeam} currency={cockpit.currency} />
+          <CumulativeChart
+            points={cumulativePoints}
+            projection={cockpitTeam.evaluation.projection}
+            budget={cockpitTeam.evaluation.budget}
+            currency={cockpit.currency}
+            dayOfPeriod={period.dayOfPeriod}
+            daysInPeriod={period.daysInPeriod}
+          />
+          <ControlPlanCard team={cockpitTeam} />
+        </>
+      )}
+
       {detail.persons.length === 0 ? (
         <EmptyState
           icon={<IconUsersGroup />}
@@ -163,9 +341,12 @@ export default async function TeamDetailPage({
         <Card>
           <CardHeader>
             <CardTitle className="text-sm">{copy.personTitle}</CardTitle>
-            {detail.namesHidden && detail.persons.some((p) => !p.isShared) && (
-              <CardDescription>{copy.namesHiddenNote}</CardDescription>
-            )}
+            <CardDescription>
+              {copy.personSub}
+              {detail.namesHidden &&
+                detail.persons.some((p) => !p.isShared) &&
+                ` ${copy.namesHiddenNote}`}
+            </CardDescription>
             <div className="text-xs text-muted-foreground tabular-nums">
               {copy.asOf(period.monthLabel, period.dayOfPeriod, period.daysInPeriod)}
             </div>

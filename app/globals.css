@@ -141,6 +141,14 @@
     @apply font-sans;
   }
 }
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  margin: 0;
+  -webkit-appearance: none;
+}
 /* ---------------------------------------------------------------------------
    Denarius theme — PROVISIONAL front (tokens documented in docs/frontend.md §4).
    Brand accent #FF5100 (orange) + dark sidebar rail. Light + dark via the

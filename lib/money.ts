@@ -8,3 +8,14 @@ export function money(amount: number, currency = "BRL"): string {
     currency,
   }).format(amount);
 }
+
+/** Compact variant for chart axes ("R$ 1,9 mil") — same source of truth,
+ *  shorter surface. Never for headline figures. */
+export function compactMoney(amount: number, currency = "BRL"): string {
+  return new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency,
+    notation: "compact",
+    maximumFractionDigits: 1,
+  }).format(amount);
+}

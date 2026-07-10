@@ -271,7 +271,10 @@ function SidebarTrigger({
       }}
       {...props}
     >
-      <IconLayoutSidebar />
+      {/* Size class ON the svg: Button's `[&_svg:not([class*='size-'])]:size-3`
+          out-specifies any parent [&_svg]:size-* override, so without this the
+          glyph renders at 12px no matter what callers pass. */}
+      <IconLayoutSidebar className="size-4.5" />
       <span className="sr-only">Toggle Sidebar</span>
     </Button>
   )

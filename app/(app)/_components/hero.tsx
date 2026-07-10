@@ -1,6 +1,5 @@
 import {
   Card,
-  CardAction,
   CardContent,
   CardDescription,
   CardHeader,
@@ -9,14 +8,15 @@ import {
 import type { BudgetEvaluation } from "@/lib/engine/budget";
 import type { VerdictStatus } from "@/lib/engine/verdict";
 import { money } from "@/lib/money";
-import { BudgetEditDialog } from "./budget-edit-dialog";
 import { PacingPair } from "./pacing-pair";
 import { homeCopy } from "./copy";
 
-// The hero (frontend §3.4): org spend as the big money number, the pacing pair,
-// a small KPI strip (projection + projected margin) and the projected-margin
-// callout — the headline that the verdict line above summarizes. Money
-// headlines; the inline pencil edits the org budget.
+// The hero (frontend §3.4): org spend as the big money number — the product's
+// identity — over the pacing pair, a small KPI strip (projection, projected
+// margin, day of month) and the projected-margin callout. Read-only by design
+// (redesign 2026-07): budget editing lives in /ajustes/orcamentos, reached from
+// the teams table below, so nothing here opens dialogs or competes with the
+// number. The unconverted-USD note (invariant #4) is the card's honesty footer.
 
 const c = homeCopy.hero;
 
@@ -32,18 +32,16 @@ function Kpi({ label, value }: { label: string; value: string }) {
 export function Hero({
   org,
   status,
-  orgWarnPct,
-  unconvertedUsd,
   pctProjected,
+  unconvertedUsd,
   currency,
   dayOfPeriod,
   daysInPeriod,
 }: {
   org: BudgetEvaluation;
   status: VerdictStatus;
-  orgWarnPct: number;
-  unconvertedUsd: number;
   pctProjected: number | null;
+  unconvertedUsd: number;
   currency: string;
   dayOfPeriod: number;
   daysInPeriod: number;
@@ -63,28 +61,18 @@ export function Hero({
       : money(org.projectedMargin, currency);
 
   return (
-    <Card>
+    <Card className="min-h-full">
       <CardHeader>
         <CardDescription>{c.spentLabel}</CardDescription>
-        <CardTitle className="flex flex-wrap items-baseline gap-x-2 text-3xl tabular-nums sm:text-4xl">
+        <CardTitle className="flex flex-wrap items-baseline gap-x-2.5 text-4xl tracking-tight tabular-nums sm:text-5xl">
           {money(org.spent, currency)}
-          <span className="text-base font-normal text-muted-foreground">
+          <span className="text-base font-normal tracking-normal text-muted-foreground">
             {c.ofBudget(money(org.budget, currency))}
           </span>
         </CardTitle>
-        <CardAction>
-          <BudgetEditDialog
-            scope="org"
-            teamId={null}
-            currency={currency}
-            amount={org.budget}
-            warnPct={orgWarnPct}
-            triggerLabel={c.editBudget}
-          />
-        </CardAction>
       </CardHeader>
 
-      <CardContent className="flex flex-col gap-5">
+      <CardContent className="flex flex-1 flex-col gap-5">
         <PacingPair
           pctSpent={org.pctSpent}
           pctProjected={pctProjected}
@@ -94,19 +82,17 @@ export function Hero({
           daysInPeriod={daysInPeriod}
         />
 
-        <dl className="grid grid-cols-2 gap-4 border-t pt-4 sm:grid-cols-3">
+        {/* Two KPIs, not three: the day-of-month figure already lives in the
+            verdict meta line and the time bar — a third copy was noise. */}
+        <dl className="grid grid-cols-2 gap-4 border-t pt-4">
           <Kpi label={c.kpiProjection} value={projectionValue} />
           <Kpi label={c.kpiMargin} value={marginValue} />
-          <Kpi
-            label={c.kpiPace}
-            value={c.kpiPaceValue(dayOfPeriod, daysInPeriod)}
-          />
         </dl>
 
-        <div>
+        <div className="mt-auto">
           <p className="text-sm/relaxed">{callout}</p>
           {unconvertedUsd > 0 && (
-            <p className="mt-1 text-xs/relaxed text-muted-foreground">
+            <p className="mt-1.5 text-xs/relaxed text-muted-foreground">
               {c.unconverted(money(unconvertedUsd, "USD"))}
             </p>
           )}
