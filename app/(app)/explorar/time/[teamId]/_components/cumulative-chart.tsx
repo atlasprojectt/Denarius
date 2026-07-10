@@ -180,8 +180,10 @@ export function CumulativeChart({
                 type="monotone"
                 stroke="var(--color-spent)"
                 strokeWidth={3}
+                strokeLinecap="round"
                 dot={false}
                 connectNulls={false}
+                isAnimationActive={false}
               />
               {projectionSegment ? (
                 <ReferenceLine
@@ -189,6 +191,7 @@ export function CumulativeChart({
                   stroke="var(--color-projected)"
                   strokeWidth={3}
                   strokeDasharray="6 6"
+                  strokeLinecap="round"
                 />
               ) : null}
             </LineChart>
