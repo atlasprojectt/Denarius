@@ -39,21 +39,20 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 type PacePoint = { marker: string; x: number; spent: number };
-type ProjectionPoint = { marker: string; x: number; projected: number };
 
-function buildPaceData(org: BudgetEvaluation) {
-  const spent: PacePoint[] = [
+function buildPaceData(org: BudgetEvaluation): PacePoint[] {
+  return [
     { marker: c.start, x: 0, spent: 0 },
     { marker: c.today, x: org.pctElapsed, spent: org.spent },
   ];
-  const projected: ProjectionPoint[] =
-    org.projection !== null && org.pctElapsed < 1
-      ? [
-          { marker: c.today, x: org.pctElapsed, projected: org.spent },
-          { marker: c.close, x: 1, projected: org.projection },
-        ]
-      : [];
-  return { spent, projected };
+}
+
+function buildProjectionSegment(org: BudgetEvaluation) {
+  if (org.projection === null || org.pctElapsed >= 1) return null;
+  return [
+    { x: org.pctElapsed, y: org.spent },
+    { x: 1, y: org.projection },
+  ] as const;
 }
 
 export function MonthlyPaceChart({
@@ -64,6 +63,7 @@ export function MonthlyPaceChart({
   currency: string;
 }) {
   const data = buildPaceData(org);
+  const projectionSegment = buildProjectionSegment(org);
   const maxY = Math.max(org.budget, org.spent, org.projection ?? 0, 1) * 1.08;
   const ticks = [0, org.pctElapsed, 1].filter(
     (v, i, a) => a.indexOf(v) === i,
@@ -92,7 +92,7 @@ export function MonthlyPaceChart({
         >
           <LineChart
             accessibilityLayer
-            data={data.spent}
+            data={data}
             margin={{ top: 16, right: 16, bottom: 4, left: 8 }}
           >
             <CartesianGrid vertical={false} />
@@ -153,15 +153,14 @@ export function MonthlyPaceChart({
               dot={false}
               connectNulls={false}
             />
-            <Line
-              data={data.projected}
-              dataKey="projected"
-              type="linear"
-              stroke="var(--color-projected)"
-              strokeWidth={3}
-              strokeDasharray="6 6"
-              dot={false}
-            />
+            {projectionSegment ? (
+              <ReferenceLine
+                segment={projectionSegment}
+                stroke="var(--color-projected)"
+                strokeWidth={3}
+                strokeDasharray="6 6"
+              />
+            ) : null}
           </LineChart>
         </ChartContainer>
         )}

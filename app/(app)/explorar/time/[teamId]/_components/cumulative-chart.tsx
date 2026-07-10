@@ -50,25 +50,24 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 type ChartRow = { day: number; spent: number };
-type ProjectionRow = { day: number; projected: number };
 
 function buildRows(points: CumulativePoint[]): ChartRow[] {
   return points.map((p) => ({ day: p.day, spent: p.spent }));
 }
 
-function buildProjectionRows(
+function buildProjectionSegment(
   points: CumulativePoint[],
   projection: number | null,
   daysInPeriod: number,
-): ProjectionRow[] {
+) {
   const last = points.at(-1);
   if (last && projection !== null && daysInPeriod > last.day) {
     return [
-      { day: last.day, projected: last.spent },
-      { day: daysInPeriod, projected: projection },
-    ];
+      { x: last.day, y: last.spent },
+      { x: daysInPeriod, y: projection },
+    ] as const;
   }
-  return [];
+  return null;
 }
 
 export function CumulativeChart({
@@ -88,7 +87,11 @@ export function CumulativeChart({
 }) {
   const hasSpend = points.some((p) => p.spent > 0);
   const rows = buildRows(points);
-  const projectionRows = buildProjectionRows(points, projection, daysInPeriod);
+  const projectionSegment = buildProjectionSegment(
+    points,
+    projection,
+    daysInPeriod,
+  );
   const maxY =
     Math.max(budget, projection ?? 0, points.at(-1)?.spent ?? 0, 1) * 1.08;
   const ticks = [1, dayOfPeriod, daysInPeriod].filter(
@@ -180,15 +183,14 @@ export function CumulativeChart({
                 dot={false}
                 connectNulls={false}
               />
-              <Line
-                data={projectionRows}
-                dataKey="projected"
-                type="linear"
-                stroke="var(--color-projected)"
-                strokeWidth={3}
-                strokeDasharray="6 6"
-                dot={false}
-              />
+              {projectionSegment ? (
+                <ReferenceLine
+                  segment={projectionSegment}
+                  stroke="var(--color-projected)"
+                  strokeWidth={3}
+                  strokeDasharray="6 6"
+                />
+              ) : null}
             </LineChart>
           </ChartContainer>
         )}
