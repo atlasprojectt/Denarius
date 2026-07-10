@@ -35,13 +35,13 @@ export function BudgetBar({
       {/* Run-rate ghost: dashed, from spend to the projected close. */}
       {g.ghostStart !== null && g.ghostEnd !== null && (
         <div
-          className="absolute inset-y-0 border-y border-r border-dashed border-foreground/40 bg-foreground/5"
+          className="denarius-bar-build absolute inset-y-0 border-y border-r border-dashed border-foreground/40 bg-foreground/5"
           style={{ left: pct(g.ghostStart), width: pct(g.ghostEnd - g.ghostStart) }}
         />
       )}
       {/* Filled portion: what's been spent. */}
       <div
-        className={`absolute inset-y-0 left-0 rounded-full ${fillColor[status]}`}
+        className={`denarius-bar-build absolute inset-y-0 left-0 rounded-full ${fillColor[status]}`}
         style={{ width: pct(g.fill) }}
       />
       {/* Budget marker: the 100% line. Hidden when spend/projection sit at the

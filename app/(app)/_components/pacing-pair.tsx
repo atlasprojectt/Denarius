@@ -49,12 +49,12 @@ export function PacingPair({
         <div className="relative h-2.5 w-full overflow-hidden rounded-full bg-muted">
           {g.ghostStart !== null && g.ghostEnd !== null && (
             <div
-              className="absolute inset-y-0 border-y border-r border-dashed border-foreground/40 bg-foreground/5"
+              className="denarius-bar-build absolute inset-y-0 border-y border-r border-dashed border-foreground/40 bg-foreground/5"
               style={{ left: pct(g.ghostStart), width: pct(g.ghostEnd - g.ghostStart) }}
             />
           )}
           <div
-            className={`absolute inset-y-0 left-0 rounded-full ${fill[status]}`}
+            className={`denarius-bar-build absolute inset-y-0 left-0 rounded-full ${fill[status]}`}
             style={{ width: pct(g.fill) }}
           />
           {g.marker < 1 && (
@@ -75,7 +75,7 @@ export function PacingPair({
         </div>
         <div className="relative h-2.5 w-full overflow-hidden rounded-full bg-muted">
           <div
-            className="absolute inset-y-0 left-0 rounded-full bg-foreground/30"
+            className="denarius-bar-build absolute inset-y-0 left-0 rounded-full bg-foreground/30"
             style={{ width: pct(at(pctElapsed)) }}
           />
           {g.marker < 1 && (

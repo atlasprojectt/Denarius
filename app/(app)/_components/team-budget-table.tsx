@@ -151,9 +151,9 @@ export function TeamBudgetTable({
                       <Link
                         href={`/explorar/time/${team.teamId}`}
                         aria-label={c.detail(team.teamName)}
-                        className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                        className="group/row-action inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-all duration-150 ease-out motion-safe:hover:-translate-y-0.5 hover:bg-muted hover:text-foreground motion-safe:active:translate-y-0 motion-safe:active:scale-95"
                       >
-                        <IconChevronRight className="size-4" />
+                        <IconChevronRight className="size-4 transition-transform duration-150 group-hover/row-action:translate-x-0.5" />
                       </Link>
                     </TableCell>
                   </TableRow>

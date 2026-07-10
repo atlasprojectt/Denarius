@@ -1,5 +1,6 @@
 "use client";
 
+import { motion, useReducedMotion } from "motion/react";
 import {
   Card,
   CardContent,
@@ -62,6 +63,7 @@ export function MonthlyPaceChart({
   org: BudgetEvaluation;
   currency: string;
 }) {
+  const reduceMotion = useReducedMotion();
   const data = buildPaceData(org);
   const projectionSegment = buildProjectionSegment(org);
   const maxY = Math.max(org.budget, org.spent, org.projection ?? 0, 1) * 1.08;
@@ -86,86 +88,104 @@ export function MonthlyPaceChart({
             {c.empty}
           </p>
         ) : (
-        <ChartContainer
-          config={chartConfig}
-          className="h-[240px] w-full"
-        >
-          <LineChart
-            accessibilityLayer
-            data={data}
-            margin={{ top: 16, right: 16, bottom: 4, left: 8 }}
+          <motion.div
+            className="overflow-hidden"
+            initial={
+              reduceMotion
+                ? false
+                : { clipPath: "inset(0 100% 0 0)", opacity: 0.7 }
+            }
+            animate={
+              reduceMotion
+                ? undefined
+                : { clipPath: "inset(0 0% 0 0)", opacity: 1 }
+            }
+            transition={{
+              duration: 0.92,
+              ease: [0.16, 1, 0.3, 1],
+            }}
           >
-            <CartesianGrid vertical={false} />
-            <XAxis
-              dataKey="x"
-              type="number"
-              domain={[0, 1]}
-              ticks={ticks}
-              tickFormatter={tickLabel}
-              tickLine={false}
-              axisLine={false}
-              tickMargin={8}
-            />
-            <YAxis
-              domain={[0, maxY]}
-              tickLine={false}
-              axisLine={false}
-              tickMargin={6}
-              width={72}
-              tickFormatter={(value: number) => compactMoney(value, currency)}
-            />
-            <ReferenceLine
-              y={org.budget}
-              stroke="var(--muted-foreground)"
-              strokeDasharray="4 4"
-              strokeOpacity={0.45}
-              label={{
-                value: c.budget,
-                position: "insideBottomRight",
-                fill: "var(--muted-foreground)",
-                fontSize: 11,
-                dy: -6,
-              }}
-            />
-            <ChartTooltip
-              cursor={false}
-              content={
-                <ChartTooltipContent
-                  indicator="line"
-                  formatter={(value, name) => (
-                    <div className="flex min-w-[10rem] items-center justify-between gap-4">
-                      <span className="text-muted-foreground">
-                        {String(name) === "projected" ? c.projected : c.spent}
-                      </span>
-                      <span className="font-mono font-medium tabular-nums">
-                        {money(Number(value), currency)}
-                      </span>
-                    </div>
-                  )}
+            <ChartContainer
+              config={chartConfig}
+              className="h-[240px] w-full"
+            >
+              <LineChart
+                accessibilityLayer
+                data={data}
+                margin={{ top: 16, right: 16, bottom: 4, left: 8 }}
+              >
+                <CartesianGrid vertical={false} />
+                <XAxis
+                  dataKey="x"
+                  type="number"
+                  domain={[0, 1]}
+                  ticks={ticks}
+                  tickFormatter={tickLabel}
+                  tickLine={false}
+                  axisLine={false}
+                  tickMargin={8}
                 />
-              }
-            />
-            <Line
-              dataKey="spent"
-              type="monotone"
-              stroke="var(--color-spent)"
-              strokeWidth={3}
-              strokeLinecap="round"
-              dot={false}
-              connectNulls={false}
-              isAnimationActive={false}
-            />
-            {projectionSegment ? (
-              <ReferenceLine
-                segment={projectionSegment}
-                stroke="var(--color-projected)"
-                strokeWidth={3}
-                strokeDasharray="6 6"
-                strokeLinecap="round"
-              />
-            ) : null}
-          </LineChart>
-        </ChartContainer>
+                <YAxis
+                  domain={[0, maxY]}
+                  tickLine={false}
+                  axisLine={false}
+                  tickMargin={6}
+                  width={72}
+                  tickFormatter={(value: number) => compactMoney(value, currency)}
+                />
+                <ReferenceLine
+                  y={org.budget}
+                  stroke="var(--muted-foreground)"
+                  strokeDasharray="4 4"
+                  strokeOpacity={0.45}
+                  label={{
+                    value: c.budget,
+                    position: "insideBottomRight",
+                    fill: "var(--muted-foreground)",
+                    fontSize: 11,
+                    dy: -6,
+                  }}
+                />
+                <ChartTooltip
+                  cursor={false}
+                  content={
+                    <ChartTooltipContent
+                      indicator="line"
+                      formatter={(value, name) => (
+                        <div className="flex min-w-[10rem] items-center justify-between gap-4">
+                          <span className="text-muted-foreground">
+                            {String(name) === "projected" ? c.projected : c.spent}
+                          </span>
+                          <span className="font-mono font-medium tabular-nums">
+                            {money(Number(value), currency)}
+                          </span>
+                        </div>
+                      )}
+                    />
+                  }
+                />
+                <Line
+                  dataKey="spent"
+                  type="monotone"
+                  stroke="var(--color-spent)"
+                  strokeWidth={3}
+                  strokeLinecap="round"
+                  dot={false}
+                  connectNulls={false}
+                  isAnimationActive={false}
+                />
+                {projectionSegment ? (
+                  <ReferenceLine
+                    segment={projectionSegment}
+                    stroke="var(--color-projected)"
+                    strokeWidth={3}
+                    strokeDasharray="6 6"
+                    strokeLinecap="round"
+                  />
+                ) : null}
+              </LineChart>
+            </ChartContainer>
+          </motion.div>
         )}
       </CardContent>
     </Card>

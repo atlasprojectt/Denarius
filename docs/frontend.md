@@ -64,11 +64,12 @@ Budget editing lives on the **`/ajustes/orcamentos`** settings page (org + per-t
 - **Drawer** (right, 420px): simulator — pre-loaded team, presets (ritmo atual / fechar no orçamento / −30%), slider, instant recompute. Scrim click closes.
 - **Modal**: budget create/edit (scope, amount, thresholds) — prefilled when opened from a row.
 - **Drill**: any team row on Home → Explore team detail; breadcrumb back. The drill-down carries the budget context, the control plan (read-only) and the [Simular] drawer — Home itself never expands or opens a drawer (redesign 2026-07-09). Person data only inside a drill, framed as "contribuintes deste pico".
+- **Motion layer** (2026-07-10): Base UI remains the primitive base, with Animate UI used as a copy-first motion reference. Microinteractions should feel premium but quiet: short press/hover feedback on controls, soft popover/dialog entrances, and respect for `prefers-reduced-motion`. Do **not** adopt the Animate UI Menu/sliding-hover pattern; sidebar and menus stay restrained with simple color/focus states.
 
 ## 6. Charts
 
 - Team/budget bars: HTML/CSS (fill + dashed ghost + marker).
-- Home dashboard visuals use shadcn Chart + Recharts: the provider/seat donut uses already computed composition shares; the monthly pace line is explicitly current spend plus linear projection, not a historical series.
+- Home dashboard visuals use shadcn Chart + Recharts: the provider/seat donut uses already computed composition shares; the monthly pace line is explicitly current spend plus linear projection, not a historical series. On every Home mount, the Home charts build in: CSS budget/pacing bars grow from the left, the composition donut enters with a sweep/soft scale, and the monthly pace chart reveals left-to-right. Recharts line animation remains disabled so the dashed projection stays a single continuous segment.
 - Cumulative historical line (spend vs budget + dashed projection): **implemented 2026-07-09** in the team drill-down — `CumulativeChart` (colocated in `explorar/time/[teamId]/_components/`) over the pure `buildCumulativeSpend()` (`lib/engine/cumulative.ts`, unit-tested): real day-by-day series using the same combine as the evaluation (frozen FX, FX-missing drops API, seats spread evenly), so the line's last point IS the card's "Gasto"; dashed tail to `evaluation.projection`; budget `ReferenceLine` labeled.
 
 ## 7. Implementation decisions (F1–F6 — locked)
@@ -100,6 +101,8 @@ shadcn blocks are **starting scaffolding**, adapted into the F5 structure — th
 ### 9.1 shadcn primitives (`components/ui/`)
 
 Base set from #12 (button, input, label, dialog, sheet, dropdown-menu, tooltip, sidebar, skeleton, separator, collapsible, avatar, breadcrumb, field) plus, added in the v1 UI pass: **card, badge, alert, table, select, switch, progress, empty, item, chart**. Primitives are generated from shadcn `base-mira`; local changes are limited to compatibility shims required by existing app contracts (`asChild`, tooltip delay alias) and the documented token/type alignment. App icons are standardized on **Tabler Icons** via `@tabler/icons-react`.
+
+**Motion policy** (2026-07-10): the primitive layer carries subtle Animate UI-inspired motion through existing Base UI wrappers plus the `motion` package where a client chart needs mount animation. Keep transitions short and executive-calm. Never use a sliding menu hover indicator; the menu/sidebar remain simple color/focus interactions.
 
 **Base UI dropdown gotchas** (found 2026-07-09 fixing the sidebar profile menu): (1) `DropdownMenuLabel` wraps Base UI `Menu.GroupLabel`, which **throws "MenuGroupContext is missing" outside a `<Menu.Group>`** — for a plain identity header inside the menu, use a styled `<div>`, not `DropdownMenuLabel`. (2) Composing `DropdownMenuTrigger asChild` through another render-prop component (e.g. `SidebarMenuButton`, itself a `TooltipTrigger`) **swallows the trigger's open/close handlers and the menu never opens** — use a plain `DropdownMenuTrigger` (it renders its own native button) styled to match, with an `aria-label` for the collapsed rail.
 
