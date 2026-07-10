@@ -1,6 +1,5 @@
 "use client";
 
-import { motion, useReducedMotion } from "motion/react";
 import {
   Card,
   CardContent,
@@ -49,8 +48,6 @@ export function ProviderComposition({
   entries: CompositionEntry[];
   currency: string;
 }) {
-  const reduceMotion = useReducedMotion();
-  const shouldAnimate = reduceMotion !== true;
   const total = entries.reduce((sum, entry) => sum + entry.amount, 0);
   const chartData = entries.map((entry, index) => ({
     ...entry,
@@ -67,16 +64,11 @@ export function ProviderComposition({
         {entries.length === 0 ? (
           <p className="text-sm text-muted-foreground">{c.empty}</p>
         ) : (
-          <div className="grid items-center gap-5 sm:grid-cols-[170px_minmax(0,1fr)]">
-            <motion.div
-              initial={
-                shouldAnimate ? { opacity: 0, scale: 0.94, rotate: -3 } : false
-              }
-              animate={
-                shouldAnimate ? { opacity: 1, scale: 1, rotate: 0 } : undefined
-              }
-              transition={{ duration: 0.58, ease: [0.16, 1, 0.3, 1] }}
-            >
+          <div
+            data-home-animate="composition"
+            className="grid items-center gap-5 sm:grid-cols-[170px_minmax(0,1fr)]"
+          >
+            <div data-home-donut>
               <ChartContainer
                 config={chartConfig}
                 className="mx-auto aspect-square h-[160px]"
@@ -107,9 +99,7 @@ export function ProviderComposition({
                     outerRadius={74}
                     paddingAngle={2}
                     strokeWidth={0}
-                    isAnimationActive={shouldAnimate}
-                    animationDuration={760}
-                    animationEasing="ease-out"
+                    isAnimationActive={false}
                   >
                     {chartData.map((entry) => (
                       <Cell key={entry.key} fill={entry.fill} />
@@ -117,10 +107,10 @@ export function ProviderComposition({
                   </Pie>
                 </PieChart>
               </ChartContainer>
-            </motion.div>
+            </div>
 
             <div className="flex min-w-0 flex-col justify-center gap-4">
-              <div className="denarius-soft-enter">
+              <div data-home-legend-item>
                 <p className="text-xs text-muted-foreground">{c.total}</p>
                 <p className="mt-1 text-xl font-semibold tabular-nums">
                   {money(total, currency)}
@@ -129,19 +119,12 @@ export function ProviderComposition({
 
               <ul className="flex flex-col gap-3">
                 {entries.map((entry, index) => (
-                  <motion.li
+                  <li
                     key={entry.key}
+                    data-home-legend-item
                     className="flex items-start gap-2.5"
-                    initial={
-                      shouldAnimate ? { opacity: 0, x: -6 } : false
-                    }
-                    animate={
-                      shouldAnimate ? { opacity: 1, x: 0 } : undefined
-                    }
-                    transition={{
-                      delay: 0.14 + index * 0.045,
-                      duration: 0.36,
-                      ease: [0.16, 1, 0.3, 1],
+                    style={{
+                      animationDelay: `${160 + index * 70}ms`,
                     }}
                   >
                     <span
@@ -163,7 +146,7 @@ export function ProviderComposition({
                         {money(entry.amount, currency)}
                       </p>
                     </div>
-                  </motion.li>
+                  </li>
                 ))}
               </ul>
             </div>

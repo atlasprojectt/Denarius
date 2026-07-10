@@ -8,6 +8,7 @@ import { percent } from "@/lib/format";
 import { getHomeData } from "@/lib/home/queries";
 import { AllClear } from "./_components/all-clear";
 import { Hero } from "./_components/hero";
+import { HomeAnimationController } from "./_components/home-animation-controller";
 import { MonthlyPaceChart } from "./_components/monthly-pace-chart";
 import { ObservationsFooter } from "./_components/observations-footer";
 import { ProviderComposition } from "./_components/provider-composition";
@@ -71,7 +72,8 @@ export default async function HomePage() {
   const allTeams = [...cockpit.needsAttention, ...cockpit.underControl];
 
   return (
-    <div className="flex w-full flex-col gap-6">
+    <div data-home-motion-root className="flex w-full flex-col gap-6">
+      <HomeAnimationController />
       <h1 className="sr-only">{homeCopy.question}</h1>
 
       {stale.showBanner && <StaleBanner items={stale.needsAttention} />}

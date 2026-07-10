@@ -132,6 +132,7 @@ export function TeamBudgetTable({
                     <TableCell className="hidden lg:table-cell">
                       <div className="flex items-center gap-2.5">
                         <BudgetBar
+                          animate
                           className="h-2 flex-1"
                           pctSpent={ev.pctSpent}
                           pctProjected={team.pctProjected}

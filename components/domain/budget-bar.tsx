@@ -19,30 +19,39 @@ export function BudgetBar({
   pctProjected,
   status,
   className = "",
+  animate = false,
 }: {
   pctSpent: number;
   pctProjected: number | null;
   status: VerdictStatus;
   className?: string;
+  animate?: boolean;
 }) {
   const g = barGeometry(pctSpent, pctProjected);
   const pct = (n: number) => `${(n * 100).toFixed(2)}%`;
 
   return (
     <div
+      data-home-animate={animate ? "budget-bar" : undefined}
       className={`relative h-2.5 w-full overflow-hidden rounded-full bg-muted ${className}`}
     >
       {/* Run-rate ghost: dashed, from spend to the projected close. */}
       {g.ghostStart !== null && g.ghostEnd !== null && (
         <div
-          className="denarius-bar-build absolute inset-y-0 border-y border-r border-dashed border-foreground/40 bg-foreground/5"
-          style={{ left: pct(g.ghostStart), width: pct(g.ghostEnd - g.ghostStart) }}
+          data-home-bar={animate ? "" : undefined}
+          className="absolute inset-y-0 border-y border-r border-dashed border-foreground/40 bg-foreground/5"
+          style={{
+            left: pct(g.ghostStart),
+            width: pct(g.ghostEnd - g.ghostStart),
+            animationDelay: "220ms",
+          }}
         />
       )}
       {/* Filled portion: what's been spent. */}
       <div
-        className={`denarius-bar-build absolute inset-y-0 left-0 rounded-full ${fillColor[status]}`}
-        style={{ width: pct(g.fill) }}
+        data-home-bar={animate ? "" : undefined}
+        className={`absolute inset-y-0 left-0 rounded-full ${fillColor[status]}`}
+        style={{ width: pct(g.fill), animationDelay: "60ms" }}
       />
       {/* Budget marker: the 100% line. Hidden when spend/projection sit at the
           very edge (marker == 1) so it doesn't merge with the track end. */}
