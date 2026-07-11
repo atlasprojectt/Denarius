@@ -2,6 +2,7 @@ import { IconUsersGroup } from "@tabler/icons-react";
 
 import { EmptyState } from "@/components/domain/empty-state";
 import { PageHeader } from "@/components/domain/page-header";
+import { PageContainer } from "@/components/domain/page-container";
 import {
   Card,
   CardContent,
@@ -47,7 +48,7 @@ export default async function RosterPage() {
   const employees = (employeesData ?? []) as unknown as EmployeeRow[];
 
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
+    <PageContainer variant="wide" className="gap-6">
       <PageHeader
         title={copy.title}
         description={copy.subtitle}
@@ -82,6 +83,6 @@ export default async function RosterPage() {
           </CardContent>
         </Card>
       )}
-    </div>
+    </PageContainer>
   );
 }

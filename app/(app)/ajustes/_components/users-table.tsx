@@ -2,7 +2,8 @@
 
 import { useActionState } from "react";
 
-import { ActionStatus } from "@/components/domain/action-status";
+import { ConfirmationDialog } from "@/components/domain/confirmation-dialog";
+import { ActionToast } from "@/components/domain/toast-provider";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -27,6 +28,8 @@ const copy = {
   removing: "Removendo…",
   selfNote: "Não é possível remover a si mesmo.",
   adminOnly: "Somente administradores podem remover usuários.",
+  removeTitle: "Remover usuário?",
+  removeDescription: "O acesso a este espaço será revogado imediatamente. Os dados históricos permanecem preservados.",
 };
 
 export type TenantUser = {
@@ -44,13 +47,21 @@ function initialsOf(email: string): string {
 function RemoveButton({ userId }: { userId: string }) {
   const [state, formAction, pending] = useActionState(removeUser, initialState);
   return (
-    <form action={formAction} className="flex items-center gap-2">
-      <input type="hidden" name="userId" value={userId} />
-      <ActionStatus error={state.error} />
-      <Button type="submit" variant="destructive" size="sm" disabled={pending}>
-        {pending ? copy.removing : copy.remove}
-      </Button>
-    </form>
+    <>
+      <ActionToast id={`user:${userId}:remove`} error={state.error} success={state.success} />
+      <ConfirmationDialog
+        trigger={<Button type="button" variant="destructive" size="sm">{copy.remove}</Button>}
+        title={copy.removeTitle}
+        description={copy.removeDescription}
+        confirmLabel={copy.remove}
+        pendingLabel={copy.removing}
+        action={formAction}
+        pending={pending}
+        success={state.success}
+      >
+        <input type="hidden" name="userId" value={userId} />
+      </ConfirmationDialog>
+    </>
   );
 }
 

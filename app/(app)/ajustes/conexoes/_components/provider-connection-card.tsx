@@ -4,6 +4,8 @@ import { useActionState, useState } from "react";
 import { IconBulb } from "@tabler/icons-react";
 
 import { ActionStatus } from "@/components/domain/action-status";
+import { ConfirmationDialog } from "@/components/domain/confirmation-dialog";
+import { ActionToast } from "@/components/domain/toast-provider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -45,8 +47,8 @@ const sharedCopy = {
   syncing: "Sincronizando…",
   revoke: "Revogar",
   revoking: "Revogando…",
-  confirmRevoke:
-    "Revogar a conexão? A chave será descartada e o uso deixará de sincronizar.",
+  revokeTitle: "Revogar conexão?",
+  confirmRevoke: "A chave será descartada e o uso deixará de sincronizar. O histórico já importado permanece disponível.",
 };
 
 const providerCopy: Record<
@@ -171,25 +173,19 @@ function ActiveControls({ keyForm }: { keyForm: KeyFormProps }) {
         >
           {rotating ? sharedCopy.cancelRotate : sharedCopy.rotate}
         </Button>
-        <form action={revokeAction}>
-          <Button
-            type="submit"
-            variant="ghost"
-            size="sm"
-            disabled={revoking}
-            className="text-destructive hover:text-destructive"
-            onClick={(event) => {
-              if (!confirm(sharedCopy.confirmRevoke)) event.preventDefault();
-            }}
-          >
-            {revoking ? sharedCopy.revoking : sharedCopy.revoke}
-          </Button>
-        </form>
+        <ConfirmationDialog
+          trigger={<Button type="button" variant="destructive" size="sm">{sharedCopy.revoke}</Button>}
+          title={sharedCopy.revokeTitle}
+          description={sharedCopy.confirmRevoke}
+          confirmLabel={sharedCopy.revoke}
+          pendingLabel={sharedCopy.revoking}
+          action={revokeAction}
+          pending={revoking}
+          success={revokeState.success}
+        />
       </div>
-      <ActionStatus
-        error={syncState.error ?? revokeState.error}
-        success={syncState.success}
-      />
+      <ActionToast id={`${keyForm.provider}:sync`} error={syncState.error} success={syncState.success} />
+      <ActionToast id={`${keyForm.provider}:revoke`} error={revokeState.error} success={revokeState.success} />
       {rotating && <KeyForm {...keyForm} />}
     </div>
   );

@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useRef } from "react";
 
 import { ActionStatus } from "@/components/domain/action-status";
+import { MoneyInput } from "@/components/domain/money-input";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -58,7 +59,7 @@ export function SubscriptionForm({
         <CardTitle className="text-sm">{copy.title}</CardTitle>
       </CardHeader>
       <CardContent>
-        <form ref={formRef} action={formAction} className="flex flex-col gap-4">
+        <form ref={formRef} action={formAction} noValidate className="flex flex-col gap-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5 sm:col-span-2">
               <Label htmlFor="tool">{copy.tool}</Label>
@@ -86,14 +87,10 @@ export function SubscriptionForm({
               <Label htmlFor="unitPrice">
                 {copy.price} ({currency})
               </Label>
-              <Input
+              <MoneyInput
                 id="unitPrice"
                 name="unitPrice"
-                type="number"
-                min={0}
-                step="0.01"
-                required
-                className="tabular-nums"
+                currency={currency}
               />
             </div>
             <div className="flex flex-col gap-1.5 sm:col-span-2">

@@ -9,6 +9,7 @@ import {
 } from "@/lib/engine/cockpit";
 import type { BudgetEvaluation } from "@/lib/engine/budget";
 import type { DriverInput } from "@/lib/engine/drivers";
+import { periodFx } from "@/lib/engine/money-model";
 import { combineTeamSpend } from "@/lib/engine/team-spend";
 import { currentPeriod, monthStartUtc, type Period } from "@/lib/engine/period";
 import { isoDaysAgo } from "@/lib/engine/week-change";
@@ -59,6 +60,8 @@ type BudgetRow = {
   amount: number;
   thresholds: number[] | null;
   frozen_fx_rate: number | null;
+  fx_rate_source: string | null;
+  fx_rate_date: string | null;
 };
 type SubscriptionRow = {
   tool: string;
@@ -101,7 +104,9 @@ export async function tenantSnapshot(
     admin.from("tenant").select("display_currency").eq("id", tenantId).maybeSingle(),
     admin
       .from("budget")
-      .select("scope, team_id, amount, thresholds, frozen_fx_rate")
+      .select(
+        "scope, team_id, amount, thresholds, frozen_fx_rate, fx_rate_source, fx_rate_date",
+      )
       .eq("tenant_id", tenantId)
       .eq("period_month", monthStart),
     admin
@@ -179,7 +184,20 @@ export async function tenantSnapshot(
   }
 
   const orgBudget = budgets.find((b) => b.scope === "org") ?? null;
-  const orgFx = orgBudget?.frozen_fx_rate ?? null;
+  // Same period-FX resolution as the screens (money-model contract) — an
+  // e-mail total that disagreed with Home would burn the product's trust.
+  const asCarrier = (b: BudgetRow) => ({
+    frozenFxRate: b.frozen_fx_rate,
+    fxRateSource: b.fx_rate_source,
+    fxRateDate: b.fx_rate_date,
+  });
+  const orgFx =
+    periodFx({
+      org: orgBudget ? asCarrier(orgBudget) : null,
+      teams: budgets
+        .filter((b) => b.scope === "team")
+        .map((b) => ({ ...asCarrier(b), teamId: b.team_id })),
+    })?.rate ?? null;
   const periodEndLabel = `${period.daysInPeriod} de ${period.monthLabel}`;
 
   const cockpitTeams: CockpitTeamInput[] = budgets
@@ -190,7 +208,7 @@ export async function tenantSnapshot(
       budget: b.amount,
       seatDisplay: seatByTeam.get(b.team_id as string) ?? 0,
       apiUsd: apiByTeam.get(b.team_id as string) ?? 0,
-      fxRate: b.frozen_fx_rate,
+      fxRate: orgFx,
       thresholds: b.thresholds ?? DEFAULT_THRESHOLDS,
     }));
 

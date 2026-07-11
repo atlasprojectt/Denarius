@@ -16,15 +16,19 @@ import {
   breakEvenDelta,
   simulatePace,
   type ScenarioInput,
+  type ScopeOutcome,
 } from "@/lib/engine/scenario";
 import { money } from "@/lib/money";
 import { percent } from "@/lib/format";
 
 // The contextual scenario simulator (#21, PRD story 36): a right-side drawer
-// opened from a team with that team pre-loaded — used by the Home team rows
-// and Explore's team detail (domain component, frontend F5). One lever — the
-// team's remaining pace — recomputed instantly on the client by the pure
-// engine (lib/engine/scenario.ts). No LLM, no round-trip; estimates, disclosed.
+// opened from a team with that team pre-loaded (domain component, frontend
+// F5). One lever — the team's remaining pace — recomputed instantly on the
+// client by the pure engine (lib/engine/scenario.ts). No LLM, no round-trip;
+// estimates, disclosed. Team and company outcomes are stated SEPARATELY, each
+// against its own budget (2026-07-11 audit, QA-04), and the "fechar no
+// orçamento" preset targets the TEAM's budget with the exact delta — no
+// rounding drift between the preset and the numbers shown (QA-10).
 
 const copy = {
   title: "Simular",
@@ -32,7 +36,7 @@ const copy = {
   currentPace: "Ritmo atual",
   spent: "Gasto até agora",
   projected: "Projeção de fechamento",
-  budget: "Orçamento",
+  budget: "Orçamento do time",
   lever: "Variação do ritmo do time até o fim do mês",
   deltaZero: "ritmo atual",
   deltaSlower: (pct: string) => `${pct} mais devagar`,
@@ -41,12 +45,14 @@ const copy = {
   presetBreakEven: "Fechar no orçamento",
   presetCut: "−30%",
   breakEvenUnreachable:
-    "Nem parando este time a empresa fecha no orçamento — o ajuste passa por outros times.",
+    "O gasto já realizado passa do orçamento do time — nem parando agora este time fecha dentro. O ajuste passa pelo orçamento ou por outros times.",
   resultTitle: "Neste cenário",
   teamCloses: "Time fecha em",
   orgCloses: "Empresa fecha em",
-  marginUnder: (amount: string) => `Fecha ${amount} abaixo do orçamento da empresa.`,
-  marginOver: (amount: string) => `Fecha ${amount} acima do orçamento da empresa.`,
+  teamUnder: (amount: string) => `${amount} abaixo do orçamento do time.`,
+  teamOver: (amount: string) => `${amount} acima do orçamento do time.`,
+  orgUnder: (amount: string) => `${amount} abaixo do orçamento da empresa.`,
+  orgOver: (amount: string) => `${amount} acima do orçamento da empresa.`,
   collecting:
     "Coletando ritmo — a simulação usa a projeção de fechamento, disponível a partir do dia 5 do período.",
   disclaimer:
@@ -63,8 +69,8 @@ export type SimulateDrawerProps = {
 };
 
 function deltaLabel(deltaPct: number): string {
-  const formatted = percent(Math.abs(deltaPct) / 100);
   if (deltaPct === 0) return copy.deltaZero;
+  const formatted = percent(Math.abs(deltaPct) / 100);
   return deltaPct < 0 ? copy.deltaSlower(formatted) : copy.deltaFaster(formatted);
 }
 
@@ -107,9 +113,12 @@ export function SimulateDrawer(props: SimulateDrawerProps) {
           <Simulation
             input={{
               org: { budget: org.budget, projection: org.projection as number },
-              team: { spent: team.spent, projection: team.projection as number },
+              team: {
+                budget: team.budget,
+                spent: team.spent,
+                projection: team.projection as number,
+              },
             }}
-            teamBudget={team.budget}
             currency={currency}
             deltaPct={deltaPct}
             onDeltaChange={setDeltaPct}
@@ -122,22 +131,22 @@ export function SimulateDrawer(props: SimulateDrawerProps) {
 
 function Simulation({
   input,
-  teamBudget,
   currency,
   deltaPct,
   onDeltaChange,
 }: {
   input: ScenarioInput;
-  teamBudget: number;
   currency: string;
   deltaPct: number;
   onDeltaChange: (value: number) => void;
 }) {
   const result = simulatePace(input, deltaPct / 100);
   const breakEven = breakEvenDelta(input);
+  // Exact delta, never the rounded label value — the preset's team close must
+  // land ON the budget, not near it (QA-10 acceptance).
   const breakEvenPct =
     breakEven.reachable && breakEven.delta !== null
-      ? Math.round(breakEven.delta * 100)
+      ? breakEven.delta * 100
       : null;
 
   return (
@@ -146,7 +155,7 @@ function Simulation({
         rows={[
           [copy.spent, money(input.team.spent, currency)],
           [copy.projected, money(input.team.projection, currency)],
-          [copy.budget, money(teamBudget, currency)],
+          [copy.budget, money(input.team.budget, currency)],
         ]}
       />
 
@@ -156,7 +165,7 @@ function Simulation({
             {copy.lever}
           </label>
           <span className="text-sm tabular-nums text-muted-foreground">
-            {deltaLabel(deltaPct)}
+            {deltaLabel(Math.round(deltaPct))}
           </span>
         </div>
         <input
@@ -198,28 +207,57 @@ function Simulation({
         <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
           {copy.resultTitle}
         </p>
-        <dl className="mt-3 flex flex-col gap-2.5 text-sm">
-          <div className="flex items-baseline justify-between gap-4">
-            <dt className="text-muted-foreground">{copy.teamCloses}</dt>
-            <dd className="text-base font-semibold tabular-nums">
-              {money(result.teamClose, currency)}
-            </dd>
-          </div>
-          <div className="flex items-baseline justify-between gap-4">
-            <dt className="text-muted-foreground">{copy.orgCloses}</dt>
-            <dd className="text-base font-semibold tabular-nums">
-              {money(result.orgClose, currency)}
-            </dd>
-          </div>
+        <dl className="mt-3 flex flex-col gap-4 text-sm">
+          <OutcomeRow
+            label={copy.teamCloses}
+            outcome={result.team}
+            currency={currency}
+            under={copy.teamUnder}
+            over={copy.teamOver}
+          />
+          <OutcomeRow
+            label={copy.orgCloses}
+            outcome={result.org}
+            currency={currency}
+            under={copy.orgUnder}
+            over={copy.orgOver}
+          />
         </dl>
-        <p className="mt-3 border-t pt-3 text-sm/relaxed">
-          {result.withinBudget
-            ? copy.marginUnder(money(result.orgMargin, currency))
-            : copy.marginOver(money(-result.orgMargin, currency))}
-        </p>
       </div>
 
       <p className="text-xs/relaxed text-muted-foreground">{copy.disclaimer}</p>
+    </div>
+  );
+}
+
+/** One scope's close + its own-budget margin — team and company are judged
+ *  separately so a green company line can never mask a breached team (QA-04). */
+function OutcomeRow({
+  label,
+  outcome,
+  currency,
+  under,
+  over,
+}: {
+  label: string;
+  outcome: ScopeOutcome;
+  currency: string;
+  under: (amount: string) => string;
+  over: (amount: string) => string;
+}) {
+  return (
+    <div className="flex flex-col gap-0.5">
+      <div className="flex items-baseline justify-between gap-4">
+        <dt className="text-muted-foreground">{label}</dt>
+        <dd className="text-base font-semibold tabular-nums">
+          {money(outcome.close, currency)}
+        </dd>
+      </div>
+      <p className="text-right text-xs/relaxed text-muted-foreground tabular-nums">
+        {outcome.withinBudget
+          ? under(money(outcome.margin, currency))
+          : over(money(-outcome.margin, currency))}
+      </p>
     </div>
   );
 }

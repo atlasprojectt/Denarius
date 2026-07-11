@@ -1,8 +1,38 @@
 import { z } from "zod";
 
+import { normalizePtBrMoney } from "@/lib/locale-money";
+
 // Shared zod schemas — the single source of validation truth (F4).
 // Server actions validate authoritatively with these; clients may reuse them.
 // Error messages are user-facing copy → pt-BR.
+
+/**
+ * Typed field-level errors for the unified inline-validation system (2026-07-11
+ * audit, S2/QA-06): first message per field, keyed by the form field name.
+ * Actions attach this next to the flat `error` so the UI can mark the exact
+ * field instead of relying on the browser's native popup.
+ */
+export function fieldErrorsOf(error: z.ZodError): Record<string, string> {
+  const fields: Record<string, string> = {};
+  for (const issue of error.issues) {
+    const key = issue.path.length > 0 ? String(issue.path[0]) : "_";
+    if (!(key in fields)) fields[key] = issue.message;
+  }
+  return fields;
+}
+
+/** Monetary input: accepts the localized pt-BR format ("1.234,56") as typed —
+ *  normalized server-side so the client hidden-input trick is a convenience,
+ *  never a requirement (authoritative validation stays here). */
+function moneyInput<T extends z.ZodType>(schema: T) {
+  return z.preprocess((value) => {
+    if (typeof value !== "string") return value;
+    const normalized = normalizePtBrMoney(value);
+    // "" would coerce to 0 — garbage or an empty field must FAIL, not become
+    // a free subscription/budget.
+    return normalized === "" ? undefined : normalized;
+  }, schema);
+}
 
 export const loginSchema = z.object({
   email: z.email("Informe um e-mail válido."),
@@ -97,10 +127,12 @@ export const subscriptionSchema = z.object({
     .int("O número de assentos deve ser inteiro.")
     .min(1, "Pelo menos 1 assento.")
     .max(100000, "Número de assentos muito alto."),
-  unitPrice: z.coerce
-    .number()
-    .min(0, "O preço não pode ser negativo.")
-    .max(10000000, "Preço muito alto."),
+  unitPrice: moneyInput(
+    z.coerce
+      .number("Informe o preço por assento.")
+      .min(0, "O preço não pode ser negativo.")
+      .max(10000000, "Preço muito alto."),
+  ),
   teamId: z.uuid("Escolha um time válido.").nullable(),
 });
 
@@ -152,10 +184,12 @@ export const budgetSchema = z
   .object({
     scope: z.enum(["org", "team"]),
     teamId: z.uuid("Escolha um time válido.").nullable(),
-    amount: z.coerce
-      .number()
-      .positive("O valor do orçamento deve ser maior que zero.")
-      .max(1_000_000_000, "Valor muito alto."),
+    amount: moneyInput(
+      z.coerce
+        .number("Informe o valor do orçamento.")
+        .positive("O valor do orçamento deve ser maior que zero.")
+        .max(1_000_000_000, "Valor muito alto."),
+    ),
     warnPct: z.coerce
       .number()
       .int("O aviso deve ser um número inteiro.")
@@ -179,5 +213,14 @@ export const employeeUpdateSchema = z.object({
     .trim()
     .min(2, "Nome muito curto (mínimo 2 caracteres).")
     .max(120, "Nome muito longo (máximo 120 caracteres)."),
+  // Email is editable (2026-07-11 audit, UX-14). It is the roster-import
+  // identity — (tenant_id, email) is the CSV upsert key — so uniqueness is
+  // enforced and a re-import under the OLD address creates a new person by
+  // design. The employee id (and thus history) is untouched by an email edit.
+  email: z.email("Informe um e-mail válido.").transform((v) => v.toLowerCase()),
   teamId: z.uuid("Escolha um time válido."),
+});
+
+export const employeeDeleteSchema = z.object({
+  employeeId: z.uuid("Funcionário inválido."),
 });

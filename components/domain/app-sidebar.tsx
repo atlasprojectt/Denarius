@@ -186,9 +186,9 @@ export function AppSidebar({
                         {userLabel}
                       </span>
                       {userLabel !== userEmail && (
-                        <span className="truncate text-xs font-normal text-muted-foreground">
-                          {userEmail}
-                        </span>
+                      <span className="break-all text-xs font-normal text-muted-foreground">
+                        {userEmail}
+                      </span>
                       )}
                     </span>
                   </div>
@@ -199,6 +199,7 @@ export function AppSidebar({
                       <span>{copy.profileSettings}</span>
                     </Link>
                   </DropdownMenuItem>
+                  <DropdownMenuSeparator />
                   <form action={logout}>
                     <DropdownMenuItem
                       asChild
@@ -213,6 +214,12 @@ export function AppSidebar({
                   </form>
                 </DropdownMenuContent>
               </DropdownMenu>
+              <span
+                role="tooltip"
+                className="pointer-events-none absolute top-1/2 left-[calc(100%+0.5rem)] z-50 hidden -translate-y-1/2 whitespace-nowrap rounded-md bg-foreground px-3 py-1.5 text-xs text-background shadow-lg group-data-[collapsible=icon]:group-hover/menu-item:block"
+              >
+                {copy.profileMenu}
+              </span>
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarFooter>

@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { IconChevronRight } from "@tabler/icons-react";
 
 import { BudgetBar } from "@/components/domain/budget-bar";
@@ -62,6 +65,8 @@ export function TeamBudgetTable({
   attentionCount: number;
   currency: string;
 }) {
+  const router = useRouter();
+
   return (
     <Card>
       <CardHeader>
@@ -83,6 +88,65 @@ export function TeamBudgetTable({
       </CardHeader>
       {teams.length > 0 && (
         <CardContent>
+          <div className="grid gap-3 md:hidden">
+            {teams.map((team) => {
+              const ev = team.evaluation;
+              const warning = warningLine(team, currency);
+              return (
+                <Link
+                  key={team.teamId}
+                  href={`/explorar/time/${team.teamId}`}
+                  className="group rounded-lg border p-4 outline-none transition-colors hover:border-primary/30 hover:bg-muted/30 focus-visible:ring-2 focus-visible:ring-ring/30"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="font-medium">{team.teamName}</p>
+                      {warning && (
+                        <p className="mt-1 text-xs/relaxed text-muted-foreground">
+                          {warning}
+                        </p>
+                      )}
+                    </div>
+                    <StatusPill status={team.status} />
+                  </div>
+                  <dl className="mt-4 grid grid-cols-3 gap-3 text-xs">
+                    <div>
+                      <dt className="text-muted-foreground">{c.colSpent}</dt>
+                      <dd className="mt-0.5 font-medium tabular-nums">
+                        {money(ev.spent, currency)}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-muted-foreground">{c.colBudget}</dt>
+                      <dd className="mt-0.5 font-medium tabular-nums">
+                        {money(ev.budget, currency)}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-muted-foreground">{c.colProjection}</dt>
+                      <dd className="mt-0.5 font-medium tabular-nums">
+                        {ev.projection === null ? c.collecting : money(ev.projection, currency)}
+                      </dd>
+                    </div>
+                  </dl>
+                  <div className="mt-4 flex items-center gap-3">
+                    <BudgetBar
+                      animate
+                      className="h-2 flex-1"
+                      pctSpent={ev.pctSpent}
+                      pctProjected={team.pctProjected}
+                      status={team.status}
+                    />
+                    <span className="text-xs tabular-nums text-muted-foreground">
+                      {percent(ev.pctSpent)}
+                    </span>
+                    <IconChevronRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+          <div className="hidden md:block">
           <Table>
             <TableHeader>
               <TableRow>
@@ -106,14 +170,24 @@ export function TeamBudgetTable({
                 const ev = team.evaluation;
                 const warning = warningLine(team, currency);
                 return (
-                  <TableRow key={team.teamId}>
+                  <TableRow
+                    key={team.teamId}
+                    role="link"
+                    tabIndex={0}
+                    aria-label={c.detail(team.teamName)}
+                    className="group cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/30"
+                    onClick={() => router.push(`/explorar/time/${team.teamId}`)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        router.push(`/explorar/time/${team.teamId}`);
+                      }
+                    }}
+                  >
                     <TableCell className="max-w-64">
-                      <Link
-                        href={`/explorar/time/${team.teamId}`}
-                        className="block truncate font-medium transition-colors hover:text-primary"
-                      >
+                      <span className="block truncate font-medium transition-colors group-hover:text-primary">
                         {team.teamName}
-                      </Link>
+                      </span>
                       {warning && (
                         <p className="mt-0.5 truncate text-xs text-muted-foreground">
                           {warning}
@@ -149,19 +223,14 @@ export function TeamBudgetTable({
                         : money(ev.projection, currency)}
                     </TableCell>
                     <TableCell className="p-0 pr-2 text-right">
-                      <Link
-                        href={`/explorar/time/${team.teamId}`}
-                        aria-label={c.detail(team.teamName)}
-                        className="group/row-action inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-all duration-150 ease-out motion-safe:hover:-translate-y-0.5 hover:bg-muted hover:text-foreground motion-safe:active:translate-y-0 motion-safe:active:scale-95"
-                      >
-                        <IconChevronRight className="size-4 transition-transform duration-150 group-hover/row-action:translate-x-0.5" />
-                      </Link>
+                      <IconChevronRight className="ml-auto size-4 text-muted-foreground transition-transform duration-150 group-hover:translate-x-0.5" />
                     </TableCell>
                   </TableRow>
                 );
               })}
             </TableBody>
           </Table>
+          </div>
         </CardContent>
       )}
     </Card>

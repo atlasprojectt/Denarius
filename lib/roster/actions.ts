@@ -10,7 +10,11 @@ import {
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { isOwnedTeam } from "@/lib/teams/queries";
-import { employeeUpdateSchema } from "@/lib/validation";
+import {
+  employeeDeleteSchema,
+  employeeUpdateSchema,
+  fieldErrorsOf,
+} from "@/lib/validation";
 
 const MAX_FILE_BYTES = 512 * 1024;
 
@@ -23,6 +27,8 @@ export type RosterPreview = {
 export type RosterFormState = {
   error?: string;
   success?: string;
+  /** Field-name → message, for the unified inline validation (S2/QA-06). */
+  fieldErrors?: Record<string, string>;
   preview?: RosterPreview;
 };
 
@@ -68,8 +74,9 @@ export async function importRoster(
   }
 
   const result = data as { imported: number; teams_created: number };
-  revalidatePath("/ajustes/roster");
-  revalidatePath("/ajustes");
+  // Roster feeds the seats-vs-roster observations on Home and creates teams —
+  // whole-tree invalidation (QA-02 rule, see lib/providers/actions.ts).
+  revalidatePath("/", "layout");
   return {
     success: `${result.imported} pessoa(s) importada(s), ${result.teams_created} time(s) criado(s).`,
   };
@@ -85,9 +92,15 @@ export async function updateEmployee(
   const parsed = employeeUpdateSchema.safeParse({
     employeeId: formData.get("employeeId"),
     name: formData.get("name"),
+    email: formData.get("email"),
     teamId: formData.get("teamId"),
   });
-  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  if (!parsed.success) {
+    return {
+      error: parsed.error.issues[0].message,
+      fieldErrors: fieldErrorsOf(parsed.error),
+    };
+  }
 
   const { tenantId } = auth.session;
   const admin = createAdminClient();
@@ -101,6 +114,7 @@ export async function updateEmployee(
     .update(
       {
         name: parsed.data.name,
+        email: parsed.data.email,
         team_id: parsed.data.teamId,
         updated_at: new Date().toISOString(),
       },
@@ -108,10 +122,51 @@ export async function updateEmployee(
     )
     .eq("id", parsed.data.employeeId)
     .eq("tenant_id", tenantId);
-  if (error || count === 0) {
+  if (error) {
+    // 23505 = unique (tenant_id, email): the import identity key (UX-14).
+    if (error.code === "23505") {
+      return {
+        error: "Já existe uma pessoa com este e-mail no roster.",
+        fieldErrors: { email: "Já existe uma pessoa com este e-mail." },
+      };
+    }
     return { error: "Não foi possível salvar. Tente novamente." };
   }
+  if (count === 0) return { error: "Pessoa não encontrada." };
 
-  revalidatePath("/ajustes/roster");
+  revalidatePath("/", "layout");
   return { success: "Funcionário atualizado." };
+}
+
+/**
+ * Removes one person from the roster (2026-07-11 audit, UX-14). Historical
+ * API usage is attributed by provider project/workspace via project_map — it
+ * never referenced the employee row — so past spend stays exactly where it
+ * was; only the roster headcount (seats-vs-roster observations) changes.
+ */
+export async function removeEmployee(
+  _prev: RosterFormState,
+  formData: FormData,
+): Promise<RosterFormState> {
+  const auth = await requireAdmin();
+  if (auth.error !== undefined) return { error: auth.error };
+
+  const parsed = employeeDeleteSchema.safeParse({
+    employeeId: formData.get("employeeId"),
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+
+  const admin = createAdminClient();
+  const { error, count } = await admin
+    .from("employee")
+    .delete({ count: "exact" })
+    .eq("id", parsed.data.employeeId)
+    .eq("tenant_id", auth.session.tenantId);
+  if (error) return { error: "Não foi possível remover. Tente novamente." };
+  // Idempotent: repeated submit / cross-tenant id match nothing — the desired
+  // end state already holds (QA-05 destructive-action contract).
+  if (count === 0) return { success: "Pessoa já havia sido removida." };
+
+  revalidatePath("/", "layout");
+  return { success: "Pessoa removida do roster." };
 }

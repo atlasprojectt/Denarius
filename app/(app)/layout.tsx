@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 
 import { AppSidebar } from "@/components/domain/app-sidebar";
+import { AppToastProvider } from "@/components/domain/toast-provider";
 import {
   SidebarInset,
   SidebarProvider,
@@ -37,27 +38,29 @@ export default async function AppLayout({
   if (!appUser) redirect("/onboarding");
 
   return (
-    <SidebarProvider>
-      <AppSidebar
-        userEmail={appUser.email}
-        userInitials={profileInitials({
-          displayName: appUser.display_name,
-          email: appUser.email,
-        })}
-        userLabel={profileLabel({
-          displayName: appUser.display_name,
-          email: appUser.email,
-        })}
-      />
-      <SidebarInset>
-        <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2.5 border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/80">
-          <SidebarTrigger className="-ml-1.5 size-10" />
-          <span className="truncate text-sm font-medium">
-            {appUser.tenant?.name}
-          </span>
-        </header>
-        <main className="flex-1 px-4 py-8 md:px-8">{children}</main>
-      </SidebarInset>
-    </SidebarProvider>
+    <AppToastProvider>
+      <SidebarProvider>
+        <AppSidebar
+          userEmail={appUser.email}
+          userInitials={profileInitials({
+            displayName: appUser.display_name,
+            email: appUser.email,
+          })}
+          userLabel={profileLabel({
+            displayName: appUser.display_name,
+            email: appUser.email,
+          })}
+        />
+        <SidebarInset>
+          <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2.5 border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+            <SidebarTrigger className="-ml-1.5 size-10" />
+            <span className="truncate text-sm font-medium">
+              {appUser.tenant?.name}
+            </span>
+          </header>
+          <main className="flex-1 px-4 py-8 md:px-8">{children}</main>
+        </SidebarInset>
+      </SidebarProvider>
+    </AppToastProvider>
   );
 }

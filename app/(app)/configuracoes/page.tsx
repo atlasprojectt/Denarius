@@ -6,6 +6,7 @@ import {
 } from "@tabler/icons-react";
 
 import { PageHeader } from "@/components/domain/page-header";
+import { PageContainer } from "@/components/domain/page-container";
 import { ThemePicker } from "@/components/domain/theme-toggle";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
@@ -76,7 +77,7 @@ export default async function PersonalSettingsPage() {
   });
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
+    <PageContainer variant="form" className="gap-6">
       <PageHeader title={copy.title} description={copy.subtitle} />
 
       <Card>
@@ -156,6 +157,6 @@ export default async function PersonalSettingsPage() {
           </ItemGroup>
         </CardContent>
       </Card>
-    </div>
+    </PageContainer>
   );
 }

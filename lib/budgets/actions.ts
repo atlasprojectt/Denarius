@@ -7,9 +7,14 @@ import { monthStartUtc } from "@/lib/engine/period";
 import { fetchUsdRate } from "@/lib/fx/rate";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isOwnedTeam } from "@/lib/teams/queries";
-import { budgetDeleteSchema, budgetSchema } from "@/lib/validation";
+import { budgetDeleteSchema, budgetSchema, fieldErrorsOf } from "@/lib/validation";
 
-export type BudgetFormState = { error?: string; success?: string };
+export type BudgetFormState = {
+  error?: string;
+  success?: string;
+  /** Field-name → message, for the unified inline validation (S2/QA-06). */
+  fieldErrors?: Record<string, string>;
+};
 
 /** An empty team select ("") means the org scope → stored as null. */
 function readTeamId(formData: FormData): string | null {
@@ -38,7 +43,12 @@ export async function upsertBudget(
     amount: formData.get("amount"),
     warnPct: formData.get("warnPct"),
   });
-  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  if (!parsed.success) {
+    return {
+      error: parsed.error.issues[0].message,
+      fieldErrors: fieldErrorsOf(parsed.error),
+    };
+  }
 
   const { scope, teamId, amount, warnPct } = parsed.data;
   const { tenantId } = auth.session;
@@ -100,10 +110,177 @@ export async function upsertBudget(
     if (error) return { error: "Não foi possível salvar. Tente novamente." };
   }
 
-  revalidatePath("/ajustes/orcamentos");
-  revalidatePath("/ajustes");
-  revalidatePath("/");
+  // Budgets drive the verdict on Home, Explore and every team detail page —
+  // whole-tree invalidation (QA-02 rule, see lib/providers/actions.ts).
+  revalidatePath("/", "layout");
   return { success: "Orçamento salvo." };
+}
+
+export type BudgetBatchState = {
+  error?: string;
+  success?: string;
+  /** Keyed by the row field name (e.g. "amount|team:<id>") — inline errors. */
+  fieldErrors?: Record<string, string>;
+};
+
+/** Batch row key: "org" or "team:<uuid>" — mirrors the form field names. */
+function parseRowKey(key: string): { scope: "org" | "team"; teamId: string | null } | null {
+  if (key === "org") return { scope: "org", teamId: null };
+  if (key.startsWith("team:") && key.length > 5) {
+    return { scope: "team", teamId: key.slice(5) };
+  }
+  return null;
+}
+
+/**
+ * Batch-edit contract for the single budgets table (2026-07-11 audit, UX-09):
+ * one Save writes every filled row. Validation is all-or-nothing — any invalid
+ * row blocks the whole batch with per-field errors and NOTHING is written.
+ * Writes are then applied per row; a mid-batch database failure (same table,
+ * same transaction budget — rare) is reported unambiguously: which scopes
+ * saved, which failed (documented strategy, docs/backend.md). Frozen FX is
+ * preserved: existing rows keep their captured triple; new rows share ONE
+ * fresh capture, consistent with the period-FX resolution. Rows with an empty
+ * amount are untouched — removal is a separate confirmed destructive action.
+ */
+export async function saveBudgetsBatch(
+  _prev: BudgetBatchState,
+  formData: FormData,
+): Promise<BudgetBatchState> {
+  const auth = await requireAdmin();
+  if (auth.error !== undefined) return { error: auth.error };
+  const { tenantId } = auth.session;
+  const admin = createAdminClient();
+  const period = monthStartUtc();
+
+  // 1. Parse + validate EVERY submitted row before touching the database.
+  const rowKeys = formData.getAll("row").map((v) => String(v));
+  const fieldErrors: Record<string, string> = {};
+  const rows: {
+    key: string;
+    scope: "org" | "team";
+    teamId: string | null;
+    amount: number;
+    thresholds: number[];
+  }[] = [];
+
+  for (const key of rowKeys) {
+    const parsedKey = parseRowKey(key);
+    if (!parsedKey) return { error: "Linha de orçamento inválida." };
+
+    const rawAmount = formData.get(`amount|${key}`);
+    const amountText = typeof rawAmount === "string" ? rawAmount.trim() : "";
+    if (amountText === "") continue; // untouched row — no budget for this scope
+
+    const parsed = budgetSchema.safeParse({
+      scope: parsedKey.scope,
+      teamId: parsedKey.teamId,
+      amount: amountText,
+      warnPct: formData.get(`warnPct|${key}`) ?? undefined,
+    });
+    if (!parsed.success) {
+      for (const issue of parsed.error.issues) {
+        const field = issue.path[0] === "warnPct" ? "warnPct" : "amount";
+        const name = `${field}|${key}`;
+        if (!(name in fieldErrors)) fieldErrors[name] = issue.message;
+      }
+      continue;
+    }
+    rows.push({
+      key,
+      scope: parsed.data.scope,
+      teamId: parsed.data.teamId,
+      amount: parsed.data.amount,
+      thresholds: [parsed.data.warnPct / 100, 1.0],
+    });
+  }
+
+  if (Object.keys(fieldErrors).length > 0) {
+    return { error: "Corrija os campos destacados.", fieldErrors };
+  }
+  if (rows.length === 0) return { error: "Nenhum orçamento para salvar." };
+
+  // 2. Tenant ownership for every team row (one query, not N).
+  const teamIds = rows.filter((r) => r.teamId !== null).map((r) => r.teamId as string);
+  if (teamIds.length > 0) {
+    const { data: ownedData } = await admin
+      .from("team")
+      .select("id")
+      .eq("tenant_id", tenantId)
+      .eq("is_unattributed", false)
+      .in("id", teamIds);
+    const owned = new Set(((ownedData ?? []) as { id: string }[]).map((t) => t.id));
+    for (const row of rows) {
+      if (row.teamId !== null && !owned.has(row.teamId)) {
+        return { error: "Escolha um time válido." };
+      }
+    }
+  }
+
+  // 3. Split update vs insert against the budgets governing this period.
+  const [{ data: tenant }, { data: existingData }] = await Promise.all([
+    admin.from("tenant").select("display_currency").eq("id", tenantId).maybeSingle(),
+    admin
+      .from("budget")
+      .select("id, scope, team_id")
+      .eq("tenant_id", tenantId)
+      .eq("period_month", period),
+  ]);
+  const currency =
+    (tenant as { display_currency: string } | null)?.display_currency ?? "BRL";
+  const existing = (existingData ?? []) as {
+    id: string;
+    scope: string;
+    team_id: string | null;
+  }[];
+  const existingId = (scope: string, teamId: string | null) =>
+    existing.find((b) => b.scope === scope && b.team_id === teamId)?.id ?? null;
+
+  // One FX capture shared by every NEW row — the same single-rate-per-period
+  // contract the screens resolve with (lib/engine/money-model.ts).
+  const hasNewRow = rows.some((r) => existingId(r.scope, r.teamId) === null);
+  const frozen = hasNewRow ? await fetchUsdRate(currency) : null;
+
+  // 4. Apply row by row, collecting failures for the unambiguous report.
+  const failed: string[] = [];
+  const now = new Date().toISOString();
+  for (const row of rows) {
+    const id = existingId(row.scope, row.teamId);
+    const label = row.scope === "org" ? "Empresa" : row.key;
+    if (id !== null) {
+      const { error, count } = await admin
+        .from("budget")
+        .update(
+          { amount: row.amount, thresholds: row.thresholds, updated_at: now },
+          { count: "exact" },
+        )
+        .eq("id", id)
+        .eq("tenant_id", tenantId);
+      if (error || count === 0) failed.push(label);
+    } else {
+      const { error } = await admin.from("budget").insert({
+        tenant_id: tenantId,
+        scope: row.scope,
+        team_id: row.teamId,
+        period_month: period,
+        amount: row.amount,
+        currency,
+        thresholds: row.thresholds,
+        frozen_fx_rate: frozen?.rate ?? null,
+        fx_rate_source: frozen?.source ?? null,
+        fx_rate_date: frozen?.date ?? null,
+      });
+      if (error) failed.push(label);
+    }
+  }
+
+  revalidatePath("/", "layout");
+  if (failed.length > 0) {
+    return {
+      error: `Parte do lote não foi salva (${failed.length} de ${rows.length}). Os demais orçamentos foram gravados — tente salvar novamente.`,
+    };
+  }
+  return { success: "Orçamentos salvos." };
 }
 
 export async function deleteBudget(
@@ -126,12 +303,11 @@ export async function deleteBudget(
     .delete({ count: "exact" })
     .eq("id", parsed.data.budgetId)
     .eq("tenant_id", tenantId);
-  if (error || count === 0) {
-    return { error: "Não foi possível remover. Tente novamente." };
-  }
+  if (error) return { error: "Não foi possível remover. Tente novamente." };
+  // Idempotent: repeated submit / cross-tenant id match nothing — the desired
+  // end state already holds (QA-05 destructive-action contract).
+  if (count === 0) return { success: "Orçamento já havia sido removido." };
 
-  revalidatePath("/ajustes/orcamentos");
-  revalidatePath("/ajustes");
-  revalidatePath("/");
+  revalidatePath("/", "layout");
   return { success: "Orçamento removido." };
 }

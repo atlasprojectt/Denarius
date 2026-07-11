@@ -6,12 +6,18 @@ import { requireAdmin } from "@/lib/auth/session";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isOwnedTeam } from "@/lib/teams/queries";
 import {
+  fieldErrorsOf,
   subscriptionDeleteSchema,
   subscriptionSchema,
   subscriptionUpdateSchema,
 } from "@/lib/validation";
 
-export type SubscriptionFormState = { error?: string; success?: string };
+export type SubscriptionFormState = {
+  error?: string;
+  success?: string;
+  /** Field-name → message, for the unified inline validation (S2/QA-06). */
+  fieldErrors?: Record<string, string>;
+};
 
 /** An empty team select ("") means shared/company-wide → stored as null. */
 function readTeamId(formData: FormData): string | null {
@@ -33,7 +39,12 @@ export async function createSubscription(
     unitPrice: formData.get("unitPrice"),
     teamId: readTeamId(formData),
   });
-  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  if (!parsed.success) {
+    return {
+      error: parsed.error.issues[0].message,
+      fieldErrors: fieldErrorsOf(parsed.error),
+    };
+  }
 
   const { tenantId } = auth.session;
   const admin = createAdminClient();
@@ -62,9 +73,10 @@ export async function createSubscription(
   });
   if (error) return { error: "Não foi possível salvar. Tente novamente." };
 
-  revalidatePath("/ajustes/assinaturas");
-  revalidatePath("/ajustes");
-  revalidatePath("/explorar");
+  // Seats feed the Home cockpit, Explore and team detail — whole-tree
+  // invalidation (QA-02 rule, see lib/providers/actions.ts). The old list
+  // missed "/" entirely, so a new subscription never updated the verdict.
+  revalidatePath("/", "layout");
   return { success: "Assinatura adicionada." };
 }
 
@@ -82,7 +94,12 @@ export async function updateSubscription(
     unitPrice: formData.get("unitPrice"),
     teamId: readTeamId(formData),
   });
-  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  if (!parsed.success) {
+    return {
+      error: parsed.error.issues[0].message,
+      fieldErrors: fieldErrorsOf(parsed.error),
+    };
+  }
 
   const { tenantId } = auth.session;
   const admin = createAdminClient();
@@ -109,9 +126,7 @@ export async function updateSubscription(
     return { error: "Não foi possível salvar. Tente novamente." };
   }
 
-  revalidatePath("/ajustes/assinaturas");
-  revalidatePath("/ajustes");
-  revalidatePath("/explorar");
+  revalidatePath("/", "layout");
   return { success: "Assinatura atualizada." };
 }
 
@@ -135,12 +150,12 @@ export async function deleteSubscription(
     .delete({ count: "exact" })
     .eq("id", parsed.data.subscriptionId)
     .eq("tenant_id", tenantId);
-  if (error || count === 0) {
-    return { error: "Não foi possível remover. Tente novamente." };
-  }
+  if (error) return { error: "Não foi possível remover. Tente novamente." };
+  // Idempotent: a repeated submit (or a cross-tenant id, filtered out by the
+  // tenant scope above) matches nothing — the desired end state already holds,
+  // so this is not an error (QA-05 destructive-action contract).
+  if (count === 0) return { success: "Assinatura já havia sido removida." };
 
-  revalidatePath("/ajustes/assinaturas");
-  revalidatePath("/ajustes");
-  revalidatePath("/explorar");
+  revalidatePath("/", "layout");
   return { success: "Assinatura removida." };
 }

@@ -94,7 +94,10 @@ export async function removeUser(
     .eq("id", userId)
     .eq("tenant_id", auth.session.tenantId)
     .maybeSingle();
-  if (!target) return { error: "Usuário não encontrado neste espaço." };
+  // Idempotent: a repeated submit (or an id outside this tenant) matches
+  // nothing — the desired end state already holds and nothing is mutated
+  // (QA-05 destructive-action contract; same response either way, no leak).
+  if (!target) return { success: "Usuário já não faz parte deste espaço." };
 
   // Deleting the auth user cascades app_user (id → auth.users on delete cascade).
   const { error } = await admin.auth.admin.deleteUser(userId);

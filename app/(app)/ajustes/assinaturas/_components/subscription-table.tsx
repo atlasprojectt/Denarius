@@ -3,6 +3,9 @@
 import { useActionState, useState } from "react";
 
 import { ActionStatus } from "@/components/domain/action-status";
+import { ConfirmationDialog } from "@/components/domain/confirmation-dialog";
+import { MoneyInput } from "@/components/domain/money-input";
+import { ActionToast } from "@/components/domain/toast-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -33,6 +36,7 @@ const copy = {
   remove: "Remover",
   removing: "Removendo…",
   confirmRemove: "Remover esta assinatura?",
+  removeDescription: "O custo deixa de entrar nos totais e orçamentos do período. Esta ação não altera nada no provedor.",
 };
 
 type Subscription = {
@@ -52,9 +56,11 @@ const initialState: SubscriptionFormState = {};
 function SubscriptionRow({
   subscription,
   teams,
+  currency,
 }: {
   subscription: Subscription;
   teams: Team[];
+  currency: string;
 }) {
   const [editing, setEditing] = useState(false);
   const [updateState, updateAction, updating] = useActionState(
@@ -89,11 +95,7 @@ function SubscriptionRow({
           {subscription.accrued}
         </TableCell>
         <TableCell className="text-right">
-          {deleteState.error && (
-            <span role="alert" className="mr-2 text-xs text-destructive">
-              {deleteState.error}
-            </span>
-          )}
+          <ActionToast id={`subscription:${subscription.id}:delete`} error={deleteState.error} success={deleteState.success} />
           <Button
             type="button"
             variant="ghost"
@@ -102,25 +104,22 @@ function SubscriptionRow({
           >
             {copy.edit}
           </Button>
-          <form action={deleteAction} className="inline">
+          <ConfirmationDialog
+            trigger={<Button type="button" variant="destructive" size="sm">{copy.remove}</Button>}
+            title={copy.confirmRemove}
+            description={copy.removeDescription}
+            confirmLabel={copy.remove}
+            pendingLabel={copy.removing}
+            action={deleteAction}
+            pending={deleting}
+            success={deleteState.success}
+          >
             <input
               type="hidden"
               name="subscriptionId"
               value={subscription.id}
             />
-            <Button
-              type="submit"
-              variant="ghost"
-              size="sm"
-              disabled={deleting}
-              className="text-destructive hover:text-destructive"
-              onClick={(event) => {
-                if (!confirm(copy.confirmRemove)) event.preventDefault();
-              }}
-            >
-              {deleting ? copy.removing : copy.remove}
-            </Button>
-          </form>
+          </ConfirmationDialog>
         </TableCell>
       </TableRow>
     );
@@ -131,6 +130,7 @@ function SubscriptionRow({
       <TableCell colSpan={6} className="py-3 whitespace-normal">
         <form
           action={updateAction}
+          noValidate
           className="flex flex-wrap items-center gap-3"
         >
           <input
@@ -153,14 +153,12 @@ function SubscriptionRow({
             required
             className="h-8 w-20 bg-background tabular-nums"
           />
-          <Input
+          <MoneyInput
+            id={`unit-price-${subscription.id}`}
             name="unitPrice"
-            type="number"
-            min={0}
-            step="0.01"
+            currency={currency}
             defaultValue={subscription.unitPrice}
-            required
-            className="h-8 w-28 bg-background tabular-nums"
+            className="h-8 w-36 bg-background"
           />
           <select
             name="teamId"
@@ -197,9 +195,11 @@ function SubscriptionRow({
 export function SubscriptionTable({
   subscriptions,
   teams,
+  currency,
 }: {
   subscriptions: Subscription[];
   teams: Team[];
+  currency: string;
 }) {
   return (
     <Table>
@@ -219,6 +219,7 @@ export function SubscriptionTable({
             key={subscription.id}
             subscription={subscription}
             teams={teams}
+            currency={currency}
           />
         ))}
       </TableBody>

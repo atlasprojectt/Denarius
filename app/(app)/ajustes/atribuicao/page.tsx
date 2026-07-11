@@ -7,8 +7,11 @@ import {
 
 import { EmptyState } from "@/components/domain/empty-state";
 import { PageHeader } from "@/components/domain/page-header";
+import { PageContainer } from "@/components/domain/page-container";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { requireAdmin } from "@/lib/auth/session";
+import { listBudgets } from "@/lib/budgets/queries";
+import { periodFx } from "@/lib/engine/money-model";
 import { listTeams } from "@/lib/teams/queries";
 import { listMappableProjects } from "@/lib/usage/attribution";
 
@@ -32,7 +35,7 @@ export default async function AttributionPage() {
   const auth = await requireAdmin();
   if (auth.error !== undefined) {
     return (
-      <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
+      <PageContainer className="gap-6">
         <PageHeader
           title={copy.title}
           description={copy.subtitle}
@@ -44,17 +47,18 @@ export default async function AttributionPage() {
           title={copy.adminOnlyTitle}
           description={copy.adminOnlyBody}
         />
-      </div>
+      </PageContainer>
     );
   }
 
-  const [projects, teams] = await Promise.all([
+  const [projects, teams, budgets] = await Promise.all([
     listMappableProjects(),
     listTeams(),
+    listBudgets(),
   ]);
 
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
+    <PageContainer className="gap-6">
       <PageHeader
         title={copy.title}
         description={copy.subtitle}
@@ -72,7 +76,12 @@ export default async function AttributionPage() {
       ) : (
         <Card>
           <CardContent>
-            <ProjectMapForm projects={projects} teams={teams} />
+            <ProjectMapForm
+              projects={projects}
+              teams={teams}
+              currency={budgets.currency}
+              fx={periodFx(budgets)}
+            />
           </CardContent>
           <CardFooter className="text-xs/relaxed text-muted-foreground">
             <p className="flex items-start gap-2">
@@ -82,6 +91,6 @@ export default async function AttributionPage() {
           </CardFooter>
         </Card>
       )}
-    </div>
+    </PageContainer>
   );
 }

@@ -38,11 +38,13 @@ const providers: Record<
   anthropic: { label: "Anthropic", keySchema: anthropicKeySchema },
 };
 
+// QA-02 (2026-07-11 audit): a sync/revoke changes connection status, cost and
+// usage data consumed by Home, Explore, EVERY team-detail page, Attribution
+// and the Ajustes hub. Enumerating paths missed the dynamic ones and let a
+// stale banner survive navigation, so spend-affecting mutations invalidate the
+// whole layout tree — one rule, no route left contradicting another.
 function revalidateConsumers(): void {
-  revalidatePath("/ajustes/conexoes");
-  revalidatePath("/ajustes");
-  revalidatePath("/explorar");
-  revalidatePath("/");
+  revalidatePath("/", "layout");
 }
 
 /** Save-or-rotate: upserting the (tenant, provider) row IS the rotation. */

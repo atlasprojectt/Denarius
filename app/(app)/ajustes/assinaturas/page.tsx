@@ -2,6 +2,7 @@ import { IconCoins } from "@tabler/icons-react";
 
 import { EmptyState } from "@/components/domain/empty-state";
 import { PageHeader } from "@/components/domain/page-header";
+import { PageContainer } from "@/components/domain/page-container";
 import {
   Card,
   CardContent,
@@ -59,7 +60,7 @@ export default async function SubscriptionsPage() {
   }));
 
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
+    <PageContainer className="gap-6">
       <PageHeader
         title={copy.title}
         description={copy.subtitle}
@@ -93,10 +94,10 @@ export default async function SubscriptionsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <SubscriptionTable subscriptions={rows} teams={teams} />
+            <SubscriptionTable subscriptions={rows} teams={teams} currency={currency} />
           </CardContent>
         </Card>
       )}
-    </div>
+    </PageContainer>
   );
 }

@@ -106,3 +106,37 @@ interface NotificationChannel { send(msg: RenderedNotification): Promise<void>; 
 ## 10. Error handling & data quality
 
 Never block on gaps — disclose them: uncosted models, stale syncs, reconciliation drift, unattributed spend. Every surfaced number must be defensible; if it can't be, show the gap instead of a guess.
+
+## 11. Money display contract — 2026-07-11 audit (S1/QA-03/UX-01)
+
+`lib/engine/money-model.ts` (pure) is the single definition of how stored money becomes shown money. Concepts, kept distinct end to end:
+
+| Concept | Source | Currency |
+|---|---|---|
+| Provider-reported API cost | `cost_daily` | USD (headline truth) |
+| Token-derived API cost | `usage_daily.derived_cost` | USD (attribution grain: team/person/model) |
+| Seat cost | `subscription` accrual | display currency (native, never converted) |
+| Governed spend | seats + API × frozen FX | display currency (what budgets measure) |
+| Uncosted usage | unknown-model buckets | disclosed, never summed or dropped |
+| Reconciliation drift | `reconcile(derived, reported)` | USD, disclosed |
+
+- **`periodFx(budgets)`** resolves **ONE frozen USD→display rate per tenant per period**: the org budget's captured triple wins, else the team budget with the earliest capture date (ties by team id). Every consumer — Home cockpit, Explore, team detail, attribution screen, the notification snapshot — converts through this one rate, so the same concept shows the same number on every screen and in every e-mail. The per-budget FX triples remain the audit trail; they are no longer per-screen conversion inputs.
+- **`usdDisplay(usd, currency, fx)`** → `UsdDisplay` — the BRL-primary display model (display value leads, original USD attached; `display: null` when FX is missing). Rendered by the shared `components/domain/usd-value.tsx`.
+- **`costBridge({seatDisplay, apiUsd, fx})`** → `CostBridge` — the explicit bridge `governed = seats + API×fx` shown on the team detail so the governed total and the USD person table can never read as contradictory. `governedDisplay` is null (undefined honestly) when FX is missing and API spend exists.
+- **Missing FX** never sums USD into a display figure and never guesses: values stay USD with an explicit disclosure line (rate, source, capture date are disclosed when present).
+- Tests: `tests/money-model.test.ts` (resolution order, conversion, missing FX, bridge ≡ `combinedSpend`).
+
+## 12. Mutation contracts — 2026-07-11 audit (S2/QA-02/QA-05/QA-06)
+
+- **Revalidation rule (QA-02):** every spend-affecting mutation (provider connect/sync/revoke, attribution save, budgets, subscriptions, roster) calls `revalidatePath("/", "layout")` — whole-tree invalidation. Enumerated path lists missed the dynamic team-detail route and let a stale banner survive navigation; one rule keeps every route coherent after any mutation. The daily cron needs no revalidation (app pages are request-dynamic under RLS cookies).
+- **Typed field errors:** shared zod schemas expose `fieldErrorsOf(zodError)` → `Record<field, message>`; action states carry `fieldErrors` beside the flat `error` so the UI renders inline product validation, never the browser popup (QA-06).
+- **Localized money input:** monetary fields accept the pt-BR format (`"1.234,56"`) authoritatively server-side (`moneyInput` preprocess in `lib/validation.ts`); empty/garbage fails instead of coercing to 0. The `MoneyInput` client mask is a convenience, never a requirement.
+- **Destructive actions (QA-05):** revoke connection, remove subscription / budget / roster person / app user — all re-check `requireAdmin` at execution, scope the target by `tenant_id`, and are **idempotent**: a repeated submit or a foreign id matches nothing, mutates nothing, and returns a safe "already removed" success (same response as a cross-tenant probe — no information leak). Ciphertext is discarded on revocation. Tests: `tests/destructive-actions.test.ts`, `tests/validation-contracts.test.ts`.
+- **Budget batch edit (UX-09):** `saveBudgetsBatch` writes the whole single-table form in one action. Validation is all-or-nothing (any invalid row blocks the batch with per-row field errors; nothing written). Writes are applied row by row; the **documented partial-failure strategy** is an unambiguous report ("X of Y saved; retry") — chosen over a transaction RPC for auditable simplicity at MVP scale. Frozen FX: existing rows keep their triple; all new rows in one batch share ONE fresh capture (consistent with `periodFx`). Empty rows are untouched; removal stays a separate confirmed action. Tests: `tests/budget-batch.test.ts`.
+- **Roster identity (UX-14):** e-mail is **editable**; it is the CSV-import upsert key `(tenant_id, email)`, so uniqueness is enforced (friendly 23505 message) and a re-import under the old address creates a new person by design — the employee id (history) is untouched by an e-mail edit. `removeEmployee` deletes the person; historical API spend is attributed by project/workspace via `project_map` (it never referenced the employee row), so past team spend does not move — only roster headcount (seats-vs-roster observations) changes.
+- **Attribution save (QA-11):** `saveProjectMap` returns `saved: {key, teamId}[]` — the confirmed persistence result. The client draft/baseline model (`lib/attribution/draft.ts`) advances its baseline only to this payload; revalidated props may add rows but never overwrite a confirmed or in-progress selection. Tests: `tests/attribution-draft.test.ts`.
+- **Sync coherence (QA-02):** one `synced_at` stamp per run across `provider_connection`, `usage_daily`, `cost_daily`; the month slice is replaced before upsert (idempotent re-sync); a failed provider stays accurately `error` while another succeeds. Tests: `tests/sync-propagation.test.ts`.
+
+## 13. Scenario engine — 2026-07-11 audit (QA-04/QA-10)
+
+`lib/engine/scenario.ts`: `ScenarioInput` carries `team.budget`; `simulatePace` returns **separate `ScopeOutcome`s** (`{close, margin, withinBudget}`) for the team (vs its own budget) and the org (vs the org budget) — a positive company outcome can never mask a breached team. `breakEvenDelta` targets the **team's** budget (`δ = (teamBudget − projection) / remaining`, clamped to [−1, 0]): 0 when already inside, `reachable: false` when already-spent cost alone exceeds the budget (disclosed in the drawer), null delta when there is no remaining spend to lever. The drawer applies the **exact** delta (never the rounded label) so the preset lands ON the budget. Day-5 guard unchanged: no projection → the drawer shows the collecting state and simulates nothing.

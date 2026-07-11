@@ -1,6 +1,7 @@
 import { IconInfoCircle } from "@tabler/icons-react";
 
 import { PageHeader } from "@/components/domain/page-header";
+import { PageContainer } from "@/components/domain/page-container";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Card,
@@ -63,7 +64,7 @@ export default async function BudgetsPage() {
   const mismatch = org ? teamSum - org.amount : 0;
 
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
+    <PageContainer variant="wide" className="gap-6">
       <PageHeader
         title={copy.title}
         description={copy.subtitle}
@@ -142,6 +143,6 @@ export default async function BudgetsPage() {
           )}
         </CardContent>
       </Card>
-    </div>
+    </PageContainer>
   );
 }

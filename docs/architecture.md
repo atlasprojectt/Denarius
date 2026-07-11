@@ -87,6 +87,15 @@ Implementation note: the conceptual `user` entity is the **`app_user`** table (`
 
 - Source of truth **USD** (provider-native), stored exact.
 - Display in tenant `display_currency`; budget comparisons use the **FX rate frozen at period start** (stored on `budget`), disclosed on screen — so "spend vs budget" reflects usage change, not dollar swings.
+- **One rate per tenant per period (2026-07-11 audit):** display conversion everywhere resolves through `periodFx()` in `lib/engine/money-model.ts` (org budget's captured rate, else earliest team capture) — Home, Explore, team detail, attribution and e-mails can never convert the same USD figure differently. Per-budget FX triples remain as the audit trail. USD-native figures render display-currency-first with the original USD attached (`UsdDisplay`); a missing rate is disclosed, never guessed, and never summed into a display figure. Full contract: [backend.md §11](backend.md).
+
+## 7b. Cache & revalidation boundary (2026-07-11 audit, QA-02)
+
+App pages are request-dynamic RSCs (RLS cookies), so the server always reads fresh Postgres; the boundary that matters is the **client router cache**. The rule: every spend-affecting server action ends with `revalidatePath("/", "layout")` — whole-tree invalidation — because budgets, connections, attribution, seats and roster all feed Home, Explore and the dynamic team-detail routes at once. Enumerated per-path revalidation is forbidden (it caused QA-02: stale banners and totals surviving navigation). Contract details: [backend.md §12](backend.md).
+
+## 7c. Controlled client state over server actions (2026-07-11 audit, QA-11)
+
+Forms whose selections must survive a racing revalidation (attribution mapping) follow the draft/baseline model: the client owns a controlled draft; the **baseline advances only to the payload the server action confirmed it saved** (`saved` in the action result); revalidated props may add new rows but never overwrite client state. Pure state helpers live in `lib/` (`lib/attribution/draft.ts`), unit-tested without a DOM.
 
 ## 8. Environments
 

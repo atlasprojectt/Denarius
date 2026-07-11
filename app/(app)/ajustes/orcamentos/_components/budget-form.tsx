@@ -3,6 +3,9 @@
 import { useActionState } from "react";
 
 import { ActionStatus } from "@/components/domain/action-status";
+import { ConfirmationDialog } from "@/components/domain/confirmation-dialog";
+import { MoneyInput } from "@/components/domain/money-input";
+import { ActionToast } from "@/components/domain/toast-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,6 +23,8 @@ const copy = {
   create: "Definir orçamento",
   remove: "Remover",
   removing: "Removendo…",
+  removeTitle: "Remover orçamento?",
+  removeDescription: "O veredito e os avisos deste escopo deixam de ser calculados até que um novo orçamento seja definido.",
 };
 
 const initialState: BudgetFormState = {};
@@ -57,7 +62,7 @@ export function BudgetForm({
 
   return (
     <div className="flex flex-col gap-3">
-      <form action={formAction} className="flex flex-wrap items-end gap-3">
+      <form action={formAction} noValidate className="flex flex-wrap items-end gap-3">
         <input type="hidden" name="scope" value={scope} />
         {teamId !== null && <input type="hidden" name="teamId" value={teamId} />}
 
@@ -65,15 +70,12 @@ export function BudgetForm({
           <Label htmlFor={`amount-${scope}-${teamId ?? "org"}`}>
             {copy.amount} ({currency})
           </Label>
-          <Input
+          <MoneyInput
             id={`amount-${scope}-${teamId ?? "org"}`}
             name="amount"
-            type="number"
-            min={0}
-            step="0.01"
-            required
+            currency={currency}
             defaultValue={existing?.amount ?? ""}
-            className="w-40 tabular-nums"
+            className="w-48"
           />
         </div>
 
@@ -97,23 +99,25 @@ export function BudgetForm({
       </form>
 
       {existing && (
-        <form action={deleteAction}>
+        <ConfirmationDialog
+          trigger={<Button type="button" variant="destructive" size="sm">{copy.remove}</Button>}
+          title={copy.removeTitle}
+          description={copy.removeDescription}
+          confirmLabel={copy.remove}
+          pendingLabel={copy.removing}
+          action={deleteAction}
+          pending={deleting}
+          success={deleteState.success}
+        >
           <input type="hidden" name="budgetId" value={existing.id} />
-          <Button
-            type="submit"
-            variant="ghost"
-            size="sm"
-            disabled={deleting}
-            className="-ml-2 text-muted-foreground hover:text-destructive"
-          >
-            {deleting ? copy.removing : copy.remove}
-          </Button>
-        </form>
+        </ConfirmationDialog>
       )}
 
+      <ActionToast id={`budget:${scope}:${teamId ?? "org"}:delete`} error={deleteState.error} success={deleteState.success} />
+
       <ActionStatus
-        error={state.error ?? deleteState.error}
-        success={state.success ?? deleteState.success}
+        error={state.error}
+        success={state.success}
       />
     </div>
   );

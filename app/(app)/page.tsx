@@ -3,6 +3,7 @@ import { IconCheck, IconGauge } from "@tabler/icons-react";
 
 import { StaleBanner } from "@/components/domain/stale-banner";
 import { VerdictLine } from "@/components/domain/verdict-line";
+import { PageContainer } from "@/components/domain/page-container";
 import { Button } from "@/components/ui/button";
 import { percent } from "@/lib/format";
 import { getHomeData } from "@/lib/home/queries";
@@ -10,9 +11,11 @@ import { AllClear } from "./_components/all-clear";
 import { Hero } from "./_components/hero";
 import { HomeAnimationController } from "./_components/home-animation-controller";
 import { MonthlyPaceChart } from "./_components/monthly-pace-chart";
+import { NextActions } from "./_components/next-actions";
 import { ObservationsFooter } from "./_components/observations-footer";
 import { ProviderComposition } from "./_components/provider-composition";
 import { TeamBudgetTable } from "./_components/team-budget-table";
+import { SetupChecklist } from "./_components/setup-checklist";
 import { homeCopy } from "./_components/copy";
 
 // The Home cockpit (#19, redesigned 2026-07): a stable, read-mostly overview in
@@ -24,15 +27,15 @@ import { homeCopy } from "./_components/copy";
 // (architecture §9).
 
 export default async function HomePage() {
-  const { cockpit, period, stale, observations, hasSeatWaste } = await getHomeData();
+  const { cockpit, period, stale, observations, hasSeatWaste, setup } = await getHomeData();
 
   if (cockpit.state === "cold-start") {
     return (
-      <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
+      <PageContainer variant="full" className="gap-6">
         <h1 className="text-2xl font-semibold tracking-tight">
           {homeCopy.question}
         </h1>
-        <div className="rounded-xl border bg-card p-8 shadow-xs">
+        <div className="rounded-xl border bg-card p-6 shadow-xs md:p-8">
           <IconGauge className="size-8 text-muted-foreground" aria-hidden />
           <h2 className="mt-4 text-lg font-semibold tracking-tight">
             {homeCopy.coldStart.title}
@@ -64,7 +67,8 @@ export default async function HomePage() {
             </Button>
           </div>
         </div>
-      </div>
+        <SetupChecklist state={setup} />
+      </PageContainer>
     );
   }
 
@@ -72,7 +76,7 @@ export default async function HomePage() {
   const allTeams = [...cockpit.needsAttention, ...cockpit.underControl];
 
   return (
-    <div data-home-motion-root className="flex w-full flex-col gap-6">
+    <PageContainer data-home-motion-root variant="full" className="gap-6">
       <HomeAnimationController />
       <h1 className="sr-only">{homeCopy.question}</h1>
 
@@ -90,6 +94,8 @@ export default async function HomePage() {
       </div>
 
       {cockpit.allClear && <AllClear />}
+
+      <NextActions items={observations.filter((item) => item.kind === "action")} />
 
       <div className="grid items-stretch gap-6 xl:grid-cols-3">
         <div className="xl:col-span-2">
@@ -114,7 +120,10 @@ export default async function HomePage() {
         currency={currency}
       />
 
-      <ObservationsFooter items={observations} hasSeatWaste={hasSeatWaste} />
-    </div>
+      <ObservationsFooter
+        items={observations.filter((item) => item.kind === "observation")}
+        hasSeatWaste={hasSeatWaste}
+      />
+    </PageContainer>
   );
 }

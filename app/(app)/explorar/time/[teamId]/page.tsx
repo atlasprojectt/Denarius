@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { IconLock, IconUsersGroup } from "@tabler/icons-react";
+import { IconArrowRight, IconLock, IconUsersGroup } from "@tabler/icons-react";
 
 import { BudgetBar } from "@/components/domain/budget-bar";
 import { EmptyState } from "@/components/domain/empty-state";
+import { PageContainer } from "@/components/domain/page-container";
 import { SimulateDrawer } from "@/components/domain/simulate-drawer";
 import { StatusPill } from "@/components/domain/status-pill";
+import { UsdValue } from "@/components/domain/usd-value";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -32,10 +34,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { requireAdmin } from "@/lib/auth/session";
-import { listBudgets } from "@/lib/budgets/queries";
 import { attributeSeats } from "@/lib/engine/accrual";
 import { findCockpitTeam, type CockpitTeam } from "@/lib/engine/cockpit";
 import { buildCumulativeSpend } from "@/lib/engine/cumulative";
+import {
+  costBridge,
+  usdDisplay,
+  type CostBridge,
+} from "@/lib/engine/money-model";
 import { currentPeriod } from "@/lib/engine/period";
 import { getCockpitData } from "@/lib/home/queries";
 import { percent } from "@/lib/format";
@@ -56,6 +62,10 @@ const copy = {
     `${label}, dia ${day} de ${days}`,
   budgetTitle: "Orçamento do time",
   budgetSub: "Assentos + API convertidos no câmbio congelado do período.",
+  bridge: (seats: string, api: string, apiUsd: string) =>
+    `Composição do gasto: ${seats} em assentos + ${api} de API (${apiUsd} convertidos no câmbio congelado).`,
+  bridgeNoFx: (seats: string, apiUsd: string) =>
+    `Composição do gasto: ${seats} em assentos + ${apiUsd} de API — câmbio do período indisponível, os valores não são somados.`,
   budgetSpent: "Gasto",
   budgetAmount: "Orçamento",
   budgetProjection: "Projeção de fechamento",
@@ -84,7 +94,11 @@ const copy = {
   uncosted: "não precificado",
   total: "Total do time",
   uncostedNote:
-    "Modelos sem preço aparecem como “não precificado” em vez de sumir do total. Valores em US$.",
+    "Modelos sem preço aparecem como “não precificado” em vez de sumir do total.",
+  fxNote: (rate: string, date: string) =>
+    `Convertido de US$ no câmbio congelado do período (${rate} por US$ 1, capturado em ${date}). O valor original em US$ acompanha cada linha.`,
+  fxMissingNote:
+    "Câmbio do período indisponível — valores exibidos em US$ (originais), sem conversão estimada.",
 };
 
 const compactTokens = new Intl.NumberFormat("pt-BR", {
@@ -133,12 +147,27 @@ function budgetWarningLine(team: CockpitTeam, currency: string): string | null {
 function TeamBudgetCard({
   team,
   currency,
+  bridge,
 }: {
   team: CockpitTeam;
   currency: string;
+  bridge: CostBridge | null;
 }) {
   const ev = team.evaluation;
   const warning = budgetWarningLine(team, currency);
+  const bridgeLine =
+    bridge === null
+      ? null
+      : bridge.apiDisplay !== null
+        ? copy.bridge(
+            money(bridge.seatDisplay, currency),
+            money(bridge.apiDisplay, currency),
+            money(bridge.apiUsd, "USD"),
+          )
+        : copy.bridgeNoFx(
+            money(bridge.seatDisplay, currency),
+            money(bridge.apiUsd, "USD"),
+          );
 
   return (
     <Card>
@@ -186,6 +215,11 @@ function TeamBudgetCard({
           </div>
         </dl>
         {warning && <p className="text-sm/relaxed">{warning}</p>}
+        {bridgeLine && (
+          <p className="text-xs/relaxed text-muted-foreground tabular-nums">
+            {bridgeLine}
+          </p>
+        )}
       </CardContent>
       <CardFooter>
         <Link
@@ -213,14 +247,33 @@ function ControlPlanCard({ team }: { team: CockpitTeam }) {
       </CardHeader>
       <CardContent>
         <ul className="flex flex-col gap-3.5">
-          {team.finding.controlPlan.map((action) => (
+          {team.finding.controlPlan.map((action) => {
+            const href =
+              action.id === "review-idle-seats"
+                ? "/ajustes/assinaturas"
+                : action.id === "set-provider-limit"
+                  ? "/ajustes/conexoes"
+                  : action.id === "revisit-budget"
+                    ? "/ajustes/orcamentos"
+                    : action.id === "talk-to-top-team"
+                      ? "#contribuidores"
+                      : "/explorar#por-modelo";
+            return (
             <li key={action.id}>
-              <p className="text-sm font-medium">{action.title}</p>
+              <Link
+                href={href}
+                className="group flex items-start justify-between gap-4 rounded-lg border p-4 outline-none transition-colors hover:border-primary/30 hover:bg-muted/30 focus-visible:ring-2 focus-visible:ring-ring/30"
+              >
+                <span>
+              <span className="block text-sm font-medium">{action.title}</span>
               <p className="mt-0.5 text-xs/relaxed text-muted-foreground">
                 {action.detail}
               </p>
+                </span>
+                <IconArrowRight className="mt-0.5 size-4 shrink-0 text-primary transition-transform group-hover:translate-x-0.5" />
+              </Link>
             </li>
-          ))}
+          );})}
         </ul>
       </CardContent>
     </Card>
@@ -238,7 +291,7 @@ export default async function TeamDetailPage({
   const auth = await requireAdmin();
   if (auth.error !== undefined) {
     return (
-      <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
+      <PageContainer variant="wide" className="gap-6">
         <Crumbs current={copy.adminOnlyTitle} />
         <EmptyState
           icon={<IconLock />}
@@ -246,16 +299,15 @@ export default async function TeamDetailPage({
           description={copy.adminOnlyBody}
           primaryAction={<Link href="/explorar">{copy.adminOnlyCta}</Link>}
         />
-      </div>
+      </PageContainer>
     );
   }
 
-  const [detail, { cockpit }, dailyUsd, budgets, { subscriptions }] =
+  const [detail, { cockpit, fx }, dailyUsd, { subscriptions }] =
     await Promise.all([
       teamDetail(teamId),
       getCockpitData(),
       teamDailyApiUsd(teamId),
-      listBudgets(),
       listSubscriptions(),
     ]);
   if (!detail.found) notFound();
@@ -267,11 +319,9 @@ export default async function TeamDetailPage({
   const cockpitTeam =
     cockpit.state === "ready" ? findCockpitTeam(cockpit, teamId) : undefined;
 
-  // Cumulative series (F3 chart): same combine as the evaluation — the team
-  // budget's frozen FX and the accrued seat slice — so the line's last point
+  // Cumulative series (F3 chart): same combine as the evaluation — the
+  // period's frozen FX and the accrued seat slice — so the line's last point
   // IS the card's "Gasto". Only budgeted teams have a budget to chart against.
-  const teamFxRate =
-    budgets.teams.find((b) => b.teamId === teamId)?.frozenFxRate ?? null;
   const teamSeatAccrued =
     attributeSeats(subscriptions, period).teams.find(
       (t) => t.teamId === teamId,
@@ -279,14 +329,28 @@ export default async function TeamDetailPage({
   const cumulativePoints = cockpitTeam
     ? buildCumulativeSpend({
         apiByDay: dailyUsd,
-        fxRate: teamFxRate,
+        fxRate: fx?.rate ?? null,
         seatAccrued: teamSeatAccrued,
         dayOfPeriod: period.dayOfPeriod,
       })
     : [];
 
+  const displayCurrency = cockpit.state === "ready" ? cockpit.currency : "BRL";
+
+  // The explicit bridge between the governed total ("Gasto") and the person
+  // table below it: governed = seats (display) + API (USD × frozen FX). The
+  // audit read the two as contradictory numbers; this states the relationship.
+  const bridge = cockpitTeam
+    ? costBridge({
+        currency: displayCurrency,
+        seatDisplay: teamSeatAccrued,
+        apiUsd: detail.totalUsd,
+        fx,
+      })
+    : null;
+
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
+    <PageContainer variant="wide" className="gap-6">
       <Crumbs current={detail.teamName} />
 
       <header className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
@@ -317,7 +381,11 @@ export default async function TeamDetailPage({
 
       {cockpit.state === "ready" && cockpitTeam && (
         <>
-          <TeamBudgetCard team={cockpitTeam} currency={cockpit.currency} />
+          <TeamBudgetCard
+            team={cockpitTeam}
+            currency={cockpit.currency}
+            bridge={bridge}
+          />
           <CumulativeChart
             points={cumulativePoints}
             projection={cockpitTeam.evaluation.projection}
@@ -338,7 +406,7 @@ export default async function TeamDetailPage({
           primaryAction={<Link href="/ajustes/atribuicao">{copy.emptyCta}</Link>}
         />
       ) : (
-        <Card>
+        <Card id="contribuidores" className="scroll-mt-20">
           <CardHeader>
             <CardTitle className="text-sm">{copy.personTitle}</CardTitle>
             <CardDescription>
@@ -352,6 +420,32 @@ export default async function TeamDetailPage({
             </div>
           </CardHeader>
           <CardContent>
+            <div className="grid gap-3 md:hidden">
+              {detail.persons.map((person) => (
+                <div key={person.userId || "__shared__"} className="rounded-lg border p-4">
+                  <p className="font-medium">
+                    {person.isShared ? copy.sharedKey : person.userId}
+                  </p>
+                  <dl className="mt-3 grid grid-cols-2 gap-3 text-xs">
+                    <div>
+                      <dt className="text-muted-foreground">{copy.colTokens}</dt>
+                      <dd className="mt-0.5 font-medium tabular-nums">
+                        {compactTokens.format(person.inputTokens + person.outputTokens)}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-muted-foreground">{copy.colDerived}</dt>
+                      <dd className="mt-0.5 font-medium tabular-nums">
+                        {person.uncosted && person.derivedUsd === 0 ? copy.uncosted : (
+                          <UsdValue value={usdDisplay(person.derivedUsd, displayCurrency, fx)} />
+                        )}
+                      </dd>
+                    </div>
+                  </dl>
+                </div>
+              ))}
+            </div>
+            <div className="hidden md:block">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -383,7 +477,9 @@ export default async function TeamDetailPage({
                           {copy.uncosted}
                         </span>
                       ) : (
-                        money(person.derivedUsd, "USD")
+                        <UsdValue
+                          value={usdDisplay(person.derivedUsd, displayCurrency, fx)}
+                        />
                       )}
                     </TableCell>
                   </TableRow>
@@ -394,19 +490,25 @@ export default async function TeamDetailPage({
                   <TableCell>{copy.total}</TableCell>
                   <TableCell />
                   <TableCell className="text-right tabular-nums">
-                    {money(detail.totalUsd, "USD")}
+                    <UsdValue
+                      value={usdDisplay(detail.totalUsd, displayCurrency, fx)}
+                    />
                   </TableCell>
                 </TableRow>
               </TableFooter>
             </Table>
+            </div>
           </CardContent>
-          {detail.hasUncosted && (
-            <CardFooter className="text-xs/relaxed text-muted-foreground">
-              <p>{copy.uncostedNote}</p>
-            </CardFooter>
-          )}
+          <CardFooter className="flex-col items-start gap-1 text-xs/relaxed text-muted-foreground">
+            <p>
+              {fx !== null
+                ? copy.fxNote(money(fx.rate, displayCurrency), fx.date ?? "—")
+                : copy.fxMissingNote}
+            </p>
+            {detail.hasUncosted && <p>{copy.uncostedNote}</p>}
+          </CardFooter>
         </Card>
       )}
-    </div>
+    </PageContainer>
   );
 }

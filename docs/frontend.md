@@ -1,7 +1,7 @@
 # Denarius — Frontend & UI spec
 
-> Derives from [prd.md](prd.md) (UX Decisions P1–P15). This doc is the **visual contract** for the frontend — the design tokens (§4) and component contracts below. (A static `prototype/` seeded these decisions and was removed once the real screens shipped in #12–#15; the running app is the live reference.)
-> **Status:** UX decisions (P1–P15) and implementation decisions (F1–F6, §7) all locked.
+> Derives from [prd.md](prd.md) (UX Decisions P1–P16). This doc is the **visual contract** for the frontend — the design tokens (§4) and component contracts below.
+> **Status:** UX decisions P1–P16 and implementation decisions F1–F6 are locked. P16 is the founder-approved 2026-07-11 UI/UX audit and supersedes conflicting earlier screen details.
 >
 > **The provisional skin was replaced by the v1 product UI** (2026-07-08, founder-directed): shadcn primitives used extensively, a formalized semaphore token set, shared PageHeader/EmptyState/ActionStatus domain components, consistent empty/loading/error states, and a full pass over Home/Explorar/Ajustes. The *structure* (F1–F6, screen contracts, tokens-as-CSS-variables) is unchanged. Brand identity (logo, accent, final type choices) may still be tuned before launch, but the present look is the product baseline — no longer a throwaway approximation. §9 lists what's still pending.
 
@@ -17,9 +17,9 @@
 
 | Screen | Job |
 |---|---|
-| **Início (Home)** | The cockpit — a stable, read-only overview (redesigned 2026-07-09). Full-width rows: verdict → hero (spend vs budget + pacing pair + projected-margin callout) + provider composition donut (2/3 · 1/3) → monthly-pace line → **one stable teams table** (all budgeted teams, at-risk first, no expanding rows) → Observações (apontamentos). Nothing on Home expands, opens drawers or edits — acting on a team is a click through to its drill-down; editing budgets is a click to `/ajustes/orcamentos` |
-| **Explorar** | Investigation. Root: by-team table (incl. **Não atribuído**) + by-model; drill → team detail (breadcrumb). **#17 shipped:** API-by-team table (USD), stale banner + reconciliation notice, and the Admin-only per-person drill at `/explorar/time/[teamId]` (shared keys / Anthropic roll up to the team, never a person). **Redesign 2026-07-09:** the team drill-down is now where a team's situation is *acted on* — it carries a **budget context card** (status pill + bar + spend/budget/projection + warning line + "editar em Ajustes"), the **control plan card** (`finding.controlPlan`, catalog-only, moved off Home), and the **[Simular] drawer** in its header. |
-| **Ajustes** | Hub for company and operational setup: company name, read-only display currency, Connections (OpenAI/Anthropic/Copilot-soon), **atribuição (mapa projeto/workspace → time, #17)**, **orçamentos (org + por time, #18)**, roster CSV, manual seats, users/roles, privacy toggles, currency |
+| **Início (Home)** | Condensed freshness → verdict/meta → linked **Próximas ações** → hero/provider composition → monthly pace → one stable teams table → remaining calm Observações. Full-row team links use a static chevron. |
+| **Explorar** | `#por-time`, `#por-modelo`, and `#assentos` anchored sections with sorting, search above ten rows, BRL-primary values, secondary USD detail, prominent reconciliation, and responsive cards. Team drill adds a governed-spend bridge and independent team/company scenario outcomes. |
+| **Ajustes** | Navigation-only index. Dedicated routes: Empresa, Conexões, Atribuição, Roster, Assinaturas, Orçamentos, Privacidade, and Usuários. |
 
 Budget editing lives on the **`/ajustes/orcamentos`** settings page (org + per-team `<form>`s, Σ-mismatch notice, frozen-FX disclosure) — reached from the Home teams table's "Gerenciar orçamentos" action and the drill-down's "editar em Ajustes" link. The **simulator is a right-side drawer** opened in context ([Simular] in the team drill-down header) — never a nav destination. **#18 shipped** the budget CRUD page. **#19 shipped** the Home cockpit; its inline pencil→modal (`BudgetEditDialog`) was **removed in the 2026-07-09 redesign** — Home is read-only, so editing is one click away on the settings page rather than a per-row dialog. The [Simular] drawer (interactive presets/slider from #21) now opens only from the team drill-down, not from Home rows.
 
@@ -51,7 +51,7 @@ Budget editing lives on the **`/ajustes/orcamentos`** settings page (org + per-t
 | Radii | **standardized scale** — cards/panels `rounded-xl` (14px) · inner rows/boxes `rounded-lg` (10px) · controls & menus `rounded-md` (8px) · pills/avatars `rounded-full`. shadcn primitives now use the `base-mira` preset (2026-07-08 founder-directed) with local compatibility for the app's existing `asChild` call sites. |
 | Type | DM Sans for app text (`--font-sans`; `--font-heading` maps to sans); Geist Mono (`--font-mono`) only for key-like strings (Admin key input); numbers **tabular-nums**; two weights (400/600) |
 | Shadows | cards `shadow-xs`; drawer/modal stronger |
-| Content column | pages are `max-w-4xl mx-auto` inside `main` (`px-4 py-8 md:px-8`); **Home is full-width** (`w-full`, founder-directed 2026-07-09 — the cockpit uses the whole monitor, no dead margins); app header is sticky with backdrop blur and holds only the sidebar trigger + tenant name. Theme is chosen in `/configuracoes` (the `ThemePicker`), **not** the header — a header toggle was tried and removed (2026-07-09, founder-directed: it read as clutter and duplicated the settings control) |
+| Content column | one `PageContainer` system: `full` = `max-w-none` for the Home cockpit (fills the monitor — the big spend number is the product identity; founder direction 2026-07-11); `wide` = `max-w-7xl` for analytical/table screens; `default` = `max-w-5xl` for operational settings; `form` = `max-w-3xl` for focused forms. All share the same gutters and centering. |
 
 **Light + dark** (supersedes the earlier "light only" of P9 for this provisional front — a founder-directed change). The theme is the `.dark` class on `<html>`, toggled by `components/domain/theme-toggle.tsx` (no dependency; reads/writes `localStorage.theme` and is applied pre-paint by a no-FOUC inline script in `app/layout.tsx`, defaulting to the OS preference). Desktop-first; consumption screens legible at mobile width. Copy: pt-BR, sentence case, observation language for apontamentos, alarm language reserved for warnings.
 
@@ -62,7 +62,8 @@ Budget editing lives on the **`/ajustes/orcamentos`** settings page (org + per-t
 ## 5. Interaction patterns
 
 - **Drawer** (right, 420px): simulator — pre-loaded team, presets (ritmo atual / fechar no orçamento / −30%), slider, instant recompute. Scrim click closes.
-- **Modal**: budget create/edit (scope, amount, thresholds) — prefilled when opened from a row.
+- **Confirmation dialog**: required before every Revogar/Remover action; consequence copy, safe initial focus, disabled while pending.
+- **Feedback**: field validation remains inline; cross-screen mutation success/error uses a Base UI toast (5 seconds, maximum three, neutral success and destructive error).
 - **Drill**: any team row on Home → Explore team detail; breadcrumb back. The drill-down carries the budget context, the control plan (read-only) and the [Simular] drawer — Home itself never expands or opens a drawer (redesign 2026-07-09). Person data only inside a drill, framed as "contribuintes deste pico".
 - **Motion layer** (2026-07-10): Base UI remains the primitive base, with Animate UI used as a copy-first motion reference. Microinteractions should feel premium but quiet: short press/hover feedback on controls, soft popover/dialog entrances, and respect for `prefers-reduced-motion`. Do **not** adopt the Animate UI Menu/sliding-hover pattern; sidebar and menus stay restrained with simple color/focus states.
 
@@ -132,10 +133,14 @@ Screen-local compositions stay colocated (F5): the cockpit pieces (`Hero` with i
 - **Loading**: per-route skeletons that mirror each screen's real shape and column width (RSC streaming, no client spinners, F1) — `app/(app)/loading.tsx` mirrors the full-width Home cockpit; `explorar/loading.tsx`, `explorar/time/[teamId]/loading.tsx`, `ajustes/loading.tsx` (also covers the `/ajustes/*` subpages) and `configuracoes/loading.tsx` mirror their own layouts, so no screen jumps between skeleton and content (refinement 2026-07-09).
 - **Error / data quality**: `StaleBanner` for stale/failed syncs; `Alert` for informational notices (Σ-mismatch); `ActionStatus` for mutation results; uncosted/unattributed/FX-missing always disclosed in card footers ("as of" stamps, reconciliation lines).
 - **All-clear**: affirmative soft-green panel (`AllClear`), never a blank section.
-- **Settings hub**: `/ajustes` is grouped (Empresa · Fontes de gasto · Governança) with uppercase group labels; link-out areas are `Item` rows (icon + status line + chevron) inside cards; inline areas (privacy switches, users list) are cards with `Switch`/`Item` primitives.
+- **Settings hub**: `/ajustes` contains navigation Items only. Inline Company, Privacy, and Users sections move to `/ajustes/empresa`, `/ajustes/privacidade`, and `/ajustes/usuarios`.
 
 ### 9.4 Pendências (deliberately deferred)
 
 - **Onboarding checklist** on Home (§3.1) — the cold-start hero covers the gap meanwhile.
 - **Brand identity final pass** (logo refinement, accent audit, marketing surfaces) — the v1 skin is the product baseline, not necessarily the launch brand.
 - **Roster-CSV react-hook-form upgrade** (F4) — the native preview flow proved sufficient so far.
+
+### 9.5 Hydration & theme — QA-01 resolution (2026-07-11 audit)
+
+Diagnosed per the audit plan: in a **clean browser** (no extensions), light and dark saved preferences, OS preference, first authenticated load, navigation and refresh all hydrate with **zero console errors**. The audit's mismatch (QA-01) reproduces only with the auditor's browser extension injecting `chrome-extension://…/youtube-hulu-vast-ads.js` into `<head>` — QA-01b confirmed; not a `themeScript` bug. The inline theme script stays as-is; `suppressHydrationWarning` on `<html>` (app/layout.tsx) is the narrowest justified boundary — it covers exactly the pre-paint `.dark` class the no-FOUC script adds — and no broader suppression was added. A DOM-level regression test would require a browser-test dependency the repo deliberately doesn't carry; the manual matrix above is the documented verification, and any future hydration error in a clean browser should be treated as a new bug, not as this known issue.

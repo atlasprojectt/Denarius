@@ -4,6 +4,7 @@ import { attributeSeats } from "@/lib/engine/accrual";
 import type { PeriodProgress, SeatSubscription } from "@/lib/engine/accrual";
 import { buildCockpit, type Cockpit } from "@/lib/engine/cockpit";
 import { freshness, type ConnectionStatus } from "@/lib/engine/freshness";
+import { periodFx, type FrozenFx } from "@/lib/engine/money-model";
 import { currentPeriod, monthStartUtc } from "@/lib/engine/period";
 import { combineTeamSpend } from "@/lib/engine/team-spend";
 import { isoDaysAgo, weekOverWeek } from "@/lib/engine/week-change";
@@ -25,11 +26,20 @@ export type CockpitData = {
   period: PeriodProgress;
   /** Connection freshness for the stale-data banner (honesty in the chrome). */
   stale: ReturnType<typeof freshness>;
+  /** THE period's frozen USD→display rate (money-model contract) — one rate
+   *  for every conversion on every screen; null disclosed, never guessed. */
+  fx: FrozenFx | null;
 };
 
 /** One calm footer line — the ordering rule (apontamentos, then secondary
  *  waste) is applied here in the data layer, not in the component. */
-export type Observation = { id: string; text: string };
+export type Observation = {
+  id: string;
+  text: string;
+  kind: "observation" | "action";
+  href?: string;
+  actionLabel?: string;
+};
 
 export type HomeData = CockpitData & {
   /** The calm "Observações" feed — in-app only, never emailed (P14). Ordered:
@@ -37,6 +47,7 @@ export type HomeData = CockpitData & {
   observations: Observation[];
   /** Whether the seats-vs-roster caveat note should show (any waste line). */
   hasSeatWaste: boolean;
+  setup: { connected: boolean; hasRoster: boolean; hasBudget: boolean };
 };
 
 type ConnectionRow = {
@@ -125,7 +136,8 @@ type CockpitAssembly = CockpitData & {
   apiByTeam: Map<string, number>;
   seatUnattributed: number;
   apiUnattributedUsd: number;
-  orgFxRate: number | null;
+  connected: boolean;
+  hasOrgBudget: boolean;
 };
 
 async function assembleCockpit(): Promise<CockpitAssembly> {
@@ -148,12 +160,17 @@ async function assembleCockpit(): Promise<CockpitAssembly> {
   const apiByTeam = new Map(apiTeams.teams.map((t) => [t.teamId, t.derivedUsd]));
   const reportedUsd = providers.reduce((sum, p) => sum + p.usd, 0);
 
+  // ONE frozen FX for every scope this period (money-model contract) — the
+  // per-budget triples are the audit trail, not per-screen conversion inputs.
+  const fx = periodFx(budgets);
+  const fxRate = fx?.rate ?? null;
+
   const org = budgets.org
     ? {
         budget: budgets.org.amount,
         seatDisplay: seats.orgTotal,
         apiUsd: reportedUsd,
-        fxRate: budgets.org.frozenFxRate,
+        fxRate,
         thresholds: budgets.org.thresholds,
       }
     : null;
@@ -166,7 +183,7 @@ async function assembleCockpit(): Promise<CockpitAssembly> {
       budget: b.amount,
       seatDisplay: seatByTeam.get(b.teamId as string) ?? 0,
       apiUsd: apiByTeam.get(b.teamId as string) ?? 0,
-      fxRate: b.frozenFxRate,
+      fxRate,
       thresholds: b.thresholds,
     }));
 
@@ -191,6 +208,7 @@ async function assembleCockpit(): Promise<CockpitAssembly> {
     cockpit,
     period,
     stale: freshness(connections),
+    fx,
     currency: budgets.currency,
     teams,
     teamName,
@@ -199,7 +217,8 @@ async function assembleCockpit(): Promise<CockpitAssembly> {
     apiByTeam,
     seatUnattributed: seats.unattributed,
     apiUnattributedUsd: apiTeams.unattributedUsd,
-    orgFxRate: budgets.org?.frozenFxRate ?? null,
+    connected: connections.some((connection) => connection.status === "active"),
+    hasOrgBudget: budgets.org !== null,
   };
 }
 
@@ -207,8 +226,8 @@ async function assembleCockpit(): Promise<CockpitAssembly> {
  *  simulator but render no observations, so the week-change queries and the
  *  apontamento rules never run for them. */
 export async function getCockpitData(): Promise<CockpitData> {
-  const { cockpit, period, stale } = await assembleCockpit();
-  return { cockpit, period, stale };
+  const { cockpit, period, stale, fx } = await assembleCockpit();
+  return { cockpit, period, stale, fx };
 }
 
 export async function getHomeData(): Promise<HomeData> {
@@ -245,7 +264,7 @@ export async function getHomeData(): Promise<HomeData> {
       apiUsdByTeam: assembly.apiByTeam,
       seatUnattributed: assembly.seatUnattributed,
       apiUnattributedUsd: assembly.apiUnattributedUsd,
-      fxRate: assembly.orgFxRate,
+      fxRate: assembly.fx?.rate ?? null,
     }),
   });
 
@@ -261,15 +280,35 @@ export async function getHomeData(): Promise<HomeData> {
   });
 
   const observations: Observation[] = [
-    ...apontamentos.map((a) => ({ id: `apontamento:${a.id}`, text: a.text })),
-    ...seatWaste.map((w) => ({ id: `seat:${w.id}`, text: w.text })),
+    ...apontamentos.map((a) => ({
+      id: `apontamento:${a.id}`,
+      text: a.text,
+      kind: a.kind === "unattributed" ? ("action" as const) : ("observation" as const),
+      href: a.kind === "unattributed" ? "/ajustes/atribuicao" : undefined,
+      actionLabel: a.kind === "unattributed" ? "Mapear atribuição" : undefined,
+    })),
+    ...seatWaste.map((w) => ({
+      id: `seat:${w.id}`,
+      text: w.text,
+      kind: "action" as const,
+      href: "/ajustes/assinaturas",
+      actionLabel: "Revisar assinaturas",
+    })),
   ];
+
+  const rosterTotal = [...roster.values()].reduce((sum, n) => sum + n, 0);
 
   return {
     cockpit,
     period: assembly.period,
     stale: assembly.stale,
+    fx: assembly.fx,
     observations,
     hasSeatWaste: seatWaste.length > 0,
+    setup: {
+      connected: assembly.connected,
+      hasRoster: rosterTotal > 0,
+      hasBudget: assembly.hasOrgBudget,
+    },
   };
 }

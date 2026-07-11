@@ -1,4 +1,5 @@
 import { PageHeader } from "@/components/domain/page-header";
+import { PageContainer } from "@/components/domain/page-container";
 import { Badge } from "@/components/ui/badge";
 import {
   Item,
@@ -16,6 +17,7 @@ const copy = {
   title: "Conexões",
   subtitle:
     "Chaves admin somente-leitura, criptografadas em repouso. O Denarius observa uso e custo — nunca altera nada nos provedores.",
+  comingSoonTitle: "Em breve",
   comingSoon: [
     {
       name: "GitHub Copilot",
@@ -42,7 +44,7 @@ export default async function ConnectionsPage() {
   const connections = (data ?? []) as ConnectionRow[];
 
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
+    <PageContainer className="gap-6">
       <PageHeader
         title={copy.title}
         description={copy.subtitle}
@@ -63,19 +65,24 @@ export default async function ConnectionsPage() {
         );
       })}
 
-      {copy.comingSoon.map((item) => (
-        <Item key={item.name} variant="outline" className="border-dashed">
-          <ItemContent>
-            <ItemTitle>{item.name}</ItemTitle>
-            <ItemDescription>{item.description}</ItemDescription>
-          </ItemContent>
-          <ItemActions>
-            <Badge variant="outline" className="text-muted-foreground">
-              {item.status}
-            </Badge>
-          </ItemActions>
-        </Item>
-      ))}
-    </div>
+      <section className="flex flex-col gap-3">
+        <h2 className="text-xs font-medium tracking-wider text-muted-foreground uppercase">
+          {copy.comingSoonTitle}
+        </h2>
+        {copy.comingSoon.map((item) => (
+          <Item key={item.name} variant="outline" className="border-dashed">
+            <ItemContent>
+              <ItemTitle>{item.name}</ItemTitle>
+              <ItemDescription>{item.description}</ItemDescription>
+            </ItemContent>
+            <ItemActions>
+              <Badge variant="outline" className="text-muted-foreground">
+                {item.status}
+              </Badge>
+            </ItemActions>
+          </Item>
+        ))}
+      </section>
+    </PageContainer>
   );
 }
