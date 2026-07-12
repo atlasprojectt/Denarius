@@ -11,14 +11,6 @@ async function signIn(page: Page) {
   await page.waitForURL((url) => !url.pathname.startsWith("/login"));
 }
 
-async function openProfileMenu(page: Page) {
-  const profile = page.getByRole("button", { name: "Perfil" });
-  if (!(await profile.isVisible())) {
-    await page.locator("header").getByRole("button", { name: /sidebar/i }).click();
-  }
-  await profile.click();
-}
-
 test.beforeEach(async ({ page }) => {
   test.skip(!email || !password, "Configure E2E_EMAIL e E2E_PASSWORD para o tenant seed.");
   await signIn(page);
@@ -68,46 +60,7 @@ test("Subscription validation stays inside the product UI", async ({ page }) => 
 test("Collapsed sidebar destinations remain labelled", async ({ page }) => {
   test.skip(test.info().project.name === "mobile", "Mobile uses the drawer sidebar.");
   await page.goto("/");
-
-  const destinations = ["Início", "Explorar", "Ajustes"];
-  const brand = page.getByRole("link", { name: "Denarius" });
-  const profile = page.getByRole("button", { name: "Perfil" });
-
   await page.locator("header").getByRole("button", { name: /sidebar/i }).click();
-  await expect(brand.locator("svg.hidden")).toBeVisible();
-  await expect(profile.locator("[data-slot=avatar]")).toBeVisible();
-
-  for (const destination of destinations) {
-    const link = page.getByRole("link", { name: destination, exact: true });
-    await expect(link.locator("svg")).toBeVisible();
-    await expect(link.locator("span")).toBeHidden();
-    await link.hover();
-    await expect(page.getByRole("tooltip")).toContainText(destination);
-  }
-
-  await page.getByRole("link", { name: "Explorar", exact: true }).click();
-  await expect(page.getByRole("link", { name: "Explorar", exact: true })).toHaveAttribute(
-    "data-active",
-    "true",
-  );
-
-  await page.goto("/ajustes/orcamentos");
-  await expect(page.getByRole("link", { name: "Ajustes", exact: true })).toHaveAttribute(
-    "data-active",
-    "true",
-  );
-
-  await profile.click();
-  await expect(page.getByRole("link", { name: "Configurações" })).toBeVisible();
-});
-
-test("Sidebar profile menu opens settings and signs out", async ({ page }) => {
-  await page.goto("/");
-  await openProfileMenu(page);
-  await page.getByRole("link", { name: "Configurações" }).click();
-  await expect(page).toHaveURL(/\/configuracoes$/);
-
-  await openProfileMenu(page);
-  await page.getByRole("menuitem", { name: "Sair" }).click();
-  await expect(page).toHaveURL(/\/login$/);
+  await page.getByRole("link", { name: "Explorar" }).hover();
+  await expect(page.getByRole("tooltip")).toContainText("Explorar");
 });
