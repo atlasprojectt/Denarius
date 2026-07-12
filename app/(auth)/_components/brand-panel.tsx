@@ -17,14 +17,14 @@ const copy = {
 
 export function BrandPanel() {
   return (
-    <div className="relative hidden flex-col justify-between bg-[#0e0e10] p-10 text-zinc-300 lg:flex">
+    <div className="relative hidden flex-col justify-between bg-stone-950 p-10 text-stone-300 lg:flex">
       <LogoWordmark className="h-6 w-auto text-white" />
 
       <div className="max-w-md">
         <h2 className="text-3xl font-semibold leading-tight tracking-tight text-balance text-white">
           {copy.headline}
         </h2>
-        <p className="mt-4 text-base leading-relaxed text-zinc-400">
+        <p className="mt-4 text-base leading-relaxed text-stone-400">
           {copy.sub}
         </p>
 
@@ -35,17 +35,17 @@ export function BrandPanel() {
               aria-hidden
               className="mt-1.5 size-2 shrink-0 rounded-full bg-[#22c55e]"
             />
-            <p className="text-sm/relaxed font-medium text-zinc-100">
+            <p className="text-sm/relaxed font-medium text-stone-100">
               {copy.vignette.verdict}
             </p>
           </div>
-          <p className="mt-2 pl-[18px] text-xs text-zinc-500 tabular-nums">
+          <p className="mt-2 pl-[18px] text-xs text-stone-500 tabular-nums">
             {copy.vignette.meta}
           </p>
         </div>
       </div>
 
-      <p className="text-xs text-zinc-500">{copy.footnote}</p>
+      <p className="text-xs text-stone-500">{copy.footnote}</p>
     </div>
   );
 }

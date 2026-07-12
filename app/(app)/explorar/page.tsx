@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { IconCompass, IconInfoCircle } from "@tabler/icons-react";
+import { RiCompass3Line, RiInformationLine } from "@remixicon/react";
 
 import { EmptyState } from "@/components/domain/empty-state";
 import { PageHeader } from "@/components/domain/page-header";
@@ -230,7 +230,7 @@ export default async function ExplorePage() {
 
       {coldStart && (
         <EmptyState
-          icon={<IconCompass />}
+          icon={<RiCompass3Line />}
           title={copy.emptyTitle}
           description={copy.emptyBody}
           primaryAction={
@@ -259,7 +259,7 @@ export default async function ExplorePage() {
               amountHeader={copy.colDerived}
             />
             <Alert>
-              <IconInfoCircle />
+              <RiInformationLine />
               <AlertDescription className="space-y-1">
                 {driftNotice && <p>{driftNotice}</p>}
                 <p>{copy.apiTeamReconcile(inDisplay(apiTeams.orgTotalUsd))}</p>

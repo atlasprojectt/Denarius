@@ -1,4 +1,4 @@
-import { IconInfoCircle } from "@tabler/icons-react";
+import { RiInformationLine } from "@remixicon/react";
 
 import { PageHeader } from "@/components/domain/page-header";
 import { PageContainer } from "@/components/domain/page-container";
@@ -86,7 +86,7 @@ export default async function BudgetsPage() {
         <CardContent className="flex flex-col gap-4">
           {org && mismatch !== 0 && (
             <Alert>
-              <IconInfoCircle />
+              <RiInformationLine />
               <AlertDescription>
                 {mismatch > 0
                   ? copy.mismatchOver(money(mismatch, currency))

@@ -1,4 +1,4 @@
-import { IconCoins } from "@tabler/icons-react";
+import { RiCoinsLine } from "@remixicon/react";
 
 import { EmptyState } from "@/components/domain/empty-state";
 import { PageHeader } from "@/components/domain/page-header";
@@ -72,7 +72,7 @@ export default async function SubscriptionsPage() {
 
       {rows.length === 0 ? (
         <EmptyState
-          icon={<IconCoins />}
+          icon={<RiCoinsLine />}
           title={copy.emptyTitle}
           description={copy.emptyBody}
         />

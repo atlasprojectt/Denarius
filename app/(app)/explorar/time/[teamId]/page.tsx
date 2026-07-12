@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { IconArrowRight, IconLock, IconUsersGroup } from "@tabler/icons-react";
+import { RiArrowRightLine, RiLockLine, RiTeamLine } from "@remixicon/react";
 
 import { BudgetBar } from "@/components/domain/budget-bar";
 import { EmptyState } from "@/components/domain/empty-state";
@@ -274,7 +274,7 @@ function ControlPlanCard({ team }: { team: CockpitTeam }) {
                     className="group flex items-start justify-between gap-4 rounded-lg border p-4 outline-none transition-colors hover:border-primary/30 hover:bg-muted/30 focus-visible:ring-2 focus-visible:ring-ring/30"
                   >
                     {body}
-                    <IconArrowRight className="mt-0.5 size-4 shrink-0 text-primary transition-transform group-hover:translate-x-0.5" />
+                    <RiArrowRightLine className="mt-0.5 size-4 shrink-0 text-primary transition-transform group-hover:translate-x-0.5" />
                   </Link>
                 ) : (
                   <div className="rounded-lg border p-4">{body}</div>
@@ -302,7 +302,7 @@ export default async function TeamDetailPage({
       <PageContainer variant="wide" className="gap-6">
         <Crumbs current={copy.adminOnlyTitle} />
         <EmptyState
-          icon={<IconLock />}
+          icon={<RiLockLine />}
           title={copy.adminOnlyTitle}
           description={copy.adminOnlyBody}
           primaryAction={<Link href="/explorar">{copy.adminOnlyCta}</Link>}
@@ -408,7 +408,7 @@ export default async function TeamDetailPage({
 
       {detail.persons.length === 0 ? (
         <EmptyState
-          icon={<IconUsersGroup />}
+          icon={<RiTeamLine />}
           title={copy.emptyTitle}
           description={copy.emptyBody}
           primaryAction={<Link href="/ajustes/atribuicao">{copy.emptyCta}</Link>}

@@ -1,4 +1,4 @@
-import { IconCircleCheck } from "@tabler/icons-react";
+import { RiCheckboxCircleLine } from "@remixicon/react";
 
 import { homeCopy } from "./copy";
 
@@ -10,7 +10,7 @@ const c = homeCopy.allClear;
 export function AllClear() {
   return (
     <div className="flex items-start gap-3 rounded-xl border bg-status-green-soft p-5">
-      <IconCircleCheck
+      <RiCheckboxCircleLine
         className="mt-0.5 size-5 shrink-0 text-status-green"
       />
       <div>

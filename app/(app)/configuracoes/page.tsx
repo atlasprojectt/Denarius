@@ -1,9 +1,9 @@
 import { redirect } from "next/navigation";
 import {
-  IconBell,
-  IconBrush,
-  IconUserCircle,
-} from "@tabler/icons-react";
+  RiNotification3Line,
+  RiBrushLine,
+  RiUserLine,
+} from "@remixicon/react";
 
 import { PageHeader } from "@/components/domain/page-header";
 import { PageContainer } from "@/components/domain/page-container";
@@ -92,7 +92,7 @@ export default async function PersonalSettingsPage() {
 
               <ItemContent>
                 <ItemTitle className="text-base">
-                  <IconUserCircle
+                  <RiUserLine
                     className="size-4 text-muted-foreground"
                     aria-hidden
                   />
@@ -123,7 +123,7 @@ export default async function PersonalSettingsPage() {
                 variant="icon"
                 className="size-8 text-muted-foreground"
               >
-                <IconBrush className="size-4" aria-hidden />
+                <RiBrushLine className="size-4" aria-hidden />
               </ItemMedia>
               <ItemContent>
                 <ItemTitle>{copy.appearanceTitle}</ItemTitle>
@@ -142,7 +142,7 @@ export default async function PersonalSettingsPage() {
                     variant="icon"
                     className="size-8 text-muted-foreground"
                   >
-                    <IconBell className="size-4" aria-hidden />
+                    <RiNotification3Line className="size-4" aria-hidden />
                   </ItemMedia>
                   <ItemContent>
                     <ItemTitle>{copy.notificationsTitle}</ItemTitle>

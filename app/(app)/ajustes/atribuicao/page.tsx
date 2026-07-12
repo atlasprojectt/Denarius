@@ -1,9 +1,9 @@
 import Link from "next/link";
 import {
-  IconChartPie,
-  IconBulb,
-  IconLock,
-} from "@tabler/icons-react";
+  RiPieChartLine,
+  RiLightbulbLine,
+  RiLockLine,
+} from "@remixicon/react";
 
 import { EmptyState } from "@/components/domain/empty-state";
 import { PageHeader } from "@/components/domain/page-header";
@@ -43,7 +43,7 @@ export default async function AttributionPage() {
           backLabel={copy.back}
         />
         <EmptyState
-          icon={<IconLock />}
+          icon={<RiLockLine />}
           title={copy.adminOnlyTitle}
           description={copy.adminOnlyBody}
         />
@@ -68,7 +68,7 @@ export default async function AttributionPage() {
 
       {projects.length === 0 ? (
         <EmptyState
-          icon={<IconChartPie />}
+          icon={<RiPieChartLine />}
           title={copy.emptyTitle}
           description={copy.emptyBody}
           primaryAction={<Link href="/ajustes/conexoes">{copy.connectCta}</Link>}
@@ -85,7 +85,7 @@ export default async function AttributionPage() {
           </CardContent>
           <CardFooter className="text-xs/relaxed text-muted-foreground">
             <p className="flex items-start gap-2">
-              <IconBulb className="mt-0.5 size-4 shrink-0" aria-hidden />
+              <RiLightbulbLine className="mt-0.5 size-4 shrink-0" aria-hidden />
               {copy.tip}
             </p>
           </CardFooter>

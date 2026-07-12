@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { IconArrowsSort, IconChevronRight, IconSearch } from "@tabler/icons-react";
+import { RiArrowUpDownLine, RiArrowRightSLine, RiSearchLine } from "@remixicon/react";
 
 import { Input } from "@/components/ui/input";
 import {
@@ -58,7 +58,7 @@ function SortButton({
       className="inline-flex items-center gap-1 rounded-sm outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/30"
     >
       {children}
-      <IconArrowsSort className="size-3" aria-hidden />
+      <RiArrowUpDownLine className="size-3" aria-hidden />
     </button>
   );
 }
@@ -111,7 +111,7 @@ export function ExploreTable({
       {rows.length > 10 && (
         <label className="relative block max-w-sm">
           <span className="sr-only">{copy.search}</span>
-          <IconSearch className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+          <RiSearchLine className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             type="search"
             value={query}
@@ -139,7 +139,7 @@ export function ExploreTable({
                         <p className="mt-1 text-xs/relaxed text-muted-foreground">{row.note}</p>
                       )}
                     </div>
-                    {row.href && <IconChevronRight className="size-4 shrink-0 text-muted-foreground" />}
+                    {row.href && <RiArrowRightSLine className="size-4 shrink-0 text-muted-foreground" />}
                   </div>
                   <dl className={cn("mt-3 grid gap-3 text-xs", tokensHeader ? "grid-cols-2" : "grid-cols-1")}>
                     {tokensHeader && (
@@ -236,7 +236,7 @@ export function ExploreTable({
                       )}
                     </TableCell>
                     <TableCell>
-                      {row.href && <IconChevronRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />}
+                      {row.href && <RiArrowRightSLine className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />}
                     </TableCell>
                   </TableRow>
                 ))}

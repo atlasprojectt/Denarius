@@ -1,6 +1,6 @@
 // Denarius brand marks. Paths generated from the source wordmark SVG. The
 // wordmark is two-tone: the coin is the brand accent (`var(--primary)` =
-// #FF5100), the letters inherit `currentColor` so they theme with the container
+// primary token), the letters inherit `currentColor` so they theme with the container
 // (dark ink on light, off-white on the dark rail/panel/dark mode). The standalone
 // mark stays `currentColor` so callers pick its color. Do not hand-edit path data.
 

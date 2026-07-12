@@ -1,16 +1,16 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
-  IconBuilding,
-  IconChartPie,
-  IconChevronRight,
-  IconCoins,
-  IconPlug,
-  IconShieldLock,
-  IconUserCog,
-  IconUsersGroup,
-  IconWallet,
-} from "@tabler/icons-react";
+  RiBuildingLine,
+  RiPieChartLine,
+  RiArrowRightSLine,
+  RiCoinsLine,
+  RiPlugLine,
+  RiShieldKeyholeLine,
+  RiUserSettingsLine,
+  RiTeamLine,
+  RiWallet3Line,
+} from "@remixicon/react";
 
 import { PageContainer } from "@/components/domain/page-container";
 import { PageHeader } from "@/components/domain/page-header";
@@ -100,7 +100,7 @@ function SettingsLink({
         </ItemContent>
         <ItemActions>
           {status}
-          <IconChevronRight className="size-4 text-muted-foreground" aria-hidden />
+          <RiArrowRightSLine className="size-4 text-muted-foreground" aria-hidden />
         </ItemActions>
       </Link>
     </Item>
@@ -170,7 +170,7 @@ export default async function SettingsPage() {
       <SettingsGroup title={copy.groupCompany}>
         <SettingsLink
           href="/ajustes/empresa"
-          icon={<IconBuilding />}
+          icon={<RiBuildingLine />}
           title={copy.companyTitle}
           description={copy.companySub(tenant.name, tenant.display_currency)}
         />
@@ -179,24 +179,24 @@ export default async function SettingsPage() {
       <SettingsGroup title={copy.groupSources}>
         <SettingsLink
           href="/ajustes/conexoes"
-          icon={<IconPlug />}
+          icon={<RiPlugLine />}
           title={copy.connectionsTitle}
           description={connectionSummary}
           status={activeCount > 0 ? <Badge variant="secondary">{activeCount} ativa(s)</Badge> : undefined}
         />
         <ItemSeparator className="my-0" />
-        <SettingsLink href="/ajustes/atribuicao" icon={<IconChartPie />} title={copy.attributionTitle} description={copy.attributionSub} />
+        <SettingsLink href="/ajustes/atribuicao" icon={<RiPieChartLine />} title={copy.attributionTitle} description={copy.attributionSub} />
         <ItemSeparator className="my-0" />
         <SettingsLink
           href="/ajustes/roster"
-          icon={<IconUsersGroup />}
+          icon={<RiTeamLine />}
           title={copy.rosterTitle}
           description={employeeCount ? copy.rosterCount(employeeCount, teamCount ?? 0) : copy.rosterEmpty}
         />
         <ItemSeparator className="my-0" />
         <SettingsLink
           href="/ajustes/assinaturas"
-          icon={<IconCoins />}
+          icon={<RiCoinsLine />}
           title={copy.seatsTitle}
           description={subscriptionCount ? copy.seatsCount(subscriptionCount) : copy.seatsEmpty}
         />
@@ -205,14 +205,14 @@ export default async function SettingsPage() {
       <SettingsGroup title={copy.groupGovernance}>
         <SettingsLink
           href="/ajustes/orcamentos"
-          icon={<IconWallet />}
+          icon={<RiWallet3Line />}
           title={copy.budgetsTitle}
           description={copy.budgetsSet(hasOrgBudget, teamBudgetCount)}
         />
         <ItemSeparator className="my-0" />
-        <SettingsLink href="/ajustes/privacidade" icon={<IconShieldLock />} title={copy.privacyTitle} description={copy.privacySub} />
+        <SettingsLink href="/ajustes/privacidade" icon={<RiShieldKeyholeLine />} title={copy.privacyTitle} description={copy.privacySub} />
         <ItemSeparator className="my-0" />
-        <SettingsLink href="/ajustes/usuarios" icon={<IconUserCog />} title={copy.usersTitle} description={copy.usersSub(userCount ?? 0)} />
+        <SettingsLink href="/ajustes/usuarios" icon={<RiUserSettingsLine />} title={copy.usersTitle} description={copy.usersSub(userCount ?? 0)} />
       </SettingsGroup>
     </PageContainer>
   );

@@ -280,56 +280,44 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 
 /* ---------------------------------------------------------------------------
-   Denarius theme — PROVISIONAL front (tokens documented in docs/frontend.md §4).
-   Brand accent #FF5100 (orange) + dark sidebar rail. Light + dark via the
-   `.dark` class on <html>, toggled client-side
-   (components/domain/theme-toggle.tsx) with a no-FOUC inline script in
-   app/layout.tsx. These blocks come after the shadcn base above, so they win.
+   Denarius theme — shadcn preset b3lVLrQZM, adapted only where the product has
+   a stronger semantic contract (budget semaphore and the existing theme
+   switch). These blocks follow the generated base so the preset is the visual
+   source of truth across every route.
 --------------------------------------------------------------------------- */
 :root {
-  /* Neutral, warm-leaning grayscale — no blue/slate cast (was #0b1220 navy
-     ink + #64748b slate; both read cool/purple against the orange accent). */
-  --background: #f7f7f8;
-  --foreground: #17181c;
-  --card: #ffffff;
-  --card-foreground: #17181c;
-  --popover: #ffffff;
-  --popover-foreground: #17181c;
-
-  --primary: #ff5100;
-  --primary-foreground: #ffffff;
-  --secondary: #f1f1f2;
-  --secondary-foreground: #17181c;
-  --muted: #f1f1f2;
-  --muted-foreground: #6b6f76;
-  --accent: #f1f1f2;
-  --accent-foreground: #17181c;
-
-  --border: #e6e6e8;
-  --input: #e6e6e8;
-  /* Neutral focus ring (founder 2026-07-11): the brand-orange halo on every
-     focused input read as noise; focus stays visible, just quiet. */
-  --ring: #b3b4b8;
-
-  /* Chart palette from the brand, not the preset's yellow ramp: orange first
-     (largest slice), warm tints after, neutral last. Composition only — never
-     the semaphore (principle #5). */
-  --chart-1: #ff5100;
-  --chart-2: #ff9a62;
-  --chart-3: #ffc9a8;
-  --chart-4: #8b8d93;
-  --chart-5: #a33400;
-
-  /* Light sidebar in light mode: a neutral off-white rail (slightly darker
-     than the page for a soft separation), dark ink, orange accent. No navy. */
-  --sidebar: #f4f4f5;
-  --sidebar-foreground: #3f4046;
-  --sidebar-primary: #ff5100;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #e8e8ea;
-  --sidebar-accent-foreground: #17181c;
-  --sidebar-border: #e4e4e7;
-  --sidebar-ring: #b3b4b8;
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.147 0.004 49.25);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.147 0.004 49.25);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.147 0.004 49.25);
+  --primary: oklch(0.553 0.195 38.402);
+  --primary-foreground: oklch(0.98 0.016 73.684);
+  --secondary: oklch(0.967 0.001 286.375);
+  --secondary-foreground: oklch(0.21 0.006 285.885);
+  --muted: oklch(0.97 0.001 106.424);
+  --muted-foreground: oklch(0.553 0.013 58.071);
+  --accent: oklch(0.97 0.001 106.424);
+  --accent-foreground: oklch(0.216 0.006 56.043);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.923 0.003 48.717);
+  --input: oklch(0.923 0.003 48.717);
+  --ring: oklch(0.709 0.01 56.259);
+  --chart-1: oklch(0.837 0.128 66.29);
+  --chart-2: oklch(0.705 0.213 47.604);
+  --chart-3: oklch(0.646 0.222 41.116);
+  --chart-4: oklch(0.553 0.195 38.402);
+  --chart-5: oklch(0.47 0.157 37.304);
+  --radius: 0.625rem;
+  --sidebar: oklch(0.985 0.001 106.423);
+  --sidebar-foreground: oklch(0.147 0.004 49.25);
+  --sidebar-primary: oklch(0.646 0.222 41.116);
+  --sidebar-primary-foreground: oklch(0.98 0.016 73.684);
+  --sidebar-accent: oklch(0.97 0.001 106.424);
+  --sidebar-accent-foreground: oklch(0.216 0.006 56.043);
+  --sidebar-border: oklch(0.923 0.003 48.717);
+  --sidebar-ring: oklch(0.709 0.01 56.259);
 
   /* Semaphore — budget status only. Strong = bar fills & dots; soft = pill and
      callout backgrounds; fg = text sitting on a soft background. */
@@ -345,42 +333,37 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 
 .dark {
-  /* Neutral charcoal, matching the light theme — no blue/slate cast. */
-  --background: #0c0c0d;
-  --foreground: #e9e9ea;
-  --card: #161618;
-  --card-foreground: #e9e9ea;
-  --popover: #161618;
-  --popover-foreground: #e9e9ea;
-
-  --primary: #ff5100;
-  --primary-foreground: #ffffff;
-  --secondary: #1f1f22;
-  --secondary-foreground: #e9e9ea;
-  --muted: #1f1f22;
-  --muted-foreground: #9b9ca0;
-  --accent: #1f1f22;
-  --accent-foreground: #e9e9ea;
-
-  --destructive: #ef4444;
-  --border: #27282c;
-  --input: #27282c;
-  --ring: #55565c;
-
-  --chart-1: #ff5100;
-  --chart-2: #ff8a4d;
-  --chart-3: #ffb287;
-  --chart-4: #6f7076;
-  --chart-5: #c14b12;
-
-  --sidebar: #0a0a0b;
-  --sidebar-foreground: #b6b7bb;
-  --sidebar-primary: #ff5100;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #1a1a1d;
-  --sidebar-accent-foreground: #f3f3f4;
-  --sidebar-border: #1f1f22;
-  --sidebar-ring: #55565c;
+  --background: oklch(0.147 0.004 49.25);
+  --foreground: oklch(0.985 0.001 106.423);
+  --card: oklch(0.216 0.006 56.043);
+  --card-foreground: oklch(0.985 0.001 106.423);
+  --popover: oklch(0.216 0.006 56.043);
+  --popover-foreground: oklch(0.985 0.001 106.423);
+  --primary: oklch(0.47 0.157 37.304);
+  --primary-foreground: oklch(0.98 0.016 73.684);
+  --secondary: oklch(0.274 0.006 286.033);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.268 0.007 34.298);
+  --muted-foreground: oklch(0.709 0.01 56.259);
+  --accent: oklch(0.268 0.007 34.298);
+  --accent-foreground: oklch(0.985 0.001 106.423);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.553 0.013 58.071);
+  --chart-1: oklch(0.837 0.128 66.29);
+  --chart-2: oklch(0.705 0.213 47.604);
+  --chart-3: oklch(0.646 0.222 41.116);
+  --chart-4: oklch(0.553 0.195 38.402);
+  --chart-5: oklch(0.47 0.157 37.304);
+  --sidebar: oklch(0.216 0.006 56.043);
+  --sidebar-foreground: oklch(0.985 0.001 106.423);
+  --sidebar-primary: oklch(0.705 0.213 47.604);
+  --sidebar-primary-foreground: oklch(0.98 0.016 73.684);
+  --sidebar-accent: oklch(0.268 0.007 34.298);
+  --sidebar-accent-foreground: oklch(0.985 0.001 106.423);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.553 0.013 58.071);
 
   --status-green: #22c55e;
   --status-green-soft: #10231787;

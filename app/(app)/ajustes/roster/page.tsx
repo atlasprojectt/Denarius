@@ -1,4 +1,4 @@
-import { IconUsersGroup } from "@tabler/icons-react";
+import { RiTeamLine } from "@remixicon/react";
 
 import { EmptyState } from "@/components/domain/empty-state";
 import { PageHeader } from "@/components/domain/page-header";
@@ -60,7 +60,7 @@ export default async function RosterPage() {
 
       {employees.length === 0 ? (
         <EmptyState
-          icon={<IconUsersGroup />}
+          icon={<RiTeamLine />}
           title={copy.emptyTitle}
           description={copy.emptyBody}
         />

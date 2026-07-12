@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { Toast } from "@base-ui/react/toast";
-import { IconAlertCircle, IconCheck, IconX } from "@tabler/icons-react";
+import { RiErrorWarningLine, RiCheckLine, RiCloseLine } from "@remixicon/react";
 
 import { cn } from "@/lib/utils";
 
@@ -31,9 +31,9 @@ function ToastList() {
       >
         <Toast.Content className="flex min-h-16 items-start gap-3 overflow-hidden p-4 pr-11">
           {destructive ? (
-            <IconAlertCircle className="mt-0.5 size-4 shrink-0 text-destructive" />
+            <RiErrorWarningLine className="mt-0.5 size-4 shrink-0 text-destructive" />
           ) : (
-            <IconCheck className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+            <RiCheckLine className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
           )}
           <div className="min-w-0">
             <Toast.Title className="text-sm font-semibold" />
@@ -43,7 +43,7 @@ function ToastList() {
             className="absolute top-2.5 right-2.5 inline-flex size-7 items-center justify-center rounded-md text-muted-foreground outline-none hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/30"
             aria-label="Fechar notificação"
           >
-            <IconX className="size-4" />
+            <RiCloseLine className="size-4" />
           </Toast.Close>
         </Toast.Content>
       </Toast.Root>

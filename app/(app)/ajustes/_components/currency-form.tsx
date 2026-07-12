@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { IconLock } from "@tabler/icons-react";
+import { RiLockLine } from "@remixicon/react";
 
 import { ActionStatus } from "@/components/domain/action-status";
 import { Button } from "@/components/ui/button";
@@ -50,7 +50,7 @@ export function CurrencyForm({
         <p className="text-sm font-medium">{copy.label}</p>
         <p className="flex items-center gap-1.5 text-sm tabular-nums">
           {currency}
-          <IconLock className="size-3.5 text-muted-foreground" aria-hidden />
+          <RiLockLine className="size-3.5 text-muted-foreground" aria-hidden />
         </p>
         <p className="text-xs/relaxed text-muted-foreground">{copy.lockedNote}</p>
       </div>

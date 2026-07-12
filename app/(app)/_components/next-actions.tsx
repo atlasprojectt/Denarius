@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { IconArrowRight, IconBulb } from "@tabler/icons-react";
+import { RiArrowRightLine, RiLightbulbLine } from "@remixicon/react";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { Observation } from "@/lib/home/queries";
@@ -12,7 +12,7 @@ export function NextActions({ items }: { items: Observation[] }) {
     <Card className="border-primary/20 bg-primary/[0.025]">
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-sm">
-          <IconBulb className="size-4 text-primary" aria-hidden />
+          <RiLightbulbLine className="size-4 text-primary" aria-hidden />
           {homeCopy.nextActions.title}
         </CardTitle>
         <CardDescription>{homeCopy.nextActions.subtitle}</CardDescription>
@@ -27,7 +27,7 @@ export function NextActions({ items }: { items: Observation[] }) {
             <span className="text-sm/relaxed">{item.text}</span>
             <span className="flex shrink-0 items-center gap-1 text-xs font-medium text-primary">
               {item.actionLabel ?? homeCopy.nextActions.defaultAction}
-              <IconArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
+              <RiArrowRightLine className="size-3.5 transition-transform group-hover:translate-x-0.5" />
             </span>
           </Link>
         ))}

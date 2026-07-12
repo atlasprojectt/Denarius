@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { IconCheck, IconGauge } from "@tabler/icons-react";
+import { RiCheckLine, RiDashboard3Line } from "@remixicon/react";
 
 import { StaleBanner } from "@/components/domain/stale-banner";
 import { VerdictLine } from "@/components/domain/verdict-line";
@@ -36,7 +36,7 @@ export default async function HomePage() {
           {homeCopy.question}
         </h1>
         <div className="rounded-xl border bg-card p-6 shadow-xs md:p-8">
-          <IconGauge className="size-8 text-muted-foreground" aria-hidden />
+          <RiDashboard3Line className="size-8 text-muted-foreground" aria-hidden />
           <h2 className="mt-4 text-lg font-semibold tracking-tight">
             {homeCopy.coldStart.title}
           </h2>
@@ -49,7 +49,7 @@ export default async function HomePage() {
                 key={item}
                 className="flex items-center gap-2.5 text-sm text-muted-foreground"
               >
-                <IconCheck className="size-4 shrink-0 text-primary" aria-hidden />
+                <RiCheckLine className="size-4 shrink-0 text-primary" aria-hidden />
                 {item}
               </li>
             ))}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { IconAdjustmentsHorizontal } from "@tabler/icons-react";
+import { RiEqualizer2Line } from "@remixicon/react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -87,7 +87,7 @@ export function SimulateDrawer(props: SimulateDrawerProps) {
     <Sheet onOpenChange={(open) => open && setDeltaPct(0)}>
       <SheetTrigger asChild>
         <Button variant="outline" size="sm">
-          <IconAdjustmentsHorizontal className="size-4" />
+          <RiEqualizer2Line className="size-4" />
           {copy.title}
         </Button>
       </SheetTrigger>

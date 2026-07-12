@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { IconCheck, IconCircle } from "@tabler/icons-react";
+import { RiCheckLine, RiCircleLine } from "@remixicon/react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -35,9 +35,9 @@ export function SetupChecklist({
                   className="flex h-full items-start gap-3 rounded-lg border p-4 outline-none transition-colors hover:bg-muted/40 focus-visible:ring-2 focus-visible:ring-ring/30"
                 >
                   {done ? (
-                    <IconCheck className="mt-0.5 size-4 shrink-0 text-primary" />
+                    <RiCheckLine className="mt-0.5 size-4 shrink-0 text-primary" />
                   ) : (
-                    <IconCircle className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+                    <RiCircleLine className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
                   )}
                   <span>
                     <span className="block text-xs text-muted-foreground">

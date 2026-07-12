@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { IconChevronLeft } from "@tabler/icons-react";
+import { RiArrowLeftSLine } from "@remixicon/react";
 
 // Shared page header (frontend F5: cross-screen domain component). Keeps every
 // screen's opening consistent: optional back link, title, one-line description,
@@ -29,7 +29,7 @@ export function PageHeader({
             href={backHref}
             className="mb-1 inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
           >
-            <IconChevronLeft className="size-3.5" />
+            <RiArrowLeftSLine className="size-3.5" />
             {backLabel}
           </Link>
         )}

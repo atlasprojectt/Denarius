@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { IconInfoCircle } from "@tabler/icons-react";
+import { RiInformationLine } from "@remixicon/react";
 
 import { PageContainer } from "@/components/domain/page-container";
 import { PageHeader } from "@/components/domain/page-header";
@@ -57,7 +57,7 @@ export default async function CompanySettingsPage() {
       </Card>
       {!currencyEditable && (
         <Alert>
-          <IconInfoCircle />
+          <RiInformationLine />
           <AlertTitle>{copy.lockedTitle}</AlertTitle>
           <AlertDescription>
             <p>{copy.lockedBody}</p>

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { IconChevronRight } from "@tabler/icons-react";
+import { RiArrowRightSLine } from "@remixicon/react";
 
 import { BudgetBar } from "@/components/domain/budget-bar";
 import { StatusPill } from "@/components/domain/status-pill";
@@ -140,7 +140,7 @@ export function TeamBudgetTable({
                     <span className="text-xs tabular-nums text-muted-foreground">
                       {percent(ev.pctSpent)}
                     </span>
-                    <IconChevronRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+                    <RiArrowRightSLine className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
                   </div>
                 </Link>
               );
@@ -223,7 +223,7 @@ export function TeamBudgetTable({
                         : money(ev.projection, currency)}
                     </TableCell>
                     <TableCell className="p-0 pr-2 text-right">
-                      <IconChevronRight className="ml-auto size-4 text-muted-foreground transition-transform duration-150 group-hover:translate-x-0.5" />
+                      <RiArrowRightSLine className="ml-auto size-4 text-muted-foreground transition-transform duration-150 group-hover:translate-x-0.5" />
                     </TableCell>
                   </TableRow>
                 );

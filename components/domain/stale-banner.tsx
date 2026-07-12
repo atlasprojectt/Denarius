@@ -1,4 +1,4 @@
-import { IconHistory } from "@tabler/icons-react";
+import { RiHistoryLine } from "@remixicon/react";
 import Link from "next/link";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -38,7 +38,7 @@ export function StaleBanner({ items }: { items: ConnectionFreshness[] }) {
   const summary = items.map(detail).join(" ");
   return (
     <Alert role="status" className="bg-muted/50 sm:grid-cols-[1rem_minmax(0,1fr)_auto]">
-      <IconHistory />
+      <RiHistoryLine />
       <AlertTitle>{copy.title}</AlertTitle>
       <AlertDescription className="sm:col-start-2">
         <p>{summary}</p>

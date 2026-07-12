@@ -3,13 +3,13 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  IconSelector,
-  IconChartLine,
-  IconSettings,
-  IconHome,
-  IconLogout,
-  IconUserCircle,
-} from "@tabler/icons-react";
+  RiExpandUpDownLine,
+  RiLineChartLine,
+  RiSettings3Line,
+  RiHome5Line,
+  RiLogoutBoxRLine,
+  RiUserLine,
+} from "@remixicon/react";
 
 import { LogoMark, LogoWordmark } from "@/components/domain/logo";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -49,12 +49,12 @@ const copy = {
 };
 
 const cockpitItems = [
-  { title: copy.home, href: "/", icon: IconHome },
-  { title: copy.explore, href: "/explorar", icon: IconChartLine },
+  { title: copy.home, href: "/", icon: RiHome5Line },
+  { title: copy.explore, href: "/explorar", icon: RiLineChartLine },
 ];
 
 const accountItems = [
-  { title: copy.settings, href: "/ajustes", icon: IconSettings },
+  { title: copy.settings, href: "/ajustes", icon: RiSettings3Line },
 ];
 
 type NavItem = (typeof cockpitItems)[number];
@@ -128,7 +128,7 @@ export function AppSidebar({
             className="flex h-11 items-center rounded-md px-1.5 transition-colors hover:bg-sidebar-accent group-data-[collapsible=icon]:h-10 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
           >
             <LogoWordmark className="h-7 w-auto group-data-[collapsible=icon]:hidden" />
-            <LogoMark className="hidden size-7 shrink-0 text-[#FF5100] group-data-[collapsible=icon]:block" />
+            <LogoMark className="hidden size-7 shrink-0 text-primary group-data-[collapsible=icon]:block" />
           </Link>
         </SidebarHeader>
 
@@ -170,7 +170,7 @@ export function AppSidebar({
                       </span>
                     )}
                   </span>
-                  <IconSelector className="ml-auto size-4 shrink-0 text-sidebar-foreground/60 group-data-[collapsible=icon]:hidden" />
+                  <RiExpandUpDownLine className="ml-auto size-4 shrink-0 text-sidebar-foreground/60 group-data-[collapsible=icon]:hidden" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
                   side="right"
@@ -201,7 +201,7 @@ export function AppSidebar({
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild className="h-9">
                     <Link href="/configuracoes">
-                      <IconUserCircle />
+                      <RiUserLine />
                       <span>{copy.profileSettings}</span>
                     </Link>
                   </DropdownMenuItem>
@@ -213,7 +213,7 @@ export function AppSidebar({
                       className="h-9"
                     >
                       <button type="submit" className="w-full">
-                        <IconLogout />
+                        <RiLogoutBoxRLine />
                         <span>{copy.logout}</span>
                       </button>
                     </DropdownMenuItem>

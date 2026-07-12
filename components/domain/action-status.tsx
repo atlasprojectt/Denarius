@@ -1,4 +1,4 @@
-import { IconCircleCheck, IconAlertCircle } from "@tabler/icons-react";
+import { RiCheckboxCircleLine, RiErrorWarningLine } from "@remixicon/react";
 
 // Inline result line for useActionState forms (F4). One consistent look for
 // every mutation across the app. Success stays neutral — green is reserved for
@@ -14,7 +14,7 @@ export function ActionStatus({
   if (error) {
     return (
       <p role="alert" className="flex items-center gap-1.5 text-sm text-destructive">
-        <IconAlertCircle className="size-4 shrink-0" />
+        <RiErrorWarningLine className="size-4 shrink-0" />
         {error}
       </p>
     );
@@ -22,7 +22,7 @@ export function ActionStatus({
   if (success) {
     return (
       <p role="status" className="flex items-center gap-1.5 text-sm text-muted-foreground">
-        <IconCircleCheck className="size-4 shrink-0" />
+        <RiCheckboxCircleLine className="size-4 shrink-0" />
         {success}
       </p>
     );

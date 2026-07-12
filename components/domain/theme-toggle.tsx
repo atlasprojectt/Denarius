@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
-import { IconMoon, IconSun } from "@tabler/icons-react";
+import { RiMoonLine, RiSunLine } from "@remixicon/react";
 
 import { cn } from "@/lib/utils";
 
@@ -67,9 +67,9 @@ export function ThemeToggle({ className }: { className?: string }) {
       )}
     >
       {isDark ? (
-        <IconSun className="size-4" />
+        <RiSunLine className="size-4" />
       ) : (
-        <IconMoon className="size-4" />
+        <RiMoonLine className="size-4" />
       )}
     </button>
   );
@@ -170,7 +170,7 @@ export function ThemePicker() {
         selected={!isDark}
         label={copy.light}
         hint={copy.lightHint}
-        icon={<IconSun className="size-4" />}
+        icon={<RiSunLine className="size-4" />}
         onSelect={() => setTheme(false)}
       />
       <ThemeOption
@@ -178,7 +178,7 @@ export function ThemePicker() {
         selected={isDark}
         label={copy.dark}
         hint={copy.darkHint}
-        icon={<IconMoon className="size-4" />}
+        icon={<RiMoonLine className="size-4" />}
         onSelect={() => setTheme(true)}
       />
     </div>
