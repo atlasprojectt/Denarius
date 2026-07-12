@@ -92,7 +92,7 @@ function NavGroup({
                 asChild
                 isActive={isActivePath(pathname, item.href)}
                 tooltip={item.title}
-                className="h-9 gap-2.5 px-2.5 data-active:bg-primary data-active:font-medium data-active:text-primary-foreground data-active:hover:bg-primary/90 data-active:hover:text-primary-foreground [&_svg]:size-4.5"
+                className="h-9 gap-2.5 px-2.5 data-active:font-medium [&_svg]:size-4.5"
               >
                 <Link href={item.href}>
                   <item.icon />
@@ -128,7 +128,7 @@ export function AppSidebar({
             className="flex h-11 items-center rounded-md px-1.5 transition-colors hover:bg-sidebar-accent group-data-[collapsible=icon]:h-10 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
           >
             <LogoWordmark className="h-7 w-auto text-foreground group-data-[collapsible=icon]:hidden" />
-            <LogoMark className="hidden size-7 shrink-0 text-primary group-data-[collapsible=icon]:block" />
+            <LogoMark className="hidden size-7 shrink-0 text-chart-2 group-data-[collapsible=icon]:block" />
           </Link>
         </SidebarHeader>
 

@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 
 import { AppSidebar } from "@/components/domain/app-sidebar";
+import { NextActionsButton } from "@/components/domain/next-actions-button";
 import { AppToastProvider } from "@/components/domain/toast-provider";
 import {
   SidebarInset,
@@ -57,6 +58,9 @@ export default async function AppLayout({
             <span className="truncate text-sm font-medium">
               {appUser.tenant?.name}
             </span>
+            <div className="ml-auto">
+              <NextActionsButton />
+            </div>
           </header>
           {/* SidebarInset already renders the page's <main> landmark — a
               nested second <main> broke the single-landmark contract. */}

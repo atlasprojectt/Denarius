@@ -16,9 +16,10 @@ import {
 import type { CumulativePoint } from "@/lib/engine/cumulative";
 import { compactMoney, money } from "@/lib/money";
 import {
+  Area,
   CartesianGrid,
+  ComposedChart,
   Line,
-  LineChart,
   ReferenceLine,
   XAxis,
   YAxis,
@@ -115,11 +116,27 @@ export function CumulativeChart({
           </p>
         ) : (
           <ChartContainer config={chartConfig} className="h-[220px] w-full">
-            <LineChart
+            <ComposedChart
               accessibilityLayer
               data={rows}
               margin={{ top: 16, right: 16, bottom: 4, left: 8 }}
             >
+              <defs>
+                {/* Orange fill under the realized line only; fades out and ends
+                    where the projection tail begins. */}
+                <linearGradient id="cumulative-fill" x1="0" y1="0" x2="0" y2="1">
+                  <stop
+                    offset="0%"
+                    stopColor="var(--color-spent)"
+                    stopOpacity={0.28}
+                  />
+                  <stop
+                    offset="100%"
+                    stopColor="var(--color-spent)"
+                    stopOpacity={0}
+                  />
+                </linearGradient>
+              </defs>
               <CartesianGrid vertical={false} />
               <XAxis
                 dataKey="day"
@@ -175,6 +192,14 @@ export function CumulativeChart({
                   />
                 }
               />
+              <Area
+                dataKey="spent"
+                type="monotone"
+                stroke="none"
+                fill="url(#cumulative-fill)"
+                connectNulls={false}
+                isAnimationActive={false}
+              />
               <Line
                 dataKey="spent"
                 type="monotone"
@@ -186,15 +211,25 @@ export function CumulativeChart({
                 isAnimationActive={false}
               />
               {projectionSegment ? (
-                <ReferenceLine
-                  segment={projectionSegment}
-                  stroke="var(--color-projected)"
-                  strokeWidth={3}
-                  strokeDasharray="6 6"
-                  strokeLinecap="round"
-                />
+                <>
+                  {/* Boundary marker where realized spend ends and the
+                      projection begins. */}
+                  <ReferenceLine
+                    x={dayOfPeriod}
+                    stroke="var(--muted-foreground)"
+                    strokeDasharray="2 3"
+                    strokeOpacity={0.5}
+                  />
+                  <ReferenceLine
+                    segment={projectionSegment}
+                    stroke="var(--color-projected)"
+                    strokeWidth={3}
+                    strokeDasharray="6 6"
+                    strokeLinecap="round"
+                  />
+                </>
               ) : null}
-            </LineChart>
+            </ComposedChart>
           </ChartContainer>
         )}
       </CardContent>

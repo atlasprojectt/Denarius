@@ -16,9 +16,10 @@ import {
 import type { BudgetEvaluation } from "@/lib/engine/budget";
 import { compactMoney, money } from "@/lib/money";
 import {
+  Area,
   CartesianGrid,
+  ComposedChart,
   Line,
-  LineChart,
   ReferenceLine,
   XAxis,
   YAxis,
@@ -30,6 +31,8 @@ import { homeCopy } from "./copy";
 // the redesigned cockpit — the numbers themselves live in the hero, so this
 // card carries only the trajectory (no KPI footer).
 
+// Gradient fill under the realized line + a boundary marker where the
+// projection begins (2026-07-12).
 const c = homeCopy.monthlyPace;
 
 const chartConfig = {
@@ -92,11 +95,28 @@ export function MonthlyPaceChart({
                 config={chartConfig}
                 className="h-[240px] w-full"
               >
-                <LineChart
+                <ComposedChart
                   accessibilityLayer
                   data={data}
                   margin={{ top: 16, right: 16, bottom: 4, left: 8 }}
                 >
+                  <defs>
+                    {/* Orange fill under the REALIZED line only — it fades to
+                        transparent and (because `spent` stops at today) ends
+                        exactly where the projection begins. */}
+                    <linearGradient id="pace-fill" x1="0" y1="0" x2="0" y2="1">
+                      <stop
+                        offset="0%"
+                        stopColor="var(--color-spent)"
+                        stopOpacity={0.28}
+                      />
+                      <stop
+                        offset="100%"
+                        stopColor="var(--color-spent)"
+                        stopOpacity={0}
+                      />
+                    </linearGradient>
+                  </defs>
                   <CartesianGrid vertical={false} />
                   <XAxis
                     dataKey="x"
@@ -151,6 +171,16 @@ export function MonthlyPaceChart({
                       />
                     }
                   />
+                  {/* Gradient fill sits under the realized line (drawn first,
+                      so the solid line reads on top with strong contrast). */}
+                  <Area
+                    dataKey="spent"
+                    type="monotone"
+                    stroke="none"
+                    fill="url(#pace-fill)"
+                    connectNulls={false}
+                    isAnimationActive={false}
+                  />
                   <Line
                     dataKey="spent"
                     type="monotone"
@@ -162,15 +192,25 @@ export function MonthlyPaceChart({
                     isAnimationActive={false}
                   />
                   {projectionSegment ? (
-                    <ReferenceLine
-                      segment={projectionSegment}
-                      stroke="var(--color-projected)"
-                      strokeWidth={3}
-                      strokeDasharray="6 6"
-                      strokeLinecap="round"
-                    />
+                    <>
+                      {/* Boundary: exactly where realized spend ends and the
+                          projection (simulação de gastos) begins. */}
+                      <ReferenceLine
+                        x={org.pctElapsed}
+                        stroke="var(--muted-foreground)"
+                        strokeDasharray="2 3"
+                        strokeOpacity={0.5}
+                      />
+                      <ReferenceLine
+                        segment={projectionSegment}
+                        stroke="var(--color-projected)"
+                        strokeWidth={3}
+                        strokeDasharray="6 6"
+                        strokeLinecap="round"
+                      />
+                    </>
                   ) : null}
-                </LineChart>
+                </ComposedChart>
               </ChartContainer>
             </div>
           </div>

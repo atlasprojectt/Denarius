@@ -11,7 +11,6 @@ import { AllClear } from "./_components/all-clear";
 import { Hero } from "./_components/hero";
 import { HomeAnimationController } from "./_components/home-animation-controller";
 import { MonthlyPaceChart } from "./_components/monthly-pace-chart";
-import { NextActions } from "./_components/next-actions";
 import { ObservationsFooter } from "./_components/observations-footer";
 import { ProviderComposition } from "./_components/provider-composition";
 import { TeamBudgetTable } from "./_components/team-budget-table";
@@ -94,8 +93,6 @@ export default async function HomePage() {
       </div>
 
       {cockpit.allClear && <AllClear />}
-
-      <NextActions items={observations.filter((item) => item.kind === "action")} />
 
       <div className="grid items-stretch gap-6 xl:grid-cols-3">
         <div className="xl:col-span-2">

@@ -230,19 +230,20 @@ export async function getCockpitData(): Promise<CockpitData> {
   return { cockpit, period, stale, fx };
 }
 
-export async function getHomeData(): Promise<HomeData> {
-  const now = new Date();
-  // Neither footer read needs anything from the cockpit — one parallel batch.
-  const [assembly, weekRows, roster] = await Promise.all([
-    assembleCockpit(),
-    teamWeekChanges(now),
-    rosterHeadcount(),
-  ]);
+/**
+ * The calm feed (#21/#22): apontamentos then secondary seat-waste, mapped into
+ * one ordered Observation[] split by kind. Pure over already-fetched aggregates
+ * — the single source of truth for both the Home footer (kind "observation")
+ * and the header's Próximas ações button (kind "action").
+ */
+function buildObservations(
+  assembly: CockpitAssembly,
+  weekRows: { teamId: string; pct: number | null }[],
+  roster: Map<string, number>,
+): Observation[] {
   const { cockpit } = assembly;
-
-  // Observations footer (#21): pure rules over the same aggregates. A warned
-  // team never re-appears as an apontamento — one event, one channel; the
-  // warning flag comes from the finding itself, the cockpit's source of truth.
+  // A warned team never re-appears as an apontamento — one event, one channel;
+  // the warning flag comes from the finding itself, the cockpit's truth.
   const budgetedTeams =
     cockpit.state === "ready"
       ? [...cockpit.needsAttention, ...cockpit.underControl].map((t) => ({
@@ -269,9 +270,8 @@ export async function getHomeData(): Promise<HomeData> {
   });
 
   // Secondary waste (#22): seats paid vs roster people. Ordered AFTER the
-  // apontamentos into one feed — waste is secondary by design, and the
-  // "below" rule lives here, not in the JSX. Never above a budget item,
-  // never emailed. Ids are namespaced so React keys can't collide.
+  // apontamentos into one feed — waste is secondary by design. Ids are
+  // namespaced so React keys can't collide.
   const seatWaste = buildSeatWaste({
     currency: assembly.currency,
     subscriptions: assembly.subscriptions,
@@ -279,7 +279,7 @@ export async function getHomeData(): Promise<HomeData> {
     totalPeople: [...roster.values()].reduce((sum, n) => sum + n, 0),
   });
 
-  const observations: Observation[] = [
+  return [
     ...apontamentos.map((a) => ({
       id: `apontamento:${a.id}`,
       text: a.text,
@@ -295,20 +295,48 @@ export async function getHomeData(): Promise<HomeData> {
       actionLabel: "Revisar assinaturas",
     })),
   ];
+}
 
+export async function getHomeData(): Promise<HomeData> {
+  const now = new Date();
+  // Neither footer read needs anything from the cockpit — one parallel batch.
+  const [assembly, weekRows, roster] = await Promise.all([
+    assembleCockpit(),
+    teamWeekChanges(now),
+    rosterHeadcount(),
+  ]);
+
+  const observations = buildObservations(assembly, weekRows, roster);
   const rosterTotal = [...roster.values()].reduce((sum, n) => sum + n, 0);
 
   return {
-    cockpit,
+    cockpit: assembly.cockpit,
     period: assembly.period,
     stale: assembly.stale,
     fx: assembly.fx,
     observations,
-    hasSeatWaste: seatWaste.length > 0,
+    hasSeatWaste: observations.some((o) => o.id.startsWith("seat:")),
     setup: {
       connected: assembly.connected,
       hasRoster: rosterTotal > 0,
       hasBudget: assembly.hasOrgBudget,
     },
   };
+}
+
+/**
+ * Just the actionable subset of the observations feed — the header's
+ * "Próximas ações" pop-up (global, on-demand). Same rules and reads as the Home
+ * footer, filtered to kind "action". Runs under RLS, so it's tenant-scoped.
+ */
+export async function getNextActions(): Promise<Observation[]> {
+  const now = new Date();
+  const [assembly, weekRows, roster] = await Promise.all([
+    assembleCockpit(),
+    teamWeekChanges(now),
+    rosterHeadcount(),
+  ]);
+  return buildObservations(assembly, weekRows, roster).filter(
+    (o) => o.kind === "action",
+  );
 }
