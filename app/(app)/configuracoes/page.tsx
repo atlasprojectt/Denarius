@@ -77,7 +77,7 @@ export default async function PersonalSettingsPage() {
   });
 
   return (
-    <PageContainer variant="form" className="gap-6">
+    <PageContainer className="gap-6">
       <PageHeader title={copy.title} description={copy.subtitle} />
 
       <Card>

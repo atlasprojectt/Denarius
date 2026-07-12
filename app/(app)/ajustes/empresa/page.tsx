@@ -42,7 +42,7 @@ export default async function CompanySettingsPage() {
   const currencyEditable = isAdmin && (budgetCount ?? 0) === 0 && (subscriptionCount ?? 0) === 0;
 
   return (
-    <PageContainer variant="form" className="gap-6">
+    <PageContainer className="gap-6">
       <PageHeader title={copy.title} description={copy.subtitle} backHref="/ajustes" backLabel={copy.back} />
       <Card>
         <CardHeader>

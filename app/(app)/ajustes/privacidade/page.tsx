@@ -27,7 +27,7 @@ export default async function PrivacySettingsPage() {
   const isAdmin = canEditCompanySettings((userData as { role: string } | null)?.role ?? "viewer");
 
   return (
-    <PageContainer variant="form" className="gap-6">
+    <PageContainer className="gap-6">
       <PageHeader title={copy.title} description={copy.subtitle} backHref="/ajustes" backLabel={copy.back} />
       <Card>
         <CardHeader>

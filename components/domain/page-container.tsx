@@ -3,13 +3,13 @@ import type { ComponentProps } from "react";
 import { cn } from "@/lib/utils";
 
 const widths = {
-  // The cockpit fills the monitor — no max-width cap (founder direction
-  // 2026-07-09/11: the big spend number is the product identity and the
-  // analytical rows benefit from the full horizontal space).
+  // Home only: the cockpit fills the monitor — no max-width cap (founder
+  // direction 2026-07-09/11: the big spend number is the product identity and
+  // the analytical rows benefit from the full horizontal space).
   full: "max-w-none",
+  // Every other screen shares ONE width (founder 2026-07-11): no width jumps
+  // between routes — the audit's S7/QA-12 complaint — Home is the exception.
   wide: "max-w-7xl",
-  default: "max-w-5xl",
-  form: "max-w-3xl",
 } as const;
 
 export type PageContainerProps = ComponentProps<"div"> & {
@@ -18,7 +18,7 @@ export type PageContainerProps = ComponentProps<"div"> & {
 
 /** One deliberate width system for every app route (PRD P16). */
 export function PageContainer({
-  variant = "default",
+  variant = "wide",
   className,
   ...props
 }: PageContainerProps) {

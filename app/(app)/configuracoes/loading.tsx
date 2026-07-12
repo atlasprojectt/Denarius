@@ -7,7 +7,7 @@ import { PageContainer } from "@/components/domain/page-container";
 
 export default function PersonalSettingsLoading() {
   return (
-    <PageContainer variant="form" className="gap-6" aria-busy>
+    <PageContainer className="gap-6" aria-busy>
       <div className="flex flex-col gap-2">
         <Skeleton className="h-7 w-44" />
         <Skeleton className="h-4 w-80 max-w-full" />

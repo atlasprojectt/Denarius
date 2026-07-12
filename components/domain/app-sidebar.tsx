@@ -92,7 +92,7 @@ function NavGroup({
                 asChild
                 isActive={isActivePath(pathname, item.href)}
                 tooltip={item.title}
-                className="h-9 gap-2.5 px-2.5 [&_svg]:size-4.5"
+                className="h-9 gap-2.5 px-2.5 data-active:bg-primary/10 data-active:text-primary data-active:hover:bg-primary/15 data-active:hover:text-primary [&_svg]:size-4.5"
               >
                 <Link href={item.href}>
                   <item.icon />

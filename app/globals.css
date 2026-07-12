@@ -307,7 +307,18 @@ input[type="number"]::-webkit-outer-spin-button {
 
   --border: #e6e6e8;
   --input: #e6e6e8;
-  --ring: #ff5100;
+  /* Neutral focus ring (founder 2026-07-11): the brand-orange halo on every
+     focused input read as noise; focus stays visible, just quiet. */
+  --ring: #b3b4b8;
+
+  /* Chart palette from the brand, not the preset's yellow ramp: orange first
+     (largest slice), warm tints after, neutral last. Composition only — never
+     the semaphore (principle #5). */
+  --chart-1: #ff5100;
+  --chart-2: #ff9a62;
+  --chart-3: #ffc9a8;
+  --chart-4: #8b8d93;
+  --chart-5: #a33400;
 
   /* Light sidebar in light mode: a neutral off-white rail (slightly darker
      than the page for a soft separation), dark ink, orange accent. No navy. */
@@ -318,7 +329,7 @@ input[type="number"]::-webkit-outer-spin-button {
   --sidebar-accent: #e8e8ea;
   --sidebar-accent-foreground: #17181c;
   --sidebar-border: #e4e4e7;
-  --sidebar-ring: #ff5100;
+  --sidebar-ring: #b3b4b8;
 
   /* Semaphore — budget status only. Strong = bar fills & dots; soft = pill and
      callout backgrounds; fg = text sitting on a soft background. */
@@ -354,7 +365,13 @@ input[type="number"]::-webkit-outer-spin-button {
   --destructive: #ef4444;
   --border: #27282c;
   --input: #27282c;
-  --ring: #ff5100;
+  --ring: #55565c;
+
+  --chart-1: #ff5100;
+  --chart-2: #ff8a4d;
+  --chart-3: #ffb287;
+  --chart-4: #6f7076;
+  --chart-5: #c14b12;
 
   --sidebar: #0a0a0b;
   --sidebar-foreground: #b6b7bb;
@@ -363,7 +380,7 @@ input[type="number"]::-webkit-outer-spin-button {
   --sidebar-accent: #1a1a1d;
   --sidebar-accent-foreground: #f3f3f4;
   --sidebar-border: #1f1f22;
-  --sidebar-ring: #ff5100;
+  --sidebar-ring: #55565c;
 
   --status-green: #22c55e;
   --status-green-soft: #10231787;
