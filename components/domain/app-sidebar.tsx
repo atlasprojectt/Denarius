@@ -92,11 +92,13 @@ function NavGroup({
                 asChild
                 isActive={isActivePath(pathname, item.href)}
                 tooltip={item.title}
-                className="h-9 gap-2.5 px-2.5 data-active:font-medium [&_svg]:size-4.5"
+                className="h-9 gap-2.5 px-2.5 data-active:font-medium group-data-[collapsible=icon]:justify-center [&_svg]:size-4.5"
               >
                 <Link href={item.href}>
                   <item.icon />
-                  <span>{item.title}</span>
+                  <span className="group-data-[collapsible=icon]:hidden">
+                    {item.title}
+                  </span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
