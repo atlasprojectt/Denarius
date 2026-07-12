@@ -85,7 +85,7 @@ function NavGroup({
         {label}
       </SidebarGroupLabel>
       <SidebarGroupContent>
-        <SidebarMenu>
+        <SidebarMenu className="group-data-[collapsible=icon]:items-center">
           {items.map((item) => (
             <SidebarMenuItem key={item.href}>
               <SidebarMenuButton
@@ -122,7 +122,7 @@ export function AppSidebar({
 
   return (
     <TooltipProvider delayDuration={0}>
-      <Sidebar collapsible="icon">
+      <Sidebar variant="inset" collapsible="icon">
         <SidebarHeader className="px-3 pt-3">
           <Link
             href="/"
@@ -148,7 +148,7 @@ export function AppSidebar({
         </SidebarContent>
 
         <SidebarFooter>
-          <SidebarMenu>
+          <SidebarMenu className="group-data-[collapsible=icon]:items-center">
             <SidebarMenuItem>
               <DropdownMenu>
                 {/* Plain trigger, not asChild: composing Base UI's Menu.Trigger
@@ -157,7 +157,7 @@ export function AppSidebar({
                     SidebarMenuButton. */}
                 <DropdownMenuTrigger
                   aria-label={copy.profileMenu}
-                  className="flex h-12 w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left outline-hidden ring-sidebar-ring transition-[width,height,padding] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 data-open:bg-sidebar-accent data-open:text-sidebar-accent-foreground group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-0!"
+                  className="flex h-12 w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left outline-hidden ring-sidebar-ring transition-[width,height,padding] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 data-open:bg-sidebar-accent data-open:text-sidebar-accent-foreground group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-0!"
                 >
                   <Avatar className="size-8 shrink-0 group-data-[collapsible=icon]:size-7">
                     <AvatarFallback className="bg-sidebar-accent text-xs font-semibold text-sidebar-accent-foreground">

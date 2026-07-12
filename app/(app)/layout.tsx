@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { AppSidebar } from "@/components/domain/app-sidebar";
 import { NextActionsButton } from "@/components/domain/next-actions-button";
 import { AppToastProvider } from "@/components/domain/toast-provider";
+import { Separator } from "@/components/ui/separator";
 import {
   SidebarInset,
   SidebarProvider,
@@ -53,8 +54,12 @@ export default async function AppLayout({
           })}
         />
         <SidebarInset>
-          <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2.5 border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+          <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2.5 border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/80 md:rounded-t-xl">
             <SidebarTrigger className="-ml-1.5 size-10" />
+            <Separator
+              orientation="vertical"
+              className="mr-2 self-center! data-[orientation=vertical]:h-4"
+            />
             <span className="truncate text-sm font-medium">
               {appUser.tenant?.name}
             </span>
