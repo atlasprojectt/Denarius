@@ -1,12 +1,19 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Toast } from "@base-ui/react/toast";
 import { IconAlertCircle, IconCheck, IconX } from "@tabler/icons-react";
 
 import { cn } from "@/lib/utils";
 
 type ToastData = { tone?: "neutral" | "destructive" };
+
+// ONE global manager (Base UI's documented pattern for imperative toasts):
+// module-scoped, handed to the Provider below. Unlike the context hook, it
+// cannot resolve to a different provider instance across bundle boundaries —
+// the context-hook variant silently dropped every add — and its identity is
+// stable, so effects that fire toasts never loop on a changing manager.
+const toastManager = Toast.createToastManager();
 
 function ToastList() {
   const { toasts } = Toast.useToastManager<ToastData>();
@@ -46,7 +53,7 @@ function ToastList() {
 
 export function AppToastProvider({ children }: { children: React.ReactNode }) {
   return (
-    <Toast.Provider limit={3} timeout={5000}>
+    <Toast.Provider toastManager={toastManager} limit={3} timeout={5000}>
       {children}
       <Toast.Portal>
         <Toast.Viewport className="fixed right-4 bottom-4 z-[100] w-[calc(100%-2rem)] max-w-sm sm:right-8 sm:bottom-8">
@@ -63,17 +70,28 @@ export function ActionToast({
   id,
   success,
   error,
+  state,
 }: {
   id: string;
+  /** Message to toast on success — callers pick what surfaces here vs inline. */
   success?: string;
+  /** Message to toast on error — omit when the error renders inline instead. */
   error?: string;
+  /** The useActionState state object. Each dispatch returns a FRESH object, so
+   *  its identity marks "one action completed" — one toast per completion,
+   *  even when the message text repeats across saves. */
+  state: object;
 }) {
-  const toast = useToastManager();
+  // One toast per action completion: each useActionState dispatch returns a
+  // FRESH state object, so its identity marks "the action finished" — even
+  // when the message text repeats across saves.
+  const lastState = useRef<object | null>(null);
 
   useEffect(() => {
+    if (lastState.current === state) return;
+    lastState.current = state;
     if (error) {
-      toast.add({
-        id: `${id}:error`,
+      toastManager.add({
         title: "Não foi possível concluir",
         description: error,
         priority: "high",
@@ -82,15 +100,14 @@ export function ActionToast({
       return;
     }
     if (success) {
-      toast.add({
-        id: `${id}:success`,
+      toastManager.add({
         title: "Alteração concluída",
         description: success,
         priority: "low",
         data: { tone: "neutral" },
       });
     }
-  }, [error, id, success, toast]);
+  }, [error, id, success, state]);
 
   return null;
 }

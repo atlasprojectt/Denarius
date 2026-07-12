@@ -19,3 +19,7 @@ Thumbs.db
 # TS build cache
 *.tsbuildinfo
 .vercel
+
+# Playwright artifacts (also keeps Tailwind v4 source-scan away from HTML dumps)
+test-results/
+playwright-report/

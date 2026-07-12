@@ -65,3 +65,40 @@ reload before closing WP4/WP8.
    pattern; 3 in ExploreTable's render-time SortButton → hoisted; 1 in
    ConfirmationDialog's success effect → render-adjust).
 5. Pushed to `main` → auto-deploy via `.github/workflows/deploy-prod.yml`.
+
+## Round 2 — finishing GPT-5.6's in-flight batch (2026-07-11, evening)
+
+GPT-5.6 continued after the first push: single-table budget form
+(`budget-table-form.tsx`, consuming `saveBudgetsBatch` — UX-09 UI done), Playwright
+e2e scaffold (`playwright.config.ts` + `e2e/ui-ux-audit.spec.ts`, `npm run test:e2e`),
+inline field errors on subscriptions/roster, loading-skeleton container swaps,
+`MoneyInput` form/invalid props. Fable 5 completed and fixed on top:
+
+1. **UX-13 delivered as contract**: `ControlAction.href` in the catalog (in-app
+   investigation targets); team detail consumes it with two page-local overrides
+   (`#contribuidores`, `/ajustes/conexoes`).
+2. **ActionToast crash + silent drop fixed** (toast-provider): the context-hook
+   manager caused an infinite update loop ("Maximum update depth") AND adds were
+   silently dropped. Rewritten on Base UI's global `Toast.createToastManager()`
+   passed to the Provider; one toast per action-state identity (repeat saves still
+   notify). Verified in browser: batch save → "Alteração concluída" appears.
+3. **Double `<main>` fixed** (app layout): SidebarInset already renders the main
+   landmark; the nested second main broke the single-landmark contract.
+4. **UX-07 orphan-label bug fixed**: collapsed rail left the faded group label
+   intercepting pointer events OVER the first menu item (blocked hover/click).
+   `pointer-events-none` when collapsed, in `app-sidebar.tsx`.
+5. **Tooltip a11y**: Base UI popup carries no ARIA role — added `role="tooltip"`
+   to `TooltipContent`.
+6. **Tailwind v4 source-scan trap**: Playwright's `test-results/` HTML dumps
+   (entity-escaped classes) were picked up as Tailwind candidates and broke the
+   generated CSS. `test-results/` + `playwright-report/` gitignored.
+7. **e2e run (desktop project)**: **6/6 green** against a warm server with a seeded
+   temp tenant (both fake providers connected; confirmation-dialog and
+   collapsed-sidebar-tooltip journeys pass). Requires `E2E_EMAIL`/`E2E_PASSWORD`
+   (documented in `.env.example`). Note: against a Playwright-spawned COLD dev
+   server, interaction-heavy asserts can flake on first-compile latency — warm
+   the routes or point `E2E_BASE_URL` at a running server.
+
+Cleanup done: temp tenant `QA Fable5 Round2 (temp)` + its auth user deleted from
+the shared Supabase (verified single-user before the cascade delete). Round 2
+closed with lint + typecheck + 275 vitest + 6/6 e2e green.

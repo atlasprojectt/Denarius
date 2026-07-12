@@ -233,6 +233,15 @@ function TeamBudgetCard({
   );
 }
 
+// UX-13: default investigation targets come from the catalog contract
+// (lib/findings/catalog.ts). This page overrides two of them with in-context
+// destinations: the contributors table is right below, and the provider
+// consoles are reachable from Conexões.
+const CONTROL_PLAN_HREF_OVERRIDES: Record<string, string> = {
+  "talk-to-top-team": "#contribuidores",
+  "set-provider-limit": "/ajustes/conexoes",
+};
+
 /** The curated control plan (redesign 2026-07: moved here from the Home rows —
  *  acting on a warning is investigation, not overview). Catalog-only, read-only. */
 function ControlPlanCard({ team }: { team: CockpitTeam }) {
@@ -248,32 +257,31 @@ function ControlPlanCard({ team }: { team: CockpitTeam }) {
       <CardContent>
         <ul className="flex flex-col gap-3.5">
           {team.finding.controlPlan.map((action) => {
-            const href =
-              action.id === "review-idle-seats"
-                ? "/ajustes/assinaturas"
-                : action.id === "set-provider-limit"
-                  ? "/ajustes/conexoes"
-                  : action.id === "revisit-budget"
-                    ? "/ajustes/orcamentos"
-                    : action.id === "talk-to-top-team"
-                      ? "#contribuidores"
-                      : "/explorar#por-modelo";
+            const href = CONTROL_PLAN_HREF_OVERRIDES[action.id] ?? action.href;
+            const body = (
+              <span>
+                <span className="block text-sm font-medium">{action.title}</span>
+                <p className="mt-0.5 text-xs/relaxed text-muted-foreground">
+                  {action.detail}
+                </p>
+              </span>
+            );
             return (
-            <li key={action.id}>
-              <Link
-                href={href}
-                className="group flex items-start justify-between gap-4 rounded-lg border p-4 outline-none transition-colors hover:border-primary/30 hover:bg-muted/30 focus-visible:ring-2 focus-visible:ring-ring/30"
-              >
-                <span>
-              <span className="block text-sm font-medium">{action.title}</span>
-              <p className="mt-0.5 text-xs/relaxed text-muted-foreground">
-                {action.detail}
-              </p>
-                </span>
-                <IconArrowRight className="mt-0.5 size-4 shrink-0 text-primary transition-transform group-hover:translate-x-0.5" />
-              </Link>
-            </li>
-          );})}
+              <li key={action.id}>
+                {href ? (
+                  <Link
+                    href={href}
+                    className="group flex items-start justify-between gap-4 rounded-lg border p-4 outline-none transition-colors hover:border-primary/30 hover:bg-muted/30 focus-visible:ring-2 focus-visible:ring-ring/30"
+                  >
+                    {body}
+                    <IconArrowRight className="mt-0.5 size-4 shrink-0 text-primary transition-transform group-hover:translate-x-0.5" />
+                  </Link>
+                ) : (
+                  <div className="rounded-lg border p-4">{body}</div>
+                )}
+              </li>
+            );
+          })}
         </ul>
       </CardContent>
     </Card>

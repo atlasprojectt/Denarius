@@ -120,12 +120,11 @@ function EmployeeRow({
   return (
     <TableRow className="bg-muted/30">
       <TableCell colSpan={4} className="py-3 whitespace-normal">
-        <form action={formAction} className="flex flex-wrap items-center gap-3">
+        <form action={formAction} noValidate className="flex flex-wrap items-center gap-3">
           <input type="hidden" name="employeeId" value={employee.id} />
           <Input
             name="name"
             defaultValue={employee.name}
-            required
             aria-invalid={state.fieldErrors?.name !== undefined}
             className="h-8 w-56 bg-background"
           />
@@ -134,7 +133,6 @@ function EmployeeRow({
               name="email"
               type="email"
               defaultValue={employee.email}
-              required
               aria-invalid={state.fieldErrors?.email !== undefined}
               className="h-8 w-64 bg-background"
             />
@@ -174,6 +172,64 @@ function EmployeeRow({
         </form>
       </TableCell>
     </TableRow>
+  );
+}
+
+function MobileEmployeeCard({ employee, teams }: { employee: Employee; teams: Team[] }) {
+  const [editing, setEditing] = useState(false);
+  const [state, action, pending] = useActionState(updateEmployee, initialState);
+  const [removeState, removeAction, removing] = useActionState(removeEmployee, initialState);
+
+  if (!editing) {
+    return (
+      <div className="rounded-lg border p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="font-medium">{employee.name}</p>
+            <p className="mt-0.5 break-all text-xs text-muted-foreground">{employee.email}</p>
+            <p className="mt-1 text-xs text-muted-foreground">{employee.teamName}</p>
+          </div>
+          <div className="flex flex-col gap-1">
+            <Button type="button" variant="outline" size="sm" onClick={() => setEditing(true)}>
+              {copy.edit}
+            </Button>
+            <ConfirmationDialog
+              trigger={<Button type="button" variant="destructive" size="sm">{copy.remove}</Button>}
+              title={copy.removeTitle(employee.name)}
+              description={copy.removeBody}
+              confirmLabel={copy.remove}
+              pendingLabel={copy.removing}
+              action={removeAction}
+              pending={removing}
+              success={removeState.success}
+            >
+              <input type="hidden" name="employeeId" value={employee.id} />
+              <ActionStatus error={removeState.error} />
+            </ConfirmationDialog>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <form action={action} noValidate className="flex flex-col gap-3 rounded-lg border bg-muted/20 p-4">
+      <input type="hidden" name="employeeId" value={employee.id} />
+      <Input name="name" defaultValue={employee.name} aria-invalid={state.fieldErrors?.name !== undefined} />
+      <Input name="email" type="email" defaultValue={employee.email} aria-invalid={state.fieldErrors?.email !== undefined} />
+      <select
+        name="teamId"
+        defaultValue={teams.find((team) => team.name === employee.teamName)?.id ?? ""}
+        className="h-8 rounded-md border border-input bg-background px-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/30"
+      >
+        {teams.map((team) => <option key={team.id} value={team.id}>{team.name}</option>)}
+      </select>
+      <ActionStatus error={state.error} success={state.success} />
+      <div className="flex justify-end gap-2">
+        <Button type="button" variant="outline" size="sm" onClick={() => setEditing(false)}>{copy.cancel}</Button>
+        <Button type="submit" size="sm" disabled={pending}>{pending ? copy.saving : copy.save}</Button>
+      </div>
+    </form>
   );
 }
 
@@ -226,15 +282,7 @@ export function EmployeeTable({
         <>
           <div className="grid gap-3 md:hidden">
             {visible.map((employee) => (
-              <div key={employee.id} className="rounded-lg border p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="font-medium">{employee.name}</p>
-                    <p className="mt-0.5 break-all text-xs text-muted-foreground">{employee.email}</p>
-                  </div>
-                  <span className="text-xs text-muted-foreground">{employee.teamName}</span>
-                </div>
-              </div>
+              <MobileEmployeeCard key={employee.id} employee={employee} teams={teams} />
             ))}
           </div>
 

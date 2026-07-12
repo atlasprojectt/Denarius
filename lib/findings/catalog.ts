@@ -15,6 +15,10 @@ export type ControlAction = {
   title: string;
   /** One line of context on why it helps. */
   detail: string;
+  /** In-app investigation target (UX-13) — where to LOOK, never an enforcement
+   *  control. Absent when the action happens outside Denarius (e.g. a spend
+   *  limit set in the provider's own console). Always an internal path. */
+  href?: string;
 };
 
 export const CONTROL_CATALOG = {
@@ -22,31 +26,37 @@ export const CONTROL_CATALOG = {
     id: "review-costly-models",
     title: "Revisar os modelos mais caros do período",
     detail: "Os modelos de maior custo costumam concentrar o gasto — vale checar se o uso justifica o preço.",
+    href: "/explorar#por-modelo",
   },
   shiftToSmaller: {
     id: "shift-to-smaller",
     title: "Migrar tarefas simples para modelos menores",
     detail: "Boa parte das chamadas simples roda bem em modelos mini/nano por uma fração do custo.",
+    href: "/explorar#por-modelo",
   },
   talkToTopTeam: {
     id: "talk-to-top-team",
     title: "Conversar com o time de maior consumo",
     detail: "A concentração aponta onde uma conversa curta tem o maior efeito sobre o gasto.",
+    href: "/explorar#por-time",
   },
   reviewIdleSeats: {
     id: "review-idle-seats",
     title: "Rever assentos ociosos frente ao roster",
     detail: "Assinaturas por assento acima do número de pessoas ativas viram custo fixo sem retorno.",
+    href: "/ajustes/assinaturas",
   },
   setProviderLimit: {
     id: "set-provider-limit",
     title: "Definir um limite de gasto no console do provedor",
     detail: "O limite é aplicado pelo próprio provedor — o Denarius apenas recomenda; a decisão é sua.",
+    // No href: the action lives in the provider's console, outside Denarius.
   },
   revisitBudget: {
     id: "revisit-budget",
     title: "Reavaliar se o orçamento reflete o plano do período",
     detail: "Se o gasto acompanha um crescimento planejado, o orçamento pode estar defasado, não o gasto.",
+    href: "/ajustes/orcamentos",
   },
 } as const satisfies Record<string, ControlAction>;
 

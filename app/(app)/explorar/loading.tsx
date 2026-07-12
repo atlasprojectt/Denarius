@@ -1,4 +1,5 @@
 import { Skeleton } from "@/components/ui/skeleton";
+import { PageContainer } from "@/components/domain/page-container";
 
 // Explore skeleton (F1: RSC streaming). Mirrors the real shape — PageHeader,
 // then the by-team and by-model table cards at the same max-w-4xl column — so
@@ -22,13 +23,13 @@ function TableCardSkeleton({ rows }: { rows: number }) {
 
 export default function ExploreLoading() {
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-col gap-6" aria-busy>
+    <PageContainer variant="wide" className="gap-6" aria-busy>
       <div className="flex flex-col gap-2">
         <Skeleton className="h-7 w-36" />
         <Skeleton className="h-4 w-3/4 max-w-xl" />
       </div>
       <TableCardSkeleton rows={4} />
       <TableCardSkeleton rows={5} />
-    </div>
+    </PageContainer>
   );
 }

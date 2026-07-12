@@ -1,4 +1,5 @@
 import { Skeleton } from "@/components/ui/skeleton";
+import { PageContainer } from "@/components/domain/page-container";
 
 // Route-group loading state (F1: RSC streaming + skeletons, no client
 // spinners). Mirrors the cockpit rhythm — verdict line, hero + composition
@@ -7,7 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function AppLoading() {
   return (
-    <div className="flex w-full flex-col gap-6" aria-busy>
+    <PageContainer variant="wide" className="gap-6" aria-busy>
       <div className="flex items-center gap-3">
         <Skeleton className="size-4 rounded-full" />
         <Skeleton className="h-6 w-2/3 max-w-md" />
@@ -47,6 +48,6 @@ export default function AppLoading() {
         <Skeleton className="h-10 w-full" />
         <Skeleton className="h-10 w-full" />
       </div>
-    </div>
+    </PageContainer>
   );
 }

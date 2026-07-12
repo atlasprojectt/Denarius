@@ -1,4 +1,5 @@
 import { Skeleton } from "@/components/ui/skeleton";
+import { PageContainer } from "@/components/domain/page-container";
 
 // Personal-settings skeleton (F1: RSC streaming). Mirrors the real shape —
 // PageHeader, one card with the profile row (large avatar + form) and the
@@ -6,7 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function PersonalSettingsLoading() {
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6" aria-busy>
+    <PageContainer variant="form" className="gap-6" aria-busy>
       <div className="flex flex-col gap-2">
         <Skeleton className="h-7 w-44" />
         <Skeleton className="h-4 w-80 max-w-full" />
@@ -51,6 +52,6 @@ export default function PersonalSettingsLoading() {
           </div>
         </div>
       </div>
-    </div>
+    </PageContainer>
   );
 }

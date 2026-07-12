@@ -1,4 +1,5 @@
 import { Skeleton } from "@/components/ui/skeleton";
+import { PageContainer } from "@/components/domain/page-container";
 
 // Settings skeleton (F1: RSC streaming). Mirrors the hub rhythm — PageHeader,
 // group label, cards of icon+text item rows — at the same max-w-4xl column.
@@ -19,7 +20,7 @@ function ItemRowSkeleton() {
 
 export default function SettingsLoading() {
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-col gap-8" aria-busy>
+    <PageContainer className="gap-8" aria-busy>
       <div className="flex flex-col gap-2">
         <Skeleton className="h-7 w-32" />
         <Skeleton className="h-4 w-80 max-w-full" />
@@ -43,6 +44,6 @@ export default function SettingsLoading() {
           <ItemRowSkeleton />
         </div>
       </div>
-    </div>
+    </PageContainer>
   );
 }

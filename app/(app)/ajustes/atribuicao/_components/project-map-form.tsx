@@ -93,7 +93,7 @@ export function ProjectMapForm({
 
   return (
     <form action={formAction} className="flex flex-col gap-4">
-      <ActionToast id="project-map:save" success={state.success} />
+      <ActionToast id="project-map:save" state={state} success={state.success} />
       <div className="grid gap-3 md:hidden">
         {projects.map((project) => {
           const key = `${project.provider}|${project.projectId}`;

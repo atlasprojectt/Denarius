@@ -77,7 +77,13 @@ function NavGroup({
 }) {
   return (
     <SidebarGroup>
-      <SidebarGroupLabel>{label}</SidebarGroupLabel>
+      {/* Collapsed rail: the label fades out (opacity-0 -mt-8) but the shadcn
+          primitive leaves it hovering OVER the first menu item, swallowing
+          clicks and tooltip hovers (2026-07-11 audit, UX-07/QA-07). Kill its
+          pointer events when the rail is in icon mode. */}
+      <SidebarGroupLabel className="group-data-[collapsible=icon]:pointer-events-none">
+        {label}
+      </SidebarGroupLabel>
       <SidebarGroupContent>
         <SidebarMenu>
           {items.map((item) => (

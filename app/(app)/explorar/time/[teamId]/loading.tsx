@@ -1,4 +1,5 @@
 import { Skeleton } from "@/components/ui/skeleton";
+import { PageContainer } from "@/components/domain/page-container";
 
 // Team drill-down skeleton (F1: RSC streaming). Mirrors the real shape —
 // breadcrumb, header with the [Simular] slot, budget-context card, control
@@ -6,7 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function TeamDetailLoading() {
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-col gap-6" aria-busy>
+    <PageContainer variant="wide" className="gap-6" aria-busy>
       <Skeleton className="h-4 w-40" />
 
       <div className="flex items-end justify-between gap-6">
@@ -43,6 +44,6 @@ export default function TeamDetailLoading() {
         <Skeleton className="h-9 w-full" />
         <Skeleton className="h-9 w-full" />
       </div>
-    </div>
+    </PageContainer>
   );
 }

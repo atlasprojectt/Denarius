@@ -67,8 +67,9 @@ export function SubscriptionForm({
                 id="tool"
                 name="tool"
                 placeholder={copy.toolPlaceholder}
-                required
+                aria-invalid={state.fieldErrors?.tool !== undefined}
               />
+              {state.fieldErrors?.tool && <p className="text-xs text-destructive">{state.fieldErrors.tool}</p>}
             </div>
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="seatCount">{copy.seats}</Label>
@@ -79,9 +80,10 @@ export function SubscriptionForm({
                 min={1}
                 step={1}
                 defaultValue={1}
-                required
+                aria-invalid={state.fieldErrors?.seatCount !== undefined}
                 className="tabular-nums"
               />
+              {state.fieldErrors?.seatCount && <p className="text-xs text-destructive">{state.fieldErrors.seatCount}</p>}
             </div>
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="unitPrice">
@@ -91,7 +93,9 @@ export function SubscriptionForm({
                 id="unitPrice"
                 name="unitPrice"
                 currency={currency}
+                invalid={state.fieldErrors?.unitPrice !== undefined}
               />
+              {state.fieldErrors?.unitPrice && <p className="text-xs text-destructive">{state.fieldErrors.unitPrice}</p>}
             </div>
             <div className="flex flex-col gap-1.5 sm:col-span-2">
               <Label htmlFor="teamId">{copy.team}</Label>

@@ -58,7 +58,9 @@ export default async function AppLayout({
               {appUser.tenant?.name}
             </span>
           </header>
-          <main className="flex-1 px-4 py-8 md:px-8">{children}</main>
+          {/* SidebarInset already renders the page's <main> landmark — a
+              nested second <main> broke the single-landmark contract. */}
+          <div className="flex-1 px-4 py-8 md:px-8">{children}</div>
         </SidebarInset>
       </SidebarProvider>
     </AppToastProvider>

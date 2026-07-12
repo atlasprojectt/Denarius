@@ -48,7 +48,7 @@ function RemoveButton({ userId }: { userId: string }) {
   const [state, formAction, pending] = useActionState(removeUser, initialState);
   return (
     <>
-      <ActionToast id={`user:${userId}:remove`} error={state.error} success={state.success} />
+      <ActionToast id={`user:${userId}:remove`} state={state} error={state.error} success={state.success} />
       <ConfirmationDialog
         trigger={<Button type="button" variant="destructive" size="sm">{copy.remove}</Button>}
         title={copy.removeTitle}

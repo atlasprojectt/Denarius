@@ -184,8 +184,8 @@ function ActiveControls({ keyForm }: { keyForm: KeyFormProps }) {
           success={revokeState.success}
         />
       </div>
-      <ActionToast id={`${keyForm.provider}:sync`} error={syncState.error} success={syncState.success} />
-      <ActionToast id={`${keyForm.provider}:revoke`} error={revokeState.error} success={revokeState.success} />
+      <ActionToast id={`${keyForm.provider}:sync`} state={syncState} error={syncState.error} success={syncState.success} />
+      <ActionToast id={`${keyForm.provider}:revoke`} state={revokeState} error={revokeState.error} success={revokeState.success} />
       {rotating && <KeyForm {...keyForm} />}
     </div>
   );

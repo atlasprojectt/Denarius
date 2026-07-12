@@ -16,7 +16,7 @@ import { money } from "@/lib/money";
 import { listBudgets, type Budget } from "@/lib/budgets/queries";
 import { listTeams } from "@/lib/teams/queries";
 
-import { BudgetForm, type ExistingBudget } from "./_components/budget-form";
+import { BudgetTableForm, type BudgetTableRow } from "./_components/budget-table-form";
 
 const copy = {
   back: "Ajustes",
@@ -24,11 +24,8 @@ const copy = {
   subtitle:
     "O limite mensal da empresa e de cada time. O orçamento governa o gasto total rastreado (APIs + assinaturas) e destrava o veredito, a projeção de fechamento e os avisos antecipados.",
   periodNote: (label: string) => `Período atual — ${label}`,
-  orgTitle: "Empresa",
-  orgSub: "O limite da empresa toda para o período.",
-  teamsTitle: "Times",
-  teamsSub:
-    "Limites independentes por time. A soma dos times não precisa bater com o da empresa — é só um aviso, nunca um erro.",
+  tableTitle: "Empresa e times",
+  tableSub: "Edite todos os limites e salve uma vez. Empresa e times são guardrails independentes.",
   noTeams:
     "Nenhum time ainda. Importe o roster para definir orçamentos por time.",
   mismatchOver: (delta: string) =>
@@ -47,7 +44,7 @@ function warnPctOf(budget: Budget): number {
   return warn ? Math.round(warn * 100) : 80;
 }
 
-function toExisting(budget: Budget | undefined): ExistingBudget | null {
+function toExisting(budget: Budget | undefined): BudgetTableRow["existing"] {
   if (!budget) return null;
   return { id: budget.id, amount: budget.amount, warnPct: warnPctOf(budget) };
 }
@@ -62,6 +59,14 @@ export default async function BudgetsPage() {
   const budgetByTeam = new Map(teamBudgets.map((b) => [b.teamId, b]));
   const teamSum = teamBudgets.reduce((sum, b) => sum + b.amount, 0);
   const mismatch = org ? teamSum - org.amount : 0;
+  const rows: BudgetTableRow[] = [
+    { key: "org", label: "Empresa", existing: toExisting(org ?? undefined) },
+    ...teams.map((team) => ({
+      key: `team:${team.id}`,
+      label: team.name,
+      existing: toExisting(budgetByTeam.get(team.id)),
+    })),
+  ];
 
   return (
     <PageContainer variant="wide" className="gap-6">
@@ -75,42 +80,8 @@ export default async function BudgetsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-sm">{copy.orgTitle}</CardTitle>
-          <CardDescription>{copy.orgSub}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <BudgetForm
-            scope="org"
-            teamId={null}
-            currency={currency}
-            existing={toExisting(org ?? undefined)}
-          />
-        </CardContent>
-        {org && org.currency !== "USD" && (
-          <CardFooter
-            className={`text-xs/relaxed ${
-              org.frozenFxRate === null
-                ? "text-status-amber-fg"
-                : "text-muted-foreground"
-            }`}
-          >
-            <p>
-              {org.frozenFxRate !== null
-                ? copy.fxDisclosure(
-                    money(org.frozenFxRate, org.currency),
-                    org.fxRateSource ?? "—",
-                    org.fxRateDate ?? "—",
-                  )
-                : copy.fxMissing}
-            </p>
-          </CardFooter>
-        )}
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm">{copy.teamsTitle}</CardTitle>
-          <CardDescription>{copy.teamsSub}</CardDescription>
+          <CardTitle className="text-sm">{copy.tableTitle}</CardTitle>
+          <CardDescription>{copy.tableSub}</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           {org && mismatch !== 0 && (
@@ -124,24 +95,20 @@ export default async function BudgetsPage() {
             </Alert>
           )}
 
-          {teams.length === 0 ? (
+          {teams.length === 0 && (
             <p className="text-sm text-muted-foreground">{copy.noTeams}</p>
-          ) : (
-            <ul className="flex flex-col divide-y">
-              {teams.map((team) => (
-                <li key={team.id} className="flex flex-col gap-2.5 py-5 first:pt-0 last:pb-0">
-                  <p className="text-sm font-medium">{team.name}</p>
-                  <BudgetForm
-                    scope="team"
-                    teamId={team.id}
-                    currency={currency}
-                    existing={toExisting(budgetByTeam.get(team.id))}
-                  />
-                </li>
-              ))}
-            </ul>
           )}
+          <BudgetTableForm rows={rows} currency={currency} />
         </CardContent>
+        {org && org.currency !== "USD" && (
+          <CardFooter className={`text-xs/relaxed ${org.frozenFxRate === null ? "text-status-amber-fg" : "text-muted-foreground"}`}>
+            <p>
+              {org.frozenFxRate !== null
+                ? copy.fxDisclosure(money(org.frozenFxRate, org.currency), org.fxRateSource ?? "—", org.fxRateDate ?? "—")
+                : copy.fxMissing}
+            </p>
+          </CardFooter>
+        )}
       </Card>
     </PageContainer>
   );

@@ -95,7 +95,7 @@ function SubscriptionRow({
           {subscription.accrued}
         </TableCell>
         <TableCell className="text-right">
-          <ActionToast id={`subscription:${subscription.id}:delete`} error={deleteState.error} success={deleteState.success} />
+          <ActionToast id={`subscription:${subscription.id}:delete`} state={deleteState} error={deleteState.error} success={deleteState.success} />
           <Button
             type="button"
             variant="ghost"
@@ -192,6 +192,71 @@ function SubscriptionRow({
   );
 }
 
+function MobileSubscriptionCard({
+  subscription,
+  teams,
+  currency,
+}: {
+  subscription: Subscription;
+  teams: Team[];
+  currency: string;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [state, action, pending] = useActionState(updateSubscription, initialState);
+  const [deleteState, deleteAction, deleting] = useActionState(deleteSubscription, initialState);
+
+  if (!editing) {
+    return (
+      <div className="rounded-lg border p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="font-medium">{subscription.tool}</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {subscription.seatCount} {copy.seats.toLocaleLowerCase("pt-BR")} · {subscription.teamName ?? copy.shared}
+            </p>
+          </div>
+          <p className="text-sm font-medium tabular-nums">{subscription.monthly}</p>
+        </div>
+        <p className="mt-2 text-xs text-muted-foreground tabular-nums">{copy.accrued}: {subscription.accrued}</p>
+        <div className="mt-4 flex gap-2">
+          <Button type="button" variant="outline" size="sm" onClick={() => setEditing(true)}>{copy.edit}</Button>
+          <ConfirmationDialog
+            trigger={<Button type="button" variant="destructive" size="sm">{copy.remove}</Button>}
+            title={copy.confirmRemove}
+            description={copy.removeDescription}
+            confirmLabel={copy.remove}
+            pendingLabel={copy.removing}
+            action={deleteAction}
+            pending={deleting}
+            success={deleteState.success}
+          >
+            <input type="hidden" name="subscriptionId" value={subscription.id} />
+          </ConfirmationDialog>
+          <ActionToast id={`subscription-mobile:${subscription.id}:delete`} state={deleteState} error={deleteState.error} success={deleteState.success} />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <form action={action} noValidate className="flex flex-col gap-3 rounded-lg border bg-muted/20 p-4">
+      <input type="hidden" name="subscriptionId" value={subscription.id} />
+      <Input name="tool" defaultValue={subscription.tool} aria-invalid={state.fieldErrors?.tool !== undefined} />
+      <Input name="seatCount" type="number" min={1} step={1} defaultValue={subscription.seatCount} aria-invalid={state.fieldErrors?.seatCount !== undefined} />
+      <MoneyInput id={`mobile-unit-price-${subscription.id}`} name="unitPrice" currency={currency} defaultValue={subscription.unitPrice} />
+      <select name="teamId" defaultValue={subscription.teamId ?? ""} className="h-8 rounded-md border border-input bg-background px-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/30">
+        <option value="">{copy.shared}</option>
+        {teams.map((team) => <option key={team.id} value={team.id}>{team.name}</option>)}
+      </select>
+      <ActionStatus error={state.error} success={state.success} />
+      <div className="flex justify-end gap-2">
+        <Button type="button" variant="outline" size="sm" onClick={() => setEditing(false)}>{copy.cancel}</Button>
+        <Button type="submit" size="sm" disabled={pending}>{pending ? copy.saving : copy.save}</Button>
+      </div>
+    </form>
+  );
+}
+
 export function SubscriptionTable({
   subscriptions,
   teams,
@@ -202,6 +267,13 @@ export function SubscriptionTable({
   currency: string;
 }) {
   return (
+    <>
+      <div className="grid gap-3 md:hidden">
+        {subscriptions.map((subscription) => (
+          <MobileSubscriptionCard key={subscription.id} subscription={subscription} teams={teams} currency={currency} />
+        ))}
+      </div>
+      <div className="hidden md:block">
     <Table>
       <TableHeader>
         <TableRow>
@@ -224,5 +296,7 @@ export function SubscriptionTable({
         ))}
       </TableBody>
     </Table>
+      </div>
+    </>
   );
 }
