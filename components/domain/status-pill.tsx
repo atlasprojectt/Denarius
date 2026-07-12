@@ -11,11 +11,14 @@ const copy: Record<VerdictStatus, string> = {
   collecting: "Coletando",
 };
 
+// Each pill carries a border in its own status tone (2026-07-12): the soft
+// background alone read faint on dark surfaces — the border lifts the tag off
+// the card and sharpens the semaphore signal.
 const styles: Record<VerdictStatus, string> = {
-  green: "bg-status-green-soft text-status-green-fg",
-  amber: "bg-status-amber-soft text-status-amber-fg",
-  red: "bg-status-red-soft text-status-red-fg",
-  collecting: "bg-muted text-muted-foreground",
+  green: "border border-status-green/40 bg-status-green-soft text-status-green-fg",
+  amber: "border border-status-amber/40 bg-status-amber-soft text-status-amber-fg",
+  red: "border border-status-red/40 bg-status-red-soft text-status-red-fg",
+  collecting: "border border-border bg-muted text-muted-foreground",
 };
 
 const dot: Record<VerdictStatus, string> = {
