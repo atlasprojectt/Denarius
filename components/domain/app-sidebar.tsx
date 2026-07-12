@@ -32,6 +32,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { logout } from "@/lib/auth/actions";
@@ -39,7 +40,6 @@ import { logout } from "@/lib/auth/actions";
 const copy = {
   brand: "Denarius",
   groupCockpit: "Cockpit",
-  groupAccount: "Conta",
   home: "Início",
   explore: "Explorar",
   settings: "Ajustes",
@@ -48,16 +48,16 @@ const copy = {
   logout: "Sair",
 };
 
-const cockpitItems = [
+const mainItems = [
   { title: copy.home, href: "/", icon: RiHome5Line },
   { title: copy.explore, href: "/explorar", icon: RiLineChartLine },
 ];
 
-const accountItems = [
+const secondaryItems = [
   { title: copy.settings, href: "/ajustes", icon: RiSettings3Line },
 ];
 
-type NavItem = (typeof cockpitItems)[number];
+type NavItem = (typeof mainItems)[number];
 
 // "/" only matches exactly; sections stay lit on their subroutes
 // (/explorar/time/[id] keeps Explorar active).
@@ -66,24 +66,26 @@ function isActivePath(pathname: string, href: string): boolean {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-function NavGroup({
+function NavSection({
   label,
   items,
   pathname,
+  className,
 }: {
-  label: string;
+  label?: string;
   items: NavItem[];
   pathname: string;
+  className?: string;
 }) {
   return (
-    <SidebarGroup>
-      {/* Collapsed rail: the label fades out (opacity-0 -mt-8) but the shadcn
-          primitive leaves it hovering OVER the first menu item, swallowing
-          clicks and tooltip hovers (2026-07-11 audit, UX-07/QA-07). Kill its
-          pointer events when the rail is in icon mode. */}
-      <SidebarGroupLabel className="group-data-[collapsible=icon]:pointer-events-none">
-        {label}
-      </SidebarGroupLabel>
+    <SidebarGroup className={className}>
+      {label ? (
+        // The collapsed label overlaps the first item unless pointer events
+        // are disabled while it fades out.
+        <SidebarGroupLabel className="group-data-[collapsible=icon]:pointer-events-none">
+          {label}
+        </SidebarGroupLabel>
+      ) : null}
       <SidebarGroupContent>
         <SidebarMenu>
           {items.map((item) => (
@@ -94,9 +96,11 @@ function NavGroup({
                 tooltip={item.title}
                 className="h-9 gap-2.5 px-2.5 data-active:font-medium [&_svg]:size-4.5"
               >
-                <Link href={item.href}>
+                <Link href={item.href} aria-label={item.title}>
                   <item.icon />
-                  <span>{item.title}</span>
+                  <span className="group-data-[collapsible=icon]:hidden">
+                    {item.title}
+                  </span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -117,30 +121,33 @@ export function AppSidebar({
   userLabel: string;
 }) {
   const pathname = usePathname();
+  const { isMobile } = useSidebar();
 
   return (
     <TooltipProvider delayDuration={0}>
-      <Sidebar collapsible="icon">
-        <SidebarHeader className="px-3 pt-3">
-          <Link
-            href="/"
-            aria-label={copy.brand}
-            className="flex h-11 items-center rounded-md px-1.5 transition-colors hover:bg-sidebar-accent group-data-[collapsible=icon]:h-10 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
-          >
-            <LogoWordmark className="h-7 w-auto text-foreground group-data-[collapsible=icon]:hidden" />
-            <LogoMark className="hidden size-7 shrink-0 text-chart-2 group-data-[collapsible=icon]:block" />
-          </Link>
+      <Sidebar variant="inset" collapsible="icon">
+        <SidebarHeader>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton size="lg" asChild tooltip={copy.brand}>
+                <Link href="/" aria-label={copy.brand}>
+                  <LogoWordmark className="h-7 w-auto text-foreground group-data-[collapsible=icon]:hidden" />
+                  <LogoMark className="hidden size-7 shrink-0 text-chart-2 group-data-[collapsible=icon]:block" />
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
         </SidebarHeader>
 
         <SidebarContent>
-          <NavGroup
+          <NavSection
             label={copy.groupCockpit}
-            items={cockpitItems}
+            items={mainItems}
             pathname={pathname}
           />
-          <NavGroup
-            label={copy.groupAccount}
-            items={accountItems}
+          <NavSection
+            className="mt-auto"
+            items={secondaryItems}
             pathname={pathname}
           />
         </SidebarContent>
@@ -173,7 +180,7 @@ export function AppSidebar({
                   <RiExpandUpDownLine className="ml-auto size-4 shrink-0 text-sidebar-foreground/60 group-data-[collapsible=icon]:hidden" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
-                  side="right"
+                  side={isMobile ? "bottom" : "right"}
                   align="end"
                   sideOffset={10}
                   className="w-64 rounded-xl"
