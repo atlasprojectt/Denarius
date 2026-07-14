@@ -71,8 +71,10 @@ export default async function AppLayout({
           {/* SidebarInset already renders the page's <main> landmark — a
               nested second <main> broke the single-landmark contract.
               data-reveal-root scopes the app-wide chart open-animations; the
-              RevealController persists across navigations and replays them. */}
-          <div data-reveal-root className="flex-1 px-4 py-8 md:px-8">
+              RevealController persists across navigations and replays them.
+              flex column so a page can opt into filling the viewport height
+              (Home's cockpit grid) with flex-1. */}
+          <div data-reveal-root className="flex flex-1 flex-col px-4 py-8 md:px-8">
             {children}
           </div>
           <RevealController />

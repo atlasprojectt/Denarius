@@ -76,7 +76,7 @@ export default async function HomePage() {
   const allTeams = budgetedTeams(cockpit);
 
   return (
-    <PageContainer variant="full" className="gap-6">
+    <PageContainer variant="full" className="flex-1 gap-4">
       <h1 className="sr-only">{homeCopy.question}</h1>
 
       {stale.showBanner && <StaleBanner items={stale.needsAttention} />}
@@ -96,8 +96,10 @@ export default async function HomePage() {
 
       {/* The 2x2 grid. min-w-0 wrappers matter: grid children default to
           min-width auto, and the table + long tabular-nums strings would
-          otherwise push the track past the viewport (horizontal overflow). */}
-      <div className="grid items-stretch gap-6 xl:grid-cols-2">
+          otherwise push the track past the viewport (horizontal overflow).
+          content-sized rows keep the cockpit inside the target desktop
+          viewport without inflating every card to the tallest row. */}
+      <div className="grid flex-1 items-stretch gap-4 xl:grid-cols-2">
         <div className="min-w-0">
           <Hero
             org={org}

@@ -122,7 +122,7 @@ export function TeamBudgetTable({
       </CardHeader>
       {teams.length > 0 && (
         <CardContent className="@container">
-          <div className="grid gap-3 @2xl:hidden">
+          <div className="grid gap-2 @2xl:hidden">
             {teams.map((team) => {
               const ev = team.evaluation;
               const warning = warningLine(team, currency);
@@ -131,20 +131,20 @@ export function TeamBudgetTable({
                   key={team.teamId}
                   href={`/times/${team.teamId}`}
                   aria-label={c.detail(team.teamName)}
-                  className="group rounded-lg border p-4 outline-none transition-colors hover:border-primary-hover/40 hover:bg-muted/30 focus-visible:ring-2 focus-visible:ring-ring/30"
+                  className="group rounded-lg border p-3 outline-none transition-colors hover:border-primary-hover/40 hover:bg-muted/30 focus-visible:ring-2 focus-visible:ring-ring/30"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p className="font-medium">{team.teamName}</p>
                       {warning && (
-                        <p className="mt-1 text-xs/relaxed text-muted-foreground">
+                        <p className="mt-0.5 truncate text-xs text-muted-foreground">
                           {warning}
                         </p>
                       )}
                     </div>
                     <StatusPill status={team.status} />
                   </div>
-                  <dl className="mt-4 grid grid-cols-3 gap-3 text-xs">
+                  <dl className="mt-2.5 grid grid-cols-3 gap-2 text-[11px] leading-relaxed">
                     <div>
                       <dt className="text-muted-foreground">{c.colSpent}</dt>
                       <dd className="mt-0.5 font-medium tabular-nums">
@@ -164,7 +164,7 @@ export function TeamBudgetTable({
                       </dd>
                     </div>
                   </dl>
-                  <div className="mt-4 flex items-center gap-3">
+                  <div className="mt-2.5 flex items-center gap-2.5">
                     <BudgetBar
                       animate
                       className="h-2 flex-1"

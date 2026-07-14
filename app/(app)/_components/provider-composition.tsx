@@ -48,7 +48,7 @@ export function ProviderComposition({
   const total = entries.reduce((sum, entry) => sum + entry.amount, 0);
 
   return (
-    <Card className="min-h-full">
+    <Card size="sm" className="min-h-full">
       <CardHeader>
         <CardTitle className="text-sm">{c.title}</CardTitle>
         <CardDescription>{c.drillNote}</CardDescription>
@@ -61,7 +61,7 @@ export function ProviderComposition({
             data-reveal="composition"
             // data-reveal-state is stamped by the RevealController pre-hydration.
             suppressHydrationWarning
-            className="flex flex-1 flex-col justify-center gap-5"
+            className="flex flex-1 flex-col justify-center gap-4"
           >
             <div data-reveal-legend>
               <p className="text-xs text-muted-foreground">{c.total}</p>
@@ -70,7 +70,7 @@ export function ProviderComposition({
               </p>
             </div>
 
-            <ul className="flex flex-col gap-4">
+            <ul className="flex flex-col gap-3">
               {entries.map((entry, index) => (
                 <li
                   key={entry.key}

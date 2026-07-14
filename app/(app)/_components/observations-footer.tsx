@@ -19,10 +19,10 @@ export function ObservationsFooter({
   if (items.length === 0) return null;
 
   return (
-    <section className="rounded-xl border border-dashed p-5">
+    <section className="rounded-xl border border-dashed p-4">
       <h2 className="text-sm font-medium text-muted-foreground">{c.title}</h2>
       <p className="mt-0.5 text-xs text-muted-foreground/80">{c.subtitle}</p>
-      <ul className="mt-3.5 flex flex-col gap-2">
+      <ul className="mt-2.5 grid gap-x-6 gap-y-1.5 xl:grid-cols-2">
         {items.map((item) => (
           <li
             key={item.id}

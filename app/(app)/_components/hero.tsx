@@ -82,7 +82,7 @@ export function Hero({
       : money(org.projectedMargin, currency);
 
   return (
-    <Card className="min-h-full">
+    <Card size="sm" className="min-h-full">
       <CardHeader>
         <CardDescription>{c.spentLabel}</CardDescription>
         <CardTitle className="flex flex-wrap items-baseline gap-x-2.5 text-4xl tracking-tight tabular-nums sm:text-5xl">
@@ -94,7 +94,7 @@ export function Hero({
         <WeekDelta pct={weekPct} />
       </CardHeader>
 
-      <CardContent className="flex flex-1 flex-col gap-5">
+      <CardContent className="flex flex-1 flex-col gap-4">
         <PacingPair
           pctSpent={org.pctSpent}
           pctProjected={pctProjected}
@@ -106,7 +106,7 @@ export function Hero({
 
         {/* Two KPIs, not three: the day-of-month figure already lives in the
             verdict meta line and the time bar — a third copy was noise. */}
-        <dl className="grid grid-cols-2 gap-4 border-t pt-4">
+        <dl className="grid grid-cols-2 gap-4 border-t pt-3">
           <Kpi label={c.kpiProjection} value={projectionValue} />
           <Kpi label={c.kpiMargin} value={marginValue} />
         </dl>
