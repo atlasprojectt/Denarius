@@ -26,7 +26,8 @@ import { homeCopy } from "./_components/copy";
 // (architecture §9).
 
 export default async function HomePage() {
-  const { cockpit, period, stale, observations, hasSeatWaste, setup } = await getHomeData();
+  const { cockpit, period, stale, observations, hasSeatWaste, orgWeekPct, setup } =
+    await getHomeData();
 
   if (cockpit.state === "cold-start") {
     return (
@@ -103,6 +104,7 @@ export default async function HomePage() {
             currency={currency}
             dayOfPeriod={period.dayOfPeriod}
             daysInPeriod={period.daysInPeriod}
+            weekPct={orgWeekPct}
           />
         </div>
         <ProviderComposition entries={cockpit.composition} currency={currency} />

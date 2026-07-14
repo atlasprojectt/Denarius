@@ -47,6 +47,10 @@ export type HomeData = CockpitData & {
   observations: Observation[];
   /** Whether the seats-vs-roster caveat note should show (any waste line). */
   hasSeatWaste: boolean;
+  /** Org week-over-week API cost change (reported USD — same source and math
+   *  as the digest, so screen and email can never disagree). Neutral display
+   *  only (principle #5); null when the previous week has no spend. */
+  orgWeekPct: number | null;
   setup: { connected: boolean; hasRoster: boolean; hasBudget: boolean };
 };
 
@@ -55,6 +59,17 @@ type ConnectionRow = {
   status: string;
   last_sync_at: string | null;
 };
+
+/** cost_daily rows for the last 14 days — the org week-over-week input, same
+ *  source as the digest snapshot (lib/notify/snapshot.ts). */
+async function orgWeekCosts(now: Date): Promise<{ date: string; amount: number }[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("cost_daily")
+    .select("date, amount")
+    .gte("date", isoDaysAgo(now, 14));
+  return (data ?? []) as { date: string; amount: number }[];
+}
 
 /** Month-to-date provider-reported cost (USD, the headline truth), by provider. */
 async function providerCostToDate(): Promise<{ provider: string; usd: number }[]> {
@@ -346,11 +361,13 @@ function buildObservations(
 
 export async function getHomeData(): Promise<HomeData> {
   const now = new Date();
-  // Neither footer read needs anything from the cockpit — one parallel batch.
-  const [assembly, weekRows, roster] = await Promise.all([
+  // None of the footer/delta reads need anything from the cockpit — one
+  // parallel batch.
+  const [assembly, weekRows, roster, weekCosts] = await Promise.all([
     assembleCockpit(),
     teamWeekChanges(now),
     rosterHeadcount(),
+    orgWeekCosts(now),
   ]);
 
   const observations = buildObservations(assembly, weekRows, roster);
@@ -363,6 +380,7 @@ export async function getHomeData(): Promise<HomeData> {
     fx: assembly.fx,
     observations,
     hasSeatWaste: observations.some((o) => o.id.startsWith("seat:")),
+    orgWeekPct: weekOverWeek(weekCosts, now).pct,
     setup: {
       connected: assembly.connected,
       hasRoster: rosterTotal > 0,

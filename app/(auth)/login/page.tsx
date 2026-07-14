@@ -16,7 +16,7 @@ export default function LoginPage() {
           </div>
         </div>
       </div>
-      <BrandPanel />
+      <BrandPanel imageSrc="/login-bitcoin.webp" />
     </div>
   );
 }

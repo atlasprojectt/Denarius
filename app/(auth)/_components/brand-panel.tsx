@@ -1,8 +1,8 @@
-// Right-hand cover column of the auth pages (login-02/signup-02 layout):
-// instead of a stock image, the product's value proposition over a neutral
-// charcoal (no navy/slate cast — frontend §4) plus a small static verdict
-// vignette that hints at what's inside.
+// Right-hand cover column of the auth pages (login-02/signup-02 layout): the
+// product's value proposition plus a small static verdict vignette. Callers
+// may provide a page-specific cover image; signup keeps the neutral fallback.
 
+import Image from "next/image";
 import { LogoWordmark } from "@/components/domain/logo";
 
 const copy = {
@@ -15,12 +15,33 @@ const copy = {
   footnote: "Denarius é read-only: avisa e recomenda, nunca bloqueia.",
 };
 
-export function BrandPanel() {
+export function BrandPanel({ imageSrc }: { imageSrc?: string } = {}) {
   return (
-    <div className="relative hidden flex-col justify-between bg-stone-950 p-10 text-stone-300 lg:flex">
-      <LogoWordmark className="h-6 w-auto text-white" />
+    <div className="relative hidden flex-col justify-between overflow-hidden bg-stone-950 p-10 text-stone-300 lg:flex">
+      {imageSrc ? (
+        <>
+          <Image
+            src={imageSrc}
+            alt=""
+            fill
+            priority
+            sizes="50vw"
+            className="object-cover object-center"
+          />
+          <div
+            aria-hidden
+            className="absolute inset-0 bg-gradient-to-r from-stone-950/75 via-stone-950/30 to-transparent"
+          />
+          <div
+            aria-hidden
+            className="absolute inset-0 bg-gradient-to-t from-stone-950/80 via-transparent to-stone-950/25"
+          />
+        </>
+      ) : null}
 
-      <div className="max-w-md">
+      <LogoWordmark className="relative z-10 h-6 w-auto text-white" />
+
+      <div className="relative z-10 max-w-md">
         <h2 className="text-3xl font-semibold leading-tight tracking-tight text-balance text-white">
           {copy.headline}
         </h2>
@@ -45,7 +66,7 @@ export function BrandPanel() {
         </div>
       </div>
 
-      <p className="text-xs text-stone-500">{copy.footnote}</p>
+      <p className="relative z-10 text-xs text-stone-400">{copy.footnote}</p>
     </div>
   );
 }
