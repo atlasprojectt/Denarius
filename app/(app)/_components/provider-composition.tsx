@@ -65,10 +65,12 @@ export function ProviderComposition({
           <p className="text-sm text-muted-foreground">{c.empty}</p>
         ) : (
           <div
-            data-home-animate="composition"
+            data-reveal="composition"
+            // data-reveal-state is stamped by the RevealController pre-hydration.
+            suppressHydrationWarning
             className="grid items-center gap-5 sm:grid-cols-[170px_minmax(0,1fr)]"
           >
-            <div data-home-donut>
+            <div data-reveal-donut>
               <ChartContainer
                 config={chartConfig}
                 className="mx-auto aspect-square h-[160px]"
@@ -110,7 +112,7 @@ export function ProviderComposition({
             </div>
 
             <div className="flex min-w-0 flex-col justify-center gap-4">
-              <div data-home-legend-item>
+              <div data-reveal-legend>
                 <p className="text-xs text-muted-foreground">{c.total}</p>
                 <p className="mt-1 text-xl font-semibold tabular-nums">
                   {money(total, currency)}
@@ -121,7 +123,7 @@ export function ProviderComposition({
                 {entries.map((entry, index) => (
                   <li
                     key={entry.key}
-                    data-home-legend-item
+                    data-reveal-legend
                     className="flex items-start gap-2.5"
                     style={{
                       animationDelay: `${160 + index * 70}ms`,

@@ -19,8 +19,8 @@ export async function createClient() {
               cookieStore.set(name, value, options),
             );
           } catch {
-            // Called from an RSC render (no response to write to) — middleware
-            // refreshes sessions, so dropping the write here is safe.
+            // Called from an RSC render (no response to write to) — the proxy
+            // (proxy.ts) refreshes sessions, so dropping the write here is safe.
           }
         },
       },

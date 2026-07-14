@@ -1,11 +1,11 @@
 import "server-only";
 
 import { attributeSeats } from "@/lib/engine/accrual";
-import type { PeriodProgress, SeatSubscription } from "@/lib/engine/accrual";
-import { buildCockpit, type Cockpit } from "@/lib/engine/cockpit";
+import type { SeatSubscription } from "@/lib/engine/accrual";
+import { budgetedTeams, buildCockpit, type Cockpit } from "@/lib/engine/cockpit";
 import { freshness, type ConnectionStatus } from "@/lib/engine/freshness";
 import { periodFx, type FrozenFx } from "@/lib/engine/money-model";
-import { currentPeriod, monthStartUtc } from "@/lib/engine/period";
+import { currentPeriod, monthStartUtc, type Period } from "@/lib/engine/period";
 import { combineTeamSpend } from "@/lib/engine/team-spend";
 import { isoDaysAgo, weekOverWeek } from "@/lib/engine/week-change";
 import { buildApontamentos } from "@/lib/findings/apontamentos";
@@ -23,7 +23,7 @@ import { mapKey, teamApiSpend } from "@/lib/usage/attribution";
 
 export type CockpitData = {
   cockpit: Cockpit;
-  period: PeriodProgress;
+  period: Period;
   /** Connection freshness for the stale-data banner (honesty in the chrome). */
   stale: ReturnType<typeof freshness>;
   /** THE period's frozen USD→display rate (money-model contract) — one rate
@@ -230,6 +230,57 @@ export async function getCockpitData(): Promise<CockpitData> {
   return { cockpit, period, stale, fx };
 }
 
+export type TimesData = CockpitData & {
+  currency: string;
+  /** Every people team (the canonical list — includes non-budgeted teams). */
+  teams: { id: string; name: string }[];
+  /** Combined spend (seats + API × frozen FX) per team id, via the shared
+   *  engine combine — null when the FX rate is missing (invariant #4). */
+  combinedByTeam: Map<string, number> | null;
+  combinedUnattributed: number | null;
+  /** Raw parts for the FX-missing fallback: seats are display-currency native
+   *  (honest alone), API stays USD and is disclosed, never summed. */
+  seatByTeam: Map<string, number>;
+  apiUsdByTeam: Map<string, number>;
+  seatUnattributed: number;
+  apiUnattributedUsd: number;
+};
+
+/** The Times tab read: one assembly pass (no re-fetch of teams/seats/usage on
+ *  top of the cockpit's own reads) + the per-team combined spend from the
+ *  shared engine combine, so Times can never drift from Home/email numbers. */
+export async function getTimesData(): Promise<TimesData> {
+  const a = await assembleCockpit();
+
+  const mix = combineTeamSpend({
+    teams: a.teams,
+    seatByTeam: a.seatByTeam,
+    apiUsdByTeam: a.apiByTeam,
+    seatUnattributed: a.seatUnattributed,
+    apiUnattributedUsd: a.apiUnattributedUsd,
+    fxRate: a.fx?.rate ?? null,
+  });
+  // combineTeamSpend maps input.teams 1:1 in order — zip back to ids here so
+  // pages never rely on that positional contract themselves.
+  const combinedByTeam =
+    mix === null ? null : new Map(a.teams.map((t, i) => [t.id, mix.teamDrivers[i].value]));
+
+  return {
+    cockpit: a.cockpit,
+    period: a.period,
+    stale: a.stale,
+    fx: a.fx,
+    currency: a.currency,
+    teams: a.teams,
+    combinedByTeam,
+    combinedUnattributed: mix === null ? null : mix.unattributed,
+    seatByTeam: a.seatByTeam,
+    apiUsdByTeam: a.apiByTeam,
+    seatUnattributed: a.seatUnattributed,
+    apiUnattributedUsd: a.apiUnattributedUsd,
+  };
+}
+
 /**
  * The calm feed (#21/#22): apontamentos then secondary seat-waste, mapped into
  * one ordered Observation[] split by kind. Pure over already-fetched aggregates
@@ -244,17 +295,13 @@ function buildObservations(
   const { cockpit } = assembly;
   // A warned team never re-appears as an apontamento — one event, one channel;
   // the warning flag comes from the finding itself, the cockpit's truth.
-  const budgetedTeams =
-    cockpit.state === "ready"
-      ? [...cockpit.needsAttention, ...cockpit.underControl].map((t) => ({
-          name: t.teamName,
-          pctSpent: t.evaluation.pctSpent,
-          hasWarning: t.finding !== null,
-        }))
-      : [];
   const apontamentos = buildApontamentos({
     currency: assembly.currency,
-    budgetedTeams,
+    budgetedTeams: budgetedTeams(cockpit).map((t) => ({
+      name: t.teamName,
+      pctSpent: t.evaluation.pctSpent,
+      hasWarning: t.finding !== null,
+    })),
     weekByTeam: weekRows.map((w) => ({
       name: assembly.teamName.get(w.teamId) ?? "—",
       pct: w.pct,

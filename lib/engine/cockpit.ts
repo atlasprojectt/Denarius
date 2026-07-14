@@ -170,6 +170,13 @@ export function findCockpitTeam(
   );
 }
 
+/** Every budgeted team, needs-attention first (cockpit ordering) — the one
+ *  flatten shared by Home and Times, for the same reason as findCockpitTeam. */
+export function budgetedTeams(cockpit: Cockpit): CockpitTeam[] {
+  if (cockpit.state !== "ready") return [];
+  return [...cockpit.needsAttention, ...cockpit.underControl];
+}
+
 /** Assembles the full Home cockpit from raw parts. Pure — the hero function. */
 export function buildCockpit(input: CockpitInput): Cockpit {
   if (input.org === null) return { state: "cold-start" };

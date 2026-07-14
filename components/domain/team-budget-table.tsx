@@ -26,16 +26,45 @@ import {
 import type { CockpitTeam } from "@/lib/engine/cockpit";
 import { percent } from "@/lib/format";
 import { money } from "@/lib/money";
-import { homeCopy } from "./copy";
 
 // The teams section (frontend §3.5, redesign 2026-07): ONE stable table for
 // every budgeted team, at-risk first — no expanding rows, no collapsed groups,
-// no inline dialogs. The row states the situation; acting on it lives in
-// dedicated routes: the row links to /explorar/time/[id] (investigation,
-// simulation, control plan) and "Gerenciar orçamentos" → /ajustes/orcamentos
-// (editing). All numbers are engine-provided; this component only formats them.
+// no inline dialogs. Shared by Home and the Times tab (§F5 domain component).
+// The row states the situation; acting on it lives in dedicated routes: the row
+// links to /times/[id] (investigation, simulation, control plan) and "Gerenciar
+// orçamentos" → /ajustes/orcamentos (editing). All numbers are engine-provided;
+// this component only formats them.
 
-const c = homeCopy.teams;
+// Copy (F2: pt-BR, isolated). Owned here now that the table is a cross-screen
+// domain component rather than a Home-only piece.
+const c = {
+  title: "Orçamentos por time",
+  subtitleAttention: (n: number, total: number) =>
+    n === 1
+      ? `1 de ${total} times precisa de atenção neste mês.`
+      : `${n} de ${total} times precisam de atenção neste mês.`,
+  subtitleAllOk: (total: number) =>
+    total === 1
+      ? "O único time com orçamento está dentro do ritmo."
+      : `Todos os ${total} times com orçamento estão dentro do ritmo.`,
+  manage: "Gerenciar orçamentos",
+  colTeam: "Time",
+  colStatus: "Situação",
+  colSpent: "Gasto",
+  colBudget: "Orçamento",
+  colUsage: "Consumo",
+  colProjection: "Projeção",
+  detail: (team: string) => `Ver detalhe de ${team}`,
+  collecting: "—",
+  warnBreach: (spent: string, budget: string, pct: string) =>
+    `Estourou o orçamento: ${spent} de ${budget} (${pct}).`,
+  warnProjected: (projection: string, over: string) =>
+    `No ritmo atual, fecha em ${projection} — ${over} acima do orçamento.`,
+  warnThreshold: (pct: string) => `Já em ${pct} do orçamento neste ponto do mês.`,
+  emptyBody:
+    "Defina orçamentos por time para ver aqui quem está dentro do ritmo e quem precisa de atenção.",
+  emptyCta: "Definir orçamentos por time",
+} as const;
 
 function warningLine(team: CockpitTeam, currency: string): string | null {
   const f = team.finding;
@@ -95,8 +124,8 @@ export function TeamBudgetTable({
               return (
                 <Link
                   key={team.teamId}
-                  href={`/explorar/time/${team.teamId}`}
-                  className="group rounded-lg border p-4 outline-none transition-colors hover:border-primary/30 hover:bg-muted/30 focus-visible:ring-2 focus-visible:ring-ring/30"
+                  href={`/times/${team.teamId}`}
+                  className="group rounded-lg border p-4 outline-none transition-colors hover:border-primary-hover/40 hover:bg-muted/30 focus-visible:ring-2 focus-visible:ring-ring/30"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
@@ -176,16 +205,16 @@ export function TeamBudgetTable({
                     tabIndex={0}
                     aria-label={c.detail(team.teamName)}
                     className="group cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/30"
-                    onClick={() => router.push(`/explorar/time/${team.teamId}`)}
+                    onClick={() => router.push(`/times/${team.teamId}`)}
                     onKeyDown={(event) => {
                       if (event.key === "Enter" || event.key === " ") {
                         event.preventDefault();
-                        router.push(`/explorar/time/${team.teamId}`);
+                        router.push(`/times/${team.teamId}`);
                       }
                     }}
                   >
                     <TableCell className="max-w-64">
-                      <span className="block truncate font-medium transition-colors group-hover:text-primary">
+                      <span className="block truncate font-medium transition-colors group-hover:text-primary-hover">
                         {team.teamName}
                       </span>
                       {warning && (

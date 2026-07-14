@@ -38,35 +38,6 @@ export const homeCopy = {
       `+ ${usd} de API ainda sem câmbio congelado — fora do total até o câmbio ser capturado.`,
   },
 
-  teams: {
-    title: "Orçamentos por time",
-    subtitleAttention: (n: number, total: number) =>
-      n === 1
-        ? `1 de ${total} times precisa de atenção neste mês.`
-        : `${n} de ${total} times precisam de atenção neste mês.`,
-    subtitleAllOk: (total: number) =>
-      total === 1
-        ? "O único time com orçamento está dentro do ritmo."
-        : `Todos os ${total} times com orçamento estão dentro do ritmo.`,
-    manage: "Gerenciar orçamentos",
-    colTeam: "Time",
-    colStatus: "Situação",
-    colSpent: "Gasto",
-    colBudget: "Orçamento",
-    colUsage: "Consumo",
-    colProjection: "Projeção",
-    detail: (team: string) => `Ver detalhe de ${team}`,
-    collecting: "—",
-    warnBreach: (spent: string, budget: string, pct: string) =>
-      `Estourou o orçamento: ${spent} de ${budget} (${pct}).`,
-    warnProjected: (projection: string, over: string) =>
-      `No ritmo atual, fecha em ${projection} — ${over} acima do orçamento.`,
-    warnThreshold: (pct: string) => `Já em ${pct} do orçamento neste ponto do mês.`,
-    emptyBody:
-      "Defina orçamentos por time para ver aqui quem está dentro do ritmo e quem precisa de atenção.",
-    emptyCta: "Definir orçamentos por time",
-  },
-
   allClear: {
     title: "Tudo sob controle",
     body: "Nenhum time fora do orçamento no ritmo atual. Próximo resumo na sexta.",

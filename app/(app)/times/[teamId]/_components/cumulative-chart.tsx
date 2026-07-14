@@ -13,7 +13,7 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart";
-import type { BudgetEvaluation } from "@/lib/engine/budget";
+import type { CumulativePoint } from "@/lib/engine/cumulative";
 import { compactMoney, money } from "@/lib/money";
 import {
   Area,
@@ -24,88 +24,109 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { homeCopy } from "./copy";
 
-// "Ritmo do mês" (frontend §3.8): the cumulative spend line vs the budget
-// reference, with the linear projection dashed. A full-width analysis card in
-// the redesigned cockpit — the numbers themselves live in the hero, so this
-// card carries only the trajectory (no KPI footer).
+// The cumulative spend-vs-budget line (frontend §6, the F3 Recharts chart):
+// the team's real day-by-day spend, the budget reference and the dashed
+// projection tail to the period close. All numbers are engine-provided
+// (buildCumulativeSpend + the team evaluation); this component only draws.
 
-// Gradient fill under the realized line + a boundary marker where the
-// projection begins (2026-07-12).
-const c = homeCopy.monthlyPace;
+const copy = {
+  title: "Ritmo do time",
+  subtitle:
+    "Gasto acumulado dia a dia contra o orçamento — a linha tracejada é a projeção de fechamento.",
+  empty: "Sem gasto registrado neste período ainda.",
+  spent: "Gasto",
+  projected: "Projeção",
+  budget: "Orçamento",
+  today: "hoje",
+  dayTick: (day: number) => `dia ${day}`,
+};
 
 const chartConfig = {
-  spent: { label: c.spent, color: "var(--primary)" },
-  projected: { label: c.projected, color: "color-mix(in oklab, var(--primary) 55%, transparent)" },
-  budget: { label: c.budget, color: "var(--muted-foreground)" },
+  spent: { label: copy.spent, color: "var(--primary)" },
+  projected: {
+    label: copy.projected,
+    color: "color-mix(in oklab, var(--primary) 55%, transparent)",
+  },
 } satisfies ChartConfig;
 
-type PacePoint = { marker: string; x: number; spent: number };
+type ChartRow = { day: number; spent: number };
 
-function buildPaceData(org: BudgetEvaluation): PacePoint[] {
-  return [
-    { marker: c.start, x: 0, spent: 0 },
-    { marker: c.today, x: org.pctElapsed, spent: org.spent },
-  ];
+function buildRows(points: CumulativePoint[]): ChartRow[] {
+  return points.map((p) => ({ day: p.day, spent: p.spent }));
 }
 
-function buildProjectionSegment(org: BudgetEvaluation) {
-  if (org.projection === null || org.pctElapsed >= 1) return null;
-  return [
-    { x: org.pctElapsed, y: org.spent },
-    { x: 1, y: org.projection },
-  ] as const;
+function buildProjectionSegment(
+  points: CumulativePoint[],
+  projection: number | null,
+  daysInPeriod: number,
+) {
+  const last = points.at(-1);
+  if (last && projection !== null && daysInPeriod > last.day) {
+    return [
+      { x: last.day, y: last.spent },
+      { x: daysInPeriod, y: projection },
+    ] as const;
+  }
+  return null;
 }
 
-export function MonthlyPaceChart({
-  org,
+export function CumulativeChart({
+  points,
+  projection,
+  budget,
   currency,
+  dayOfPeriod,
+  daysInPeriod,
 }: {
-  org: BudgetEvaluation;
+  points: CumulativePoint[];
+  projection: number | null;
+  budget: number;
   currency: string;
+  dayOfPeriod: number;
+  daysInPeriod: number;
 }) {
-  const data = buildPaceData(org);
-  const projectionSegment = buildProjectionSegment(org);
-  const maxY = Math.max(org.budget, org.spent, org.projection ?? 0, 1) * 1.08;
-  const ticks = [0, org.pctElapsed, 1].filter(
+  const hasSpend = points.some((p) => p.spent > 0);
+  const rows = buildRows(points);
+  const projectionSegment = buildProjectionSegment(
+    points,
+    projection,
+    daysInPeriod,
+  );
+  const maxY =
+    Math.max(budget, projection ?? 0, points.at(-1)?.spent ?? 0, 1) * 1.08;
+  const ticks = [1, dayOfPeriod, daysInPeriod].filter(
     (v, i, a) => a.indexOf(v) === i,
   );
-  const tickLabel = (value: number) => {
-    if (value === 0) return c.start;
-    if (value === 1) return c.close;
-    return c.today;
-  };
+  const tickLabel = (value: number) =>
+    value === dayOfPeriod && value !== daysInPeriod
+      ? copy.today
+      : copy.dayTick(value);
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-sm">{c.title}</CardTitle>
-        <CardDescription>{c.subtitle}</CardDescription>
+        <CardTitle className="text-sm">{copy.title}</CardTitle>
+        <CardDescription>{copy.subtitle}</CardDescription>
       </CardHeader>
       <CardContent>
-        {org.spent <= 0 ? (
+        {!hasSpend ? (
           <p className="py-8 text-center text-sm text-muted-foreground">
-            {c.empty}
+            {copy.empty}
           </p>
         ) : (
-          // data-reveal-state is stamped by the RevealController pre-hydration.
-          <div data-reveal="monthly-pace" suppressHydrationWarning>
+          <div data-reveal="cumulative" suppressHydrationWarning>
             <div data-reveal-wipe>
-              <ChartContainer
-                config={chartConfig}
-                className="h-[240px] w-full"
-              >
+              <ChartContainer config={chartConfig} className="h-[220px] w-full">
                 <ComposedChart
                   accessibilityLayer
-                  data={data}
+                  data={rows}
                   margin={{ top: 16, right: 16, bottom: 4, left: 8 }}
                 >
                   <defs>
-                    {/* Orange fill under the REALIZED line only — it fades to
-                        transparent and (because `spent` stops at today) ends
-                        exactly where the projection begins. */}
-                    <linearGradient id="pace-fill" x1="0" y1="0" x2="0" y2="1">
+                    {/* Orange fill under the realized line only; fades out and ends
+                        where the projection tail begins. */}
+                    <linearGradient id="cumulative-fill" x1="0" y1="0" x2="0" y2="1">
                       <stop
                         offset="0%"
                         stopColor="var(--color-spent)"
@@ -120,9 +141,9 @@ export function MonthlyPaceChart({
                   </defs>
                   <CartesianGrid vertical={false} />
                   <XAxis
-                    dataKey="x"
+                    dataKey="day"
                     type="number"
-                    domain={[0, 1]}
+                    domain={[1, daysInPeriod]}
                     ticks={ticks}
                     tickFormatter={tickLabel}
                     tickLine={false}
@@ -135,17 +156,15 @@ export function MonthlyPaceChart({
                     axisLine={false}
                     tickMargin={6}
                     width={72}
-                    tickFormatter={(value: number) =>
-                      compactMoney(value, currency)
-                    }
+                    tickFormatter={(value: number) => compactMoney(value, currency)}
                   />
                   <ReferenceLine
-                    y={org.budget}
+                    y={budget}
                     stroke="var(--muted-foreground)"
                     strokeDasharray="4 4"
                     strokeOpacity={0.45}
                     label={{
-                      value: c.budget,
+                      value: copy.budget,
                       position: "insideBottomRight",
                       fill: "var(--muted-foreground)",
                       fontSize: 11,
@@ -157,12 +176,15 @@ export function MonthlyPaceChart({
                     content={
                       <ChartTooltipContent
                         indicator="line"
+                        labelFormatter={(_, payload) =>
+                          copy.dayTick(Number(payload?.[0]?.payload?.day ?? 0))
+                        }
                         formatter={(value, name) => (
                           <div className="flex min-w-[10rem] items-center justify-between gap-4">
                             <span className="text-muted-foreground">
                               {String(name) === "projected"
-                                ? c.projected
-                                : c.spent}
+                                ? copy.projected
+                                : copy.spent}
                             </span>
                             <span className="font-mono font-medium tabular-nums">
                               {money(Number(value), currency)}
@@ -172,13 +194,11 @@ export function MonthlyPaceChart({
                       />
                     }
                   />
-                  {/* Gradient fill sits under the realized line (drawn first,
-                      so the solid line reads on top with strong contrast). */}
                   <Area
                     dataKey="spent"
                     type="monotone"
                     stroke="none"
-                    fill="url(#pace-fill)"
+                    fill="url(#cumulative-fill)"
                     connectNulls={false}
                     isAnimationActive={false}
                   />
@@ -194,10 +214,10 @@ export function MonthlyPaceChart({
                   />
                   {projectionSegment ? (
                     <>
-                      {/* Boundary: exactly where realized spend ends and the
-                          projection (simulação de gastos) begins. */}
+                      {/* Boundary marker where realized spend ends and the
+                          projection begins. */}
                       <ReferenceLine
-                        x={org.pctElapsed}
+                        x={dayOfPeriod}
                         stroke="var(--muted-foreground)"
                         strokeDasharray="2 3"
                         strokeOpacity={0.5}

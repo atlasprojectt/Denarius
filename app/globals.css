@@ -45,6 +45,7 @@
   --color-secondary: var(--secondary);
   --color-primary-foreground: var(--primary-foreground);
   --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
   --color-popover-foreground: var(--popover-foreground);
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
@@ -150,13 +151,13 @@ input[type="number"]::-webkit-outer-spin-button {
   -webkit-appearance: none;
 }
 
-@property --home-donut-sweep {
+@property --reveal-donut-sweep {
   syntax: "<angle>";
   inherits: false;
   initial-value: 0deg;
 }
 
-@keyframes denarius-home-bar-build {
+@keyframes denarius-reveal-bar-build {
   0% {
     opacity: 0;
     transform: scaleX(0);
@@ -170,7 +171,7 @@ input[type="number"]::-webkit-outer-spin-button {
   }
 }
 
-@keyframes denarius-home-chart-reveal {
+@keyframes denarius-reveal-wipe {
   0% {
     clip-path: inset(0 100% 0 0);
     opacity: 0.35;
@@ -181,20 +182,20 @@ input[type="number"]::-webkit-outer-spin-button {
   }
 }
 
-@keyframes denarius-home-donut-build {
+@keyframes denarius-reveal-donut-build {
   0% {
-    --home-donut-sweep: 0deg;
+    --reveal-donut-sweep: 0deg;
     opacity: 0.25;
     transform: scale(0.94) rotate(-6deg);
   }
   100% {
-    --home-donut-sweep: 360deg;
+    --reveal-donut-sweep: 360deg;
     opacity: 1;
     transform: scale(1) rotate(0deg);
   }
 }
 
-@keyframes denarius-home-legend-enter {
+@keyframes denarius-reveal-legend-enter {
   0% {
     opacity: 0;
     transform: translateY(6px);
@@ -205,60 +206,60 @@ input[type="number"]::-webkit-outer-spin-button {
   }
 }
 
-[data-home-animate-state="idle"] [data-home-bar] {
+[data-reveal-state="idle"] [data-reveal-bar] {
   opacity: 0;
   transform: scaleX(0);
   transform-origin: left center;
 }
 
-[data-home-animate-state="idle"] [data-home-chart-reveal] {
+[data-reveal-state="idle"] [data-reveal-wipe] {
   clip-path: inset(0 100% 0 0);
   opacity: 0.35;
 }
 
-[data-home-animate-state="idle"] [data-home-donut] {
-  --home-donut-sweep: 0deg;
+[data-reveal-state="idle"] [data-reveal-donut] {
+  --reveal-donut-sweep: 0deg;
   opacity: 0.25;
   transform: scale(0.94) rotate(-6deg);
-  -webkit-mask-image: conic-gradient(#000 var(--home-donut-sweep), transparent 0deg);
-  mask-image: conic-gradient(#000 var(--home-donut-sweep), transparent 0deg);
+  -webkit-mask-image: conic-gradient(#000 var(--reveal-donut-sweep), transparent 0deg);
+  mask-image: conic-gradient(#000 var(--reveal-donut-sweep), transparent 0deg);
 }
 
-[data-home-animate-state="idle"] [data-home-legend-item] {
+[data-reveal-state="idle"] [data-reveal-legend] {
   opacity: 0;
   transform: translateY(6px);
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  [data-home-animate-state="running"] [data-home-bar] {
-    animation: denarius-home-bar-build 1150ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  [data-reveal-state="running"] [data-reveal-bar] {
+    animation: denarius-reveal-bar-build 1150ms cubic-bezier(0.16, 1, 0.3, 1) both;
     transform-origin: left center;
     will-change: transform, opacity;
   }
 
-  [data-home-animate-state="running"] [data-home-chart-reveal] {
-    animation: denarius-home-chart-reveal 1400ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  [data-reveal-state="running"] [data-reveal-wipe] {
+    animation: denarius-reveal-wipe 1400ms cubic-bezier(0.16, 1, 0.3, 1) both;
     overflow: hidden;
     will-change: clip-path, opacity;
   }
 
-  [data-home-animate-state="running"] [data-home-donut] {
-    -webkit-mask-image: conic-gradient(#000 var(--home-donut-sweep), transparent 0deg);
-    animation: denarius-home-donut-build 1200ms cubic-bezier(0.16, 1, 0.3, 1) both;
-    mask-image: conic-gradient(#000 var(--home-donut-sweep), transparent 0deg);
+  [data-reveal-state="running"] [data-reveal-donut] {
+    -webkit-mask-image: conic-gradient(#000 var(--reveal-donut-sweep), transparent 0deg);
+    animation: denarius-reveal-donut-build 1200ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    mask-image: conic-gradient(#000 var(--reveal-donut-sweep), transparent 0deg);
     will-change: transform, opacity;
   }
 
-  [data-home-animate-state="running"] [data-home-legend-item] {
-    animation: denarius-home-legend-enter 560ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  [data-reveal-state="running"] [data-reveal-legend] {
+    animation: denarius-reveal-legend-enter 560ms cubic-bezier(0.16, 1, 0.3, 1) both;
     will-change: transform, opacity;
   }
 }
 
-[data-home-animate-state="done"] [data-home-bar],
-[data-home-animate-state="done"] [data-home-chart-reveal],
-[data-home-animate-state="done"] [data-home-donut],
-[data-home-animate-state="done"] [data-home-legend-item] {
+[data-reveal-state="done"] [data-reveal-bar],
+[data-reveal-state="done"] [data-reveal-wipe],
+[data-reveal-state="done"] [data-reveal-donut],
+[data-reveal-state="done"] [data-reveal-legend] {
   animation: none;
   clip-path: none;
   opacity: 1;
@@ -266,10 +267,10 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  [data-home-animate] [data-home-bar],
-  [data-home-animate] [data-home-chart-reveal],
-  [data-home-animate] [data-home-donut],
-  [data-home-animate] [data-home-legend-item] {
+  [data-reveal] [data-reveal-bar],
+  [data-reveal] [data-reveal-wipe],
+  [data-reveal] [data-reveal-donut],
+  [data-reveal] [data-reveal-legend] {
     -webkit-mask-image: none;
     animation: none;
     clip-path: none;
@@ -294,6 +295,9 @@ input[type="number"]::-webkit-outer-spin-button {
   --popover-foreground: oklch(0.147 0.004 49.25);
   --primary: oklch(0.553 0.195 38.402);
   --primary-foreground: oklch(0.98 0.016 73.684);
+  /* Brand hover accent: one step lighter than --primary so hovered text and
+     borders brighten instead of muddying (solid buttons keep bg-primary/80). */
+  --primary-hover: oklch(0.646 0.222 41.116);
   --secondary: oklch(0.967 0.001 286.375);
   --secondary-foreground: oklch(0.21 0.006 285.885);
   --muted: oklch(0.97 0.001 106.424);
@@ -341,6 +345,9 @@ input[type="number"]::-webkit-outer-spin-button {
   --popover-foreground: oklch(0.985 0.001 106.423);
   --primary: oklch(0.47 0.157 37.304);
   --primary-foreground: oklch(0.98 0.016 73.684);
+  /* Dark primary is deliberately deep for button fills — hovered text needs a
+     much brighter orange to stay legible on the dark card. */
+  --primary-hover: oklch(0.705 0.213 47.604);
   --secondary: oklch(0.274 0.006 286.033);
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.268 0.007 34.298);
@@ -374,4 +381,14 @@ input[type="number"]::-webkit-outer-spin-button {
   --status-red: #ef4444;
   --status-red-soft: #2c131387;
   --status-red-fg: #fca5a5;
+}
+
+/* Description links inside the empty/field/item primitives hover in the brand
+   hover accent. Kept here (unlayered, so it wins over the primitives' layered
+   [&>a:hover]:text-primary utility) instead of editing components/ui/* — F5
+   keeps those files untouched. */
+[data-slot="empty-description"] > a:hover,
+[data-slot="field-description"] > a:hover,
+[data-slot="item-description"] > a:hover {
+  color: var(--primary-hover);
 }

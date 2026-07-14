@@ -32,13 +32,17 @@ export function BudgetBar({
 
   return (
     <div
-      data-home-animate={animate ? "budget-bar" : undefined}
+      data-reveal={animate ? "budget-bar" : undefined}
+      // The RevealController stamps data-reveal-state on this node before the
+      // client island hydrates — the attribute is controller-owned, so React
+      // must not diff it (hydration-mismatch warning otherwise).
+      suppressHydrationWarning
       className={`relative h-2.5 w-full overflow-hidden rounded-full bg-muted ${className}`}
     >
       {/* Run-rate ghost: dashed, from spend to the projected close. */}
       {g.ghostStart !== null && g.ghostEnd !== null && (
         <div
-          data-home-bar={animate ? "" : undefined}
+          data-reveal-bar={animate ? "" : undefined}
           className="absolute inset-y-0 border-y border-r border-dashed border-foreground/40 bg-foreground/5"
           style={{
             left: pct(g.ghostStart),
@@ -49,7 +53,7 @@ export function BudgetBar({
       )}
       {/* Filled portion: what's been spent. */}
       <div
-        data-home-bar={animate ? "" : undefined}
+        data-reveal-bar={animate ? "" : undefined}
         className={`absolute inset-y-0 left-0 rounded-full ${fillColor[status]}`}
         style={{ width: pct(g.fill), animationDelay: "60ms" }}
       />

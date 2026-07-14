@@ -1,12 +1,11 @@
 import Link from "next/link";
-import { RiCompass3Line, RiInformationLine } from "@remixicon/react";
+import { RiCompass3Line } from "@remixicon/react";
 
 import { EmptyState } from "@/components/domain/empty-state";
 import { PageHeader } from "@/components/domain/page-header";
 import { PageContainer } from "@/components/domain/page-container";
 import { StaleBanner } from "@/components/domain/stale-banner";
 import { UsdValue } from "@/components/domain/usd-value";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Card,
   CardContent,
@@ -25,14 +24,13 @@ import { money } from "@/lib/money";
 import { listSubscriptions } from "@/lib/subscriptions/queries";
 import { listTeams } from "@/lib/teams/queries";
 import { createClient } from "@/lib/supabase/server";
-import { teamApiSpend } from "@/lib/usage/attribution";
 import { apiSpendMonthToDate } from "@/lib/usage/queries";
 import { ExploreTable, type ExploreRow } from "./_components/explore-table";
 
 const copy = {
   title: "Explorar",
   subtitle:
-    "Para onde o gasto vai: por time, por modelo e por assinatura. Controle, não vigilância — pessoas só aparecem no detalhamento de um time, quando permitido.",
+    "Para onde o gasto vai: por modelo e por assinatura. A visão por time fica na aba Times; pessoas só aparecem no detalhamento de um time, quando permitido.",
   asOf: (label: string, day: number, days: number) =>
     `${label}, dia ${day} de ${days}`,
   emptyTitle: "Sem dados para explorar ainda",
@@ -48,16 +46,6 @@ const copy = {
   mapIt: "mapear",
   reconcile: (total: string) =>
     `Total da empresa = soma dos times + não atribuído = ${total} — sempre reconcilia.`,
-  apiTeamTitle: "Gasto de API por time",
-  apiTeamSub:
-    "Custo derivado (tokens × preço), convertido no câmbio congelado do período — o original em US$ acompanha cada valor. Clique em um time para investigar.",
-  apiTeamAsOf: (stamp: string) => `dados de ${stamp}`,
-  apiTeamReconcile: (total: string) =>
-    `Empresa = soma dos times + não atribuído = ${total} — sempre reconcilia.`,
-  driftUncosted: (drift: string) =>
-    `Derivado e reportado diferem em ${drift}, provavelmente por modelos não precificados neste mês.`,
-  driftWarn: (drift: string, pct: string) =>
-    `Atenção: o gasto derivado difere do reportado pelos provedores em ${drift} (${pct}) — confira a tabela de preços.`,
   apiTitle: (label: string) => `Uso de API por modelo — ${label}`,
   apiHeadlineSuffix: "neste mês",
   apiAsOf: (stamp: string) => `dados de ${stamp}`,
@@ -74,16 +62,10 @@ const copy = {
   fxMissingNote:
     "Câmbio do período indisponível — valores de API exibidos em US$ (originais), sem conversão estimada.",
   navLabel: "Seções de exploração",
-  navTeams: "Por time",
   navModels: "Por modelo",
   navSeats: "Assentos",
   zero: "Sem gasto neste período.",
 };
-
-const pctFmt = new Intl.NumberFormat("pt-BR", {
-  style: "percent",
-  maximumFractionDigits: 0,
-});
 
 type ConnectionRow = {
   provider: string;
@@ -97,14 +79,12 @@ export default async function ExplorePage() {
   const [
     { subscriptions, currency },
     apiSpend,
-    apiTeams,
     budgets,
     allTeams,
     { data: connectionData },
   ] = await Promise.all([
     listSubscriptions(),
     apiSpendMonthToDate(),
-    teamApiSpend(),
     listBudgets(),
     listTeams(),
     supabase
@@ -139,46 +119,10 @@ export default async function ExplorePage() {
       .sort()[0] ?? null;
 
   const coldStart = subscriptions.length === 0 && !apiSpend.hasData;
-  const rec = apiTeams.reconciliation;
-  const driftNotice =
-    apiTeams.hasData && !rec.withinTolerance
-      ? apiTeams.hasUncosted
-        ? copy.driftUncosted(inDisplay(Math.abs(rec.driftUsd)))
-        : copy.driftWarn(
-            inDisplay(Math.abs(rec.driftUsd)),
-            rec.driftPct === null ? "—" : pctFmt.format(rec.driftPct),
-          )
-      : null;
   const fxNote =
     fx !== null
       ? copy.fxNote(money(fx.rate, currency), fx.date ?? "—")
       : copy.fxMissingNote;
-
-  const apiTeamById = new Map(apiTeams.teams.map((team) => [team.teamId, team]));
-  const apiTeamRows: ExploreRow[] = allTeams.map((team) => {
-    const spend = apiTeamById.get(team.id);
-    const usd = spend?.derivedUsd ?? 0;
-    const display = usdDisplay(usd, currency, fx);
-    return {
-      id: team.id,
-      label: team.name,
-      amount: usd === 0 ? 0 : display.display,
-      originalUsd: usd,
-      href: `/explorar/time/${team.id}`,
-      note: spend?.uncosted ? copy.uncosted : usd === 0 ? copy.zero : undefined,
-    };
-  });
-  if (apiTeams.unattributedUsd > 0) {
-    const display = usdDisplay(apiTeams.unattributedUsd, currency, fx);
-    apiTeamRows.push({
-      id: "__unattributed__",
-      label: copy.unattributed,
-      amount: display.display,
-      originalUsd: apiTeams.unattributedUsd,
-      href: "/ajustes/atribuicao",
-      note: copy.mapIt,
-    });
-  }
 
   const modelRows: ExploreRow[] = apiSpend.byModel.map((row) => {
     const usd = row.derivedCost ?? 0;
@@ -222,7 +166,6 @@ export default async function ExplorePage() {
 
       {!coldStart && (
         <nav aria-label={copy.navLabel} className="sticky top-16 z-[5] flex flex-wrap gap-1 rounded-lg border bg-background/95 p-1 shadow-xs backdrop-blur">
-          {apiTeams.hasData && <a href="#por-time" className="rounded-md px-3 py-2 text-sm font-medium hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring/30">{copy.navTeams}</a>}
           {apiSpend.hasData && <a href="#por-modelo" className="rounded-md px-3 py-2 text-sm font-medium hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring/30">{copy.navModels}</a>}
           {subscriptions.length > 0 && <a href="#assentos" className="rounded-md px-3 py-2 text-sm font-medium hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring/30">{copy.navSeats}</a>}
         </nav>
@@ -240,34 +183,6 @@ export default async function ExplorePage() {
             <Link href="/ajustes/assinaturas">{copy.emptySeatsCta}</Link>
           }
         />
-      )}
-
-      {apiTeams.hasData && (
-        <Card id="por-time" className="scroll-mt-32">
-          <CardHeader>
-            <CardTitle className="text-sm">{copy.apiTeamTitle}</CardTitle>
-            <CardDescription>{copy.apiTeamSub}</CardDescription>
-            {lastSyncAt && (
-              <CardAsOf>{copy.apiTeamAsOf(utcStamp(lastSyncAt))}</CardAsOf>
-            )}
-          </CardHeader>
-          <CardContent className="flex flex-col gap-4">
-            <ExploreTable
-              rows={apiTeamRows}
-              currency={currency}
-              labelHeader={copy.colTeam}
-              amountHeader={copy.colDerived}
-            />
-            <Alert>
-              <RiInformationLine />
-              <AlertDescription className="space-y-1">
-                {driftNotice && <p>{driftNotice}</p>}
-                <p>{copy.apiTeamReconcile(inDisplay(apiTeams.orgTotalUsd))}</p>
-                <p>{fxNote}</p>
-              </AlertDescription>
-            </Alert>
-          </CardContent>
-        </Card>
       )}
 
       {apiSpend.hasData && (

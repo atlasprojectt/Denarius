@@ -8,6 +8,7 @@ import {
   RiSettings3Line,
   RiHome5Line,
   RiLogoutBoxRLine,
+  RiTeamLine,
   RiUserLine,
 } from "@remixicon/react";
 
@@ -41,6 +42,7 @@ const copy = {
   groupCockpit: "Cockpit",
   groupAccount: "Conta",
   home: "Início",
+  teams: "Times",
   explore: "Explorar",
   settings: "Ajustes",
   profileMenu: "Perfil",
@@ -50,6 +52,7 @@ const copy = {
 
 const cockpitItems = [
   { title: copy.home, href: "/", icon: RiHome5Line },
+  { title: copy.teams, href: "/times", icon: RiTeamLine },
   { title: copy.explore, href: "/explorar", icon: RiLineChartLine },
 ];
 
@@ -60,7 +63,7 @@ const accountItems = [
 type NavItem = (typeof cockpitItems)[number];
 
 // "/" only matches exactly; sections stay lit on their subroutes
-// (/explorar/time/[id] keeps Explorar active).
+// (/times/[id] keeps Times active).
 function isActivePath(pathname: string, href: string): boolean {
   if (href === "/") return pathname === "/";
   return pathname === href || pathname.startsWith(`${href}/`);

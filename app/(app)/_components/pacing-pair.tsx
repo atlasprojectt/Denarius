@@ -39,7 +39,8 @@ export function PacingPair({
   };
 
   return (
-    <div data-home-animate="pacing-pair" className="flex flex-col gap-3">
+    // data-reveal-state is stamped by the RevealController pre-hydration.
+    <div data-reveal="pacing-pair" suppressHydrationWarning className="flex flex-col gap-3">
       {/* Spend bar */}
       <div>
         <div className="mb-1 flex items-baseline justify-between text-xs text-muted-foreground">
@@ -49,7 +50,7 @@ export function PacingPair({
         <div className="relative h-2.5 w-full overflow-hidden rounded-full bg-muted">
           {g.ghostStart !== null && g.ghostEnd !== null && (
             <div
-              data-home-bar
+              data-reveal-bar
               className="absolute inset-y-0 border-y border-r border-dashed border-foreground/40 bg-foreground/5"
               style={{
                 left: pct(g.ghostStart),
@@ -59,7 +60,7 @@ export function PacingPair({
             />
           )}
           <div
-            data-home-bar
+            data-reveal-bar
             className={`absolute inset-y-0 left-0 rounded-full ${fill[status]}`}
             style={{ width: pct(g.fill), animationDelay: "80ms" }}
           />
@@ -81,7 +82,7 @@ export function PacingPair({
         </div>
         <div className="relative h-2.5 w-full overflow-hidden rounded-full bg-muted">
           <div
-            data-home-bar
+            data-reveal-bar
             className="absolute inset-y-0 left-0 rounded-full bg-foreground/30"
             style={{ width: pct(at(pctElapsed)), animationDelay: "180ms" }}
           />

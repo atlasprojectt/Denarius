@@ -13,7 +13,7 @@ const PUBLIC_PREFIXES = ["/login", "/signup", "/auth"];
  */
 const SESSION_BYPASS_PREFIXES = ["/api/cron"];
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname;
   if (SESSION_BYPASS_PREFIXES.some((p) => path.startsWith(p))) {
     return NextResponse.next({ request });

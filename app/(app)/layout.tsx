@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 
 import { AppSidebar } from "@/components/domain/app-sidebar";
 import { NextActionsButton } from "@/components/domain/next-actions-button";
+import { RevealController } from "@/components/domain/reveal-controller";
 import { AppToastProvider } from "@/components/domain/toast-provider";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -68,8 +69,13 @@ export default async function AppLayout({
             </div>
           </header>
           {/* SidebarInset already renders the page's <main> landmark — a
-              nested second <main> broke the single-landmark contract. */}
-          <div className="flex-1 px-4 py-8 md:px-8">{children}</div>
+              nested second <main> broke the single-landmark contract.
+              data-reveal-root scopes the app-wide chart open-animations; the
+              RevealController persists across navigations and replays them. */}
+          <div data-reveal-root className="flex-1 px-4 py-8 md:px-8">
+            {children}
+          </div>
+          <RevealController />
         </SidebarInset>
       </SidebarProvider>
     </AppToastProvider>
