@@ -1,17 +1,20 @@
-import { barGeometry } from "@/lib/bars";
+import { barGeometry, cut, TICKS } from "@/lib/bars";
 import type { VerdictStatus } from "@/lib/engine/verdict";
 
-// Hand-rolled budget bar (frontend F3: a progress bar is not a chart). Fill =
-// spent, dashed ghost = run-rate projection past spend, the vertical marker =
-// the budget line. Geometry (scaling for overruns) is the pure barGeometry
-// helper; this component only paints it. Fill color follows budget status —
-// semaphore discipline (product principle #5).
+// Hand-rolled budget bar (frontend F3: a progress bar is not a chart), painted
+// as a segmented tick bar (2026-07 restyle, one texture family with the hero
+// pacing pair). Fill = spent, ghost = run-rate projection past spend, the
+// vertical marker = the budget line. Geometry (scaling for overruns) is the
+// pure barGeometry helper; this component only paints it. Every layer is the
+// same full-width tick grid cut by clip-path so tick columns align; fill vs
+// ghost vs track read by color strength alone. Fill color follows budget
+// status — semaphore discipline (product principle #5).
 
 const fillColor: Record<VerdictStatus, string> = {
-  green: "bg-status-green",
-  amber: "bg-status-amber",
-  red: "bg-status-red",
-  collecting: "bg-muted-foreground",
+  green: "text-status-green",
+  amber: "text-status-amber",
+  red: "text-status-red",
+  collecting: "text-muted-foreground",
 };
 
 export function BudgetBar({
@@ -37,16 +40,18 @@ export function BudgetBar({
       // client island hydrates — the attribute is controller-owned, so React
       // must not diff it (hydration-mismatch warning otherwise).
       suppressHydrationWarning
-      className={`relative h-2.5 w-full overflow-hidden rounded-full bg-muted ${className}`}
+      className={`relative h-2.5 w-full ${className}`}
     >
-      {/* Run-rate ghost: dashed, from spend to the projected close. */}
+      {/* Track: the faint full-width tick grid. */}
+      <div aria-hidden className="absolute inset-0 text-foreground/15" style={TICKS} />
+      {/* Run-rate ghost: neutral ticks from spend to the projected close. */}
       {g.ghostStart !== null && g.ghostEnd !== null && (
         <div
           data-reveal-bar={animate ? "" : undefined}
-          className="absolute inset-y-0 border-y border-r border-dashed border-foreground/40 bg-foreground/5"
+          className="absolute inset-0 text-foreground/35"
           style={{
-            left: pct(g.ghostStart),
-            width: pct(g.ghostEnd - g.ghostStart),
+            ...TICKS,
+            clipPath: cut(g.ghostStart, g.ghostEnd),
             animationDelay: "220ms",
           }}
         />
@@ -54,8 +59,8 @@ export function BudgetBar({
       {/* Filled portion: what's been spent. */}
       <div
         data-reveal-bar={animate ? "" : undefined}
-        className={`absolute inset-y-0 left-0 rounded-full ${fillColor[status]}`}
-        style={{ width: pct(g.fill), animationDelay: "60ms" }}
+        className={`absolute inset-0 ${fillColor[status]}`}
+        style={{ ...TICKS, clipPath: cut(0, g.fill), animationDelay: "60ms" }}
       />
       {/* Budget marker: the 100% line. Hidden when spend/projection sit at the
           very edge (marker == 1) so it doesn't merge with the track end. */}

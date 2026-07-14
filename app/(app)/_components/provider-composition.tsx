@@ -1,4 +1,5 @@
-"use client";
+import type { ReactNode } from "react";
+import { RiGroupLine } from "@remixicon/react";
 
 import {
   Card,
@@ -7,31 +8,20 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-  type ChartConfig,
-} from "@/components/ui/chart";
+import { ProviderIcon } from "@/components/domain/provider-icon";
+import { cut, TICKS } from "@/lib/bars";
 import type { CompositionEntry } from "@/lib/engine/cockpit";
 import { percent } from "@/lib/format";
 import { money } from "@/lib/money";
-import { Cell, Pie, PieChart } from "recharts";
 import { homeCopy } from "./copy";
 
-// "Para onde vai o dinheiro" (frontend §3.8): provider/seat composition as a
-// shadcn/Recharts donut. Neutral chart tokens — this is composition, not budget
-// status, so no semaphore colors (product principle #5).
+// "Para onde vai o dinheiro" (frontend §3.8): provider/seat composition as
+// ranked horizontal tick bars (2026-07 restyle — F3: hand-rolled CSS, the
+// donut is gone). Each source is a provider mark + label, the amount with its
+// share, and a tick bar cut to the share. Neutral chart-ramp colors — this is
+// composition, not budget status, so no semaphore (product principle #5).
 
 const c = homeCopy.composition;
-
-const chartConfig = {
-  amount: { label: c.amount },
-  openai: { label: "OpenAI", color: "var(--chart-1)" },
-  anthropic: { label: "Anthropic", color: "var(--chart-2)" },
-  seats: { label: "Assentos", color: "var(--chart-3)" },
-  other: { label: "Outros", color: "var(--chart-4)" },
-} satisfies ChartConfig;
 
 const chartColors = [
   "var(--chart-1)",
@@ -41,6 +31,13 @@ const chartColors = [
   "var(--chart-5)",
 ];
 
+// Known composition keys → marks; unknown keys render without an icon.
+const entryIcon: Record<string, ReactNode> = {
+  openai: <ProviderIcon provider="openai" className="size-4" />,
+  anthropic: <ProviderIcon provider="anthropic" className="size-4" />,
+  seats: <RiGroupLine className="size-4 text-muted-foreground" aria-hidden />,
+};
+
 export function ProviderComposition({
   entries,
   currency,
@@ -49,10 +46,6 @@ export function ProviderComposition({
   currency: string;
 }) {
   const total = entries.reduce((sum, entry) => sum + entry.amount, 0);
-  const chartData = entries.map((entry, index) => ({
-    ...entry,
-    fill: chartColors[index % chartColors.length],
-  }));
 
   return (
     <Card className="min-h-full">
@@ -60,7 +53,7 @@ export function ProviderComposition({
         <CardTitle className="text-sm">{c.title}</CardTitle>
         <CardDescription>{c.drillNote}</CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex flex-1 flex-col">
         {entries.length === 0 ? (
           <p className="text-sm text-muted-foreground">{c.empty}</p>
         ) : (
@@ -68,90 +61,55 @@ export function ProviderComposition({
             data-reveal="composition"
             // data-reveal-state is stamped by the RevealController pre-hydration.
             suppressHydrationWarning
-            className="grid items-center gap-5 sm:grid-cols-[170px_minmax(0,1fr)]"
+            className="flex flex-1 flex-col justify-center gap-5"
           >
-            <div data-reveal-donut>
-              <ChartContainer
-                config={chartConfig}
-                className="mx-auto aspect-square h-[160px]"
-              >
-                <PieChart>
-                  <ChartTooltip
-                    cursor={false}
-                    content={
-                      <ChartTooltipContent
-                        hideLabel
-                        nameKey="label"
-                        formatter={(value, name) => (
-                          <div className="flex min-w-[10rem] items-center justify-between gap-4">
-                            <span className="text-muted-foreground">{name}</span>
-                            <span className="font-mono font-medium tabular-nums">
-                              {money(Number(value), currency)}
-                            </span>
-                          </div>
-                        )}
-                      />
-                    }
-                  />
-                  <Pie
-                    data={chartData}
-                    dataKey="amount"
-                    nameKey="label"
-                    innerRadius={48}
-                    outerRadius={74}
-                    paddingAngle={2}
-                    strokeWidth={0}
-                    isAnimationActive={false}
-                  >
-                    {chartData.map((entry) => (
-                      <Cell key={entry.key} fill={entry.fill} />
-                    ))}
-                  </Pie>
-                </PieChart>
-              </ChartContainer>
+            <div data-reveal-legend>
+              <p className="text-xs text-muted-foreground">{c.total}</p>
+              <p className="mt-1 text-xl font-semibold tabular-nums">
+                {money(total, currency)}
+              </p>
             </div>
 
-            <div className="flex min-w-0 flex-col justify-center gap-4">
-              <div data-reveal-legend>
-                <p className="text-xs text-muted-foreground">{c.total}</p>
-                <p className="mt-1 text-xl font-semibold tabular-nums">
-                  {money(total, currency)}
-                </p>
-              </div>
-
-              <ul className="flex flex-col gap-3">
-                {entries.map((entry, index) => (
-                  <li
-                    key={entry.key}
-                    data-reveal-legend
-                    className="flex items-start gap-2.5"
-                    style={{
-                      animationDelay: `${160 + index * 70}ms`,
-                    }}
-                  >
-                    <span
-                      className="mt-1.5 size-2.5 shrink-0 rounded-full"
-                      style={{
-                        backgroundColor:
-                          chartColors[index % chartColors.length],
-                      }}
-                      aria-hidden
-                    />
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-baseline justify-between gap-2 text-sm">
-                        <span className="truncate font-medium">{entry.label}</span>
-                        <span className="tabular-nums text-muted-foreground">
-                          {percent(entry.share)}
+            <ul className="flex flex-col gap-4">
+              {entries.map((entry, index) => (
+                <li
+                  key={entry.key}
+                  data-reveal-legend
+                  style={{ animationDelay: `${120 + index * 70}ms` }}
+                >
+                  <div className="flex items-baseline justify-between gap-3 text-sm">
+                    <span className="flex min-w-0 items-center gap-2">
+                      {entryIcon[entry.key] && (
+                        <span className="shrink-0 self-center">
+                          {entryIcon[entry.key]}
                         </span>
-                      </div>
-                      <p className="mt-0.5 text-xs tabular-nums text-muted-foreground">
-                        {money(entry.amount, currency)}
-                      </p>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </div>
+                      )}
+                      <span className="truncate font-medium">{entry.label}</span>
+                    </span>
+                    <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
+                      {c.entryValue(money(entry.amount, currency), percent(entry.share))}
+                    </span>
+                  </div>
+                  <div className="relative mt-1.5 h-2 w-full">
+                    <div
+                      aria-hidden
+                      className="absolute inset-0 text-foreground/15"
+                      style={TICKS}
+                    />
+                    <div
+                      data-reveal-bar
+                      className="absolute inset-0"
+                      style={{
+                        ...TICKS,
+                        color: chartColors[index % chartColors.length],
+                        clipPath: cut(0, entry.share),
+                        animationDelay: `${160 + index * 90}ms`,
+                      }}
+                    />
+                  </div>
+                </li>
+              ))}
+            </ul>
           </div>
         )}
       </CardContent>

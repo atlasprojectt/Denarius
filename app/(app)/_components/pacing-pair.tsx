@@ -1,6 +1,4 @@
-import type { CSSProperties } from "react";
-
-import { barGeometry } from "@/lib/bars";
+import { barGeometry, cut, TICKS, TICKS_BOLD } from "@/lib/bars";
 import type { VerdictStatus } from "@/lib/engine/verdict";
 import { percent } from "@/lib/format";
 import { homeCopy } from "./copy";
@@ -11,20 +9,10 @@ import { homeCopy } from "./copy";
 // "spent 90%" against "only 75% through the month". Rendered as segmented
 // tick bars (2026-07 restyle): texture only — the spend fill keeps the
 // semaphore color (principle #5) and geometry still comes from barGeometry.
+// The spend bar is THE bar of the cockpit, so it's taller and bold (TICKS_BOLD,
+// same 6px grid); the time bar below stays standard for hierarchy.
 
 const c = homeCopy.hero;
-
-// Every layer paints the SAME full-width tick grid (currentColor) and is cut
-// by clip-path, so track/fill/ghost tick columns always align — a left-offset
-// layer would start its own grid.
-const TICKS: CSSProperties = {
-  backgroundImage:
-    "repeating-linear-gradient(90deg, currentColor 0 2px, transparent 2px 6px)",
-};
-
-/** clip-path inset cutting a full-width layer to the [from..to] fraction. */
-const cut = (from: number, to: number): string =>
-  `inset(0 ${((1 - to) * 100).toFixed(2)}% 0 ${(from * 100).toFixed(2)}%)`;
 
 export function PacingPair({
   pctSpent,
@@ -58,18 +46,18 @@ export function PacingPair({
     <div data-reveal="pacing-pair" suppressHydrationWarning className="flex flex-col gap-3">
       {/* Spend bar */}
       <div>
-        <div className="mb-1 flex items-baseline justify-between text-xs text-muted-foreground">
-          <span>{c.pacingSpend}</span>
-          <span className="tabular-nums">{percent(pctSpent)}</span>
+        <div className="mb-1 flex items-baseline justify-between text-xs">
+          <span className="font-medium">{c.pacingSpend}</span>
+          <span className="font-medium tabular-nums">{percent(pctSpent)}</span>
         </div>
-        <div className="relative h-3.5 w-full">
-          <div aria-hidden className="absolute inset-0 text-foreground/15" style={TICKS} />
+        <div className="relative h-4 w-full">
+          <div aria-hidden className="absolute inset-0 text-foreground/15" style={TICKS_BOLD} />
           {g.ghostStart !== null && g.ghostEnd !== null && (
             <div
               data-reveal-bar
               className="absolute inset-0 text-foreground/35"
               style={{
-                ...TICKS,
+                ...TICKS_BOLD,
                 clipPath: cut(g.ghostStart, g.ghostEnd),
                 animationDelay: "260ms",
               }}
@@ -78,7 +66,7 @@ export function PacingPair({
           <div
             data-reveal-bar
             className={`absolute inset-0 ${fill[status]}`}
-            style={{ ...TICKS, clipPath: cut(0, g.fill), animationDelay: "80ms" }}
+            style={{ ...TICKS_BOLD, clipPath: cut(0, g.fill), animationDelay: "80ms" }}
           />
           {g.marker < 1 && (
             <div

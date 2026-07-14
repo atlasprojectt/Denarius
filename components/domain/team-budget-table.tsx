@@ -34,6 +34,11 @@ import { money } from "@/lib/money";
 // links to /times/[id] (investigation, simulation, control plan) and "Gerenciar
 // orçamentos" → /ajustes/orcamentos (editing). All numbers are engine-provided;
 // this component only formats them.
+//
+// Variant switching is container-query based (@container on CardContent), not
+// viewport based: on Home the card sits in a half-width grid cell and must show
+// the compact card list even on a wide monitor, while on /times the same
+// component is full-width and shows the table — the card's own width decides.
 
 // Copy (F2: pt-BR, isolated). Owned here now that the table is a cross-screen
 // domain component rather than a Home-only piece.
@@ -97,7 +102,7 @@ export function TeamBudgetTable({
   const router = useRouter();
 
   return (
-    <Card>
+    <Card className="min-h-full">
       <CardHeader>
         <CardTitle className="text-sm">{c.title}</CardTitle>
         <CardDescription>
@@ -116,8 +121,8 @@ export function TeamBudgetTable({
         </CardAction>
       </CardHeader>
       {teams.length > 0 && (
-        <CardContent>
-          <div className="grid gap-3 md:hidden">
+        <CardContent className="@container">
+          <div className="grid gap-3 @2xl:hidden">
             {teams.map((team) => {
               const ev = team.evaluation;
               const warning = warningLine(team, currency);
@@ -125,6 +130,7 @@ export function TeamBudgetTable({
                 <Link
                   key={team.teamId}
                   href={`/times/${team.teamId}`}
+                  aria-label={c.detail(team.teamName)}
                   className="group rounded-lg border p-4 outline-none transition-colors hover:border-primary-hover/40 hover:bg-muted/30 focus-visible:ring-2 focus-visible:ring-ring/30"
                 >
                   <div className="flex items-start justify-between gap-3">
@@ -175,20 +181,20 @@ export function TeamBudgetTable({
               );
             })}
           </div>
-          <div className="hidden md:block">
+          <div className="hidden @2xl:block">
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>{c.colTeam}</TableHead>
                 <TableHead>{c.colStatus}</TableHead>
                 <TableHead className="text-right">{c.colSpent}</TableHead>
-                <TableHead className="hidden text-right md:table-cell">
+                <TableHead className="hidden text-right @2xl:table-cell">
                   {c.colBudget}
                 </TableHead>
-                <TableHead className="hidden w-44 lg:table-cell">
+                <TableHead className="hidden w-44 @3xl:table-cell">
                   {c.colUsage}
                 </TableHead>
-                <TableHead className="hidden text-right md:table-cell">
+                <TableHead className="hidden text-right @2xl:table-cell">
                   {c.colProjection}
                 </TableHead>
                 <TableHead className="w-10" />
@@ -229,10 +235,10 @@ export function TeamBudgetTable({
                     <TableCell className="text-right tabular-nums">
                       {money(ev.spent, currency)}
                     </TableCell>
-                    <TableCell className="hidden text-right tabular-nums text-muted-foreground md:table-cell">
+                    <TableCell className="hidden text-right tabular-nums text-muted-foreground @2xl:table-cell">
                       {money(ev.budget, currency)}
                     </TableCell>
-                    <TableCell className="hidden lg:table-cell">
+                    <TableCell className="hidden @3xl:table-cell">
                       <div className="flex items-center gap-2.5">
                         <BudgetBar
                           animate
@@ -246,7 +252,7 @@ export function TeamBudgetTable({
                         </span>
                       </div>
                     </TableCell>
-                    <TableCell className="hidden text-right tabular-nums text-muted-foreground md:table-cell">
+                    <TableCell className="hidden text-right tabular-nums text-muted-foreground @2xl:table-cell">
                       {ev.projection === null
                         ? c.collecting
                         : money(ev.projection, currency)}
