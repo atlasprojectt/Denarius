@@ -151,12 +151,6 @@ input[type="number"]::-webkit-outer-spin-button {
   -webkit-appearance: none;
 }
 
-@property --reveal-donut-sweep {
-  syntax: "<angle>";
-  inherits: false;
-  initial-value: 0deg;
-}
-
 @keyframes denarius-reveal-bar-build {
   0% {
     opacity: 0;
@@ -182,19 +176,6 @@ input[type="number"]::-webkit-outer-spin-button {
   }
 }
 
-@keyframes denarius-reveal-donut-build {
-  0% {
-    --reveal-donut-sweep: 0deg;
-    opacity: 0.25;
-    transform: scale(0.94) rotate(-6deg);
-  }
-  100% {
-    --reveal-donut-sweep: 360deg;
-    opacity: 1;
-    transform: scale(1) rotate(0deg);
-  }
-}
-
 @keyframes denarius-reveal-legend-enter {
   0% {
     opacity: 0;
@@ -217,14 +198,6 @@ input[type="number"]::-webkit-outer-spin-button {
   opacity: 0.35;
 }
 
-[data-reveal-state="idle"] [data-reveal-donut] {
-  --reveal-donut-sweep: 0deg;
-  opacity: 0.25;
-  transform: scale(0.94) rotate(-6deg);
-  -webkit-mask-image: conic-gradient(#000 var(--reveal-donut-sweep), transparent 0deg);
-  mask-image: conic-gradient(#000 var(--reveal-donut-sweep), transparent 0deg);
-}
-
 [data-reveal-state="idle"] [data-reveal-legend] {
   opacity: 0;
   transform: translateY(6px);
@@ -243,13 +216,6 @@ input[type="number"]::-webkit-outer-spin-button {
     will-change: clip-path, opacity;
   }
 
-  [data-reveal-state="running"] [data-reveal-donut] {
-    -webkit-mask-image: conic-gradient(#000 var(--reveal-donut-sweep), transparent 0deg);
-    animation: denarius-reveal-donut-build 1200ms cubic-bezier(0.16, 1, 0.3, 1) both;
-    mask-image: conic-gradient(#000 var(--reveal-donut-sweep), transparent 0deg);
-    will-change: transform, opacity;
-  }
-
   [data-reveal-state="running"] [data-reveal-legend] {
     animation: denarius-reveal-legend-enter 560ms cubic-bezier(0.16, 1, 0.3, 1) both;
     will-change: transform, opacity;
@@ -258,7 +224,6 @@ input[type="number"]::-webkit-outer-spin-button {
 
 [data-reveal-state="done"] [data-reveal-bar],
 [data-reveal-state="done"] [data-reveal-wipe],
-[data-reveal-state="done"] [data-reveal-donut],
 [data-reveal-state="done"] [data-reveal-legend] {
   animation: none;
   clip-path: none;
@@ -269,7 +234,6 @@ input[type="number"]::-webkit-outer-spin-button {
 @media (prefers-reduced-motion: reduce) {
   [data-reveal] [data-reveal-bar],
   [data-reveal] [data-reveal-wipe],
-  [data-reveal] [data-reveal-donut],
   [data-reveal] [data-reveal-legend] {
     -webkit-mask-image: none;
     animation: none;

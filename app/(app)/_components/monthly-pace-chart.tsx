@@ -27,9 +27,9 @@ import {
 import { homeCopy } from "./copy";
 
 // "Ritmo do mês" (frontend §3.8): the cumulative spend line vs the budget
-// reference, with the linear projection dashed. A full-width analysis card in
-// the redesigned cockpit — the numbers themselves live in the hero, so this
-// card carries only the trajectory (no KPI footer).
+// reference, with the linear projection dashed. An analysis cell in the 2x2
+// cockpit grid — the numbers themselves live in the hero, so this card
+// carries only the trajectory (no KPI footer).
 
 // Gradient fill under the realized line + a boundary marker where the
 // projection begins (2026-07-12).
@@ -81,23 +81,25 @@ export function MonthlyPaceChart({
   };
 
   return (
-    <Card>
+    <Card className="min-h-full">
       <CardHeader>
         <CardTitle className="text-sm">{c.title}</CardTitle>
         <CardDescription>{c.subtitle}</CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex flex-1 flex-col justify-center">
         {org.spent <= 0 ? (
           <p className="py-8 text-center text-sm text-muted-foreground">
             {c.empty}
           </p>
         ) : (
           // data-reveal-state is stamped by the RevealController pre-hydration.
+          // A bounded plot keeps the 2x2 cockpit inside the desktop viewport;
+          // the card still stretches to match the teams card beside it.
           <div data-reveal="monthly-pace" suppressHydrationWarning>
             <div data-reveal-wipe>
               <ChartContainer
                 config={chartConfig}
-                className="h-[240px] w-full"
+                className="h-[220px] w-full 2xl:h-[240px]"
               >
                 <ComposedChart
                   accessibilityLayer

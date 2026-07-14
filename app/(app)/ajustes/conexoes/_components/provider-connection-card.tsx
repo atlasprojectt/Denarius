@@ -5,6 +5,7 @@ import { RiLightbulbLine } from "@remixicon/react";
 
 import { ActionStatus } from "@/components/domain/action-status";
 import { ConfirmationDialog } from "@/components/domain/confirmation-dialog";
+import { ProviderIcon } from "@/components/domain/provider-icon";
 import { ActionToast } from "@/components/domain/toast-provider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -221,7 +222,10 @@ export function ProviderConnectionCard({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-sm">{providerCopy[provider].title}</CardTitle>
+        <CardTitle className="flex items-center gap-2 text-sm">
+          <ProviderIcon provider={provider} className="size-4 shrink-0" />
+          {providerCopy[provider].title}
+        </CardTitle>
         <CardDescription className="tabular-nums">
           {stamp ? sharedCopy.lastSync(stamp) : sharedCopy.neverSynced}
         </CardDescription>

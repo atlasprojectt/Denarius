@@ -7,12 +7,6 @@ export const homeCopy = {
   meta: (day: number, days: number, pctElapsed: string) =>
     `dia ${day} de ${days} · ${pctElapsed} do mês`,
 
-  nextActions: {
-    title: "Próximas ações",
-    subtitle: "Pontos do período que já têm um caminho claro de investigação.",
-    defaultAction: "Investigar",
-  },
-
   setup: {
     title: "Prepare o primeiro veredito",
     subtitle: "Três passos deixam o Denarius pronto para responder se o gasto está sob controle.",
@@ -49,7 +43,7 @@ export const homeCopy = {
     drillNote: "O mesmo gasto do período, agora agrupado por fonte. Tokens e modelos ficam em Explorar.",
     empty: "Sem gasto de API convertido ainda neste período.",
     total: "Total convertido",
-    amount: "Gasto",
+    entryValue: (amount: string, pct: string) => `${amount} (${pct})`,
   },
 
   monthlyPace: {

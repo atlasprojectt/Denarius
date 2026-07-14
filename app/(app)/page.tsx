@@ -17,13 +17,13 @@ import { TeamBudgetTable } from "@/components/domain/team-budget-table";
 import { SetupChecklist } from "./_components/setup-checklist";
 import { homeCopy } from "./_components/copy";
 
-// The Home cockpit (#19, redesigned 2026-07): a stable, read-mostly overview in
-// full-width rows — verdict (the answer), hero (the money headline), pace +
-// composition (analysis), the teams table (drill-down entry), observations
-// (ambient). Nothing on this screen expands, opens drawers or edits; simulation
-// and control plans live in /times/[id], budget editing in
-// /ajustes/orcamentos. No arithmetic here; buildCockpit already did it
-// (architecture §9).
+// The Home cockpit (#19, redesigned 2026-07): a stable, read-mostly overview —
+// the verdict line (the answer) over a 2x2 card grid: hero (the money
+// headline) + composition (where it goes) on top, monthly pace + the teams
+// table (drill-down entry) below, observations as the ambient footer. Nothing
+// on this screen expands, opens drawers or edits; simulation and control plans
+// live in /times/[id], budget editing in /ajustes/orcamentos. No arithmetic
+// here; buildCockpit already did it (architecture §9).
 
 export default async function HomePage() {
   const { cockpit, period, stale, observations, hasSeatWaste, orgWeekPct, setup } =
@@ -76,7 +76,7 @@ export default async function HomePage() {
   const allTeams = budgetedTeams(cockpit);
 
   return (
-    <PageContainer variant="full" className="gap-6">
+    <PageContainer variant="full" className="flex-1 gap-4">
       <h1 className="sr-only">{homeCopy.question}</h1>
 
       {stale.showBanner && <StaleBanner items={stale.needsAttention} />}
@@ -94,8 +94,13 @@ export default async function HomePage() {
 
       {cockpit.allClear && <AllClear />}
 
-      <div className="grid items-stretch gap-6 xl:grid-cols-3">
-        <div className="xl:col-span-2">
+      {/* The 2x2 grid. min-w-0 wrappers matter: grid children default to
+          min-width auto, and the table + long tabular-nums strings would
+          otherwise push the track past the viewport (horizontal overflow).
+          content-sized rows keep the cockpit inside the target desktop
+          viewport without inflating every card to the tallest row. */}
+      <div className="grid flex-1 items-stretch gap-4 xl:grid-cols-2">
+        <div className="min-w-0">
           <Hero
             org={org}
             status={cockpit.verdict.status}
@@ -107,16 +112,20 @@ export default async function HomePage() {
             weekPct={orgWeekPct}
           />
         </div>
-        <ProviderComposition entries={cockpit.composition} currency={currency} />
+        <div className="min-w-0">
+          <ProviderComposition entries={cockpit.composition} currency={currency} />
+        </div>
+        <div className="min-w-0">
+          <MonthlyPaceChart org={org} currency={currency} />
+        </div>
+        <div className="min-w-0">
+          <TeamBudgetTable
+            teams={allTeams}
+            attentionCount={cockpit.needsAttention.length}
+            currency={currency}
+          />
+        </div>
       </div>
-
-      <MonthlyPaceChart org={org} currency={currency} />
-
-      <TeamBudgetTable
-        teams={allTeams}
-        attentionCount={cockpit.needsAttention.length}
-        currency={currency}
-      />
 
       <ObservationsFooter
         items={observations.filter((item) => item.kind === "observation")}

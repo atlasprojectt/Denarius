@@ -32,7 +32,7 @@ function Kpi({ label, value }: { label: string; value: string }) {
   );
 }
 
-/** Week-over-week chip under the big number. Deliberately NEUTRAL (principle
+/** Week-over-week pill under the big number. Deliberately NEUTRAL (principle
  *  #5): spending more isn't inherently bad, so the arrow informs direction
  *  without judging it — the signed percent carries it for screen readers. */
 function WeekDelta({ pct }: { pct: number | null }) {
@@ -40,8 +40,8 @@ function WeekDelta({ pct }: { pct: number | null }) {
   const Arrow = pct < 0 ? RiArrowDownSFill : RiArrowUpSFill;
   const signed = `${pct > 0 ? "+" : ""}${percent(pct, 1)}`;
   return (
-    <p className="flex items-center gap-0.5 text-sm font-medium text-muted-foreground tabular-nums">
-      {pct !== 0 && <Arrow className="size-4 shrink-0" aria-hidden />}
+    <p className="mt-1 inline-flex w-fit items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground tabular-nums">
+      {pct !== 0 && <Arrow className="size-3.5 shrink-0" aria-hidden />}
       {c.weekDelta(signed)}
     </p>
   );
@@ -82,7 +82,7 @@ export function Hero({
       : money(org.projectedMargin, currency);
 
   return (
-    <Card className="min-h-full">
+    <Card size="sm" className="min-h-full">
       <CardHeader>
         <CardDescription>{c.spentLabel}</CardDescription>
         <CardTitle className="flex flex-wrap items-baseline gap-x-2.5 text-4xl tracking-tight tabular-nums sm:text-5xl">
@@ -94,7 +94,7 @@ export function Hero({
         <WeekDelta pct={weekPct} />
       </CardHeader>
 
-      <CardContent className="flex flex-1 flex-col gap-5">
+      <CardContent className="flex flex-1 flex-col gap-4">
         <PacingPair
           pctSpent={org.pctSpent}
           pctProjected={pctProjected}
@@ -106,7 +106,7 @@ export function Hero({
 
         {/* Two KPIs, not three: the day-of-month figure already lives in the
             verdict meta line and the time bar — a third copy was noise. */}
-        <dl className="grid grid-cols-2 gap-4 border-t pt-4">
+        <dl className="grid grid-cols-2 gap-4 border-t pt-3">
           <Kpi label={c.kpiProjection} value={projectionValue} />
           <Kpi label={c.kpiMargin} value={marginValue} />
         </dl>
