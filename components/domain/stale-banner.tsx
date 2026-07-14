@@ -2,6 +2,7 @@ import { RiHistoryLine } from "@remixicon/react";
 import Link from "next/link";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 import type { ConnectionFreshness } from "@/lib/engine/freshness";
 
 // Honesty in the chrome (frontend §3.2): when a connector's last sync failed or
@@ -43,12 +44,14 @@ export function StaleBanner({ items }: { items: ConnectionFreshness[] }) {
       <AlertDescription className="sm:col-start-2">
         <p>{summary}</p>
       </AlertDescription>
-      <Link
-        href="/ajustes/conexoes"
-        className="col-start-2 text-xs font-medium text-primary underline-offset-4 hover:underline sm:col-start-3 sm:row-span-2 sm:row-start-1 sm:self-center"
+      <Button
+        variant="outline"
+        size="sm"
+        asChild
+        className="col-start-2 w-fit sm:col-start-3 sm:row-span-2 sm:row-start-1 sm:self-center"
       >
-        {copy.reconnect}
-      </Link>
+        <Link href="/ajustes/conexoes">{copy.reconnect}</Link>
+      </Button>
     </Alert>
   );
 }

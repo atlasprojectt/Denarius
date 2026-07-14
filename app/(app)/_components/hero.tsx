@@ -1,3 +1,5 @@
+import { RiArrowDownSFill, RiArrowUpSFill } from "@remixicon/react";
+
 import {
   Card,
   CardContent,
@@ -7,6 +9,7 @@ import {
 } from "@/components/ui/card";
 import type { BudgetEvaluation } from "@/lib/engine/budget";
 import type { VerdictStatus } from "@/lib/engine/verdict";
+import { percent } from "@/lib/format";
 import { money } from "@/lib/money";
 import { PacingPair } from "./pacing-pair";
 import { homeCopy } from "./copy";
@@ -29,6 +32,21 @@ function Kpi({ label, value }: { label: string; value: string }) {
   );
 }
 
+/** Week-over-week chip under the big number. Deliberately NEUTRAL (principle
+ *  #5): spending more isn't inherently bad, so the arrow informs direction
+ *  without judging it — the signed percent carries it for screen readers. */
+function WeekDelta({ pct }: { pct: number | null }) {
+  if (pct === null) return null;
+  const Arrow = pct < 0 ? RiArrowDownSFill : RiArrowUpSFill;
+  const signed = `${pct > 0 ? "+" : ""}${percent(pct, 1)}`;
+  return (
+    <p className="flex items-center gap-0.5 text-sm font-medium text-muted-foreground tabular-nums">
+      {pct !== 0 && <Arrow className="size-4 shrink-0" aria-hidden />}
+      {c.weekDelta(signed)}
+    </p>
+  );
+}
+
 export function Hero({
   org,
   status,
@@ -37,6 +55,7 @@ export function Hero({
   currency,
   dayOfPeriod,
   daysInPeriod,
+  weekPct,
 }: {
   org: BudgetEvaluation;
   status: VerdictStatus;
@@ -45,6 +64,8 @@ export function Hero({
   currency: string;
   dayOfPeriod: number;
   daysInPeriod: number;
+  /** Org week-over-week API cost change; null hides the chip. */
+  weekPct: number | null;
 }) {
   const callout = org.collecting
     ? c.collecting
@@ -70,6 +91,7 @@ export function Hero({
             {c.ofBudget(money(org.budget, currency))}
           </span>
         </CardTitle>
+        <WeekDelta pct={weekPct} />
       </CardHeader>
 
       <CardContent className="flex flex-1 flex-col gap-5">

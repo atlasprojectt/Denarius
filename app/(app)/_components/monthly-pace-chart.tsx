@@ -36,8 +36,11 @@ import { homeCopy } from "./copy";
 const c = homeCopy.monthlyPace;
 
 const chartConfig = {
-  spent: { label: c.spent, color: "var(--primary)" },
-  projected: { label: c.projected, color: "color-mix(in oklab, var(--primary) 55%, transparent)" },
+  // chart-1, not primary: the deep brand orange sits too close to the status
+  // red next door in the hero — the lightest ramp step keeps the line clearly
+  // "brand", not "semaphore" (founder call, 2026-07-14).
+  spent: { label: c.spent, color: "var(--chart-1)" },
+  projected: { label: c.projected, color: "color-mix(in oklab, var(--chart-1) 55%, transparent)" },
   budget: { label: c.budget, color: "var(--muted-foreground)" },
 } satisfies ChartConfig;
 

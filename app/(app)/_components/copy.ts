@@ -26,6 +26,7 @@ export const homeCopy = {
   hero: {
     spentLabel: "Gasto no período",
     ofBudget: (budget: string) => `de ${budget}`,
+    weekDelta: (pct: string) => `${pct} vs semana anterior`,
     kpiProjection: "Projeção de fechamento",
     kpiMargin: "Margem projetada",
     collectingShort: "coletando ritmo",

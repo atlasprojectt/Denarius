@@ -43,10 +43,12 @@ const copy = {
 };
 
 const chartConfig = {
-  spent: { label: copy.spent, color: "var(--primary)" },
+  // chart-1, not primary: same lighter brand orange as the Home pace line —
+  // the deep primary reads too close to the status red on adjacent cards.
+  spent: { label: copy.spent, color: "var(--chart-1)" },
   projected: {
     label: copy.projected,
-    color: "color-mix(in oklab, var(--primary) 55%, transparent)",
+    color: "color-mix(in oklab, var(--chart-1) 55%, transparent)",
   },
 } satisfies ChartConfig;
 
