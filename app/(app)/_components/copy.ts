@@ -36,6 +36,7 @@ export const homeCopy = {
   allClear: {
     title: "Tudo sob controle",
     body: "Nenhum time fora do orçamento no ritmo atual. Próximo resumo na sexta.",
+    dismiss: "Fechar aviso",
   },
 
   composition: {

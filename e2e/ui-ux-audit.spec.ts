@@ -2,6 +2,20 @@ import { expect, test, type Page } from "@playwright/test";
 
 const email = process.env.E2E_EMAIL;
 const password = process.env.E2E_PASSWORD;
+const sidebarMotionDurationMs = 520;
+
+type MotionBox = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+};
+
+type SidebarMotionFrame = {
+  elapsed: number;
+  railCenterX: number;
+  icons: Record<string, MotionBox>;
+};
 
 async function signIn(page: Page) {
   await page.goto("/login");
@@ -9,6 +23,133 @@ async function signIn(page: Page) {
   await page.getByLabel("Senha").fill(password ?? "");
   await page.getByRole("button", { name: "Entrar", exact: true }).click();
   await page.waitForURL((url) => !url.pathname.startsWith("/login"));
+}
+
+async function captureSidebarCollapse(page: Page): Promise<SidebarMotionFrame[]> {
+  const framesPromise = page.evaluate(
+    (duration) =>
+      new Promise<SidebarMotionFrame[]>((resolve) => {
+        const startedAt = performance.now();
+        const frames: SidebarMotionFrame[] = [];
+
+        function sample(now: number) {
+          const rail = document.querySelector<HTMLElement>(
+            '[data-slot="sidebar-inner"]',
+          );
+          const icons: Record<string, MotionBox> = {};
+
+          document
+            .querySelectorAll<HTMLElement>("[data-sidebar-nav-icon]")
+            .forEach((slot) => {
+              const icon = slot.querySelector<SVGElement>("svg");
+              const key = slot.dataset.sidebarNavIcon;
+              if (!icon || !key) return;
+              const rect = icon.getBoundingClientRect();
+              icons[`nav:${key}`] = {
+                x: rect.x + rect.width / 2,
+                y: rect.y + rect.height / 2,
+                width: rect.width,
+                height: rect.height,
+              };
+            });
+
+          const profile = document.querySelector<HTMLElement>(
+            "[data-sidebar-profile-slot]",
+          );
+          if (profile) {
+            const rect = profile.getBoundingClientRect();
+            icons.profile = {
+              x: rect.x + rect.width / 2,
+              y: rect.y + rect.height / 2,
+              width: rect.width,
+              height: rect.height,
+            };
+          }
+
+          const stale = document.querySelector<HTMLElement>(
+            "[data-sidebar-stale-icon] svg",
+          );
+          if (stale) {
+            const rect = stale.getBoundingClientRect();
+            icons.stale = {
+              x: rect.x + rect.width / 2,
+              y: rect.y + rect.height / 2,
+              width: rect.width,
+              height: rect.height,
+            };
+          }
+
+          const railRect = rail?.getBoundingClientRect();
+          frames.push({
+            elapsed: now - startedAt,
+            railCenterX: railRect
+              ? railRect.x + railRect.width / 2
+              : Number.NaN,
+            icons,
+          });
+
+          if (now - startedAt < duration) {
+            requestAnimationFrame(sample);
+          } else {
+            resolve(frames);
+          }
+        }
+
+        requestAnimationFrame(sample);
+      }),
+    sidebarMotionDurationMs,
+  );
+
+  await page.locator('[data-slot="sidebar-trigger"]').click();
+  return framesPromise;
+}
+
+function expectStableCollapse(frames: SidebarMotionFrame[]) {
+  expect(frames.length).toBeGreaterThan(10);
+  const finalFrame = frames.at(-1);
+  expect(finalFrame).toBeDefined();
+  if (!finalFrame) return;
+
+  expect(Object.keys(finalFrame.icons)).toEqual(
+    expect.arrayContaining([
+      "nav:/",
+      "nav:/times",
+      "nav:/explorar",
+      "nav:/ajustes",
+      "profile",
+    ]),
+  );
+
+  for (const key of Object.keys(finalFrame.icons)) {
+    const boxes = frames.map((frame) => frame.icons[key]).filter(Boolean);
+    const xPositions = boxes.map((box) => box.x);
+    const widths = boxes.map((box) => box.width);
+    const heights = boxes.map((box) => box.height);
+    const reverseSteps = xPositions
+      .slice(1)
+      .map((position, index) => position - xPositions[index]);
+    const settledPositions = frames
+      .filter((frame) => finalFrame.elapsed - frame.elapsed <= 80)
+      .map((frame) => frame.icons[key]?.x)
+      .filter((position): position is number => position !== undefined);
+
+    expect(Math.max(...widths) - Math.min(...widths), key).toBeLessThanOrEqual(
+      0.1,
+    );
+    expect(
+      Math.max(...heights) - Math.min(...heights),
+      key,
+    ).toBeLessThanOrEqual(0.1);
+    expect(Math.max(0, ...reverseSteps), key).toBeLessThanOrEqual(0.5);
+    expect(
+      Math.max(...settledPositions) - Math.min(...settledPositions),
+      key,
+    ).toBeLessThanOrEqual(0.2);
+    expect(
+      Math.abs(xPositions.at(-1)! - finalFrame.railCenterX),
+      key,
+    ).toBeLessThanOrEqual(0.5);
+  }
 }
 
 test.beforeEach(async ({ page }) => {
@@ -57,10 +198,17 @@ test("Subscription validation stays inside the product UI", async ({ page }) => 
   await expect(page.getByRole("alert")).toBeVisible();
 });
 
-test("Collapsed sidebar destinations remain labelled", async ({ page }) => {
+test("Collapsed sidebar icons stay stable and destinations remain labelled", async ({ page }) => {
+  test.setTimeout(60_000);
   test.skip(test.info().project.name === "mobile", "Mobile uses the drawer sidebar.");
   await page.goto("/");
-  await page.locator("header").getByRole("button", { name: /sidebar/i }).click();
+  await page.waitForLoadState("networkidle");
+
+  expectStableCollapse(await captureSidebarCollapse(page));
+  await page.locator('[data-slot="sidebar-trigger"]').click();
+  await page.waitForTimeout(350);
+  expectStableCollapse(await captureSidebarCollapse(page));
+
   await page.getByRole("link", { name: "Explorar" }).hover();
   await expect(page.getByRole("tooltip")).toContainText("Explorar");
 });

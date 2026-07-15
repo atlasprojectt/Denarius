@@ -69,16 +69,16 @@ type NavItem = (typeof cockpitItems)[number];
 // fade-out on collapse, delayed fade-in on expand so text appears as the
 // space opens. Pairs with the sidebar width override in globals.css.
 const fadeLabel =
-  "transition-opacity duration-200 delay-100 ease-out group-data-[collapsible=icon]:pointer-events-none group-data-[collapsible=icon]:opacity-0 group-data-[collapsible=icon]:delay-0 group-data-[collapsible=icon]:duration-150";
+  "translate-x-0 transition-[opacity,transform] duration-200 delay-100 ease-out group-data-[collapsible=icon]:pointer-events-none group-data-[collapsible=icon]:-translate-x-1 group-data-[collapsible=icon]:opacity-0 group-data-[collapsible=icon]:delay-0 group-data-[collapsible=icon]:duration-150";
 
-// Give the icon its own animated track so the mounted label never changes the
-// icon's alignment while the button narrows to the collapsed rail.
+// Keep the visual slot fixed while the button narrows. The expanded width is
+// absolute relative to the rail variable: animating from 100% would compound
+// with the parent's own width transition and pull the icon sideways.
 const navButton =
-  "h-9 gap-0 p-0 data-active:font-medium group-data-[collapsible=icon]:p-0! [&_svg]:size-4.5";
+  "mx-auto h-9 w-[calc(var(--sidebar-width)-2rem)] gap-0 py-0 pr-0 pl-1 data-active:font-medium group-data-[collapsible=icon]:p-0! [&_svg]:size-4.5";
 const navIconSlot =
-  "grid h-9 w-10 shrink-0 place-items-center transition-[width,height] duration-[320ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-data-[collapsible=icon]:size-8";
-const profileSlot =
-  "grid h-12 w-12 shrink-0 place-items-center transition-[width,height] duration-[320ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-data-[collapsible=icon]:size-8";
+  "grid size-8 shrink-0 place-items-center";
+const profileSlot = "grid size-8 shrink-0 place-items-center";
 
 // "/" only matches exactly; sections stay lit on their subroutes
 // (/times/[id] keeps Times active).
@@ -102,13 +102,13 @@ function NavGroup({
           primitive leaves it hovering OVER the first menu item, swallowing
           clicks and tooltip hovers (2026-07-11 audit, UX-07/QA-07). Kill its
           pointer events when the rail is in icon mode. */}
-      <SidebarGroupLabel className="group-data-[collapsible=icon]:pointer-events-none">
+      <SidebarGroupLabel className="translate-x-0 transition-[margin,opacity,transform] group-data-[collapsible=icon]:pointer-events-none group-data-[collapsible=icon]:-translate-x-1">
         {label}
       </SidebarGroupLabel>
       <SidebarGroupContent>
-        <SidebarMenu className="group-data-[collapsible=icon]:items-center">
+        <SidebarMenu>
           {items.map((item) => (
-            <SidebarMenuItem key={item.href}>
+            <SidebarMenuItem key={item.href} className="w-full">
               <SidebarMenuButton
                 asChild
                 isActive={isActivePath(pathname, item.href)}
@@ -116,10 +116,13 @@ function NavGroup({
                 className={navButton}
               >
                 <Link href={item.href}>
-                  <span className={navIconSlot}>
+                  <span
+                    data-sidebar-nav-icon={item.href}
+                    className={navIconSlot}
+                  >
                     <item.icon />
                   </span>
-                  <span className={`${fadeLabel} shrink-0 whitespace-nowrap`}>
+                  <span className={`${fadeLabel} ml-1 shrink-0 whitespace-nowrap`}>
                     {item.title}
                   </span>
                 </Link>
@@ -177,8 +180,8 @@ export function AppSidebar({
 
         <SidebarFooter>
           <StaleBanner items={staleConnections} />
-          <SidebarMenu className="group-data-[collapsible=icon]:items-center">
-            <SidebarMenuItem>
+          <SidebarMenu>
+            <SidebarMenuItem className="w-full">
               <DropdownMenu>
                 {/* Plain trigger, not asChild: composing Base UI's Menu.Trigger
                     through SidebarMenuButton's render chain swallowed the
@@ -186,9 +189,9 @@ export function AppSidebar({
                     SidebarMenuButton. */}
                 <DropdownMenuTrigger
                   aria-label={copy.profileMenu}
-                  className="flex h-12 w-full items-center gap-0 overflow-hidden rounded-md p-0 text-left outline-hidden ring-sidebar-ring transition-[width,height,padding] duration-[320ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 data-open:bg-sidebar-accent data-open:text-sidebar-accent-foreground group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-0!"
+                  className="mx-auto flex h-12 w-[calc(var(--sidebar-width)-2rem)] items-center gap-0 overflow-hidden rounded-md py-0 pr-0 pl-2 text-left outline-hidden ring-sidebar-ring transition-[width,height,padding] duration-[320ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 data-open:bg-sidebar-accent data-open:text-sidebar-accent-foreground group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-0!"
                 >
-                  <span className={profileSlot}>
+                  <span data-sidebar-profile-slot className={profileSlot}>
                     <Avatar className="size-8 shrink-0 transition-[width,height] duration-[320ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-data-[collapsible=icon]:size-7">
                       <AvatarFallback className="bg-sidebar-accent text-xs font-semibold text-sidebar-accent-foreground">
                         {userInitials}
@@ -196,7 +199,7 @@ export function AppSidebar({
                     </Avatar>
                   </span>
                   <span
-                    className={`grid min-w-0 flex-1 text-left text-sm leading-tight ${fadeLabel}`}
+                    className={`ml-2 grid min-w-0 flex-1 text-left text-sm leading-tight ${fadeLabel}`}
                   >
                     <span className="truncate font-medium">{userLabel}</span>
                     {userLabel !== userEmail && (
