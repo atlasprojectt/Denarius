@@ -84,10 +84,19 @@ if (ready && !notificationLogReady) {
   );
 }
 
+const invitationReady = ready && (await tableApplied("invitation"));
+if (ready && !invitationReady) {
+  console.warn(
+    "\n[rls-isolation] invitation table not found — apply " +
+      "supabase/migrations/*_invitations.sql to cover it here too.\n",
+  );
+}
+
 const TABLES = [
   "tenant",
   "app_user",
   "team",
+  ...(invitationReady ? (["invitation"] as const) : []),
   ...(subscriptionReady ? (["subscription"] as const) : []),
   ...(providersReady
     ? (["provider_connection", "usage_daily", "cost_daily"] as const)
@@ -210,6 +219,19 @@ describe.skipIf(!ready)("RLS tenant isolation", () => {
         currency: "BRL",
       });
       if (budgetError) throw budgetError;
+    }
+
+    if (invitationReady) {
+      // A pending invite: the token hash must never be readable across tenants
+      // (it is the credential for joining THIS tenant).
+      const { error: inviteError } = await admin.from("invitation").insert({
+        tenant_id: tenant.id,
+        email: `invitee-${label}-${run}@denarius-test.dev`,
+        role: "viewer",
+        token_hash: `hash-${label}-${run}`,
+        expires_at: new Date(Date.now() + 86_400_000).toISOString(),
+      });
+      if (inviteError) throw inviteError;
     }
 
     if (notificationLogReady) {
@@ -386,6 +408,35 @@ describe.skipIf(!ready)("RLS tenant isolation", () => {
         amount: 999,
       });
       expect(error).not.toBeNull();
+    },
+  );
+
+  it.skipIf(!invitationReady)(
+    "invitation rows are tenant-isolated, and a user cannot forge one",
+    async () => {
+      const clientA = await signedInClient(a);
+
+      const { data } = await clientA.from("invitation").select("tenant_id, token_hash");
+      expect(data?.length).toBeGreaterThan(0);
+      expect(data?.every((r) => r.tenant_id === a.tenantId)).toBe(true);
+
+      // B's pending invite — and above all its token hash — is invisible to A.
+      const { data: crossTenant } = await clientA
+        .from("invitation")
+        .select("id")
+        .eq("tenant_id", b.tenantId);
+      expect(crossTenant ?? []).toEqual([]);
+
+      // Self-inviting as admin (or into another tenant) is a write: denied.
+      // Invites exist only through the admin-guarded server action.
+      const { error: writeDenied } = await clientA.from("invitation").insert({
+        tenant_id: a.tenantId,
+        email: "forged@denarius-test.dev",
+        role: "admin",
+        token_hash: `forged-${run}`,
+        expires_at: new Date(Date.now() + 86_400_000).toISOString(),
+      });
+      expect(writeDenied).not.toBeNull();
     },
   );
 

@@ -73,6 +73,24 @@ export const companySettingsSchema = z.object({
     .max(80, "Nome da empresa muito longo (máximo 80 caracteres)."),
 });
 
+/** Invite a colleague (PRD story #2). The role is a closed set — the check
+ *  constraint in the table says the same thing, and both are the contract. */
+export const inviteUserSchema = z.object({
+  email: z.email("Informe um e-mail válido.").transform((v) => v.toLowerCase()),
+  role: z.enum(["admin", "viewer"], { message: "Escolha um papel válido." }),
+});
+
+export const invitationRevokeSchema = z.object({
+  invitationId: z.uuid("Convite inválido."),
+});
+
+/** Accepting an invite is a signup: the token proves the address, the person
+ *  chooses the password. Same minimum as signupSchema — one rule for passwords. */
+export const acceptInvitationSchema = z.object({
+  token: z.string().min(1, "Convite inválido."),
+  password: z.string().min(8, "A senha precisa de pelo menos 8 caracteres."),
+});
+
 export const digestPreferenceSchema = z.object({
   // A checkbox posts "on" or nothing; the action coerces to boolean first.
   receiveDigest: z.boolean(),

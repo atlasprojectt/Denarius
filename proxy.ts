@@ -1,8 +1,10 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-/** Routes reachable without a session. Everything else redirects to /login. */
-const PUBLIC_PREFIXES = ["/login", "/signup", "/auth"];
+/** Routes reachable without a session. Everything else redirects to /login.
+ *  /convite carries its own credential — the invite token in the path — and an
+ *  invitee has no session yet by definition. */
+const PUBLIC_PREFIXES = ["/login", "/signup", "/auth", "/convite"];
 
 /**
  * Routes with their own non-session authorization (e.g. CRON_SECRET) — bypass
