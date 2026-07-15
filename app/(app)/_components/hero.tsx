@@ -111,7 +111,9 @@ export function Hero({
           <Kpi label={c.kpiMargin} value={marginValue} />
         </dl>
 
-        <div className="mt-auto">
+        {/* Flows right after the KPIs — an mt-auto pin opened a void in the
+            middle of the card whenever the grid row ran taller. */}
+        <div>
           <p className="text-sm/relaxed">{callout}</p>
           {unconvertedUsd > 0 && (
             <p className="mt-1.5 text-xs/relaxed text-muted-foreground">

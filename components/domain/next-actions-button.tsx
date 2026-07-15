@@ -8,6 +8,7 @@ import {
   RiLightbulbLine,
 } from "@remixicon/react";
 
+import { Button } from "@/components/ui/button";
 import {
   Popover,
   PopoverContent,
@@ -19,12 +20,13 @@ import type { Observation } from "@/lib/home/queries";
 
 // Global header control (2026-07-12): "Próximas ações" moved off Home into a
 // button in the app header, on every screen. This is where the product saves
-// the CEO's time, so the trigger is tonal brand accent with a count badge
-// (2026-07-14) instead of a ghost button. The badge is fed by one prefetch on
-// mount — the header's client island persists across client-side navigations,
-// so that's one query per full page load, not per navigation — and the items
-// are refetched on open so the list reflects the latest sync/budget state.
-// Empty → a calm "tudo em dia" state (no "0" badge — that would nag).
+// the CEO's time, so the trigger uses the design-system Button `accent` variant
+// (tonal brand) as a rounded pill with a count badge (2026-07-15). The badge is
+// fed by one prefetch on mount — the header's client island persists across
+// client-side navigations, so that's one query per full page load, not per
+// navigation — and the items are refetched on open so the list reflects the
+// latest sync/budget state. Empty → a calm "tudo em dia" state (no "0" badge —
+// that would nag).
 
 const copy = {
   title: "Próximas ações",
@@ -75,28 +77,34 @@ export function NextActionsButton() {
     >
       <PopoverTrigger
         aria-label={count > 0 ? copy.badgeAria(count) : copy.title}
-        className="inline-flex h-8 items-center gap-1.5 rounded-full bg-primary/10 px-3 text-xs font-semibold text-primary outline-none transition-colors hover:bg-primary/15 focus-visible:ring-2 focus-visible:ring-ring/40 dark:bg-primary/15 dark:text-primary-hover dark:hover:bg-primary/20"
-      >
-        <RiLightbulbLine className="size-4" aria-hidden />
-        <span className="hidden sm:inline">{copy.title}</span>
-        {count > 0 && (
-          <span
-            aria-hidden
-            className="min-w-4 rounded-full bg-primary px-1 text-center text-[10px] font-semibold leading-4 text-primary-foreground tabular-nums"
+        render={
+          <Button
+            variant="accent"
+            size="lg"
+            className="h-8 gap-1.5 rounded-full px-3 font-semibold"
           >
-            {count}
-          </span>
-        )}
-      </PopoverTrigger>
-      <PopoverContent side="bottom" align="end" className="w-80 p-0">
-        <div className="border-b px-3 py-2.5">
+            <RiLightbulbLine className="size-4" aria-hidden />
+            <span className="hidden sm:inline">{copy.title}</span>
+            {count > 0 && (
+              <span
+                aria-hidden
+                className="min-w-4 rounded-full bg-primary px-1 text-center text-[10px] font-semibold leading-4 text-primary-foreground tabular-nums"
+              >
+                {count}
+              </span>
+            )}
+          </Button>
+        }
+      />
+      <PopoverContent side="bottom" align="end" className="w-96 max-w-[calc(100vw-2rem)] p-0">
+        <div className="border-b px-4 py-3">
           <p className="text-sm font-medium">{copy.title}</p>
           <p className="mt-0.5 text-xs/relaxed text-muted-foreground">
             {copy.subtitle}
           </p>
         </div>
 
-        <div className="p-1.5">
+        <div className="p-2">
           {loading ? (
             <div className="flex flex-col gap-1.5 p-1.5">
               <Skeleton className="h-12 w-full rounded-lg" />

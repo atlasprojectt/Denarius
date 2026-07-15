@@ -60,8 +60,12 @@ export function ProviderComposition({
           <div
             data-reveal="composition"
             // data-reveal-state is stamped by the RevealController pre-hydration.
+            // Distributed, not centered: the total anchors the top and the
+            // entry list spreads over whatever height the hero gives the row,
+            // so a taller row widens the breathing room between bars instead
+            // of pooling voids above and below the content.
             suppressHydrationWarning
-            className="flex flex-1 flex-col justify-center gap-4"
+            className="flex flex-1 flex-col gap-4"
           >
             <div data-reveal-legend>
               <p className="text-xs text-muted-foreground">{c.total}</p>
@@ -70,7 +74,7 @@ export function ProviderComposition({
               </p>
             </div>
 
-            <ul className="flex flex-col gap-3">
+            <ul className="flex flex-1 flex-col justify-evenly gap-3">
               {entries.map((entry, index) => (
                 <li
                   key={entry.key}

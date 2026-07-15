@@ -9,6 +9,13 @@ import { ActionToast } from "@/components/domain/toast-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Table,
   TableBody,
   TableCell,
@@ -160,18 +167,26 @@ function SubscriptionRow({
             defaultValue={subscription.unitPrice}
             className="h-8 w-36 bg-background"
           />
-          <select
+          <Select
             name="teamId"
             defaultValue={subscription.teamId ?? ""}
-            className="h-8 rounded-md border border-input bg-transparent px-2 text-sm transition-colors outline-none focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50 dark:bg-input/30"
+            items={{
+              "": copy.shared,
+              ...Object.fromEntries(teams.map((t) => [t.id, t.name])),
+            }}
           >
-            <option value="">{copy.shared}</option>
-            {teams.map((team) => (
-              <option key={team.id} value={team.id}>
-                {team.name}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger className="h-8 w-40 text-sm">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">{copy.shared}</SelectItem>
+              {teams.map((team) => (
+                <SelectItem key={team.id} value={team.id}>
+                  {team.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <ActionStatus error={updateState.error} />
           <div className="ml-auto flex gap-2">
             <Button
@@ -244,10 +259,22 @@ function MobileSubscriptionCard({
       <Input name="tool" defaultValue={subscription.tool} aria-invalid={state.fieldErrors?.tool !== undefined} />
       <Input name="seatCount" type="number" min={1} step={1} defaultValue={subscription.seatCount} aria-invalid={state.fieldErrors?.seatCount !== undefined} />
       <MoneyInput id={`mobile-unit-price-${subscription.id}`} name="unitPrice" currency={currency} defaultValue={subscription.unitPrice} />
-      <select name="teamId" defaultValue={subscription.teamId ?? ""} className="h-8 rounded-md border border-input bg-background px-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/30">
-        <option value="">{copy.shared}</option>
-        {teams.map((team) => <option key={team.id} value={team.id}>{team.name}</option>)}
-      </select>
+      <Select
+            name="teamId"
+            defaultValue={subscription.teamId ?? ""}
+            items={{
+              "": copy.shared,
+              ...Object.fromEntries(teams.map((t) => [t.id, t.name])),
+            }}
+          >
+        <SelectTrigger className="h-8 w-full text-sm">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="">{copy.shared}</SelectItem>
+          {teams.map((team) => <SelectItem key={team.id} value={team.id}>{team.name}</SelectItem>)}
+        </SelectContent>
+      </Select>
       <ActionStatus error={state.error} success={state.success} />
       <div className="flex justify-end gap-2">
         <Button type="button" variant="outline" size="sm" onClick={() => setEditing(false)}>{copy.cancel}</Button>

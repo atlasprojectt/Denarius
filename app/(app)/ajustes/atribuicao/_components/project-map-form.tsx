@@ -8,6 +8,13 @@ import { UsdValue } from "@/components/domain/usd-value";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Table,
   TableBody,
   TableCell,
@@ -187,21 +194,32 @@ function TeamSelect({
   value: string;
   onChange: (value: string) => void;
 }) {
-  // Native select: dozens of per-row dropdowns inside one form submit reliably
-  // with zero client state; styled to match the shadcn trigger.
+  // Design-system Select (Base UI): each row is controlled so the form can
+  // track dirty state, and `name` submits via a hidden input — dozens of
+  // per-row dropdowns still post reliably in one form. `items` lets the trigger
+  // render the team name (not the id) while the popup is closed.
+  const items: Record<string, string> = {
+    [UNATTRIBUTED]: copy.unattributed,
+    ...Object.fromEntries(teams.map((team) => [team.id, team.name])),
+  };
   return (
-    <select
+    <Select
       name={name}
+      items={items}
       value={value}
-      onChange={(event) => onChange(event.target.value)}
-      className="h-8 w-full rounded-md border border-input bg-transparent px-2 text-sm transition-colors outline-none focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50 dark:bg-input/30"
+      onValueChange={(next) => onChange(next ?? UNATTRIBUTED)}
     >
-      <option value={UNATTRIBUTED}>{copy.unattributed}</option>
-      {teams.map((team) => (
-        <option key={team.id} value={team.id}>
-          {team.name}
-        </option>
-      ))}
-    </select>
+      <SelectTrigger className="h-8 w-full text-sm">
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value={UNATTRIBUTED}>{copy.unattributed}</SelectItem>
+        {teams.map((team) => (
+          <SelectItem key={team.id} value={team.id}>
+            {team.name}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 }

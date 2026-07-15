@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useRef } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 
 import { ActionStatus } from "@/components/domain/action-status";
 import { MoneyInput } from "@/components/domain/money-input";
@@ -13,6 +13,13 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   createSubscription,
   type SubscriptionFormState,
@@ -46,9 +53,20 @@ export function SubscriptionForm({
     initialState,
   );
   const formRef = useRef<HTMLFormElement>(null);
+  // The team Select is controlled so it resets with the form ("" = shared);
+  // form.reset() only clears native fields, not the Base UI Select.
+  const [teamId, setTeamId] = useState("");
 
-  // Reset the fields after a successful add — a DOM side effect, so it lives
-  // in an effect (the action returns a fresh state object on every dispatch).
+  // Reset the Select on a successful add (React's "adjust state during render"
+  // pattern — the action returns a fresh state object on every dispatch).
+  const [prevState, setPrevState] = useState(state);
+  if (state !== prevState) {
+    setPrevState(state);
+    if (state.success) setTeamId("");
+  }
+
+  // Clear the native fields after a successful add — a DOM side effect, so it
+  // lives in an effect.
   useEffect(() => {
     if (state.success) formRef.current?.reset();
   }, [state]);
@@ -99,19 +117,27 @@ export function SubscriptionForm({
             </div>
             <div className="flex flex-col gap-1.5 sm:col-span-2">
               <Label htmlFor="teamId">{copy.team}</Label>
-              <select
-                id="teamId"
+              <Select
                 name="teamId"
-                defaultValue=""
-                className="h-8 max-w-sm rounded-md border border-input bg-transparent px-2 text-sm transition-colors outline-none focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50 dark:bg-input/30"
+                items={{
+                  "": copy.shared,
+                  ...Object.fromEntries(teams.map((t) => [t.id, t.name])),
+                }}
+                value={teamId}
+                onValueChange={(value) => setTeamId(value ?? "")}
               >
-                <option value="">{copy.shared}</option>
-                {teams.map((team) => (
-                  <option key={team.id} value={team.id}>
-                    {team.name}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger id="teamId" className="h-8 w-full max-w-sm text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">{copy.shared}</SelectItem>
+                  {teams.map((team) => (
+                    <SelectItem key={team.id} value={team.id}>
+                      {team.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 

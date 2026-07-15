@@ -8,6 +8,13 @@ import { ConfirmationDialog } from "@/components/domain/confirmation-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Table,
   TableBody,
   TableCell,
@@ -140,20 +147,25 @@ function EmployeeRow({
               <p className="text-xs text-destructive">{state.fieldErrors.email}</p>
             )}
           </div>
-          <select
+          <Select
             name="teamId"
             required
+            items={Object.fromEntries(teams.map((t) => [t.id, t.name]))}
             defaultValue={
               teams.find((team) => team.name === employee.teamName)?.id ?? ""
             }
-            className="h-8 rounded-md border border-input bg-transparent px-2 text-sm transition-colors outline-none focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50 dark:bg-input/30"
           >
-            {teams.map((team) => (
-              <option key={team.id} value={team.id}>
-                {team.name}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger className="h-8 w-40 text-sm">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {teams.map((team) => (
+                <SelectItem key={team.id} value={team.id}>
+                  {team.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <p className="w-full text-xs text-muted-foreground">{copy.emailHint}</p>
           <ActionStatus error={state.error} />
           <div className="ml-auto flex gap-2">
@@ -217,13 +229,19 @@ function MobileEmployeeCard({ employee, teams }: { employee: Employee; teams: Te
       <input type="hidden" name="employeeId" value={employee.id} />
       <Input name="name" defaultValue={employee.name} aria-invalid={state.fieldErrors?.name !== undefined} />
       <Input name="email" type="email" defaultValue={employee.email} aria-invalid={state.fieldErrors?.email !== undefined} />
-      <select
+      <Select
         name="teamId"
+        required
+        items={Object.fromEntries(teams.map((t) => [t.id, t.name]))}
         defaultValue={teams.find((team) => team.name === employee.teamName)?.id ?? ""}
-        className="h-8 rounded-md border border-input bg-background px-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/30"
       >
-        {teams.map((team) => <option key={team.id} value={team.id}>{team.name}</option>)}
-      </select>
+        <SelectTrigger className="h-8 w-full text-sm">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {teams.map((team) => <SelectItem key={team.id} value={team.id}>{team.name}</SelectItem>)}
+        </SelectContent>
+      </Select>
       <ActionStatus error={state.error} success={state.success} />
       <div className="flex justify-end gap-2">
         <Button type="button" variant="outline" size="sm" onClick={() => setEditing(false)}>{copy.cancel}</Button>

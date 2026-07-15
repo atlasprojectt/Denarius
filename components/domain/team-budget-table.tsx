@@ -35,10 +35,15 @@ import { money } from "@/lib/money";
 // orçamentos" → /ajustes/orcamentos (editing). All numbers are engine-provided;
 // this component only formats them.
 //
-// Variant switching is container-query based (@container on CardContent), not
-// viewport based: on Home the card sits in a half-width grid cell and must show
-// the compact card list even on a wide monitor, while on /times the same
-// component is full-width and shows the table — the card's own width decides.
+// Layout is chosen by the `variant` prop, not by width:
+//   - "responsive" (default, /times): container-query based (@container on
+//     CardContent) — full-width shows the table, a narrow container falls back
+//     to the compact card list.
+//   - "table" (Home): always the table, even in Home's half-width grid cell.
+//     Home must not flip design as the window resizes, so the width-dependent
+//     compact fallback is dropped and the Orçamento/Projeção columns show
+//     unconditionally; only the wide Consumo (usage-bar) column stays
+//     container-gated so the table stays readable when the cell is narrow.
 
 // Copy (F2: pt-BR, isolated). Owned here now that the table is a cross-screen
 // domain component rather than a Home-only piece.
@@ -93,16 +98,33 @@ export function TeamBudgetTable({
   teams,
   attentionCount,
   currency,
+  variant = "responsive",
 }: {
   /** Every budgeted team, needs-attention first (cockpit ordering). */
   teams: CockpitTeam[];
   attentionCount: number;
   currency: string;
+  /** "table" forces the table at every width (Home); "responsive" flips to the
+   *  compact list in a narrow container (/times). */
+  variant?: "responsive" | "table";
 }) {
   const router = useRouter();
+  const forceTable = variant === "table";
+  // Columns that are container-gated in "responsive" mode but always visible
+  // when the table is forced (so Home's half-width cell still shows them).
+  const optionalColHead = forceTable ? "text-right" : "hidden text-right @2xl:table-cell";
+  const optionalColCell = forceTable
+    ? "text-right tabular-nums text-muted-foreground"
+    : "hidden text-right tabular-nums text-muted-foreground @2xl:table-cell";
 
   return (
-    <Card className="min-h-full">
+    // min-h-full is Home-only (variant="table"): the 2x2 grid cell stretches
+    // the card. On /times the page column is a definite-height flex chain
+    // (min-h-svh → flex-1), so a percentage min-height makes THIS card absorb
+    // the viewport height and flex-shrink squash its siblings — the
+    // "Times sem orçamento" card collapsed to its header (overflow-hidden
+    // disables the min-content floor). Natural height in "responsive" mode.
+    <Card className={forceTable ? "min-h-full" : undefined}>
       <CardHeader>
         <CardTitle className="text-sm">{c.title}</CardTitle>
         <CardDescription>
@@ -122,6 +144,7 @@ export function TeamBudgetTable({
       </CardHeader>
       {teams.length > 0 && (
         <CardContent className="@container">
+          {!forceTable && (
           <div className="grid gap-2 @2xl:hidden">
             {teams.map((team) => {
               const ev = team.evaluation;
@@ -181,22 +204,19 @@ export function TeamBudgetTable({
               );
             })}
           </div>
-          <div className="hidden @2xl:block">
+          )}
+          <div className={forceTable ? "block" : "hidden @2xl:block"}>
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>{c.colTeam}</TableHead>
                 <TableHead>{c.colStatus}</TableHead>
                 <TableHead className="text-right">{c.colSpent}</TableHead>
-                <TableHead className="hidden text-right @2xl:table-cell">
-                  {c.colBudget}
-                </TableHead>
+                <TableHead className={optionalColHead}>{c.colBudget}</TableHead>
                 <TableHead className="hidden w-44 @3xl:table-cell">
                   {c.colUsage}
                 </TableHead>
-                <TableHead className="hidden text-right @2xl:table-cell">
-                  {c.colProjection}
-                </TableHead>
+                <TableHead className={optionalColHead}>{c.colProjection}</TableHead>
                 <TableHead className="w-10" />
               </TableRow>
             </TableHeader>
@@ -235,7 +255,7 @@ export function TeamBudgetTable({
                     <TableCell className="text-right tabular-nums">
                       {money(ev.spent, currency)}
                     </TableCell>
-                    <TableCell className="hidden text-right tabular-nums text-muted-foreground @2xl:table-cell">
+                    <TableCell className={optionalColCell}>
                       {money(ev.budget, currency)}
                     </TableCell>
                     <TableCell className="hidden @3xl:table-cell">
@@ -252,7 +272,7 @@ export function TeamBudgetTable({
                         </span>
                       </div>
                     </TableCell>
-                    <TableCell className="hidden text-right tabular-nums text-muted-foreground @2xl:table-cell">
+                    <TableCell className={optionalColCell}>
                       {ev.projection === null
                         ? c.collecting
                         : money(ev.projection, currency)}

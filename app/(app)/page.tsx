@@ -97,9 +97,11 @@ export default async function HomePage() {
       {/* The 2x2 grid. min-w-0 wrappers matter: grid children default to
           min-width auto, and the table + long tabular-nums strings would
           otherwise push the track past the viewport (horizontal overflow).
-          content-sized rows keep the cockpit inside the target desktop
-          viewport without inflating every card to the tallest row. */}
-      <div className="grid flex-1 items-stretch gap-4 xl:grid-cols-2">
+          Row 1 hugs its content (the dense hero sets the height) and row 2
+          takes every leftover pixel — the pace chart grows with it, so the
+          viewport is filled by the chart, not by voids inside the top cards
+          (proportion pass, 2026-07-14). */}
+      <div className="grid flex-1 items-stretch gap-4 xl:grid-cols-2 xl:grid-rows-[auto_minmax(0,1fr)]">
         <div className="min-w-0">
           <Hero
             org={org}
@@ -123,6 +125,7 @@ export default async function HomePage() {
             teams={allTeams}
             attentionCount={cockpit.needsAttention.length}
             currency={currency}
+            variant="table"
           />
         </div>
       </div>

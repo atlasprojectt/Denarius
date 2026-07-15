@@ -60,6 +60,9 @@
 }
 
 :root {
+  /* Tells the UA to render native controls (select dropdowns, scrollbars,
+     date pickers) in the light palette so they match the theme. */
+  color-scheme: light;
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.141 0.005 285.823);
   --popover: oklch(1 0 0);
@@ -95,6 +98,8 @@
 }
 
 .dark {
+  /* Dark native controls (fixes the white OS <select> dropdown in dark mode). */
+  color-scheme: dark;
   --background: oklch(0.141 0.005 285.823);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.21 0.006 285.885);

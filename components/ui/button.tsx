@@ -18,6 +18,8 @@ const buttonVariants = cva(
           "hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:hover:bg-muted/50",
         destructive:
           "bg-destructive/10 text-destructive hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40",
+        accent:
+          "bg-primary/10 text-primary hover:bg-primary/15 dark:bg-primary/15 dark:text-primary-hover dark:hover:bg-primary/20",
         link: "text-primary underline-offset-4 hover:underline",
       },
       size: {
@@ -64,9 +66,14 @@ function Button({
       // Declare what we actually render so the console stays clean.
       nativeButton={render ? render.type === "button" : true}
       {...props}
-    >
-      {render ? null : children}
-    </ButtonPrimitive>
+      // When `render` is set, the children key must be OMITTED entirely, not
+      // null: an asChild element passed from a Server Component arrives as a
+      // react.lazy element (react#32392), and Base UI merges the primitive's
+      // props before unwrapping it — an explicit `children: null` then wins
+      // over the render element's own children in cloneElement, wiping the
+      // label out of the SSR HTML (docs/frontend.md §9.1).
+      {...(render ? {} : { children })}
+    />
   )
 }
 

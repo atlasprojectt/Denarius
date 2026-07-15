@@ -93,13 +93,14 @@ export function MonthlyPaceChart({
           </p>
         ) : (
           // data-reveal-state is stamped by the RevealController pre-hydration.
-          // A bounded plot keeps the 2x2 cockpit inside the desktop viewport;
-          // the card still stretches to match the teams card beside it.
-          <div data-reveal="monthly-pace" suppressHydrationWarning>
-            <div data-reveal-wipe>
+          // The flex-1/h-full chain lets the plot absorb the flexible bottom
+          // grid row — leftover viewport height becomes chart, not voids in
+          // the top cards; min-h keeps it readable when the row is short.
+          <div data-reveal="monthly-pace" suppressHydrationWarning className="flex flex-1 flex-col">
+            <div data-reveal-wipe className="min-h-0 flex-1">
               <ChartContainer
                 config={chartConfig}
-                className="h-[220px] w-full 2xl:h-[240px]"
+                className="h-full min-h-[220px] w-full"
               >
                 <ComposedChart
                   accessibilityLayer
