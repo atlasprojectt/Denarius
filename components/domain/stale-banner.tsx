@@ -24,6 +24,10 @@ const providerLabel: Record<string, string> = {
   anthropic: "Anthropic",
 };
 
+const collapsedButton =
+  "gap-0 p-0 group-data-[collapsible=icon]:p-0! [&_svg]:size-4.5";
+const collapsedIconSlot = "grid size-8 shrink-0 place-items-center";
+
 function detail(item: ConnectionFreshness): string {
   const label = providerLabel[item.provider] ?? item.provider;
   if (item.state === "failed") {
@@ -68,10 +72,16 @@ export function StaleBanner({ items }: { items: ConnectionFreshness[] }) {
 
       <SidebarMenu className="hidden group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:items-center motion-safe:animate-in motion-safe:fade-in motion-safe:duration-300">
         <SidebarMenuItem>
-          <SidebarMenuButton asChild tooltip={copy.title}>
+          <SidebarMenuButton
+            asChild
+            tooltip={copy.title}
+            className={collapsedButton}
+          >
             <Link href="/ajustes/conexoes" aria-label={copy.title}>
-              <RiHistoryLine />
-              <span>{copy.title}</span>
+              <span className={collapsedIconSlot}>
+                <RiHistoryLine />
+              </span>
+              <span className="sr-only">{copy.title}</span>
             </Link>
           </SidebarMenuButton>
         </SidebarMenuItem>

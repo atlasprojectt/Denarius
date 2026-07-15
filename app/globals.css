@@ -262,6 +262,20 @@ input[type="number"]::-webkit-outer-spin-button {
   transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/* The inset content card's left margin flips 0↔8px with the collapsed state
+   but the primitive gives it no transition — it snapped while the width
+   eased, a visible hitch at the start of every toggle. */
+[data-slot="sidebar-inset"] {
+  transition: margin 320ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Menu buttons morph to size-8 with the primitive's default 150ms/ease —
+   out of step with the 320ms rail. Same clock for everything that moves. */
+[data-slot="sidebar-menu-button"] {
+  transition-duration: 320ms;
+  transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
 /* ---------------------------------------------------------------------------
    Status-dot pulse — the red verdict dot pulses (an expanding, fading ring +
    a subtle breathe on the dot) instead of blinking. Red-only: alarm motion

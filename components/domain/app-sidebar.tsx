@@ -71,6 +71,15 @@ type NavItem = (typeof cockpitItems)[number];
 const fadeLabel =
   "transition-opacity duration-200 delay-100 ease-out group-data-[collapsible=icon]:pointer-events-none group-data-[collapsible=icon]:opacity-0 group-data-[collapsible=icon]:delay-0 group-data-[collapsible=icon]:duration-150";
 
+// Give the icon its own animated track so the mounted label never changes the
+// icon's alignment while the button narrows to the collapsed rail.
+const navButton =
+  "h-9 gap-0 p-0 data-active:font-medium group-data-[collapsible=icon]:p-0! [&_svg]:size-4.5";
+const navIconSlot =
+  "grid h-9 w-10 shrink-0 place-items-center transition-[width,height] duration-[320ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-data-[collapsible=icon]:size-8";
+const profileSlot =
+  "grid h-12 w-12 shrink-0 place-items-center transition-[width,height] duration-[320ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-data-[collapsible=icon]:size-8";
+
 // "/" only matches exactly; sections stay lit on their subroutes
 // (/times/[id] keeps Times active).
 function isActivePath(pathname: string, href: string): boolean {
@@ -104,11 +113,15 @@ function NavGroup({
                 asChild
                 isActive={isActivePath(pathname, item.href)}
                 tooltip={item.title}
-                className="h-9 gap-2.5 px-2.5 data-active:font-medium [&_svg]:size-4.5"
+                className={navButton}
               >
                 <Link href={item.href}>
-                  <item.icon />
-                  <span className={fadeLabel}>{item.title}</span>
+                  <span className={navIconSlot}>
+                    <item.icon />
+                  </span>
+                  <span className={`${fadeLabel} shrink-0 whitespace-nowrap`}>
+                    {item.title}
+                  </span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -142,7 +155,7 @@ export function AppSidebar({
           <Link
             href="/"
             aria-label={copy.brand}
-            className="relative flex h-11 items-center overflow-hidden rounded-md px-1.5 transition-colors hover:bg-sidebar-accent group-data-[collapsible=icon]:h-10 group-data-[collapsible=icon]:px-0"
+            className="relative flex h-11 items-center overflow-hidden rounded-md px-1.5 transition-[color,background-color,height,padding] duration-[320ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:bg-sidebar-accent group-data-[collapsible=icon]:h-10 group-data-[collapsible=icon]:px-0"
           >
             <LogoWordmark className={`h-7 w-auto shrink-0 text-foreground ${fadeLabel}`} />
             <LogoMark className="absolute top-1/2 left-1/2 size-7 -translate-x-1/2 -translate-y-1/2 scale-90 text-chart-2 opacity-0 transition-[opacity,scale] duration-200 ease-out group-data-[collapsible=icon]:scale-100 group-data-[collapsible=icon]:opacity-100 group-data-[collapsible=icon]:delay-100" />
@@ -173,13 +186,15 @@ export function AppSidebar({
                     SidebarMenuButton. */}
                 <DropdownMenuTrigger
                   aria-label={copy.profileMenu}
-                  className="flex h-12 w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left outline-hidden ring-sidebar-ring transition-[width,height,padding] duration-[320ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 data-open:bg-sidebar-accent data-open:text-sidebar-accent-foreground group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-0.5!"
+                  className="flex h-12 w-full items-center gap-0 overflow-hidden rounded-md p-0 text-left outline-hidden ring-sidebar-ring transition-[width,height,padding] duration-[320ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 data-open:bg-sidebar-accent data-open:text-sidebar-accent-foreground group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-0!"
                 >
-                  <Avatar className="size-8 shrink-0 group-data-[collapsible=icon]:size-7">
-                    <AvatarFallback className="bg-sidebar-accent text-xs font-semibold text-sidebar-accent-foreground">
-                      {userInitials}
-                    </AvatarFallback>
-                  </Avatar>
+                  <span className={profileSlot}>
+                    <Avatar className="size-8 shrink-0 transition-[width,height] duration-[320ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-data-[collapsible=icon]:size-7">
+                      <AvatarFallback className="bg-sidebar-accent text-xs font-semibold text-sidebar-accent-foreground">
+                        {userInitials}
+                      </AvatarFallback>
+                    </Avatar>
+                  </span>
                   <span
                     className={`grid min-w-0 flex-1 text-left text-sm leading-tight ${fadeLabel}`}
                   >

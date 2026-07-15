@@ -119,7 +119,13 @@ export function CumulativeChart({
         ) : (
           <div data-reveal="cumulative" suppressHydrationWarning>
             <div data-reveal-wipe>
-              <ChartContainer config={chartConfig} className="h-[220px] w-full">
+              {/* debounce: stretch-while-frozen during continuous resizes
+                  (sidebar collapse) instead of per-frame re-renders. */}
+              <ChartContainer
+                config={chartConfig}
+                debounce={80}
+                className="h-[220px] w-full overflow-hidden"
+              >
                 <ComposedChart
                   accessibilityLayer
                   data={rows}

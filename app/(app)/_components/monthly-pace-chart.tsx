@@ -98,9 +98,13 @@ export function MonthlyPaceChart({
           // the top cards; min-h keeps it readable when the row is short.
           <div data-reveal="monthly-pace" suppressHydrationWarning className="flex flex-1 flex-col">
             <div data-reveal-wipe className="min-h-0 flex-1">
+              {/* debounce: during a continuous resize (the sidebar collapse)
+                  the chart stretches with the card instead of re-rendering
+                  every frame, then settles crisp in one render. */}
               <ChartContainer
                 config={chartConfig}
-                className="h-full min-h-[220px] w-full"
+                debounce={80}
+                className="h-full min-h-[220px] w-full overflow-hidden"
               >
                 <ComposedChart
                   accessibilityLayer

@@ -45,6 +45,7 @@ function ChartContainer({
   children,
   config,
   initialDimension = INITIAL_DIMENSION,
+  debounce,
   ...props
 }: React.ComponentProps<"div"> & {
   config: ChartConfig
@@ -55,16 +56,48 @@ function ChartContainer({
     width: number
     height: number
   }
+  // Passthrough to ResponsiveContainer: without it the chart re-renders on
+  // every frame of a continuous resize (e.g. the sidebar collapse), which
+  // drops frames app-wide.
+  debounce?: number
 }) {
   const uniqueId = React.useId()
   const chartId = `chart-${id ?? uniqueId.replace(/:/g, "")}`
+  const containerRef = React.useRef<HTMLDivElement>(null)
+
+  // Companion to debounce: between debounced renders the SVG keeps its stale
+  // width/height attributes while the container animates, so it would clip or
+  // gap. Surface always emits a matching viewBox, so CSS size-full plus
+  // preserveAspectRatio="none" (an attribute — not stylable; React retains
+  // the node across recharts re-renders, so setting it once holds) lets the
+  // frozen chart stretch with the container until the crisp redraw lands.
+  // The surface mounts in a later commit than this container (recharts fills
+  // its internal store first), so watch for it instead of a one-shot set.
+  React.useEffect(() => {
+    if (!debounce) return
+    const root = containerRef.current
+    if (!root) return
+    const apply = () => {
+      const svg = root.querySelector<SVGSVGElement>("svg.recharts-surface")
+      svg?.setAttribute("preserveAspectRatio", "none")
+      return svg !== null
+    }
+    if (apply()) return
+    const observer = new MutationObserver(() => {
+      if (apply()) observer.disconnect()
+    })
+    observer.observe(root, { childList: true, subtree: true })
+    return () => observer.disconnect()
+  }, [debounce])
 
   return (
     <ChartContext.Provider value={{ config }}>
       <div
         data-slot="chart"
         data-chart={chartId}
+        ref={containerRef}
         className={cn(
+          debounce && "[&_.recharts-surface]:size-full!",
           "flex aspect-video justify-center text-xs [&_.recharts-cartesian-axis-tick_text]:fill-muted-foreground [&_.recharts-cartesian-grid_line[stroke='#ccc']]:stroke-border/50 [&_.recharts-curve.recharts-tooltip-cursor]:stroke-border [&_.recharts-dot[stroke='#fff']]:stroke-transparent [&_.recharts-layer]:outline-hidden [&_.recharts-polar-grid_[stroke='#ccc']]:stroke-border [&_.recharts-radial-bar-background-sector]:fill-muted [&_.recharts-rectangle.recharts-tooltip-cursor]:fill-muted [&_.recharts-reference-line_[stroke='#ccc']]:stroke-border [&_.recharts-sector]:outline-hidden [&_.recharts-sector[stroke='#fff']]:stroke-transparent [&_.recharts-surface]:outline-hidden",
           className
         )}
@@ -73,6 +106,7 @@ function ChartContainer({
         <ChartStyle id={chartId} config={config} />
         <RechartsPrimitive.ResponsiveContainer
           initialDimension={initialDimension}
+          debounce={debounce}
         >
           {children}
         </RechartsPrimitive.ResponsiveContainer>
