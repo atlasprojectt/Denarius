@@ -250,6 +250,57 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 
 /* ---------------------------------------------------------------------------
+   Sidebar motion — the shadcn primitive ships a fast linear width snap
+   (200ms ease-linear). F5 keeps components/ui untouched, so the premium
+   easing is overridden here through the primitive's data-slot hooks; these
+   rules are unlayered, so they win over Tailwind's layered utilities.
+--------------------------------------------------------------------------- */
+[data-slot="sidebar-gap"],
+[data-slot="sidebar-container"],
+[data-slot="sidebar-group-label"] {
+  transition-duration: 320ms;
+  transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ---------------------------------------------------------------------------
+   Status-dot pulse — the red verdict dot pulses (an expanding, fading ring +
+   a subtle breathe on the dot) instead of blinking. Red-only: alarm motion
+   is reserved for a realized alarm state (product principle #6). The ring's
+   base opacity is 0 so reduced motion leaves it invisible, not solid.
+--------------------------------------------------------------------------- */
+@keyframes denarius-status-ping {
+  0% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+  70%,
+  100% {
+    opacity: 0;
+    transform: scale(2.1);
+  }
+}
+
+@keyframes denarius-status-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  35% {
+    transform: scale(1.12);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .denarius-ping {
+    animation: denarius-status-ping 2200ms cubic-bezier(0, 0, 0.2, 1) infinite;
+  }
+
+  .denarius-breathe {
+    animation: denarius-status-breathe 2200ms ease-in-out infinite;
+  }
+}
+
+/* ---------------------------------------------------------------------------
    Denarius theme — shadcn preset b3lVLrQZM, adapted only where the product has
    a stronger semantic contract (budget semaphore and the existing theme
    switch). These blocks follow the generated base so the preset is the visual

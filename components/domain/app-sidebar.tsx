@@ -64,6 +64,13 @@ const accountItems = [
 
 type NavItem = (typeof cockpitItems)[number];
 
+// Collapse/expand label choreography: labels stay mounted (the buttons'
+// overflow-hidden clips them) and crossfade with the width easing — fast
+// fade-out on collapse, delayed fade-in on expand so text appears as the
+// space opens. Pairs with the sidebar width override in globals.css.
+const fadeLabel =
+  "transition-opacity duration-200 delay-100 ease-out group-data-[collapsible=icon]:pointer-events-none group-data-[collapsible=icon]:opacity-0 group-data-[collapsible=icon]:delay-0 group-data-[collapsible=icon]:duration-150";
+
 // "/" only matches exactly; sections stay lit on their subroutes
 // (/times/[id] keeps Times active).
 function isActivePath(pathname: string, href: string): boolean {
@@ -97,13 +104,11 @@ function NavGroup({
                 asChild
                 isActive={isActivePath(pathname, item.href)}
                 tooltip={item.title}
-                className="h-9 gap-2.5 px-2.5 data-active:font-medium group-data-[collapsible=icon]:justify-center [&_svg]:size-4.5"
+                className="h-9 gap-2.5 px-2.5 data-active:font-medium [&_svg]:size-4.5"
               >
                 <Link href={item.href}>
                   <item.icon />
-                  <span className="group-data-[collapsible=icon]:hidden">
-                    {item.title}
-                  </span>
+                  <span className={fadeLabel}>{item.title}</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -131,13 +136,16 @@ export function AppSidebar({
     <TooltipProvider delayDuration={0}>
       <Sidebar variant="inset" collapsible="icon">
         <SidebarHeader className="px-3 pt-3">
+          {/* Wordmark ↔ coin mark crossfade: both stay mounted (overflow-hidden
+              clips the wordmark as the width eases) so the swap fades instead
+              of jump-cutting; the mark scales in slightly on top. */}
           <Link
             href="/"
             aria-label={copy.brand}
-            className="flex h-11 items-center rounded-md px-1.5 transition-colors hover:bg-sidebar-accent group-data-[collapsible=icon]:h-10 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
+            className="relative flex h-11 items-center overflow-hidden rounded-md px-1.5 transition-colors hover:bg-sidebar-accent group-data-[collapsible=icon]:h-10 group-data-[collapsible=icon]:px-0"
           >
-            <LogoWordmark className="h-7 w-auto text-foreground group-data-[collapsible=icon]:hidden" />
-            <LogoMark className="hidden size-7 shrink-0 text-chart-2 group-data-[collapsible=icon]:block" />
+            <LogoWordmark className={`h-7 w-auto shrink-0 text-foreground ${fadeLabel}`} />
+            <LogoMark className="absolute top-1/2 left-1/2 size-7 -translate-x-1/2 -translate-y-1/2 scale-90 text-chart-2 opacity-0 transition-[opacity,scale] duration-200 ease-out group-data-[collapsible=icon]:scale-100 group-data-[collapsible=icon]:opacity-100 group-data-[collapsible=icon]:delay-100" />
           </Link>
         </SidebarHeader>
 
@@ -165,14 +173,16 @@ export function AppSidebar({
                     SidebarMenuButton. */}
                 <DropdownMenuTrigger
                   aria-label={copy.profileMenu}
-                  className="flex h-12 w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left outline-hidden ring-sidebar-ring transition-[width,height,padding] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 data-open:bg-sidebar-accent data-open:text-sidebar-accent-foreground group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-0!"
+                  className="flex h-12 w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left outline-hidden ring-sidebar-ring transition-[width,height,padding] duration-[320ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 data-open:bg-sidebar-accent data-open:text-sidebar-accent-foreground group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-0.5!"
                 >
                   <Avatar className="size-8 shrink-0 group-data-[collapsible=icon]:size-7">
                     <AvatarFallback className="bg-sidebar-accent text-xs font-semibold text-sidebar-accent-foreground">
                       {userInitials}
                     </AvatarFallback>
                   </Avatar>
-                  <span className="grid min-w-0 flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
+                  <span
+                    className={`grid min-w-0 flex-1 text-left text-sm leading-tight ${fadeLabel}`}
+                  >
                     <span className="truncate font-medium">{userLabel}</span>
                     {userLabel !== userEmail && (
                       <span className="truncate text-xs text-sidebar-foreground/60">
@@ -180,7 +190,9 @@ export function AppSidebar({
                       </span>
                     )}
                   </span>
-                  <RiExpandUpDownLine className="ml-auto size-4 shrink-0 text-sidebar-foreground/60 group-data-[collapsible=icon]:hidden" />
+                  <RiExpandUpDownLine
+                    className={`ml-auto size-4 shrink-0 text-sidebar-foreground/60 ${fadeLabel}`}
+                  />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
                   side="right"

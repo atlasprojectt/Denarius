@@ -44,10 +44,12 @@ export function StaleBanner({ items }: { items: ConnectionFreshness[] }) {
 
   return (
     <>
+      {/* The two variants are a display swap; animate-in re-runs each time one
+          becomes visible, so the handoff fades instead of jump-cutting. */}
       <Link
         href="/ajustes/conexoes"
         aria-label={`${copy.title}. ${summary} ${copy.reconnect}.`}
-        className="block rounded-lg outline-hidden ring-sidebar-ring focus-visible:ring-2 group-data-[collapsible=icon]:hidden"
+        className="block rounded-lg outline-hidden ring-sidebar-ring focus-visible:ring-2 group-data-[collapsible=icon]:hidden motion-safe:animate-in motion-safe:fade-in motion-safe:duration-300"
       >
         <Alert
           role="status"
@@ -64,7 +66,7 @@ export function StaleBanner({ items }: { items: ConnectionFreshness[] }) {
         </Alert>
       </Link>
 
-      <SidebarMenu className="hidden group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:items-center">
+      <SidebarMenu className="hidden group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:items-center motion-safe:animate-in motion-safe:fade-in motion-safe:duration-300">
         <SidebarMenuItem>
           <SidebarMenuButton asChild tooltip={copy.title}>
             <Link href="/ajustes/conexoes" aria-label={copy.title}>

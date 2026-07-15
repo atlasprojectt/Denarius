@@ -20,15 +20,22 @@ const halo: Record<Verdict["status"], string> = {
 };
 
 export function VerdictLine({ verdict }: { verdict: Verdict }) {
-  const blink = verdict.status === "red" ? "motion-safe:animate-pulse" : "";
+  // Red pulses (an expanding ring + a subtle breathe), it never blinks —
+  // alarm motion only for a realized alarm state (principle #6).
+  const alarm = verdict.status === "red";
 
   return (
     <div className="flex items-start gap-3">
       <span
         aria-hidden
-        className={`mt-1 flex size-4 shrink-0 items-center justify-center rounded-full ${halo[verdict.status]} ${blink}`}
+        className={`relative mt-1 flex size-4 shrink-0 items-center justify-center rounded-full ${halo[verdict.status]}`}
       >
-        <span className={`size-2 rounded-full ${dot[verdict.status]} ${blink}`} />
+        {alarm && (
+          <span className="denarius-ping absolute inset-0 rounded-full bg-status-red opacity-0" />
+        )}
+        <span
+          className={`size-2 rounded-full ${dot[verdict.status]} ${alarm ? "denarius-breathe" : ""}`}
+        />
       </span>
       <p className="text-xl/snug font-semibold tracking-tight text-balance">
         {verdict.sentence}
