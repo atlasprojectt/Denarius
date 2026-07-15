@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { budgetedTeams } from "@/lib/engine/cockpit";
 import { percent } from "@/lib/format";
 import { getHomeData } from "@/lib/home/queries";
-import { AllClear } from "./_components/all-clear";
 import { Hero } from "./_components/hero";
 import { MonthlyPaceChart } from "./_components/monthly-pace-chart";
 import { ObservationsFooter } from "./_components/observations-footer";
@@ -88,8 +87,6 @@ export default async function HomePage() {
           )}
         </p>
       </div>
-
-      {cockpit.allClear && <AllClear />}
 
       {/* The 2x2 grid. min-w-0 wrappers matter: grid children default to
           min-width auto, and the table + long tabular-nums strings would

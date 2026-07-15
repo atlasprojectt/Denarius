@@ -33,12 +33,6 @@ export const homeCopy = {
       `+ ${usd} de API ainda sem câmbio congelado — fora do total até o câmbio ser capturado.`,
   },
 
-  allClear: {
-    title: "Tudo sob controle",
-    body: "Nenhum time fora do orçamento no ritmo atual. Próximo resumo na sexta.",
-    dismiss: "Fechar aviso",
-  },
-
   composition: {
     title: "Para onde vai o dinheiro",
     drillNote: "O mesmo gasto do período, agora agrupado por fonte. Tokens e modelos ficam em Explorar.",

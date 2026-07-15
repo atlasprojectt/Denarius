@@ -277,10 +277,11 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 
 /* ---------------------------------------------------------------------------
-   Status-dot pulse — the red verdict dot pulses (an expanding, fading ring +
-   a subtle breathe on the dot) instead of blinking. Red-only: alarm motion
-   is reserved for a realized alarm state (product principle #6). The ring's
-   base opacity is 0 so reduced motion leaves it invisible, not solid.
+   Status-dot pulse — the verdict dot pulses (an expanding, fading ring + a
+   subtle breathe on the dot) instead of blinking, in the dot's own semaphore
+   color. It signals "live", not "alarm" — slow and soft enough to stay calm
+   in green (product principle #6). The ring's base opacity is 0 so reduced
+   motion leaves it invisible, not solid.
 --------------------------------------------------------------------------- */
 @keyframes denarius-status-ping {
   0% {

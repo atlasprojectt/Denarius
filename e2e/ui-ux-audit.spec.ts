@@ -67,7 +67,7 @@ async function captureSidebarCollapse(page: Page): Promise<SidebarMotionFrame[]>
           }
 
           const stale = document.querySelector<HTMLElement>(
-            "[data-sidebar-stale-icon] svg",
+            '[data-sidebar-notice-icon="stale"] svg',
           );
           if (stale) {
             const rect = stale.getBoundingClientRect();

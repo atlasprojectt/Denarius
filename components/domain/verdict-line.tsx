@@ -20,9 +20,11 @@ const halo: Record<Verdict["status"], string> = {
 };
 
 export function VerdictLine({ verdict }: { verdict: Verdict }) {
-  // Red pulses (an expanding ring + a subtle breathe), it never blinks —
-  // alarm motion only for a realized alarm state (principle #6).
-  const alarm = verdict.status === "red";
+  // The dot pulses (an expanding ring + a subtle breathe) in every semaphore
+  // state, in its own color — it never blinks. At 2.2s it reads as "this
+  // reading is live", not as an alarm, so green stays calm (principle #6).
+  // "collecting" is still: no judgement, no motion, before day 5.
+  const live = verdict.status !== "collecting";
 
   return (
     <div className="flex items-start gap-3">
@@ -30,11 +32,13 @@ export function VerdictLine({ verdict }: { verdict: Verdict }) {
         aria-hidden
         className={`relative mt-1 flex size-4 shrink-0 items-center justify-center rounded-full ${halo[verdict.status]}`}
       >
-        {alarm && (
-          <span className="denarius-ping absolute inset-0 rounded-full bg-status-red opacity-0" />
+        {live && (
+          <span
+            className={`denarius-ping absolute inset-0 rounded-full opacity-0 ${dot[verdict.status]}`}
+          />
         )}
         <span
-          className={`size-2 rounded-full ${dot[verdict.status]} ${alarm ? "denarius-breathe" : ""}`}
+          className={`size-2 rounded-full ${dot[verdict.status]} ${live ? "denarius-breathe" : ""}`}
         />
       </span>
       <p className="text-xl/snug font-semibold tracking-tight text-balance">

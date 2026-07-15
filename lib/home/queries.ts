@@ -1,5 +1,7 @@
 import "server-only";
 
+import { cache } from "react";
+
 import { attributeSeats } from "@/lib/engine/accrual";
 import type { SeatSubscription } from "@/lib/engine/accrual";
 import { budgetedTeams, buildCockpit, type Cockpit } from "@/lib/engine/cockpit";
@@ -150,7 +152,10 @@ type CockpitAssembly = CockpitData & {
   hasOrgBudget: boolean;
 };
 
-async function assembleCockpit(): Promise<CockpitAssembly> {
+/** Per-request memoized: the app layout reads the cockpit for the sidebar
+ *  all-clear notice, and Home/Times read it again for their own screens — one
+ *  render pass, one assembly, so the extra chrome costs no extra queries. */
+const assembleCockpit = cache(async function assembleCockpit(): Promise<CockpitAssembly> {
   const period = currentPeriod();
   const supabase = await createClient();
 
@@ -223,7 +228,7 @@ async function assembleCockpit(): Promise<CockpitAssembly> {
     connected: connections.some((connection) => connection.status === "active"),
     hasOrgBudget: budgets.org !== null,
   };
-}
+});
 
 /** The cockpit alone — for screens (Explore team detail) that pre-load the
  *  simulator but render no observations, so the week-change queries and the

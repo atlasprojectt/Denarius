@@ -12,6 +12,7 @@ import {
   RiUserLine,
 } from "@remixicon/react";
 
+import { AllClear } from "@/components/domain/all-clear";
 import { LogoMark, LogoWordmark } from "@/components/domain/logo";
 import { StaleBanner } from "@/components/domain/stale-banner";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -140,11 +141,13 @@ export function AppSidebar({
   userInitials,
   userLabel,
   staleConnections,
+  allClear,
 }: {
   userEmail: string;
   userInitials: string;
   userLabel: string;
   staleConnections: ConnectionFreshness[];
+  allClear: boolean;
 }) {
   const pathname = usePathname();
 
@@ -179,7 +182,12 @@ export function AppSidebar({
         </SidebarContent>
 
         <SidebarFooter>
+          {/* The notices sit together above the profile, in one shared card
+              shape (SidebarNotice): the caveat about the data first, then the
+              affirmative state of the budget. Both are silent when they have
+              nothing to say. */}
           <StaleBanner items={staleConnections} />
+          {allClear && <AllClear />}
           <SidebarMenu>
             <SidebarMenuItem className="w-full">
               <DropdownMenu>

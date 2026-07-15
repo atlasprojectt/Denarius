@@ -1,18 +1,13 @@
 import { RiHistoryLine } from "@remixicon/react";
-import Link from "next/link";
 
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import {
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-} from "@/components/ui/sidebar";
+import { SidebarNotice } from "@/components/domain/sidebar-notice";
 import type { ConnectionFreshness } from "@/lib/engine/freshness";
 
 // Honesty in the chrome (frontend §3.2): when a connector's last sync failed or
 // went stale, say so globally — app totals may be understated. Deliberately
 // NOT a semaphore color: green/amber/red are reserved for budget status (product
-// principle #5). This is a calm data-quality notice, not an alarm.
+// principle #5). This is a calm data-quality notice, not an alarm. The card
+// shape is shared with every other sidebar notice (SidebarNotice).
 
 const copy = {
   title: "Dados possivelmente desatualizados",
@@ -23,10 +18,6 @@ const providerLabel: Record<string, string> = {
   openai: "OpenAI",
   anthropic: "Anthropic",
 };
-
-const collapsedButton =
-  "mx-auto w-[calc(var(--sidebar-width)-2rem)] gap-0 p-0 group-data-[collapsible=icon]:p-0! [&_svg]:size-4.5";
-const collapsedIconSlot = "grid size-8 shrink-0 place-items-center";
 
 function detail(item: ConnectionFreshness): string {
   const label = providerLabel[item.provider] ?? item.provider;
@@ -47,45 +38,14 @@ export function StaleBanner({ items }: { items: ConnectionFreshness[] }) {
   const summary = items.map(detail).join(" ");
 
   return (
-    <>
-      {/* The two variants are a display swap; animate-in re-runs each time one
-          becomes visible, so the handoff fades instead of jump-cutting. */}
-      <Link
-        href="/ajustes/conexoes"
-        aria-label={`${copy.title}. ${summary} ${copy.reconnect}.`}
-        className="block rounded-lg outline-hidden ring-sidebar-ring focus-visible:ring-2 group-data-[collapsible=icon]:hidden motion-safe:animate-in motion-safe:fade-in motion-safe:duration-300"
-      >
-        <Alert
-          role="status"
-          className="bg-sidebar-accent/55 px-2.5 py-2 transition-colors hover:bg-sidebar-accent"
-        >
-          <RiHistoryLine />
-          <AlertTitle className="leading-4">{copy.title}</AlertTitle>
-          <AlertDescription className="col-start-2 line-clamp-3 text-left text-[11px]/4 text-sidebar-foreground/65">
-            <p>{summary}</p>
-          </AlertDescription>
-          <span className="col-start-2 mt-1 text-[11px] font-medium text-sidebar-foreground">
-            {copy.reconnect}
-          </span>
-        </Alert>
-      </Link>
-
-      <SidebarMenu className="hidden group-data-[collapsible=icon]:flex motion-safe:animate-in motion-safe:fade-in motion-safe:duration-300">
-        <SidebarMenuItem className="w-full">
-          <SidebarMenuButton
-            asChild
-            tooltip={copy.title}
-            className={collapsedButton}
-          >
-            <Link href="/ajustes/conexoes" aria-label={copy.title}>
-              <span data-sidebar-stale-icon className={collapsedIconSlot}>
-                <RiHistoryLine />
-              </span>
-              <span className="sr-only">{copy.title}</span>
-            </Link>
-          </SidebarMenuButton>
-        </SidebarMenuItem>
-      </SidebarMenu>
-    </>
+    <SidebarNotice
+      icon={<RiHistoryLine />}
+      title={copy.title}
+      description={summary}
+      href="/ajustes/conexoes"
+      cta={copy.reconnect}
+      ariaLabel={`${copy.title}. ${summary} ${copy.reconnect}.`}
+      railIconId="stale"
+    />
   );
 }

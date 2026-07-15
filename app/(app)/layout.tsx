@@ -14,6 +14,7 @@ import {
   freshness,
   type ConnectionStatus,
 } from "@/lib/engine/freshness";
+import { getCockpitData } from "@/lib/home/queries";
 import { profileInitials, profileLabel } from "@/lib/settings/account";
 import { createClient } from "@/lib/supabase/server";
 
@@ -64,6 +65,12 @@ export default async function AppLayout({
   );
   const staleConnections = freshness(connections).needsAttention;
 
+  // The all-clear is chrome, not cockpit: it rides the sidebar on every screen,
+  // so the verdict's affirmative state is read here rather than on Home. The
+  // assembly is per-request memoized, so Home still pays for exactly one.
+  const { cockpit } = await getCockpitData();
+  const allClear = cockpit.state === "ready" && cockpit.allClear;
+
   return (
     <AppToastProvider>
       <SidebarProvider>
@@ -78,6 +85,7 @@ export default async function AppLayout({
             email: appUser.email,
           })}
           staleConnections={staleConnections}
+          allClear={allClear}
         />
         <SidebarInset>
           <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2.5 border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/80 md:rounded-t-xl">
