@@ -10,6 +10,10 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
+import {
+  freshness,
+  type ConnectionStatus,
+} from "@/lib/engine/freshness";
 import { profileInitials, profileLabel } from "@/lib/settings/account";
 import { createClient } from "@/lib/supabase/server";
 
@@ -17,6 +21,12 @@ type AppUserRow = {
   email: string;
   display_name: string | null;
   tenant: { name: string } | null;
+};
+
+type ConnectionRow = {
+  provider: string;
+  status: string;
+  last_sync_at: string | null;
 };
 
 export default async function AppLayout({
@@ -30,15 +40,29 @@ export default async function AppLayout({
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data } = await supabase
-    .from("app_user")
-    .select("email, display_name, tenant:tenant_id(name)")
-    .eq("id", user.id)
-    .maybeSingle();
+  const [{ data }, { data: connectionData }] = await Promise.all([
+    supabase
+      .from("app_user")
+      .select("email, display_name, tenant:tenant_id(name)")
+      .eq("id", user.id)
+      .maybeSingle(),
+    supabase
+      .from("provider_connection")
+      .select("provider, status, last_sync_at"),
+  ]);
   const appUser = data as AppUserRow | null;
 
   // Signed in but no tenant yet (e.g. first Google login) → bootstrap.
   if (!appUser) redirect("/onboarding");
+
+  const connections = ((connectionData ?? []) as ConnectionRow[]).map(
+    (connection): ConnectionStatus => ({
+      provider: connection.provider as ConnectionStatus["provider"],
+      status: connection.status,
+      lastSyncAt: connection.last_sync_at,
+    }),
+  );
+  const staleConnections = freshness(connections).needsAttention;
 
   return (
     <AppToastProvider>
@@ -53,6 +77,7 @@ export default async function AppLayout({
             displayName: appUser.display_name,
             email: appUser.email,
           })}
+          staleConnections={staleConnections}
         />
         <SidebarInset>
           <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2.5 border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/80 md:rounded-t-xl">

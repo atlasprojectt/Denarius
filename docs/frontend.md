@@ -133,7 +133,7 @@ Base set from #12 (button, input, label, dialog, sheet, dropdown-menu, tooltip, 
 | `BudgetBar` | Segmented tick bar: semaphore tick fill + neutral tick ghost (run-rate) + budget marker — geometry AND the shared tick texture (`TICKS`/`TICKS_BOLD`/`cut`) in `lib/bars.ts` |
 | `ProviderIcon` | Inline provider brand marks (OpenAI `currentColor`, Claude terracotta, Gemini gradient — Gemini ships ready but unused until the provider exists), path data from svgl |
 | `NextActionsButton` | Global-header "Próximas ações" popover: the trigger is the `Button` `accent` variant as a rounded pill with a count badge (one prefetch per page load; items refetched on open); the panel is `w-96` so long pt-BR actions don't cramp |
-| `StaleBanner` | Data-quality notice on shadcn `Alert` — deliberately neutral, never semaphore |
+| `StaleBanner` | Compact data-quality notice in the sidebar footer, above the profile; collapses to a tooltip-labelled icon with the rail and stays deliberately neutral, never semaphore |
 | `SimulateDrawer` | Contextual what-if drawer (Sheet), presets + slider, result panel on muted surface |
 | `AppSidebar`, `ThemeToggle`, `Logo` | Shell chrome (unchanged contracts from #12/#19) |
 
@@ -143,7 +143,7 @@ Screen-local compositions stay colocated (F5): the cockpit pieces (`Hero` with i
 
 - **Empty**: always `EmptyState` (or an affirmative panel) — never a bare table or "no data". Cold-start Home is a CTA hero listing what a budget + a source unlock; Explore/atribuição/roster/assinaturas/drill-down each have a contextual empty with the obvious next action; Admin-gated screens show a lock-icon `EmptyState` explaining "controle, não vigilância".
 - **Loading**: per-route skeletons that mirror each screen's real shape and column width (RSC streaming, no client spinners, F1) — `app/(app)/loading.tsx` mirrors the Home cockpit's 2x2 grid; `times/loading.tsx`, `times/[teamId]/loading.tsx`, `explorar/loading.tsx`, `ajustes/loading.tsx` (also covers the `/ajustes/*` subpages) and `configuracoes/loading.tsx` mirror their own layouts, so no screen jumps between skeleton and content (refinement 2026-07-09).
-- **Error / data quality**: `StaleBanner` for stale/failed syncs; `Alert` for informational notices (Σ-mismatch); `ActionStatus` for mutation results; uncosted/unattributed/FX-missing always disclosed in card footers ("as of" stamps, reconciliation lines).
+- **Error / data quality**: the global sidebar `StaleBanner` surfaces stale/failed syncs on every app route; `Alert` handles informational notices (Σ-mismatch); `ActionStatus` handles mutation results; uncosted/unattributed/FX-missing remain disclosed in card footers ("as of" stamps, reconciliation lines).
 - **All-clear**: affirmative soft-green panel (`AllClear`), never a blank section.
 - **Settings hub**: `/ajustes` contains navigation Items only. Inline Company, Privacy, and Users sections move to `/ajustes/empresa`, `/ajustes/privacidade`, and `/ajustes/usuarios`.
 

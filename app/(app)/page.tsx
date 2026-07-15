@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { RiCheckLine, RiDashboard3Line } from "@remixicon/react";
 
-import { StaleBanner } from "@/components/domain/stale-banner";
 import { VerdictLine } from "@/components/domain/verdict-line";
 import { PageContainer } from "@/components/domain/page-container";
 import { Button } from "@/components/ui/button";
@@ -26,7 +25,7 @@ import { homeCopy } from "./_components/copy";
 // here; buildCockpit already did it (architecture §9).
 
 export default async function HomePage() {
-  const { cockpit, period, stale, observations, hasSeatWaste, orgWeekPct, setup } =
+  const { cockpit, period, observations, hasSeatWaste, orgWeekPct, setup } =
     await getHomeData();
 
   if (cockpit.state === "cold-start") {
@@ -78,8 +77,6 @@ export default async function HomePage() {
   return (
     <PageContainer variant="full" className="flex-1 gap-4">
       <h1 className="sr-only">{homeCopy.question}</h1>
-
-      {stale.showBanner && <StaleBanner items={stale.needsAttention} />}
 
       <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-2">
         <VerdictLine verdict={cockpit.verdict} />

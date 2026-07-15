@@ -13,6 +13,7 @@ import {
 } from "@remixicon/react";
 
 import { LogoMark, LogoWordmark } from "@/components/domain/logo";
+import { StaleBanner } from "@/components/domain/stale-banner";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -36,6 +37,7 @@ import {
 } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { logout } from "@/lib/auth/actions";
+import type { ConnectionFreshness } from "@/lib/engine/freshness";
 
 const copy = {
   brand: "Denarius",
@@ -116,10 +118,12 @@ export function AppSidebar({
   userEmail,
   userInitials,
   userLabel,
+  staleConnections,
 }: {
   userEmail: string;
   userInitials: string;
   userLabel: string;
+  staleConnections: ConnectionFreshness[];
 }) {
   const pathname = usePathname();
 
@@ -151,6 +155,7 @@ export function AppSidebar({
         </SidebarContent>
 
         <SidebarFooter>
+          <StaleBanner items={staleConnections} />
           <SidebarMenu className="group-data-[collapsible=icon]:items-center">
             <SidebarMenuItem>
               <DropdownMenu>

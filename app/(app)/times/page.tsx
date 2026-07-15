@@ -4,7 +4,6 @@ import { RiInformationLine, RiTeamLine } from "@remixicon/react";
 import { EmptyState } from "@/components/domain/empty-state";
 import { PageContainer } from "@/components/domain/page-container";
 import { PageHeader } from "@/components/domain/page-header";
-import { StaleBanner } from "@/components/domain/stale-banner";
 import { TeamBudgetTable } from "@/components/domain/team-budget-table";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -47,7 +46,7 @@ const cents = (value: number) => Math.round(value * 100);
 
 export default async function TimesPage() {
   const data = await getTimesData();
-  const { cockpit, period, stale, currency, teams } = data;
+  const { cockpit, period, currency, teams } = data;
 
   // No teams at all → cold-start CTA, never a blank screen (F5 required state).
   if (teams.length === 0) {
@@ -125,8 +124,6 @@ export default async function TimesPage() {
         description={copy.subtitle}
         meta={copy.asOf(period.monthLabel, period.dayOfPeriod, period.daysInPeriod)}
       />
-
-      {stale.showBanner && <StaleBanner items={stale.needsAttention} />}
 
       {budgeted.length > 0 ? (
         <TeamBudgetTable

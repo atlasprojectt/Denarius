@@ -4,7 +4,6 @@ import { RiCompass3Line } from "@remixicon/react";
 import { EmptyState } from "@/components/domain/empty-state";
 import { PageHeader } from "@/components/domain/page-header";
 import { PageContainer } from "@/components/domain/page-container";
-import { StaleBanner } from "@/components/domain/stale-banner";
 import { UsdValue } from "@/components/domain/usd-value";
 import {
   Card,
@@ -16,7 +15,6 @@ import {
 } from "@/components/ui/card";
 import { listBudgets } from "@/lib/budgets/queries";
 import { attributeSeats } from "@/lib/engine/accrual";
-import { freshness, type ConnectionStatus } from "@/lib/engine/freshness";
 import { periodFx, usdDisplay } from "@/lib/engine/money-model";
 import { currentPeriod } from "@/lib/engine/period";
 import { utcStamp } from "@/lib/format";
@@ -102,20 +100,12 @@ export default async function ExplorePage() {
       ? `${money(usd * fx.rate, currency)} (${money(usd, "USD")})`
       : money(usd, "USD");
 
-  const connections = ((connectionData ?? []) as ConnectionRow[]).map(
-    (c): ConnectionStatus => ({
-      provider: c.provider as ConnectionStatus["provider"],
-      status: c.status,
-      lastSyncAt: c.last_sync_at,
-    }),
-  );
-  const fresh = freshness(connections);
   // Honest stamp across providers: totals are only as fresh as the LEAST fresh
   // active connection, so the oldest successful last_sync_at wins.
   const lastSyncAt =
-    connections
-      .filter((c) => c.status !== "revoked" && c.lastSyncAt !== null)
-      .map((c) => c.lastSyncAt as string)
+    ((connectionData ?? []) as ConnectionRow[])
+      .filter((c) => c.status !== "revoked" && c.last_sync_at !== null)
+      .map((c) => c.last_sync_at as string)
       .sort()[0] ?? null;
 
   const coldStart = subscriptions.length === 0 && !apiSpend.hasData;
@@ -161,8 +151,6 @@ export default async function ExplorePage() {
         description={copy.subtitle}
         meta={copy.asOf(period.monthLabel, period.dayOfPeriod, period.daysInPeriod)}
       />
-
-      {fresh.showBanner && <StaleBanner items={fresh.needsAttention} />}
 
       {!coldStart && (
         <nav aria-label={copy.navLabel} className="sticky top-16 z-[5] flex flex-wrap gap-1 rounded-lg border bg-background/95 p-1 shadow-xs backdrop-blur">

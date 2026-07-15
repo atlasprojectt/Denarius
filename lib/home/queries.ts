@@ -3,7 +3,6 @@ import "server-only";
 import { attributeSeats } from "@/lib/engine/accrual";
 import type { SeatSubscription } from "@/lib/engine/accrual";
 import { budgetedTeams, buildCockpit, type Cockpit } from "@/lib/engine/cockpit";
-import { freshness, type ConnectionStatus } from "@/lib/engine/freshness";
 import { periodFx, type FrozenFx } from "@/lib/engine/money-model";
 import { currentPeriod, monthStartUtc, type Period } from "@/lib/engine/period";
 import { combineTeamSpend } from "@/lib/engine/team-spend";
@@ -24,8 +23,6 @@ import { mapKey, teamApiSpend } from "@/lib/usage/attribution";
 export type CockpitData = {
   cockpit: Cockpit;
   period: Period;
-  /** Connection freshness for the stale-data banner (honesty in the chrome). */
-  stale: ReturnType<typeof freshness>;
   /** THE period's frozen USD→display rate (money-model contract) — one rate
    *  for every conversion on every screen; null disclosed, never guessed. */
   fx: FrozenFx | null;
@@ -55,9 +52,7 @@ export type HomeData = CockpitData & {
 };
 
 type ConnectionRow = {
-  provider: string;
   status: string;
-  last_sync_at: string | null;
 };
 
 /** cost_daily rows for the last 14 days — the org week-over-week input, same
@@ -166,7 +161,7 @@ async function assembleCockpit(): Promise<CockpitAssembly> {
       teamApiSpend(),
       listTeams(),
       providerCostToDate(),
-      supabase.from("provider_connection").select("provider, status, last_sync_at"),
+      supabase.from("provider_connection").select("status"),
     ]);
 
   const seats = attributeSeats(subscriptions, period);
@@ -211,18 +206,11 @@ async function assembleCockpit(): Promise<CockpitAssembly> {
     composition: providers,
   });
 
-  const connections = ((connectionData ?? []) as ConnectionRow[]).map(
-    (c): ConnectionStatus => ({
-      provider: c.provider as ConnectionStatus["provider"],
-      status: c.status,
-      lastSyncAt: c.last_sync_at,
-    }),
-  );
+  const connections = (connectionData ?? []) as ConnectionRow[];
 
   return {
     cockpit,
     period,
-    stale: freshness(connections),
     fx,
     currency: budgets.currency,
     teams,
@@ -241,8 +229,8 @@ async function assembleCockpit(): Promise<CockpitAssembly> {
  *  simulator but render no observations, so the week-change queries and the
  *  apontamento rules never run for them. */
 export async function getCockpitData(): Promise<CockpitData> {
-  const { cockpit, period, stale, fx } = await assembleCockpit();
-  return { cockpit, period, stale, fx };
+  const { cockpit, period, fx } = await assembleCockpit();
+  return { cockpit, period, fx };
 }
 
 export type TimesData = CockpitData & {
@@ -283,7 +271,6 @@ export async function getTimesData(): Promise<TimesData> {
   return {
     cockpit: a.cockpit,
     period: a.period,
-    stale: a.stale,
     fx: a.fx,
     currency: a.currency,
     teams: a.teams,
@@ -376,7 +363,6 @@ export async function getHomeData(): Promise<HomeData> {
   return {
     cockpit: assembly.cockpit,
     period: assembly.period,
-    stale: assembly.stale,
     fx: assembly.fx,
     observations,
     hasSeatWaste: observations.some((o) => o.id.startsWith("seat:")),
