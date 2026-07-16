@@ -75,8 +75,11 @@ const fadeLabel =
 // Keep the visual slot fixed while the button narrows. The expanded width is
 // absolute relative to the rail variable: animating from 100% would compound
 // with the parent's own width transition and pull the icon sideways.
+// Resting nav items (label + icon) sit at 65% of the sidebar ink so the active
+// item reads as the only lit one; the primitive's hover/data-active rules
+// restore full `--sidebar-accent-foreground`.
 const navButton =
-  "mx-auto h-9 w-[calc(var(--sidebar-width)-2rem)] gap-0 py-0 pr-0 pl-1 data-active:font-medium group-data-[collapsible=icon]:p-0! [&_svg]:size-4.5";
+  "mx-auto h-9 w-[calc(var(--sidebar-width)-2rem)] gap-0 py-0 pr-0 pl-1 text-sidebar-foreground/65 transition-colors data-active:font-medium group-data-[collapsible=icon]:p-0! [&_svg]:size-4.5";
 const navIconSlot =
   "grid size-8 shrink-0 place-items-center";
 const profileSlot = "grid size-8 shrink-0 place-items-center";
@@ -154,17 +157,17 @@ export function AppSidebar({
   return (
     <TooltipProvider delayDuration={0}>
       <Sidebar variant="inset" collapsible="icon">
-        <SidebarHeader className="px-3 pt-3">
+        <SidebarHeader className="px-3 pt-2">
           {/* Wordmark ↔ coin mark crossfade: both stay mounted (overflow-hidden
               clips the wordmark as the width eases) so the swap fades instead
               of jump-cutting; the mark scales in slightly on top. */}
           <Link
             href="/"
             aria-label={copy.brand}
-            className="relative flex h-11 items-center overflow-hidden rounded-md px-1.5 transition-[color,background-color,height,padding] duration-[320ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:bg-sidebar-accent group-data-[collapsible=icon]:h-10 group-data-[collapsible=icon]:px-0"
+            className="relative flex h-9 items-center overflow-hidden rounded-md px-1.5 transition-[color,background-color,height,padding] duration-[320ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:bg-sidebar-accent group-data-[collapsible=icon]:h-9 group-data-[collapsible=icon]:px-0"
           >
-            <LogoWordmark className={`h-7 w-auto shrink-0 text-foreground ${fadeLabel}`} />
-            <LogoMark className="absolute top-1/2 left-1/2 size-7 -translate-x-1/2 -translate-y-1/2 scale-90 text-chart-2 opacity-0 transition-[opacity,scale] duration-200 ease-out group-data-[collapsible=icon]:scale-100 group-data-[collapsible=icon]:opacity-100 group-data-[collapsible=icon]:delay-100" />
+            <LogoWordmark className={`h-5.5 w-auto shrink-0 text-foreground ${fadeLabel}`} />
+            <LogoMark className="absolute top-1/2 left-1/2 size-5.5 -translate-x-1/2 -translate-y-1/2 scale-90 text-chart-2 opacity-0 transition-[opacity,scale] duration-200 ease-out group-data-[collapsible=icon]:scale-100 group-data-[collapsible=icon]:opacity-100 group-data-[collapsible=icon]:delay-100" />
           </Link>
         </SidebarHeader>
 

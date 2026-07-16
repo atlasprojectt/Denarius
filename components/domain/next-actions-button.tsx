@@ -119,10 +119,13 @@ export function NextActionsButton() {
                   <Link
                     href={item.href ?? "/explorar"}
                     onClick={() => setOpen(false)}
-                    className="group flex items-start justify-between gap-3 rounded-lg px-3 py-2.5 outline-none transition-colors hover:bg-muted focus-visible:bg-muted"
+                    className="group block rounded-lg px-3 py-2.5 outline-none transition-colors hover:bg-muted focus-visible:bg-muted"
                   >
-                    <span className="text-sm/relaxed">{item.text}</span>
-                    <span className="mt-0.5 flex shrink-0 items-center gap-1 text-xs font-medium text-primary">
+                    <span className="block text-sm/relaxed">{item.text}</span>
+                    {/* Dark `--primary` is a button-fill orange (2.4:1 as text on
+                        the popover); `--primary-hover` is the legible one — same
+                        split the Button `accent` variant makes. */}
+                    <span className="mt-1.5 flex items-center gap-1 text-xs font-medium text-primary dark:text-primary-hover">
                       {item.actionLabel ?? copy.defaultAction}
                       <RiArrowRightLine className="size-3.5 transition-transform group-hover:translate-x-0.5" />
                     </span>
