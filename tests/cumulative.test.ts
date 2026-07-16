@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { buildCumulativeSpend } from "@/lib/engine/cumulative";
+import { buildCumulativeSpend, expectedPaceSegment } from "@/lib/engine/cumulative";
 
 // The drill-down cumulative series must mirror the evaluation combine exactly:
 // frozen-FX conversion, API dropped when FX is missing, seats spread evenly.
@@ -85,5 +85,31 @@ describe("buildCumulativeSpend", () => {
         dayOfPeriod: 0,
       }),
     ).toEqual([]);
+  });
+});
+
+// The expected-pace reference: the budget spread evenly across the period's
+// days. Presentation-neutral; the diagnosis chart draws it as-is.
+
+describe("expectedPaceSegment", () => {
+  it("runs from one day's share to the full budget at period close", () => {
+    expect(expectedPaceSegment(3100, 31)).toEqual({
+      start: { day: 1, spent: 100 },
+      end: { day: 31, spent: 3100 },
+    });
+  });
+
+  it("is null without a positive budget or a real period", () => {
+    expect(expectedPaceSegment(null, 31)).toBeNull();
+    expect(expectedPaceSegment(0, 31)).toBeNull();
+    expect(expectedPaceSegment(-5, 31)).toBeNull();
+    expect(expectedPaceSegment(3100, 0)).toBeNull();
+  });
+
+  it("degenerates cleanly for a one-day period", () => {
+    expect(expectedPaceSegment(50, 1)).toEqual({
+      start: { day: 1, spent: 50 },
+      end: { day: 1, spent: 50 },
+    });
   });
 });

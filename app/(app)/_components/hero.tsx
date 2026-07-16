@@ -23,11 +23,28 @@ import { homeCopy } from "./copy";
 
 const c = homeCopy.hero;
 
-function Kpi({ label, value }: { label: string; value: string }) {
+function Kpi({
+  label,
+  value,
+  emphasis = false,
+}: {
+  label: string;
+  value: string;
+  /** The overrun headline (margem projetada) — the single place the delta
+   *  renders in headline weight. Neutral ink: semaphore stays on the
+   *  verdict/pills (principle #5). */
+  emphasis?: boolean;
+}) {
   return (
     <div className="min-w-0">
       <dt className="truncate text-xs text-muted-foreground">{label}</dt>
-      <dd className="mt-0.5 text-sm font-medium tabular-nums">{value}</dd>
+      <dd
+        className={`mt-0.5 tabular-nums ${
+          emphasis ? "text-base font-semibold" : "text-sm font-medium"
+        }`}
+      >
+        {value}
+      </dd>
     </div>
   );
 }
@@ -105,16 +122,21 @@ export function Hero({
         />
 
         {/* Two KPIs, not three: the day-of-month figure already lives in the
-            verdict meta line and the time bar — a third copy was noise. */}
+            verdict meta line and the time bar — a third copy was noise.
+            Margem projetada carries the emphasis: it is the decision number,
+            and the ONE headline-weight rendering of the overrun (the callout
+            sentence below is support, not a second headline). */}
         <dl className="grid grid-cols-2 gap-4 border-t pt-3">
           <Kpi label={c.kpiProjection} value={projectionValue} />
-          <Kpi label={c.kpiMargin} value={marginValue} />
+          <Kpi label={c.kpiMargin} value={marginValue} emphasis />
         </dl>
 
-        {/* Flows right after the KPIs — an mt-auto pin opened a void in the
-            middle of the card whenever the grid row ran taller. */}
+        {/* Support line, not main flow (2026-07-16): the sentence repeats the
+            margem's delta in words, so it reads as context under the KPIs —
+            reduced type keeps the number said once in headline weight. A
+            support line, not a tooltip: it must survive mobile. */}
         <div>
-          <p className="text-sm/relaxed">{callout}</p>
+          <p className="text-xs/relaxed text-muted-foreground">{callout}</p>
           {unconvertedUsd > 0 && (
             <p className="mt-1.5 text-xs/relaxed text-muted-foreground">
               {c.unconverted(money(unconvertedUsd, "USD"))}

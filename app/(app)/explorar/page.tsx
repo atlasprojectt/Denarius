@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/card";
 import { listBudgets } from "@/lib/budgets/queries";
 import { attributeSeats } from "@/lib/engine/accrual";
+import { oldestActiveSync } from "@/lib/engine/freshness";
 import { periodFx, usdDisplay } from "@/lib/engine/money-model";
 import { currentPeriod } from "@/lib/engine/period";
 import { utcStamp } from "@/lib/format";
@@ -100,13 +101,15 @@ export default async function ExplorePage() {
       ? `${money(usd * fx.rate, currency)} (${money(usd, "USD")})`
       : money(usd, "USD");
 
-  // Honest stamp across providers: totals are only as fresh as the LEAST fresh
-  // active connection, so the oldest successful last_sync_at wins.
-  const lastSyncAt =
-    ((connectionData ?? []) as ConnectionRow[])
-      .filter((c) => c.status !== "revoked" && c.last_sync_at !== null)
-      .map((c) => c.last_sync_at as string)
-      .sort()[0] ?? null;
+  // Honest stamp across providers: totals are only as fresh as the LEAST
+  // fresh active connection — the shared oldestActiveSync rule, so this
+  // stamp can never disagree with the Home one for the same snapshot.
+  const lastSyncAt = oldestActiveSync(
+    ((connectionData ?? []) as ConnectionRow[]).map((c) => ({
+      status: c.status,
+      lastSyncAt: c.last_sync_at,
+    })),
+  );
 
   const coldStart = subscriptions.length === 0 && !apiSpend.hasData;
   const fxNote =

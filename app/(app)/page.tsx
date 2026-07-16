@@ -5,7 +5,7 @@ import { VerdictLine } from "@/components/domain/verdict-line";
 import { PageContainer } from "@/components/domain/page-container";
 import { Button } from "@/components/ui/button";
 import { budgetedTeams } from "@/lib/engine/cockpit";
-import { percent } from "@/lib/format";
+import { percent, utcStamp } from "@/lib/format";
 import { getHomeData } from "@/lib/home/queries";
 import { Hero } from "./_components/hero";
 import { MonthlyPaceChart } from "./_components/monthly-pace-chart";
@@ -24,8 +24,16 @@ import { homeCopy } from "./_components/copy";
 // here; buildCockpit already did it (architecture §9).
 
 export default async function HomePage() {
-  const { cockpit, period, observations, hasSeatWaste, orgWeekPct, setup } =
-    await getHomeData();
+  const {
+    cockpit,
+    period,
+    observations,
+    hasSeatWaste,
+    orgWeekPct,
+    setup,
+    unattributed,
+    lastSyncAt,
+  } = await getHomeData();
 
   if (cockpit.state === "cold-start") {
     return (
@@ -73,19 +81,33 @@ export default async function HomePage() {
   const { org, currency } = cockpit;
   const allTeams = budgetedTeams(cockpit);
 
+  // Cents-rounded: a sub-cent leftover must not resurrect the disclosure line
+  // as "R$ 0,00"; the unconverted-USD part keeps it honest when FX is missing.
+  const showUnattributed =
+    Math.round(unattributed.display * 100) > 0 || unattributed.unconvertedUsd > 0;
+
   return (
     <PageContainer variant="full" className="flex-1 gap-4">
       <h1 className="sr-only">{homeCopy.question}</h1>
 
       <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-2">
         <VerdictLine verdict={cockpit.verdict} />
-        <p className="mt-1 shrink-0 text-sm text-muted-foreground tabular-nums">
-          {homeCopy.meta(
-            period.dayOfPeriod,
-            period.daysInPeriod,
-            percent(org.pctElapsed),
+        <div className="mt-1 shrink-0 text-right">
+          <p className="text-sm text-muted-foreground tabular-nums">
+            {homeCopy.meta(
+              period.dayOfPeriod,
+              period.daysInPeriod,
+              percent(org.pctElapsed),
+            )}
+          </p>
+          {/* Freshness stamp (principle #3): same rule and format as Explore
+              (oldest active sync + utcStamp) — one mechanism, two screens. */}
+          {lastSyncAt !== null && (
+            <p className="mt-0.5 text-xs text-muted-foreground/80 tabular-nums">
+              {homeCopy.dataAsOf(utcStamp(lastSyncAt))}
+            </p>
           )}
-        </p>
+        </div>
       </div>
 
       {/* The 2x2 grid. min-w-0 wrappers matter: grid children default to
@@ -109,7 +131,11 @@ export default async function HomePage() {
           />
         </div>
         <div className="min-w-0">
-          <ProviderComposition entries={cockpit.composition} currency={currency} />
+          <ProviderComposition
+            entries={cockpit.composition}
+            currency={currency}
+            unattributed={showUnattributed ? unattributed : null}
+          />
         </div>
         <div className="min-w-0">
           <MonthlyPaceChart org={org} currency={currency} />

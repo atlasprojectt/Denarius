@@ -1,10 +1,12 @@
 import type { ReactNode } from "react";
+import Link from "next/link";
 import { RiGroupLine } from "@remixicon/react";
 
 import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -41,11 +43,27 @@ const entryIcon: Record<string, ReactNode> = {
 export function ProviderComposition({
   entries,
   currency,
+  unattributed,
 }: {
   entries: CompositionEntry[];
   currency: string;
+  /** Spend inside these slices that no team claims yet (engine-combined at
+   *  the frozen FX; `unconvertedUsd` > 0 means FX was missing for the API
+   *  part). Null hides the reconciliation line — the page applies the
+   *  cents-zero rule (invariant #3 disclosure, never a fourth slice: the
+   *  team cut lives INSIDE the source cut, a slice would double-count). */
+  unattributed: { display: number; unconvertedUsd: number } | null;
 }) {
   const total = entries.reduce((sum, entry) => sum + entry.amount, 0);
+  const unattributedLine =
+    unattributed === null
+      ? null
+      : unattributed.unconvertedUsd > 0
+        ? c.unattributedNoFx(
+            money(unattributed.display, currency),
+            money(unattributed.unconvertedUsd, "USD"),
+          )
+        : c.unattributed(money(unattributed.display, currency));
 
   return (
     <Card size="sm" className="min-h-full">
@@ -117,6 +135,19 @@ export function ProviderComposition({
           </div>
         )}
       </CardContent>
+      {unattributedLine !== null && (
+        <CardFooter className="text-xs/relaxed text-muted-foreground">
+          <p className="tabular-nums">
+            {unattributedLine}{" "}
+            <Link
+              href="/ajustes/atribuicao"
+              className="whitespace-nowrap font-medium text-foreground underline-offset-4 hover:underline"
+            >
+              {c.mapCta} →
+            </Link>
+          </p>
+        </CardFooter>
+      )}
     </Card>
   );
 }

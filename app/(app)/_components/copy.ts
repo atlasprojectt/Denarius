@@ -6,6 +6,7 @@ export const homeCopy = {
   question: "Você está no controle do gasto com IA?",
   meta: (day: number, days: number, pctElapsed: string) =>
     `dia ${day} de ${days} · ${pctElapsed} do mês`,
+  dataAsOf: (stamp: string) => `dados de ${stamp}`,
 
   setup: {
     title: "Prepare o primeiro veredito",
@@ -39,6 +40,11 @@ export const homeCopy = {
     empty: "Sem gasto de API convertido ainda neste período.",
     total: "Total convertido",
     entryValue: (amount: string, pct: string) => `${amount} (${pct})`,
+    unattributed: (amount: string) =>
+      `Deste total, ${amount} ainda não têm time — total da empresa = soma dos times + não atribuído.`,
+    unattributedNoFx: (seats: string, usd: string) =>
+      `Deste total, ${seats} em assentos (+ ${usd} de API em US$, sem câmbio do período) ainda não têm time.`,
+    mapCta: "Mapear atribuição",
   },
 
   monthlyPace: {

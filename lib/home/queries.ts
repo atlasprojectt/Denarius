@@ -4,7 +4,9 @@ import { cache } from "react";
 
 import { attributeSeats } from "@/lib/engine/accrual";
 import type { SeatSubscription } from "@/lib/engine/accrual";
+import { combinedSpend } from "@/lib/engine/budget";
 import { budgetedTeams, buildCockpit, type Cockpit } from "@/lib/engine/cockpit";
+import { oldestActiveSync } from "@/lib/engine/freshness";
 import { periodFx, type FrozenFx } from "@/lib/engine/money-model";
 import { currentPeriod, monthStartUtc, type Period } from "@/lib/engine/period";
 import { combineTeamSpend } from "@/lib/engine/team-spend";
@@ -51,10 +53,19 @@ export type HomeData = CockpitData & {
    *  only (principle #5); null when the previous week has no spend. */
   orgWeekPct: number | null;
   setup: { connected: boolean; hasRoster: boolean; hasBudget: boolean };
+  /** Spend not yet attributed to any team (shared seats + unmapped API),
+   *  combined at the frozen FX for the composition disclosure line —
+   *  invariant #3: the amount inside the source slices that the team cut
+   *  can't place. `unconvertedUsd` carries the API part when FX is missing
+   *  (disclosed, never summed). */
+  unattributed: { display: number; unconvertedUsd: number };
+  /** Freshness stamp (oldest active sync, same rule/format as Explore). */
+  lastSyncAt: string | null;
 };
 
 type ConnectionRow = {
   status: string;
+  last_sync_at: string | null;
 };
 
 /** cost_daily rows for the last 14 days — the org week-over-week input, same
@@ -150,6 +161,9 @@ type CockpitAssembly = CockpitData & {
   apiUnattributedUsd: number;
   connected: boolean;
   hasOrgBudget: boolean;
+  /** Oldest successful sync among active connections — THE freshness stamp
+   *  (same rule as Explore via oldestActiveSync); null when nothing synced. */
+  lastSyncAt: string | null;
 };
 
 /** Per-request memoized: the app layout reads the cockpit for the sidebar
@@ -166,7 +180,7 @@ const assembleCockpit = cache(async function assembleCockpit(): Promise<CockpitA
       teamApiSpend(),
       listTeams(),
       providerCostToDate(),
-      supabase.from("provider_connection").select("status"),
+      supabase.from("provider_connection").select("status, last_sync_at"),
     ]);
 
   const seats = attributeSeats(subscriptions, period);
@@ -227,12 +241,15 @@ const assembleCockpit = cache(async function assembleCockpit(): Promise<CockpitA
     apiUnattributedUsd: apiTeams.unattributedUsd,
     connected: connections.some((connection) => connection.status === "active"),
     hasOrgBudget: budgets.org !== null,
+    lastSyncAt: oldestActiveSync(
+      connections.map((c) => ({ status: c.status, lastSyncAt: c.last_sync_at })),
+    ),
   };
 });
 
-/** The cockpit alone — for screens (Explore team detail) that pre-load the
- *  simulator but render no observations, so the week-change queries and the
- *  apontamento rules never run for them. */
+/** The cockpit alone — for consumers (the app layout's sidebar notices) that
+ *  need the verdict but render no observations, so the week-change queries
+ *  and the apontamento rules never run for them. */
 export async function getCockpitData(): Promise<CockpitData> {
   const { cockpit, period, fx } = await assembleCockpit();
   return { cockpit, period, fx };
@@ -377,6 +394,12 @@ export async function getHomeData(): Promise<HomeData> {
       hasRoster: rosterTotal > 0,
       hasBudget: assembly.hasOrgBudget,
     },
+    unattributed: combinedSpend({
+      seatDisplay: assembly.seatUnattributed,
+      apiUsd: assembly.apiUnattributedUsd,
+      fxRate: assembly.fx?.rate ?? null,
+    }),
+    lastSyncAt: assembly.lastSyncAt,
   };
 }
 

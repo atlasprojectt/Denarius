@@ -168,7 +168,8 @@ test("Home keeps the verdict visible and team rows predictable", async ({ page }
 test("Explore exposes anchored sections and no horizontal page overflow", async ({ page }) => {
   await page.goto("/explorar");
   await expect(page.getByRole("navigation", { name: "Seções de exploração" })).toBeVisible();
-  await expect(page.locator("#por-time")).toBeVisible();
+  await expect(page.locator("#por-modelo")).toBeVisible();
+  await expect(page.locator("#assentos")).toBeVisible();
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   expect(overflow).toBeLessThanOrEqual(1);
 });

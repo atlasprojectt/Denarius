@@ -38,7 +38,7 @@ export const CONTROL_CATALOG = {
     id: "talk-to-top-team",
     title: "Conversar com o time de maior consumo",
     detail: "A concentração aponta onde uma conversa curta tem o maior efeito sobre o gasto.",
-    href: "/explorar#por-time",
+    href: "/times",
   },
   reviewIdleSeats: {
     id: "review-idle-seats",

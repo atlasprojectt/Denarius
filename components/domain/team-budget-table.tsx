@@ -31,9 +31,9 @@ import { money } from "@/lib/money";
 // every budgeted team, at-risk first — no expanding rows, no collapsed groups,
 // no inline dialogs. Shared by Home and the Times tab (§F5 domain component).
 // The row states the situation; acting on it lives in dedicated routes: the row
-// links to /times/[id] (investigation, simulation, control plan) and "Gerenciar
-// orçamentos" → /ajustes/orcamentos (editing). All numbers are engine-provided;
-// this component only formats them.
+// links to /times?focus=<id> (the team's diagnosis card, expanded) and
+// "Gerenciar orçamentos" → /ajustes/orcamentos (editing). All numbers are
+// engine-provided; this component only formats them.
 //
 // Layout is chosen by the `variant` prop, not by width:
 //   - "responsive" (default, /times): container-query based (@container on
@@ -152,7 +152,7 @@ export function TeamBudgetTable({
               return (
                 <Link
                   key={team.teamId}
-                  href={`/times/${team.teamId}`}
+                  href={`/times?focus=${team.teamId}`}
                   aria-label={c.detail(team.teamName)}
                   className="group rounded-lg border p-3 outline-none transition-colors hover:border-primary-hover/40 hover:bg-muted/30 focus-visible:ring-2 focus-visible:ring-ring/30"
                 >
@@ -231,11 +231,11 @@ export function TeamBudgetTable({
                     tabIndex={0}
                     aria-label={c.detail(team.teamName)}
                     className="group cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/30"
-                    onClick={() => router.push(`/times/${team.teamId}`)}
+                    onClick={() => router.push(`/times?focus=${team.teamId}`)}
                     onKeyDown={(event) => {
                       if (event.key === "Enter" || event.key === " ") {
                         event.preventDefault();
-                        router.push(`/times/${team.teamId}`);
+                        router.push(`/times?focus=${team.teamId}`);
                       }
                     }}
                   >

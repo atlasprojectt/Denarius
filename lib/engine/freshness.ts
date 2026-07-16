@@ -56,6 +56,24 @@ function ageHoursSince(iso: string | null, now: Date): number | null {
   return Math.max(0, Math.floor(ms / 3_600_000));
 }
 
+/**
+ * THE data-freshness stamp for a screen's totals: the OLDEST successful
+ * last_sync_at among non-revoked connections — totals are only as fresh as
+ * the least fresh active connector. One rule for every screen (Home and
+ * Explore both render it via utcStamp), so two screens can never disagree
+ * about when the same snapshot is from. Null when nothing ever synced.
+ */
+export function oldestActiveSync(
+  connections: Pick<ConnectionStatus, "status" | "lastSyncAt">[],
+): string | null {
+  return (
+    connections
+      .filter((c) => c.status !== "revoked" && c.lastSyncAt !== null)
+      .map((c) => c.lastSyncAt as string)
+      .sort()[0] ?? null
+  );
+}
+
 export type Freshness = {
   /** Per-connection classification (revoked excluded). */
   connections: ConnectionFreshness[];

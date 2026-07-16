@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   connectionFreshness,
   freshness,
+  oldestActiveSync,
   type ConnectionStatus,
 } from "@/lib/engine/freshness";
 
@@ -93,5 +94,35 @@ describe("freshness — banner decision across connections", () => {
     );
     expect(f.connections).toEqual([]);
     expect(f.showBanner).toBe(false);
+  });
+});
+
+// The one freshness stamp (Home + Explore): the oldest successful sync among
+// non-revoked connections — totals are only as fresh as the least fresh
+// active connector.
+
+describe("oldestActiveSync", () => {
+  it("picks the OLDEST successful sync among active connections", () => {
+    expect(
+      oldestActiveSync([
+        { status: "active", lastSyncAt: "2026-07-16T10:00:00Z" },
+        { status: "active", lastSyncAt: "2026-07-15T08:00:00Z" },
+      ]),
+    ).toBe("2026-07-15T08:00:00Z");
+  });
+
+  it("ignores revoked connections and never-synced ones", () => {
+    expect(
+      oldestActiveSync([
+        { status: "revoked", lastSyncAt: "2026-07-01T00:00:00Z" },
+        { status: "active", lastSyncAt: null },
+        { status: "error", lastSyncAt: "2026-07-14T12:00:00Z" },
+      ]),
+    ).toBe("2026-07-14T12:00:00Z");
+  });
+
+  it("is null when nothing ever synced", () => {
+    expect(oldestActiveSync([])).toBeNull();
+    expect(oldestActiveSync([{ status: "active", lastSyncAt: null }])).toBeNull();
   });
 });

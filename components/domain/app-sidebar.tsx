@@ -84,8 +84,8 @@ const navIconSlot =
   "grid size-8 shrink-0 place-items-center";
 const profileSlot = "grid size-8 shrink-0 place-items-center";
 
-// "/" only matches exactly; sections stay lit on their subroutes
-// (/times/[id] keeps Times active).
+// "/" only matches exactly; sections stay lit on their subroutes and query
+// variants (/times?focus=<id> keeps Times active — pathname stays /times).
 function isActivePath(pathname: string, href: string): boolean {
   if (href === "/") return pathname === "/";
   return pathname === href || pathname.startsWith(`${href}/`);

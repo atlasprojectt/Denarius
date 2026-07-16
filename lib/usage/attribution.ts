@@ -2,8 +2,13 @@ import "server-only";
 
 import { monthStartUtc } from "@/lib/engine/period";
 import { reconcile, type Reconciliation } from "@/lib/engine/reconcile";
-import { anonymousLabel, canSeeNames } from "@/lib/privacy/policy";
+import { canSeeNames } from "@/lib/privacy/policy";
 import { createClient } from "@/lib/supabase/server";
+import {
+  groupTeamDiagnosis,
+  type DiagnosisUsageRow,
+  type TeamApiDiagnosis,
+} from "@/lib/usage/diagnose";
 
 // Attribution of API usage → team, read under RLS for the Explore screens.
 // The provider-native grain (OpenAI project_id / Anthropic workspace_id, both
@@ -132,40 +137,81 @@ export async function teamApiSpend(): Promise<ApiAttribution> {
   };
 }
 
-/** Costed derived USD per day for one team's mapped projects, this month —
- *  feeds the drill-down cumulative chart (engine does the combine). */
-export async function teamDailyApiUsd(
-  teamId: string,
-): Promise<{ date: string; usd: number }[]> {
+export type TeamsDiagnosis = {
+  /** Diagnosis per team id — only teams with mapped usage appear. */
+  byTeam: Map<string, TeamApiDiagnosis>;
+  /** Names were withheld (Viewer, or the tenant names switch off) — person
+   *  rows carry anonymous labels, disclosed in the UI. */
+  namesHidden: boolean;
+  /** The signed-in viewer is an Admin — gates the contributors block. */
+  isAdmin: boolean;
+};
+
+/**
+ * Month-to-date diagnosis for EVERY team in one pass (the Times page renders
+ * all cards server-side): one usage_daily fetch resolved to teams via
+ * project_map, grouped by the pure lib/usage/diagnose.ts. Unmapped rows are
+ * the Unattributed bucket — surfaced at the list level, never diagnosed here.
+ * Privacy decides at the data layer (#23): names never leave the server when
+ * the viewer isn't an Admin or the tenant names switch is off.
+ */
+export async function teamsDiagnosis(): Promise<TeamsDiagnosis> {
   const supabase = await createClient();
   const since = monthStartUtc();
 
-  const [{ data: mapData }, { data: usageData }] = await Promise.all([
-    supabase
-      .from("project_map")
-      .select("provider, project_id")
-      .eq("team_id", teamId),
-    supabase
-      .from("usage_daily")
-      .select("date, provider, project_id, derived_cost, uncosted")
-      .gte("date", since),
-  ]);
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  const mapped = new Set(
-    ((mapData ?? []) as { provider: string; project_id: string }[]).map((m) =>
-      mapKey(m.provider, m.project_id),
-    ),
-  );
+  const [{ data: mapData }, { data: usageData }, { data: viewer }, { data: tenantRow }] =
+    await Promise.all([
+      supabase.from("project_map").select("provider, project_id, team_id"),
+      supabase
+        .from("usage_daily")
+        .select(
+          "date, provider, project_id, user_id, input_tokens, output_tokens, derived_cost, uncosted",
+        )
+        .gte("date", since),
+      user
+        ? supabase.from("app_user").select("role").eq("id", user.id).maybeSingle()
+        : Promise.resolve({ data: null }),
+      supabase.from("tenant").select("show_names").maybeSingle(),
+    ]);
 
-  type DailyRow = UsageRow & { date: string };
-  const byDate = new Map<string, number>();
-  for (const row of (usageData ?? []) as DailyRow[]) {
-    if (row.uncosted || row.derived_cost === null) continue;
-    if (!mapped.has(mapKey(row.provider, row.project_id))) continue;
-    byDate.set(row.date, (byDate.get(row.date) ?? 0) + row.derived_cost);
+  const role = (viewer as { role: string } | null)?.role ?? "viewer";
+  const showNames = (tenantRow as { show_names: boolean } | null)?.show_names ?? true;
+  const namesHidden = !canSeeNames({ role, showNames });
+
+  const projectTeam = new Map<string, string>();
+  for (const m of (mapData ?? []) as MapRow[]) {
+    projectTeam.set(mapKey(m.provider, m.project_id), m.team_id);
   }
 
-  return [...byDate.entries()].map(([date, usd]) => ({ date, usd }));
+  type DatedUsageRow = UsageRow & { date: string };
+  const rows: DiagnosisUsageRow[] = [];
+  for (const row of (usageData ?? []) as DatedUsageRow[]) {
+    const teamId =
+      row.project_id === ""
+        ? undefined
+        : projectTeam.get(mapKey(row.provider, row.project_id));
+    if (teamId === undefined) continue;
+    rows.push({
+      teamId,
+      date: row.date,
+      provider: row.provider,
+      userId: row.user_id,
+      inputTokens: row.input_tokens,
+      outputTokens: row.output_tokens,
+      derivedCost: row.derived_cost,
+      uncosted: row.uncosted,
+    });
+  }
+
+  return {
+    byTeam: groupTeamDiagnosis(rows, { namesHidden }),
+    namesHidden,
+    isAdmin: role === "admin",
+  };
 }
 
 export type MappableProject = {
@@ -219,130 +265,3 @@ export async function listMappableProjects(): Promise<MappableProject[]> {
   });
 }
 
-export type PersonSpend = {
-  /** provider user id, a "Colaborador N" label when names are hidden, or ""
-   *  for a shared key. */
-  userId: string;
-  /** true when this row is a shared key rolled up to the team, never a person. */
-  isShared: boolean;
-  derivedUsd: number;
-  uncosted: boolean;
-  inputTokens: number;
-  outputTokens: number;
-};
-
-export type TeamDetail = {
-  teamId: string;
-  teamName: string;
-  /** false when the team id is unknown / not this tenant's. */
-  found: boolean;
-  persons: PersonSpend[]; // sorted desc by derived cost, shared keys last
-  totalUsd: number;
-  hasUncosted: boolean;
-  /** true when names were withheld (Viewer, or the tenant names switch off) —
-   *  person rows carry anonymous labels, disclosed in the UI. */
-  namesHidden: boolean;
-};
-
-/**
- * Per-person API cost inside one team (Admin-only — names/ids are gated at the
- * call site). Usage with a provider user id becomes a person row; usage on a
- * shared key (user_id = "") rolls up to a single "shared key" row, never a
- * person (product principle #1: control, not surveillance). Anthropic has no
- * user grain, so all its usage lands in the shared row by construction.
- */
-export async function teamDetail(teamId: string): Promise<TeamDetail> {
-  const supabase = await createClient();
-  const since = monthStartUtc();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  const [{ data: teamRow }, { data: mapData }, { data: usageData }, { data: viewer }, { data: tenantRow }] =
-    await Promise.all([
-      supabase
-        .from("team")
-        .select("name")
-        .eq("id", teamId)
-        .eq("is_unattributed", false)
-        .maybeSingle(),
-      supabase.from("project_map").select("provider, project_id").eq("team_id", teamId),
-      supabase
-        .from("usage_daily")
-        .select("provider, project_id, user_id, input_tokens, output_tokens, derived_cost, uncosted")
-        .gte("date", since),
-      user
-        ? supabase.from("app_user").select("role").eq("id", user.id).maybeSingle()
-        : Promise.resolve({ data: null }),
-      supabase.from("tenant").select("show_names").maybeSingle(),
-    ]);
-
-  // Privacy decision at the data layer (#23): names never leave the server
-  // when the viewer isn't an Admin, or the tenant names switch is off.
-  const role = (viewer as { role: string } | null)?.role ?? "viewer";
-  const showNames = (tenantRow as { show_names: boolean } | null)?.show_names ?? true;
-  const namesHidden = !canSeeNames({ role, showNames });
-
-  const team = teamRow as { name: string } | null;
-  if (!team) {
-    return {
-      teamId,
-      teamName: "—",
-      found: false,
-      persons: [],
-      totalUsd: 0,
-      hasUncosted: false,
-      namesHidden,
-    };
-  }
-
-  const mappedProjects = new Set(
-    ((mapData ?? []) as { provider: string; project_id: string }[]).map((m) =>
-      mapKey(m.provider, m.project_id),
-    ),
-  );
-
-  const byUser = new Map<string, PersonSpend>();
-  let hasUncosted = false;
-  for (const row of (usageData ?? []) as UsageRow[]) {
-    if (!mappedProjects.has(mapKey(row.provider, row.project_id))) continue;
-    const key = row.user_id === "" ? "" : row.user_id;
-    const entry =
-      byUser.get(key) ??
-      ({
-        userId: key,
-        isShared: key === "",
-        derivedUsd: 0,
-        uncosted: false,
-        inputTokens: 0,
-        outputTokens: 0,
-      } satisfies PersonSpend);
-    entry.inputTokens += row.input_tokens;
-    entry.outputTokens += row.output_tokens;
-    if (row.uncosted || row.derived_cost === null) {
-      entry.uncosted = true;
-      hasUncosted = true;
-    } else {
-      entry.derivedUsd += row.derived_cost;
-    }
-    byUser.set(key, entry);
-  }
-
-  const sorted = [...byUser.values()].sort((a, b) => {
-    if (a.isShared !== b.isShared) return a.isShared ? 1 : -1;
-    return b.derivedUsd - a.derivedUsd;
-  });
-  // When names are hidden, replace each identified person's id with a stable
-  // anonymous label BEFORE returning — the real id never reaches the client.
-  // Shared-key rows are already person-free and keep their own labeling.
-  let personIndex = 0;
-  const persons = sorted.map((p) =>
-    namesHidden && !p.isShared
-      ? { ...p, userId: anonymousLabel(personIndex++) }
-      : p,
-  );
-  const totalUsd = persons.reduce((sum, p) => sum + p.derivedUsd, 0);
-
-  return { teamId, teamName: team.name, found: true, persons, totalUsd, hasUncosted, namesHidden };
-}

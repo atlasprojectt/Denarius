@@ -21,6 +21,21 @@ export type CumulativePoint = {
   spent: number;
 };
 
+/** Endpoints of the expected-pace reference line: the budget distributed
+ *  evenly across the period's days, so the eye can spot the day real spend
+ *  detached from plan. Presentation-neutral (never semaphore-colored) — pace
+ *  is a reference, not a status. Null when there is nothing to distribute. */
+export function expectedPaceSegment(
+  budget: number | null,
+  daysInPeriod: number,
+): { start: CumulativePoint; end: CumulativePoint } | null {
+  if (budget === null || budget <= 0 || daysInPeriod < 1) return null;
+  return {
+    start: { day: 1, spent: budget / daysInPeriod },
+    end: { day: daysInPeriod, spent: budget },
+  };
+}
+
 export function buildCumulativeSpend(input: {
   apiByDay: DailyUsd[];
   fxRate: number | null;
