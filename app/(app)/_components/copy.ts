@@ -5,8 +5,6 @@
 export const homeCopy = {
   question: "Você está no controle do gasto com IA?",
   verdictAction: "Ver time",
-  meta: (day: number, days: number, pctElapsed: string) =>
-    `dia ${day} de ${days} · ${pctElapsed} do mês`,
   dataAsOf: (stamp: string) => `dados de ${stamp}`,
 
   setup: {
@@ -20,17 +18,12 @@ export const homeCopy = {
   },
 
   hero: {
-    spentLabel: "Gasto no período",
+    title: "Gasto do mês",
     ofBudget: (budget: string) => `de ${budget}`,
     weekDelta: (pct: string) => `${pct} vs semana anterior`,
     kpiProjection: "Projeção de fechamento",
-    kpiMargin: "Margem projetada",
     collectingShort: "coletando ritmo",
-    pacingSpend: "Gasto",
-    pacingTime: (day: number, days: number) => `Mês: dia ${day} de ${days}`,
-    projectedOver: (over: string) => `No ritmo atual, ${over} acima do orçamento no fim do mês.`,
-    projectedUnder: (under: string) => `No ritmo atual, fecha ${under} abaixo do orçamento.`,
-    collecting: "Coletando ritmo — a projeção de fechamento aparece a partir do dia 5.",
+    today: (day: number, days: number) => `hoje · dia ${day} de ${days}`,
     unconverted: (usd: string) =>
       `+ ${usd} de API ainda sem câmbio congelado — fora do total até o câmbio ser capturado.`,
   },

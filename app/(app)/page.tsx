@@ -5,7 +5,7 @@ import { VerdictLine } from "@/components/domain/verdict-line";
 import { PageContainer } from "@/components/domain/page-container";
 import { Button } from "@/components/ui/button";
 import { budgetedTeams } from "@/lib/engine/cockpit";
-import { percent, utcStamp } from "@/lib/format";
+import { utcStamp } from "@/lib/format";
 import { getHomeData } from "@/lib/home/queries";
 import { Hero } from "./_components/hero";
 import { MonthlyPaceChart } from "./_components/monthly-pace-chart";
@@ -102,22 +102,15 @@ export default async function HomePage() {
               : null
           }
         />
-        <div className="mt-1 shrink-0 text-right">
-          <p className="text-sm text-muted-foreground tabular-nums">
-            {homeCopy.meta(
-              period.dayOfPeriod,
-              period.daysInPeriod,
-              percent(org.pctElapsed),
-            )}
+        {/* Freshness stamp (principle #3): same rule and format as Explore
+            (oldest active sync + utcStamp) — one mechanism, two screens. The
+            day-of-month meta left this corner (de-noise 2026-07-17): it now
+            lives at the hero bar's "hoje" marker, its one canonical home. */}
+        {lastSyncAt !== null && (
+          <p className="mt-1 shrink-0 text-xs text-muted-foreground/70 tabular-nums">
+            {homeCopy.dataAsOf(utcStamp(lastSyncAt))}
           </p>
-          {/* Freshness stamp (principle #3): same rule and format as Explore
-              (oldest active sync + utcStamp) — one mechanism, two screens. */}
-          {lastSyncAt !== null && (
-            <p className="mt-0.5 text-xs text-muted-foreground/80 tabular-nums">
-              {homeCopy.dataAsOf(utcStamp(lastSyncAt))}
-            </p>
-          )}
-        </div>
+        )}
       </div>
 
       {/* The 2x2 grid. min-w-0 wrappers matter: grid children default to

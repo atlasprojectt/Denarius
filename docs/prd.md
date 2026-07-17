@@ -247,7 +247,7 @@ Resolved in a dedicated UX grilling (P1–P11), extended by the founder's focus 
 
 **Verdict & pacing (P15 — new, the headline)**
 - The home opens with a **single verdict sentence + status color** answering "am I in control?": red ("Engineering exceeded its budget by 19%" — the named team's **own** overrun, plus a "Ver time" action linking to that team; the org projection lives in the hero one glance below), amber ("Attention — projected R$ 4.2k over budget"), green ("In control — projected R$ 3.1k under budget"). Deterministic; the CEO reads a conclusion, not ingredients. (Shortened 2026-07-17, founder-directed — the original longer templates carried the org projection and the close date inside the sentence.)
-- The hero pairs **% of budget spent against % of the period elapsed** ("90% spent · day 23 of 30") — a percentage of budget is meaningless without the time context; the pairing is the real control signal (spending faster than time passes = trouble).
+- The hero pairs **% of budget spent against % of the period elapsed** — a percentage of budget is meaningless without the time context; the pairing is the real control signal (spending faster than time passes = trouble). Since the 2026-07-17 de-noise the pairing renders as ONE bar: the semaphore spend bar with a neutral "hoje · dia N de M" time marker on the same scale, not a second bar.
 - **All-clear is a designed, affirmative state** (the most common state of a healthy account): green verdict + "✓ Everything under control · next digest Friday", never an empty-looking screen.
 
 **Onboarding (P3)**
