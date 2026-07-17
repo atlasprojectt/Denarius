@@ -49,6 +49,14 @@ export const signupSchema = z.object({
   password: z.string().min(8, "A senha precisa de pelo menos 8 caracteres."),
 });
 
+export const otpSchema = z.object({
+  email: z.email("Informe um e-mail válido."),
+  token: z
+    .string()
+    .trim()
+    .regex(/^\d{6}$/, "Informe o código de 6 dígitos."),
+});
+
 export const onboardingSchema = z.object({
   companyName: z
     .string()

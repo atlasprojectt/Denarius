@@ -1,14 +1,24 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { z } from "zod";
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
-import { loginSchema, onboardingSchema, signupSchema } from "@/lib/validation";
+import {
+  loginSchema,
+  onboardingSchema,
+  otpSchema,
+  signupSchema,
+} from "@/lib/validation";
 
 export type AuthFormState = {
   error?: string;
   notice?: string;
+  /** Signup landed but the e-mail still needs the 6-digit confirmation code —
+   *  the UI opens the OTP dialog for `email`. */
+  awaitingOtp?: boolean;
+  email?: string;
 };
 
 function firstIssue(error: { issues: { message: string }[] }): string {
@@ -62,12 +72,53 @@ export async function signup(
   // created later by /onboarding on first authenticated visit.
   if (!data.session) {
     return {
-      notice:
-        "Conta criada. Confira seu e-mail para confirmar e depois faça login.",
+      awaitingOtp: true,
+      email: parsed.data.email,
+      notice: "Conta criada. Enviamos um código de confirmação por e-mail.",
     };
   }
 
   redirect("/onboarding");
+}
+
+/** Confirms a fresh signup with the 6-digit code from the e-mail. On success
+ *  the SSR client stores the session cookies, so the user lands signed in. */
+export async function verifyEmailOtp(
+  _prev: AuthFormState,
+  formData: FormData,
+): Promise<AuthFormState> {
+  const parsed = otpSchema.safeParse({
+    email: formData.get("email"),
+    token: formData.get("token"),
+  });
+  if (!parsed.success) return { error: firstIssue(parsed.error) };
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.verifyOtp({
+    email: parsed.data.email,
+    token: parsed.data.token,
+    type: "signup",
+  });
+  if (error) return { error: "Código inválido ou expirado." };
+
+  redirect("/onboarding");
+}
+
+export async function resendSignupCode(
+  _prev: AuthFormState,
+  formData: FormData,
+): Promise<AuthFormState> {
+  const email = z.email().safeParse(formData.get("email"));
+  if (!email.success) return { error: "Não foi possível reenviar o código." };
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.resend({
+    type: "signup",
+    email: email.data,
+  });
+  if (error) return { error: "Não foi possível reenviar o código." };
+
+  return { notice: "Código reenviado. Confira seu e-mail." };
 }
 
 export async function logout(): Promise<void> {

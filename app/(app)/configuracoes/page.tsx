@@ -37,7 +37,7 @@ const copy = {
   } as Record<string, string>,
   appearanceTitle: "Aparência",
   appearanceSub:
-    "Claro ou escuro fica salvo neste navegador. Não altera dados da empresa.",
+    "O tema fica salvo neste navegador — Sistema acompanha o seu sistema operacional. Não altera dados da empresa.",
   notificationsTitle: "Notificações",
   notificationsSub:
     "O resumo semanal chega por e-mail às sextas, com os números do período.",

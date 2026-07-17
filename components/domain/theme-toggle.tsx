@@ -2,24 +2,88 @@
 
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
-import { RiMoonLine, RiSunLine } from "@remixicon/react";
+import { RiComputerLine, RiMoonLine, RiSunLine } from "@remixicon/react";
 
 import { cn } from "@/lib/utils";
 
 // Local appearance preference. No dependency: it flips the `.dark` class on
-// <html> and persists to localStorage; the no-FOUC inline script in app/layout.tsx
-// reads that value on first paint so the theme never flashes.
+// <html> and persists to localStorage. The no-FOUC inline script in
+// app/layout.tsx reads the value on first paint (so the theme never flashes)
+// and keeps a matchMedia listener live so "system" tracks the OS in real time.
+
+type ThemePreference = "system" | "light" | "dark";
+
+const STORAGE_KEY = "theme";
+// Same-tab preference changes broadcast on this event (the `storage` event only
+// fires in *other* tabs), so every mounted picker/toggle re-reads in sync.
+const CHANGE_EVENT = "denarius-theme";
 
 const copy = {
   toLight: "Ativar modo claro",
   toDark: "Ativar modo escuro",
+  system: "Sistema",
   light: "Claro",
   dark: "Escuro",
+  systemHint: "Acompanha o tema do seu sistema operacional.",
   lightHint: "Fundo claro para uso durante o dia.",
   darkHint: "Contraste reduzido para ambientes escuros.",
 };
 
-function useThemeState() {
+function prefersDark() {
+  return (
+    typeof window !== "undefined" &&
+    window.matchMedia("(prefers-color-scheme: dark)").matches
+  );
+}
+
+function readPreference(): ThemePreference {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored === "light" || stored === "dark" || stored === "system") {
+      return stored;
+    }
+  } catch {
+    // Storage disabled — fall back to following the system.
+  }
+  return "system";
+}
+
+function resolveDark(preference: ThemePreference): boolean {
+  return preference === "dark" || (preference === "system" && prefersDark());
+}
+
+function setPreference(preference: ThemePreference) {
+  try {
+    // "system" is stored explicitly (rather than cleared) so the choice is
+    // durable and distinguishable from "never chose".
+    localStorage.setItem(STORAGE_KEY, preference);
+  } catch {
+    // Private mode / storage disabled: the choice still works for this session.
+  }
+  document.documentElement.classList.toggle("dark", resolveDark(preference));
+  window.dispatchEvent(new Event(CHANGE_EVENT));
+}
+
+/** The stored preference (system | light | dark), kept in sync across mounts. */
+function useThemePreference(): ThemePreference {
+  const [preference, setPref] = useState<ThemePreference>("system");
+
+  useEffect(() => {
+    const sync = () => setPref(readPreference());
+    sync();
+    window.addEventListener(CHANGE_EVENT, sync);
+    window.addEventListener("storage", sync);
+    return () => {
+      window.removeEventListener(CHANGE_EVENT, sync);
+      window.removeEventListener("storage", sync);
+    };
+  }, []);
+
+  return preference;
+}
+
+/** The resolved appearance (true = dark), tracking the live `.dark` class. */
+function useIsDark(): boolean {
   const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
@@ -39,20 +103,13 @@ function useThemeState() {
   return isDark;
 }
 
-function setTheme(isDark: boolean) {
-  document.documentElement.classList.toggle("dark", isDark);
-  try {
-    localStorage.setItem("theme", isDark ? "dark" : "light");
-  } catch {
-    // Private mode / storage disabled: the choice still works for this session.
-  }
-}
-
 export function ThemeToggle({ className }: { className?: string }) {
-  const isDark = useThemeState();
+  const isDark = useIsDark();
 
+  // A compact header control only has room for two states, so it sets an
+  // explicit light/dark preference (the three-way choice lives in ThemePicker).
   function toggle() {
-    setTheme(!document.documentElement.classList.contains("dark"));
+    setPreference(isDark ? "light" : "dark");
   }
 
   return (
@@ -75,7 +132,26 @@ export function ThemeToggle({ className }: { className?: string }) {
   );
 }
 
-function ThemePreview({ dark }: { dark: boolean }) {
+function ThemePreview({ variant }: { variant: ThemePreference }) {
+  if (variant === "system") {
+    // A diagonal split hints "follows the OS" — half light, half dark.
+    return (
+      <span
+        aria-hidden
+        className="relative flex h-16 overflow-hidden rounded-lg border border-zinc-300 shadow-xs dark:border-zinc-700"
+      >
+        <span className="flex-1 bg-zinc-50" />
+        <span
+          className="absolute inset-0 bg-zinc-950"
+          style={{ clipPath: "polygon(100% 0, 100% 100%, 0 100%)" }}
+        />
+        <span className="absolute top-2 left-2 h-2 w-10 rounded-full bg-zinc-300" />
+        <span className="absolute right-2 bottom-2 h-2 w-10 rounded-full bg-orange-500/80" />
+      </span>
+    );
+  }
+
+  const dark = variant === "dark";
   return (
     <span
       aria-hidden
@@ -97,12 +173,7 @@ function ThemePreview({ dark }: { dark: boolean }) {
             dark ? "bg-zinc-500" : "bg-zinc-300",
           )}
         />
-        <span
-          className={cn(
-            "h-5 rounded-md",
-            dark ? "bg-zinc-800" : "bg-white",
-          )}
-        />
+        <span className={cn("h-5 rounded-md", dark ? "bg-zinc-800" : "bg-white")} />
         <span
           className={cn(
             "h-2 w-20 rounded-full",
@@ -115,14 +186,14 @@ function ThemePreview({ dark }: { dark: boolean }) {
 }
 
 function ThemeOption({
-  dark,
+  variant,
   selected,
   label,
   hint,
   icon,
   onSelect,
 }: {
-  dark: boolean;
+  variant: ThemePreference;
   selected: boolean;
   label: string;
   hint: string;
@@ -139,7 +210,7 @@ function ThemeOption({
         selected ? "border-primary ring-1 ring-primary/25" : "border-border",
       )}
     >
-      <ThemePreview dark={dark} />
+      <ThemePreview variant={variant} />
       <span className="flex items-start gap-2">
         <span
           className={cn(
@@ -161,25 +232,33 @@ function ThemeOption({
 }
 
 export function ThemePicker() {
-  const isDark = useThemeState();
+  const preference = useThemePreference();
 
   return (
-    <div className="grid w-full gap-3 sm:grid-cols-2">
+    <div className="grid w-full gap-3 sm:grid-cols-3">
       <ThemeOption
-        dark={false}
-        selected={!isDark}
+        variant="system"
+        selected={preference === "system"}
+        label={copy.system}
+        hint={copy.systemHint}
+        icon={<RiComputerLine className="size-4" />}
+        onSelect={() => setPreference("system")}
+      />
+      <ThemeOption
+        variant="light"
+        selected={preference === "light"}
         label={copy.light}
         hint={copy.lightHint}
         icon={<RiSunLine className="size-4" />}
-        onSelect={() => setTheme(false)}
+        onSelect={() => setPreference("light")}
       />
       <ThemeOption
-        dark
-        selected={isDark}
+        variant="dark"
+        selected={preference === "dark"}
         label={copy.dark}
         hint={copy.darkHint}
         icon={<RiMoonLine className="size-4" />}
-        onSelect={() => setTheme(true)}
+        onSelect={() => setPreference("dark")}
       />
     </div>
   );

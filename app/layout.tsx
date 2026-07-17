@@ -26,8 +26,10 @@ export const metadata: Metadata = {
 
 // Runs before first paint: applies the saved theme (or the OS preference) so
 // the .dark class is present before the body renders — no flash of the wrong
-// theme. Kept as a raw string so it ships inline in <head>. See ThemeToggle.
-const themeScript = `(function(){try{var t=localStorage.getItem('theme');var d=t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme: dark)').matches);if(d)document.documentElement.classList.add('dark');}catch(e){}})();`;
+// theme. Also keeps a matchMedia listener live so a "system" preference tracks
+// the OS in real time. Kept as a raw string so it ships inline in <head>.
+// See ThemePicker.
+const themeScript = `(function(){try{var m=window.matchMedia('(prefers-color-scheme: dark)');function a(){var t=localStorage.getItem('theme');var d=t==='dark'||((t==='system'||!t)&&m.matches);document.documentElement.classList.toggle('dark',d);}a();m.addEventListener('change',a);}catch(e){}})();`;
 
 export default function RootLayout({
   children,

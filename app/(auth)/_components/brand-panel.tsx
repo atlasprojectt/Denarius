@@ -1,6 +1,7 @@
-// Right-hand cover column of the auth pages (login-02/signup-02 layout): the
-// product's value proposition plus a small static verdict vignette. Callers
-// may provide a page-specific cover image; signup keeps the neutral fallback.
+// Right-hand narrative cover column (two-column auth layout): the product's
+// value proposition plus a small static verdict vignette. Used by the invite
+// accept page; login carries the image-only CoverPanel instead. Callers may
+// provide a page-specific cover image or keep the neutral fallback.
 
 import Image from "next/image";
 import { LogoWordmark } from "@/components/domain/logo";

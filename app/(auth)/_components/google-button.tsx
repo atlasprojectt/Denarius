@@ -30,7 +30,7 @@ function GoogleIcon() {
   );
 }
 
-export function GoogleButton() {
+export function GoogleButton({ className }: { className?: string }) {
   async function handleClick() {
     const supabase = createClient();
     await supabase.auth.signInWithOAuth({
@@ -40,7 +40,12 @@ export function GoogleButton() {
   }
 
   return (
-    <Button variant="outline" type="button" onClick={handleClick}>
+    <Button
+      variant="outline"
+      type="button"
+      onClick={handleClick}
+      className={className}
+    >
       <GoogleIcon />
       {copy.label}
     </Button>

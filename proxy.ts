@@ -4,7 +4,7 @@ import { NextResponse, type NextRequest } from "next/server";
 /** Routes reachable without a session. Everything else redirects to /login.
  *  /convite carries its own credential — the invite token in the path — and an
  *  invitee has no session yet by definition. */
-const PUBLIC_PREFIXES = ["/login", "/signup", "/auth", "/convite"];
+const PUBLIC_PREFIXES = ["/login", "/auth", "/convite"];
 
 /**
  * Routes with their own non-session authorization (e.g. CRON_SECRET) — bypass
@@ -57,7 +57,7 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (user && (path.startsWith("/login") || path.startsWith("/signup"))) {
+  if (user && path.startsWith("/login")) {
     const url = request.nextUrl.clone();
     url.pathname = "/";
     return NextResponse.redirect(url);
