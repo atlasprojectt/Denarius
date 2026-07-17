@@ -38,11 +38,17 @@ export type VerdictInput = {
   currency: string;
 };
 
-/** Overrun as a percent string that never erases a real breach: whole-number
- *  rendering ("4%") normally, one decimal ("0,4%") when rounding would say 0%. */
-function overrunPercent(fraction: number): string {
-  const whole = percent(fraction);
-  return whole === percent(0) ? percent(fraction, 1) : whole;
+/** The breach clause: "ultrapassou o orçamento em X%" with enough precision
+ *  that a real overrun never reads as zero (0 → 1 → 2 decimals). breached
+ *  includes spent === budget, so an overrun below display granularity says
+ *  "atingiu o limite" instead of claiming a zero overrun (principle #3). */
+function breachClause(fraction: number): string {
+  for (const digits of [0, 1, 2]) {
+    if (Math.round(fraction * 100 * 10 ** digits) > 0) {
+      return `ultrapassou o orçamento em ${percent(fraction, digits)}`;
+    }
+  }
+  return "atingiu o limite do orçamento";
 }
 
 /**
@@ -75,14 +81,14 @@ export function computeVerdict(input: VerdictInput): Verdict {
     const worst = breachedTeams[0];
     return {
       status: "red",
-      sentence: `${worst.name} ultrapassou o orçamento em ${overrunPercent(worst.evaluation.pctSpent - 1)}.`,
+      sentence: `${worst.name} ${breachClause(worst.evaluation.pctSpent - 1)}.`,
       teamId: worst.teamId,
     };
   }
   if (org.breached) {
     return {
       status: "red",
-      sentence: `A empresa ultrapassou o orçamento em ${overrunPercent(org.pctSpent - 1)}.`,
+      sentence: `A empresa ${breachClause(org.pctSpent - 1)}.`,
       teamId: null,
     };
   }

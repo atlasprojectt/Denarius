@@ -96,4 +96,27 @@ describe("computeVerdict — the one-line answer", () => {
     expect(v.sentence).toContain("0,2%");
     expect(v.sentence).not.toContain("em 0%");
   });
+
+  it("red: a sub-0.05% breach escalates to two decimals", () => {
+    const v = computeVerdict({
+      org: orgEval(700),
+      teams: [team("Eng", 500.1, 500)],
+      ...base,
+    });
+    expect(v.status).toBe("red");
+    // 500.1/500 → overrun 0.02%: one decimal would still round to "0,0%".
+    expect(v.sentence).toContain("0,02%");
+    expect(v.sentence).not.toContain("0,0%.");
+  });
+
+  it("red: spent exactly at budget says \"atingiu o limite\", never a 0% overrun", () => {
+    const v = computeVerdict({
+      org: orgEval(700),
+      teams: [team("Eng", 500, 500)],
+      ...base,
+    });
+    expect(v.status).toBe("red");
+    expect(v.sentence).toBe("Eng atingiu o limite do orçamento.");
+    expect(v.teamId).toBe("eng");
+  });
 });
