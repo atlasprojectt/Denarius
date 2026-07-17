@@ -91,7 +91,17 @@ export default async function HomePage() {
       <h1 className="sr-only">{homeCopy.question}</h1>
 
       <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-2">
-        <VerdictLine verdict={cockpit.verdict} />
+        <VerdictLine
+          verdict={cockpit.verdict}
+          action={
+            cockpit.verdict.teamId !== null
+              ? {
+                  label: homeCopy.verdictAction,
+                  href: `/times?focus=${cockpit.verdict.teamId}`,
+                }
+              : null
+          }
+        />
         <div className="mt-1 shrink-0 text-right">
           <p className="text-sm text-muted-foreground tabular-nums">
             {homeCopy.meta(

@@ -44,6 +44,7 @@ describe("buildCockpit — the Home view model", () => {
     expect(c.orgPctProjected).toBe(0.6);
     // day 15/30, spent 300 → projection 600, under budget → green.
     expect(c.verdict.status).toBe("green");
+    expect(c.verdict.teamId).toBeNull();
     expect(c.allClear).toBe(true);
   });
 
@@ -64,6 +65,8 @@ describe("buildCockpit — the Home view model", () => {
     // A realized breach outranks a warning.
     expect(c.needsAttention[0].status).toBe("red");
     expect(c.needsAttention[1].status).toBe("amber");
+    // The red verdict surfaces the breached team's id for the "Ver time" action.
+    expect(c.verdict.teamId).toBe("t1");
     expect(c.needsAttention[1].pctProjected).toBeCloseTo(1.92);
     expect(c.allClear).toBe(false);
   });

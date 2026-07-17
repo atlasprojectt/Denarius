@@ -18,7 +18,8 @@ function facts(overrides: Partial<DigestFacts> = {}): DigestFacts {
   return buildDigestFacts({
     verdict: {
       status: "amber",
-      sentence: "Atenção — no ritmo atual, R$ 2.000,00 acima do orçamento em 31 de julho.",
+      sentence: "Atenção — projeção de R$ 2.000,00 acima do orçamento.",
+      teamId: null,
     },
     monthLabel: "julho",
     currency: "BRL",
