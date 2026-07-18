@@ -79,11 +79,10 @@ export function NextActionsButton() {
         aria-label={count > 0 ? copy.badgeAria(count) : copy.title}
         render={
           <Button
-            variant="accent"
-            size="lg"
-            className="h-8 gap-1.5 rounded-full px-3 font-semibold"
+            variant="secondary"
+            size="sm"
           >
-            <RiLightbulbLine className="size-4" aria-hidden />
+            <RiLightbulbLine className="size-4 text-muted-foreground" aria-hidden />
             <span className="hidden sm:inline">{copy.title}</span>
             {count > 0 && (
               <span

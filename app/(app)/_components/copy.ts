@@ -29,22 +29,19 @@ export const homeCopy = {
   },
 
   composition: {
-    title: "Para onde vai o dinheiro",
-    drillNote: "O mesmo gasto do período, agora agrupado por fonte. Tokens e modelos ficam em Explorar.",
+    title: "Gasto por fonte",
+    info: "O mesmo gasto do período, agrupado por fonte — o total da empresa é a soma dos times mais o não atribuído. Tokens e modelos ficam em Explorar.",
     empty: "Sem gasto de API convertido ainda neste período.",
-    total: "Total convertido",
     entryValue: (amount: string, pct: string) => `${amount} (${pct})`,
-    unattributed: (amount: string) =>
-      `Deste total, ${amount} ainda não têm time — total da empresa = soma dos times + não atribuído.`,
+    unattributed: (amount: string) => `${amount} sem atribuição`,
     unattributedNoFx: (seats: string, usd: string) =>
-      `Deste total, ${seats} em assentos (+ ${usd} de API em US$, sem câmbio do período) ainda não têm time.`,
-    mapCta: "Mapear atribuição",
+      `${seats} sem atribuição (+ ${usd} de API sem câmbio do período)`,
+    mapCta: "Atribuir",
   },
 
   monthlyPace: {
-    title: "Ritmo do mês",
-    subtitle:
-      "Gasto acumulado contra o tempo do período — a linha tracejada é a projeção linear.",
+    title: "Evolução do mês",
+    info: "Gasto acumulado contra o tempo do período — a linha tracejada é a projeção linear.",
     empty: "Sem gasto registrado neste período ainda.",
     aria: "Gráfico de linha do gasto atual, orçamento e projeção do mês",
     spent: "Gasto",
@@ -53,6 +50,8 @@ export const homeCopy = {
     start: "Início",
     today: "Hoje",
     close: "Fechamento",
+    todayValue: (value: string) => `hoje · ${value}`,
+    projectionOver: (delta: string) => `+${delta} vs orçamento`,
   },
 
   coldStart: {

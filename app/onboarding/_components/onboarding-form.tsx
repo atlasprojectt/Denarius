@@ -61,8 +61,8 @@ export function OnboardingForm({
           </p>
         )}
         <Field>
-          <Button type="submit" disabled={pending}>
-            {pending ? copy.submitting : copy.submit}
+          <Button type="submit" loading={pending} loadingText={copy.submitting}>
+            {copy.submit}
           </Button>
         </Field>
       </FieldGroup>

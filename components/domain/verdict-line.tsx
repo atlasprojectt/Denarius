@@ -1,5 +1,7 @@
 import Link from "next/link";
+import { RiArrowRightSLine } from "@remixicon/react";
 
+import { Button } from "@/components/ui/button";
 import type { Verdict } from "@/lib/engine/verdict";
 
 // The verdict line (frontend §3.3): always present, a status dot + the one
@@ -56,13 +58,12 @@ export function VerdictLine({
           {verdict.sentence}
         </p>
         {action !== null && (
-          <Link
-            href={action.href}
-            className="text-sm font-medium whitespace-nowrap text-primary hover:underline dark:text-primary-hover"
-          >
-            {action.label}
-            {" →"}
-          </Link>
+          <Button asChild variant="tertiary" size="sm">
+            <Link href={action.href}>
+              {action.label}
+              <RiArrowRightSLine className="size-3.5" data-icon="inline-end" aria-hidden />
+            </Link>
+          </Button>
         )}
       </div>
     </div>

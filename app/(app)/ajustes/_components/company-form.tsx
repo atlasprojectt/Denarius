@@ -50,8 +50,8 @@ export function CompanyForm({
 
       {isAdmin ? (
         <div className="flex items-center gap-3">
-          <Button type="submit" variant="outline" disabled={pending}>
-            {pending ? copy.saving : copy.save}
+          <Button type="submit" loading={pending} loadingText={copy.saving}>
+            {copy.save}
           </Button>
           <ActionStatus error={state.error} success={state.success} />
         </div>

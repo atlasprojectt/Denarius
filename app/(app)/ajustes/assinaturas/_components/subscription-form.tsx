@@ -144,8 +144,8 @@ export function SubscriptionForm({
           <ActionStatus error={state.error} success={state.success} />
 
           <div>
-            <Button type="submit" disabled={pending}>
-              {pending ? copy.submitting : copy.submit}
+            <Button type="submit" loading={pending} loadingText={copy.submitting}>
+              {copy.submit}
             </Button>
           </div>
         </form>

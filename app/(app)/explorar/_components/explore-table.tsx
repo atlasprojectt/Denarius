@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { RiArrowUpDownLine, RiArrowRightSLine, RiSearchLine } from "@remixicon/react";
 
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -52,14 +53,16 @@ function SortButton({
   children: React.ReactNode;
 }) {
   return (
-    <button
+    <Button
       type="button"
+      variant="ghost"
+      size="xs"
       onClick={() => onSort(field)}
-      className="inline-flex items-center gap-1 rounded-sm outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/30"
+      className="h-auto rounded-sm p-0 hover:bg-transparent"
     >
       {children}
       <RiArrowUpDownLine className="size-3" aria-hidden />
-    </button>
+    </Button>
   );
 }
 

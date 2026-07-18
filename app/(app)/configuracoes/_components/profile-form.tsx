@@ -39,8 +39,8 @@ export function ProfileForm({ displayName }: { displayName: string }) {
             defaultValue={displayName}
           />
         </div>
-        <Button type="submit" variant="outline" disabled={pending}>
-          {pending ? copy.saving : copy.save}
+        <Button type="submit" loading={pending} loadingText={copy.saving}>
+          {copy.save}
         </Button>
       </div>
 

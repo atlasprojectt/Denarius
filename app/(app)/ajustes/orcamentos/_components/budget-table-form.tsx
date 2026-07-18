@@ -144,8 +144,8 @@ export function BudgetTableForm({
       <p className="text-xs/relaxed text-muted-foreground">{copy.warnHelp}</p>
       {state.fieldErrors && <ActionStatus error={state.error} />}
       <div>
-        <Button type="submit" form={FORM_ID} disabled={pending}>
-          {pending ? copy.saving : copy.save}
+        <Button type="submit" form={FORM_ID} loading={pending} loadingText={copy.saving}>
+          {copy.save}
         </Button>
       </div>
     </div>

@@ -1,64 +1,58 @@
 "use client";
 
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-  type ChartConfig,
-} from "@/components/ui/chart";
-import type { BudgetEvaluation } from "@/lib/engine/budget";
-import { compactMoney, money } from "@/lib/money";
-import {
+  ActiveDot,
   Area,
-  CartesianGrid,
-  ComposedChart,
-  Line,
-  ReferenceLine,
+  EvilAreaChart,
+  Grid,
+  Tooltip,
   XAxis,
   YAxis,
-} from "recharts";
+} from "@/components/evilcharts/charts/area-chart";
+import { type ChartConfig } from "@/components/evilcharts/ui/chart";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import type { BudgetEvaluation } from "@/lib/engine/budget";
+import { compactMoney, money } from "@/lib/money";
+import { Label, ReferenceDot, ReferenceLine } from "recharts";
 import { homeCopy } from "./copy";
+import { InfoTip } from "./info-tip";
 
-// "Ritmo do mês" (frontend §3.8): the cumulative spend line vs the budget
-// reference, with the linear projection dashed. An analysis cell in the 2x2
-// cockpit grid — the numbers themselves live in the hero, so this card
-// carries only the trajectory (no KPI footer).
-
-// Gradient fill under the realized line + a boundary marker where the
-// projection begins (2026-07-12).
 const c = homeCopy.monthlyPace;
 
 const chartConfig = {
-  // chart-1, not primary: the deep brand orange sits too close to the status
-  // red next door in the hero — the lightest ramp step keeps the line clearly
-  // "brand", not "semaphore" (founder call, 2026-07-14).
-  spent: { label: c.spent, color: "var(--chart-1)" },
-  projected: { label: c.projected, color: "color-mix(in oklab, var(--chart-1) 55%, transparent)" },
-  budget: { label: c.budget, color: "var(--muted-foreground)" },
+  spent: {
+    label: c.spent,
+    colors: { light: ["var(--chart-1)"], dark: ["var(--chart-1)"] },
+  },
+  projected: {
+    label: c.projected,
+    colors: { light: ["var(--chart-2)"], dark: ["var(--chart-2)"] },
+  },
 } satisfies ChartConfig;
 
-type PacePoint = { marker: string; x: number; spent: number };
+type PacePoint = {
+  marker: string;
+  x: number;
+  spent: number | null;
+  projected: number | null;
+};
 
 function buildPaceData(org: BudgetEvaluation): PacePoint[] {
   return [
-    { marker: c.start, x: 0, spent: 0 },
-    { marker: c.today, x: org.pctElapsed, spent: org.spent },
+    { marker: c.start, x: 0, spent: 0, projected: null },
+    {
+      marker: c.today,
+      x: org.pctElapsed,
+      spent: org.spent,
+      projected: org.projection === null ? null : org.spent,
+    },
+    {
+      marker: c.close,
+      x: 1,
+      spent: null,
+      projected: org.pctElapsed < 1 ? org.projection : null,
+    },
   ];
-}
-
-function buildProjectionSegment(org: BudgetEvaluation) {
-  if (org.projection === null || org.pctElapsed >= 1) return null;
-  return [
-    { x: org.pctElapsed, y: org.spent },
-    { x: 1, y: org.projection },
-  ] as const;
 }
 
 export function MonthlyPaceChart({
@@ -69,10 +63,10 @@ export function MonthlyPaceChart({
   currency: string;
 }) {
   const data = buildPaceData(org);
-  const projectionSegment = buildProjectionSegment(org);
+  const hasProjection = org.projection !== null && org.pctElapsed < 1;
   const maxY = Math.max(org.budget, org.spent, org.projection ?? 0, 1) * 1.08;
-  const ticks = [0, org.pctElapsed, 1].filter(
-    (v, i, a) => a.indexOf(v) === i,
+  const ticks = [0, org.pctElapsed, 1].filter((value, index, values) =>
+    values.indexOf(value) === index,
   );
   const tickLabel = (value: number) => {
     if (value === 0) return c.start;
@@ -83,146 +77,136 @@ export function MonthlyPaceChart({
   return (
     <Card className="min-h-full">
       <CardHeader>
-        <CardTitle className="text-sm">{c.title}</CardTitle>
-        <CardDescription>{c.subtitle}</CardDescription>
+        <CardTitle className="flex items-center gap-1.5 text-sm">
+          {c.title}
+          <InfoTip label={c.title}>{c.info}</InfoTip>
+        </CardTitle>
       </CardHeader>
       <CardContent className="flex flex-1 flex-col justify-center">
         {org.spent <= 0 ? (
-          <p className="py-8 text-center text-sm text-muted-foreground">
-            {c.empty}
-          </p>
+          <p className="py-8 text-center text-sm text-muted-foreground">{c.empty}</p>
         ) : (
-          // data-reveal-state is stamped by the RevealController pre-hydration.
-          // The flex-1/h-full chain lets the plot absorb the flexible bottom
-          // grid row — leftover viewport height becomes chart, not voids in
-          // the top cards; min-h keeps it readable when the row is short.
-          <div data-reveal="monthly-pace" suppressHydrationWarning className="flex flex-1 flex-col">
+          <div
+            data-reveal="monthly-pace"
+            suppressHydrationWarning
+            className="flex flex-1 flex-col"
+          >
             <div data-reveal-wipe className="min-h-0 flex-1">
-              {/* debounce: during a continuous resize (the sidebar collapse)
-                  the chart stretches with the card instead of re-rendering
-                  every frame, then settles crisp in one render. */}
-              <ChartContainer
+              <EvilAreaChart
+                data={data}
                 config={chartConfig}
-                debounce={80}
                 className="h-full min-h-[220px] w-full overflow-hidden"
+                curveType="monotone"
+                animationType="none"
+                chartProps={{
+                  margin: { top: 16, right: 16, bottom: 4, left: 8 },
+                }}
               >
-                <ComposedChart
-                  accessibilityLayer
-                  data={data}
-                  margin={{ top: 16, right: 16, bottom: 4, left: 8 }}
+                <Grid />
+                <XAxis
+                  dataKey="x"
+                  type="number"
+                  domain={[0, 1]}
+                  ticks={ticks}
+                  tickFormatter={tickLabel}
+                />
+                <YAxis
+                  domain={[0, maxY]}
+                  tickMargin={6}
+                  width={72}
+                  tickFormatter={(value: number) => compactMoney(value, currency)}
+                />
+                <ReferenceLine
+                  y={org.budget}
+                  stroke="var(--muted-foreground)"
+                  strokeDasharray="4 4"
+                  strokeOpacity={0.45}
+                  label={{
+                    value: c.budget,
+                    position: "insideBottomRight",
+                    fill: "var(--muted-foreground)",
+                    fontSize: 11,
+                    dy: -6,
+                  }}
+                />
+                <Tooltip
+                  formatter={(value, name) => (
+                    <div className="flex min-w-[10rem] items-center justify-between gap-4">
+                      <span className="text-muted-foreground">
+                        {String(name) === "projected" ? c.projected : c.spent}
+                      </span>
+                      <span className="text-sm font-medium tabular-nums">
+                        {money(Number(value), currency)}
+                      </span>
+                    </div>
+                  )}
+                />
+                <Area
+                  dataKey="spent"
+                  variant="gradient"
+                  strokeVariant="solid"
+                  areaProps={{
+                    dataKey: "spent",
+                    strokeWidth: 3,
+                    strokeLinecap: "round",
+                  }}
                 >
-                  <defs>
-                    {/* Orange fill under the REALIZED line only — it fades to
-                        transparent and (because `spent` stops at today) ends
-                        exactly where the projection begins. */}
-                    <linearGradient id="pace-fill" x1="0" y1="0" x2="0" y2="1">
-                      <stop
-                        offset="0%"
-                        stopColor="var(--color-spent)"
-                        stopOpacity={0.28}
-                      />
-                      <stop
-                        offset="100%"
-                        stopColor="var(--color-spent)"
-                        stopOpacity={0}
-                      />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid vertical={false} />
-                  <XAxis
-                    dataKey="x"
-                    type="number"
-                    domain={[0, 1]}
-                    ticks={ticks}
-                    tickFormatter={tickLabel}
-                    tickLine={false}
-                    axisLine={false}
-                    tickMargin={8}
+                  <ActiveDot variant="default" />
+                </Area>
+                {hasProjection ? (
+                  <>
+                    <ReferenceLine
+                      x={org.pctElapsed}
+                      stroke="var(--muted-foreground)"
+                      strokeDasharray="2 3"
+                      strokeOpacity={0.5}
+                    />
+                    <Area
+                      dataKey="projected"
+                      variant="solid"
+                      strokeVariant="dashed"
+                      areaProps={{
+                        dataKey: "projected",
+                        fillOpacity: 0,
+                        strokeWidth: 3,
+                        strokeLinecap: "round",
+                      }}
+                    >
+                      <ActiveDot variant="default" />
+                    </Area>
+                    {org.projectedBreach && org.projection !== null ? (
+                      <ReferenceDot x={1} y={org.projection} r={0} ifOverflow="extendDomain">
+                        <Label
+                          value={c.projectionOver(
+                            compactMoney(org.projection - org.budget, currency),
+                          )}
+                          position="left"
+                          offset={10}
+                          fill="var(--muted-foreground)"
+                          fontSize={12}
+                        />
+                      </ReferenceDot>
+                    ) : null}
+                  </>
+                ) : null}
+                <ReferenceDot
+                  x={org.pctElapsed}
+                  y={org.spent}
+                  r={4}
+                  fill="var(--foreground)"
+                  stroke="var(--background)"
+                  strokeWidth={2}
+                >
+                  <Label
+                    value={c.todayValue(compactMoney(org.spent, currency))}
+                    position="top"
+                    offset={10}
+                    fill="var(--foreground)"
+                    fontSize={12}
+                    fontWeight={500}
                   />
-                  <YAxis
-                    domain={[0, maxY]}
-                    tickLine={false}
-                    axisLine={false}
-                    tickMargin={6}
-                    width={72}
-                    tickFormatter={(value: number) =>
-                      compactMoney(value, currency)
-                    }
-                  />
-                  <ReferenceLine
-                    y={org.budget}
-                    stroke="var(--muted-foreground)"
-                    strokeDasharray="4 4"
-                    strokeOpacity={0.45}
-                    label={{
-                      value: c.budget,
-                      position: "insideBottomRight",
-                      fill: "var(--muted-foreground)",
-                      fontSize: 11,
-                      dy: -6,
-                    }}
-                  />
-                  <ChartTooltip
-                    cursor={false}
-                    content={
-                      <ChartTooltipContent
-                        indicator="line"
-                        formatter={(value, name) => (
-                          <div className="flex min-w-[10rem] items-center justify-between gap-4">
-                            <span className="text-muted-foreground">
-                              {String(name) === "projected"
-                                ? c.projected
-                                : c.spent}
-                            </span>
-                            <span className="font-mono font-medium tabular-nums">
-                              {money(Number(value), currency)}
-                            </span>
-                          </div>
-                        )}
-                      />
-                    }
-                  />
-                  {/* Gradient fill sits under the realized line (drawn first,
-                      so the solid line reads on top with strong contrast). */}
-                  <Area
-                    dataKey="spent"
-                    type="monotone"
-                    stroke="none"
-                    fill="url(#pace-fill)"
-                    connectNulls={false}
-                    isAnimationActive={false}
-                  />
-                  <Line
-                    dataKey="spent"
-                    type="monotone"
-                    stroke="var(--color-spent)"
-                    strokeWidth={3}
-                    strokeLinecap="round"
-                    dot={false}
-                    connectNulls={false}
-                    isAnimationActive={false}
-                  />
-                  {projectionSegment ? (
-                    <>
-                      {/* Boundary: exactly where realized spend ends and the
-                          projection (simulação de gastos) begins. */}
-                      <ReferenceLine
-                        x={org.pctElapsed}
-                        stroke="var(--muted-foreground)"
-                        strokeDasharray="2 3"
-                        strokeOpacity={0.5}
-                      />
-                      <ReferenceLine
-                        segment={projectionSegment}
-                        stroke="var(--color-projected)"
-                        strokeWidth={3}
-                        strokeDasharray="6 6"
-                        strokeLinecap="round"
-                      />
-                    </>
-                  ) : null}
-                </ComposedChart>
-              </ChartContainer>
+                </ReferenceDot>
+              </EvilAreaChart>
             </div>
           </div>
         )}

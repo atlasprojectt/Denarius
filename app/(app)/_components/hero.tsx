@@ -69,7 +69,7 @@ export function Hero({
     <Card size="sm" className="min-h-full">
       <CardHeader>
         <CardTitle className="text-sm font-medium">{c.title}</CardTitle>
-        <p className="flex flex-wrap items-baseline gap-x-2.5 text-4xl font-semibold tracking-tight tabular-nums sm:text-5xl">
+        <p className="flex flex-wrap items-baseline gap-x-2.5 pt-2 text-4xl font-semibold tracking-tight tabular-nums sm:text-5xl">
           {money(org.spent, currency)}
           <span className="text-base font-normal tracking-normal text-muted-foreground">
             {c.ofBudget(money(org.budget, currency))}
@@ -78,7 +78,7 @@ export function Hero({
         <WeekDelta pct={weekPct} />
       </CardHeader>
 
-      <CardContent className="flex flex-1 flex-col gap-4">
+      <CardContent className="-mt-2 flex flex-1 flex-col gap-4">
         <PacingBar
           pctSpent={org.pctSpent}
           pctProjected={pctProjected}

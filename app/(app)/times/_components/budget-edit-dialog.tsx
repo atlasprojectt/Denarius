@@ -109,8 +109,8 @@ export function BudgetEditDialog({
           </div>
           <DialogFooter className="items-center gap-3 sm:justify-between">
             <ActionStatus error={state.error} success={state.success} />
-            <Button type="submit" disabled={pending}>
-              {pending ? copy.submitting : copy.submit}
+            <Button type="submit" loading={pending} loadingText={copy.submitting}>
+              {copy.submit}
             </Button>
           </DialogFooter>
         </form>

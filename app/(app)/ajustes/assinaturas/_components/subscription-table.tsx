@@ -197,8 +197,8 @@ function SubscriptionRow({
             >
               {copy.cancel}
             </Button>
-            <Button type="submit" size="sm" disabled={updating}>
-              {updating ? copy.saving : copy.save}
+            <Button type="submit" size="sm" loading={updating} loadingText={copy.saving}>
+              {copy.save}
             </Button>
           </div>
         </form>
@@ -278,7 +278,7 @@ function MobileSubscriptionCard({
       <ActionStatus error={state.error} success={state.success} />
       <div className="flex justify-end gap-2">
         <Button type="button" variant="outline" size="sm" onClick={() => setEditing(false)}>{copy.cancel}</Button>
-        <Button type="submit" size="sm" disabled={pending}>{pending ? copy.saving : copy.save}</Button>
+        <Button type="submit" size="sm" loading={pending} loadingText={copy.saving}>{copy.save}</Button>
       </div>
     </form>
   );

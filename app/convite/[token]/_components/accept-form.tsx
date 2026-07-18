@@ -75,8 +75,8 @@ export function AcceptForm({
 
         <ActionStatus error={state.error} />
 
-        <Button type="submit" disabled={pending}>
-          {pending ? copy.submitting : copy.submit}
+        <Button type="submit" loading={pending} loadingText={copy.submitting}>
+          {copy.submit}
         </Button>
 
         <FieldDescription className="text-center">

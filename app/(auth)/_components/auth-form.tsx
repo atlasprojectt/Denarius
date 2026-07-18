@@ -129,19 +129,20 @@ export function AuthForm({ oauthError }: { oauthError?: string }) {
                   ["signup", copy.modeSignup],
                 ] as const
               ).map(([value, label]) => (
-                <button
+                <Button
                   key={value}
                   type="button"
+                  variant="ghost"
                   aria-pressed={mode === value}
                   onClick={() => setMode(value)}
-                  className={`relative z-10 h-9 rounded-md text-sm font-medium transition-colors duration-300 ${
+                  className={`relative z-10 h-9 rounded-md bg-transparent text-sm font-medium transition-colors duration-300 hover:bg-transparent ${
                     mode === value
                       ? "text-foreground"
                       : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
                   {label}
-                </button>
+                </Button>
               ))}
             </div>
           </div>
@@ -200,20 +201,22 @@ export function AuthForm({ oauthError }: { oauthError?: string }) {
             <IconInput
               icon={<RiKey2Line className={iconClassName} />}
               trailing={
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="icon"
                   aria-label={
                     showPassword ? copy.hidePassword : copy.showPassword
                   }
                   onClick={() => setShowPassword((v) => !v)}
-                  className="absolute inset-y-0 right-0 flex w-10 items-center justify-center rounded-r-lg text-muted-foreground transition-colors hover:text-foreground"
+                  className="absolute inset-y-0 right-0 h-auto w-10 rounded-r-lg rounded-l-none"
                 >
                   {showPassword ? (
                     <RiEyeOffLine className={iconClassName} />
                   ) : (
                     <RiEyeLine className={iconClassName} />
                   )}
-                </button>
+                </Button>
               }
             >
               <Input
@@ -241,16 +244,12 @@ export function AuthForm({ oauthError }: { oauthError?: string }) {
           <Field className="denarius-auth-enter [animation-delay:180ms]">
             <Button
               type="submit"
-              disabled={pending}
-              className="h-11 w-full rounded-lg text-sm"
+              size="lg"
+              loading={pending}
+              loadingText={isSignup ? copy.submittingSignup : copy.submittingLogin}
+              className="w-full"
             >
-              {pending
-                ? isSignup
-                  ? copy.submittingSignup
-                  : copy.submittingLogin
-                : isSignup
-                  ? copy.submitSignup
-                  : copy.submitLogin}
+              {isSignup ? copy.submitSignup : copy.submitLogin}
             </Button>
           </Field>
 
@@ -258,7 +257,7 @@ export function AuthForm({ oauthError }: { oauthError?: string }) {
             {copy.or}
           </FieldSeparator>
           <Field className="denarius-auth-enter [animation-delay:240ms]">
-            <GoogleButton className="h-11 rounded-lg text-sm" />
+            <GoogleButton className="w-full" />
           </Field>
         </FieldGroup>
       </form>
