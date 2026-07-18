@@ -167,7 +167,7 @@ export function AppSidebar({
             className="relative flex h-9 items-center overflow-hidden rounded-md px-1.5 transition-[color,background-color,height,padding] duration-[320ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:bg-sidebar-accent group-data-[collapsible=icon]:h-9 group-data-[collapsible=icon]:px-0"
           >
             <LogoWordmark className={`h-5.5 w-auto shrink-0 text-foreground ${fadeLabel}`} />
-            <LogoMark className="absolute top-1/2 left-1/2 size-5.5 -translate-x-1/2 -translate-y-1/2 scale-90 text-chart-2 opacity-0 transition-[opacity,scale] duration-200 ease-out group-data-[collapsible=icon]:scale-100 group-data-[collapsible=icon]:opacity-100 group-data-[collapsible=icon]:delay-100" />
+            <LogoMark className="absolute top-1/2 left-1/2 size-5.5 -translate-x-1/2 -translate-y-1/2 scale-90 text-brand-accent opacity-0 transition-[opacity,scale] duration-200 ease-out group-data-[collapsible=icon]:scale-100 group-data-[collapsible=icon]:opacity-100 group-data-[collapsible=icon]:delay-100" />
           </Link>
         </SidebarHeader>
 
@@ -200,7 +200,7 @@ export function AppSidebar({
                     SidebarMenuButton. */}
                 <DropdownMenuTrigger
                   aria-label={copy.profileMenu}
-                  className="mx-auto flex h-12 w-[calc(var(--sidebar-width)-2rem)] items-center gap-0 overflow-hidden rounded-md py-0 pr-0 pl-2 text-left outline-hidden ring-sidebar-ring transition-[width,height,padding] duration-[320ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 data-open:bg-sidebar-accent data-open:text-sidebar-accent-foreground group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-0!"
+                  className="mx-auto flex h-12 w-[calc(var(--sidebar-width)-2rem)] items-center gap-0 overflow-hidden rounded-md py-0 pr-1 pl-2 text-left outline-hidden ring-sidebar-ring transition-[width,height,padding] duration-[320ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 data-open:bg-sidebar-accent data-open:text-sidebar-accent-foreground group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-0!"
                 >
                   <span data-sidebar-profile-slot className={profileSlot}>
                     <Avatar className="size-8 shrink-0 transition-[width,height] duration-[320ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-data-[collapsible=icon]:size-7">
@@ -219,9 +219,12 @@ export function AppSidebar({
                       </span>
                     )}
                   </span>
-                  <RiExpandUpDownLine
-                    className={`ml-auto size-4 shrink-0 text-sidebar-foreground/60 ${fadeLabel}`}
-                  />
+                  <span
+                    aria-hidden
+                    className={`ml-1 flex size-8 shrink-0 items-center justify-center text-sidebar-foreground/60 ${fadeLabel}`}
+                  >
+                    <RiExpandUpDownLine className="size-4" />
+                  </span>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
                   side="right"

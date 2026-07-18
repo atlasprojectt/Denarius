@@ -60,7 +60,7 @@ function ageHoursSince(iso: string | null, now: Date): number | null {
  * THE data-freshness stamp for a screen's totals: the OLDEST successful
  * last_sync_at among non-revoked connections — totals are only as fresh as
  * the least fresh active connector. One rule for every screen (Home and
- * Explore both render it via utcStamp), so two screens can never disagree
+ * Explore both render it via syncStamp), so two screens can never disagree
  * about when the same snapshot is from. Null when nothing ever synced.
  */
 export function oldestActiveSync(

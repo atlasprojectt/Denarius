@@ -5,7 +5,7 @@
 export const homeCopy = {
   question: "Você está no controle do gasto com IA?",
   verdictAction: "Ver time",
-  dataAsOf: (stamp: string) => `dados de ${stamp}`,
+  dataAsOf: (stamp: string) => `Atualizado ${stamp}`,
 
   setup: {
     title: "Prepare o primeiro veredito",
@@ -41,17 +41,32 @@ export const homeCopy = {
 
   monthlyPace: {
     title: "Evolução do mês",
-    info: "Gasto acumulado contra o tempo do período — a linha tracejada é a projeção linear.",
+    info: "Gasto acumulado dia a dia contra o ritmo esperado — a linha tracejada é a projeção linear; as barras inferiores são o gasto de cada dia.",
     empty: "Sem gasto registrado neste período ainda.",
-    aria: "Gráfico de linha do gasto atual, orçamento e projeção do mês",
+    aria: (realized: string, pace: string, projection: string) =>
+      `Evolução do gasto do mês: ${realized} realizados até hoje, ritmo esperado de ${pace}, projeção de fechamento de ${projection}. Barras inferiores mostram o gasto diário.`,
+    ariaCollecting: (realized: string, pace: string) =>
+      `Evolução do gasto do mês: ${realized} realizados até hoje, ritmo esperado de ${pace}. Projeção ainda coletando ritmo. Barras inferiores mostram o gasto diário.`,
+    // Header metrics row — labels secondary, values in the foreground.
+    realizedLabel: "Realizado",
+    paceTodayLabel: "Ritmo esperado hoje",
+    projectionLabel: "Projeção",
+    collectingShort: "coletando ritmo",
+    // Series + tooltip labels.
     spent: "Gasto",
     projected: "Projeção",
     budget: "Orçamento",
-    start: "Início",
+    pace: "Ritmo esperado",
+    dailySpend: "Gasto no dia",
+    cumulative: "Acumulado",
+    paceAhead: (delta: string) => `${delta} acima do ritmo`,
+    paceBehind: (delta: string) => `${delta} abaixo do ritmo`,
+    paceOnTrack: "no ritmo esperado",
     today: "Hoje",
-    close: "Fechamento",
-    todayValue: (value: string) => `hoje · ${value}`,
+    dayLabel: (day: number, month: string) => `${day} de ${month}`,
+    todayValue: (value: string) => `Hoje · ${value}`,
     projectionOver: (delta: string) => `+${delta} vs orçamento`,
+    crossingOn: (date: string) => `Estouro previsto em ${date}`,
   },
 
   coldStart: {

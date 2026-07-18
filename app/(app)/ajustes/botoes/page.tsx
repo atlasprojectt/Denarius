@@ -34,9 +34,15 @@ export default function ButtonShowcasePage() {
         <CardHeader><CardTitle>Variantes</CardTitle></CardHeader>
         <CardContent className="flex flex-wrap items-center gap-3">
           {variants.map(([variant, label]) => (
-            <Button key={variant} variant={variant}>
+            <Button
+              key={variant}
+              variant={variant}
+              motion={variant === "tertiary" ? "forward" : "none"}
+            >
               {label}
-              {variant === "tertiary" ? <RiArrowRightSLine /> : null}
+              {variant === "tertiary" ? (
+                <RiArrowRightSLine data-icon="inline-end" />
+              ) : null}
             </Button>
           ))}
         </CardContent>
@@ -71,7 +77,7 @@ export default function ButtonShowcasePage() {
             Excluir
           </Button>
           <p className="w-full text-xs text-muted-foreground">
-            Use Tab para conferir o foco visível de cada controle.
+            Passe o cursor para conferir o hover, mantenha pressionado para o active e use Tab para o foco visível. Loading preserva as dimensões; disabled remove movimento e interação.
           </p>
         </CardContent>
       </Card>
@@ -81,9 +87,9 @@ export default function ButtonShowcasePage() {
         <CardContent className="flex flex-wrap items-center gap-3">
           <Button variant="primary">Ação principal</Button>
           <Button variant="secondary">Ação global</Button>
-          <Button variant="tertiary">
+          <Button variant="tertiary" motion="forward">
             Ação contextual
-            <RiArrowRightSLine />
+            <RiArrowRightSLine data-icon="inline-end" />
           </Button>
         </CardContent>
       </Card>

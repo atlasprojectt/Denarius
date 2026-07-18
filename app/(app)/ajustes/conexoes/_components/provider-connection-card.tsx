@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { utcStamp } from "@/lib/format";
+import { syncStamp } from "@/lib/format";
 import {
   revokeAnthropicKey,
   revokeOpenAIKey,
@@ -37,7 +37,7 @@ const sharedCopy = {
   active: "Ativo",
   error: "Erro na sincronização",
   revoked: "Revogado",
-  lastSync: (stamp: string) => `Última sincronização: ${stamp}`,
+  lastSync: (stamp: string) => `Última sincronização ${stamp}`,
   neverSynced: "Nunca sincronizado",
   keyLabel: "Admin Key (somente leitura)",
   connect: "Conectar e sincronizar",
@@ -223,7 +223,7 @@ export function ProviderConnectionCard({
   };
 
   const connected = status === "active" || status === "error";
-  const stamp = lastSyncAt ? utcStamp(lastSyncAt) : null;
+  const stamp = lastSyncAt ? syncStamp(lastSyncAt) : null;
 
   return (
     <Card>

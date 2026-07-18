@@ -18,7 +18,7 @@ import { attributeSeats } from "@/lib/engine/accrual";
 import { oldestActiveSync } from "@/lib/engine/freshness";
 import { periodFx, usdDisplay } from "@/lib/engine/money-model";
 import { currentPeriod } from "@/lib/engine/period";
-import { utcStamp } from "@/lib/format";
+import { syncStamp } from "@/lib/format";
 import { money } from "@/lib/money";
 import { listSubscriptions } from "@/lib/subscriptions/queries";
 import { listTeams } from "@/lib/teams/queries";
@@ -47,7 +47,7 @@ const copy = {
     `Total da empresa = soma dos times + não atribuído = ${total} — sempre reconcilia.`,
   apiTitle: (label: string) => `Uso de API por modelo — ${label}`,
   apiHeadlineSuffix: "neste mês",
-  apiAsOf: (stamp: string) => `dados de ${stamp}`,
+  apiAsOf: (stamp: string) => `Atualizado ${stamp}`,
   colModel: "Modelo",
   colTokens: "Tokens",
   colDerived: "Gasto derivado",
@@ -183,7 +183,7 @@ export default async function ExplorePage() {
               {copy.apiTitle(period.monthLabel)}
             </CardTitle>
             {lastSyncAt && (
-              <CardAsOf>{copy.apiAsOf(utcStamp(lastSyncAt))}</CardAsOf>
+              <CardAsOf>{copy.apiAsOf(syncStamp(lastSyncAt))}</CardAsOf>
             )}
           </CardHeader>
           <CardContent className="flex flex-col gap-3">

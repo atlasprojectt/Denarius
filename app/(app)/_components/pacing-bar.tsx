@@ -1,10 +1,10 @@
 import { barGeometry, cut, TICKS_BOLD } from "@/lib/bars";
-import type { VerdictStatus } from "@/lib/engine/verdict";
 import { percent } from "@/lib/format";
 import { homeCopy } from "./copy";
 
 // The pacing bar (frontend §3.4, de-noise 2026-07-17): ONE bar where the pair
-// used to stack two. The spend fill keeps the semaphore color (principle #5),
+// used to stack two. The spend fill keeps the fixed brand accent until a real
+// budget breach, when it switches to the semantic red,
 // the ghost extension is the projection, the vertical line is the budget — and
 // the month's elapsed time became a "hoje" tick UNDER the same scale, so the
 // eye still compares "spent 58%" against "55% of the month gone" without a
@@ -16,14 +16,12 @@ export function PacingBar({
   pctSpent,
   pctProjected,
   pctElapsed,
-  status,
   dayOfPeriod,
   daysInPeriod,
 }: {
   pctSpent: number;
   pctProjected: number | null;
   pctElapsed: number;
-  status: VerdictStatus;
   dayOfPeriod: number;
   daysInPeriod: number;
 }) {
@@ -32,12 +30,7 @@ export function PacingBar({
   // Any value's x on the shared scale: value ÷ scale = value × marker (marker = 1/scale).
   const at = (v: number) => v * g.marker;
 
-  const fill: Record<VerdictStatus, string> = {
-    green: "text-status-green",
-    amber: "text-status-amber",
-    red: "text-status-red",
-    collecting: "text-muted-foreground",
-  };
+  const fill = pctSpent > 1 ? "text-status-red" : "text-brand-accent";
 
   // The "hoje" label hugs its tick mid-bar but pins to the edge near either
   // end, so it never overflows the card at day 1 or day 31.
@@ -52,7 +45,7 @@ export function PacingBar({
   return (
     // data-reveal-state is stamped by the RevealController pre-hydration.
     <div data-reveal="pacing-bar" suppressHydrationWarning>
-      <div className="mb-1 flex items-baseline justify-end text-xs">
+      <div className="mb-0.5 flex items-baseline justify-end text-xs">
         <span className="font-medium tabular-nums">{percent(pctSpent)}</span>
       </div>
       <div className="relative h-4 w-full">
@@ -70,7 +63,7 @@ export function PacingBar({
         )}
         <div
           data-reveal-bar
-          className={`absolute inset-0 ${fill[status]}`}
+          className={`absolute inset-0 ${fill}`}
           style={{ ...TICKS_BOLD, clipPath: cut(0, g.fill), animationDelay: "80ms" }}
         />
         {g.marker < 1 && (
@@ -81,14 +74,14 @@ export function PacingBar({
           />
         )}
       </div>
-      <div className="relative mt-0.5 h-5">
+      <div className="relative mt-1 h-6">
         <div
           aria-hidden
           className="absolute top-0 h-1.5 w-px bg-foreground/50"
           style={{ left: pct(todayX) }}
         />
         <span
-          className="absolute top-1.5 text-xs whitespace-nowrap text-muted-foreground tabular-nums"
+          className="absolute top-2 text-xs whitespace-nowrap text-muted-foreground tabular-nums"
           style={todayLabelStyle}
         >
           {c.today(dayOfPeriod, daysInPeriod)}

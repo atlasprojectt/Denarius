@@ -94,7 +94,7 @@ export function AuthForm({ oauthError }: { oauthError?: string }) {
   // meaningful in login mode and only until a form submission returns its own.
   const shownError = state.error ?? (isSignup ? undefined : oauthError);
 
-  const inputClassName = "h-11 rounded-lg bg-background pl-10 text-[15px]";
+  const inputClassName = "h-11 bg-background pl-10 text-[15px]";
   const iconClassName = "size-4";
 
   return (
@@ -117,7 +117,7 @@ export function AuthForm({ oauthError }: { oauthError?: string }) {
             <div className="relative grid grid-cols-2 rounded-lg bg-muted p-1">
               <span
                 aria-hidden
-                className="absolute inset-y-1 left-1 w-[calc(50%-0.25rem)] rounded-md bg-background shadow-sm transition-transform duration-300"
+                className="absolute inset-y-1 left-1 w-[calc(50%-0.25rem)] rounded-md bg-background shadow-sm transition-transform duration-300 after:absolute after:right-3 after:bottom-0 after:left-3 after:h-0.5 after:rounded-full after:bg-brand-accent after:content-['']"
                 style={{
                   transitionTimingFunction: EASE,
                   transform: isSignup ? "translateX(100%)" : "translateX(0)",
@@ -135,9 +135,9 @@ export function AuthForm({ oauthError }: { oauthError?: string }) {
                   variant="ghost"
                   aria-pressed={mode === value}
                   onClick={() => setMode(value)}
-                  className={`relative z-10 h-9 rounded-md bg-transparent text-sm font-medium transition-colors duration-300 hover:bg-transparent ${
+                  className={`relative z-10 h-9 bg-transparent text-sm font-medium transition-colors duration-300 hover:bg-transparent ${
                     mode === value
-                      ? "text-foreground"
+                      ? "text-brand-accent-light"
                       : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
@@ -204,12 +204,12 @@ export function AuthForm({ oauthError }: { oauthError?: string }) {
                 <Button
                   type="button"
                   variant="ghost"
-                  size="icon"
+                  size="icon-sm"
                   aria-label={
                     showPassword ? copy.hidePassword : copy.showPassword
                   }
                   onClick={() => setShowPassword((v) => !v)}
-                  className="absolute inset-y-0 right-0 h-auto w-10 rounded-r-lg rounded-l-none"
+                  className="absolute top-1/2 right-1 -translate-y-1/2"
                 >
                   {showPassword ? (
                     <RiEyeOffLine className={iconClassName} />

@@ -187,7 +187,7 @@ export function TeamBudgetTable({
                   key={team.teamId}
                   href={`/times?focus=${team.teamId}`}
                   aria-label={c.detail(team.teamName)}
-                  className="group rounded-lg border p-3 outline-none transition-colors hover:border-primary-hover/40 hover:bg-muted/30 focus-visible:ring-2 focus-visible:ring-ring/30"
+                  className="group rounded-lg border p-3 outline-none transition-colors hover:border-border hover:bg-muted/30 focus-visible:ring-2 focus-visible:ring-ring/30"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <p className="min-w-0 truncate font-medium">{team.teamName}</p>
@@ -265,7 +265,7 @@ export function TeamBudgetTable({
                     }}
                   >
                     <TableCell className="max-w-64">
-                      <span className="block truncate font-medium transition-colors group-hover:text-primary-hover">
+                      <span className="block truncate font-medium transition-colors group-hover:text-foreground">
                         {team.teamName}
                       </span>
                     </TableCell>

@@ -5,7 +5,7 @@ import { VerdictLine } from "@/components/domain/verdict-line";
 import { PageContainer } from "@/components/domain/page-container";
 import { Button } from "@/components/ui/button";
 import { budgetedTeams } from "@/lib/engine/cockpit";
-import { utcStamp } from "@/lib/format";
+import { syncStamp } from "@/lib/format";
 import { getHomeData } from "@/lib/home/queries";
 import { Hero } from "./_components/hero";
 import { MonthlyPaceChart } from "./_components/monthly-pace-chart";
@@ -33,6 +33,7 @@ export default async function HomePage() {
     setup,
     unattributed,
     lastSyncAt,
+    pace,
   } = await getHomeData();
 
   if (cockpit.state === "cold-start") {
@@ -55,7 +56,7 @@ export default async function HomePage() {
                 key={item}
                 className="flex items-center gap-2.5 text-sm text-muted-foreground"
               >
-                <RiCheckLine className="size-4 shrink-0 text-primary" aria-hidden />
+                <RiCheckLine className="size-4 shrink-0 text-muted-foreground" aria-hidden />
                 {item}
               </li>
             ))}
@@ -103,12 +104,12 @@ export default async function HomePage() {
           }
         />
         {/* Freshness stamp (principle #3): same rule and format as Explore
-            (oldest active sync + utcStamp) — one mechanism, two screens. The
+            (oldest active sync + syncStamp) — one mechanism, two screens. The
             day-of-month meta left this corner (de-noise 2026-07-17): it now
             lives at the hero bar's "hoje" marker, its one canonical home. */}
         {lastSyncAt !== null && (
           <p className="mt-1 shrink-0 text-xs text-muted-foreground/70 tabular-nums">
-            {homeCopy.dataAsOf(utcStamp(lastSyncAt))}
+            {homeCopy.dataAsOf(syncStamp(lastSyncAt))}
           </p>
         )}
       </div>
@@ -124,7 +125,6 @@ export default async function HomePage() {
         <div className="min-w-0">
           <Hero
             org={org}
-            status={cockpit.verdict.status}
             pctProjected={cockpit.orgPctProjected}
             unconvertedUsd={cockpit.orgUnconvertedUsd}
             currency={currency}
@@ -141,7 +141,13 @@ export default async function HomePage() {
           />
         </div>
         <div className="min-w-0">
-          <MonthlyPaceChart org={org} currency={currency} />
+          {pace && (
+            <MonthlyPaceChart
+              pace={pace}
+              currency={currency}
+              monthLabel={period.monthLabel}
+            />
+          )}
         </div>
         <div className="min-w-0">
           <TeamBudgetTable

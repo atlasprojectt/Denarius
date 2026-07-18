@@ -7,7 +7,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import type { BudgetEvaluation } from "@/lib/engine/budget";
-import type { VerdictStatus } from "@/lib/engine/verdict";
 import { percent } from "@/lib/format";
 import { money } from "@/lib/money";
 import { PacingBar } from "./pacing-bar";
@@ -43,7 +42,6 @@ function WeekDelta({ pct }: { pct: number | null }) {
 
 export function Hero({
   org,
-  status,
   pctProjected,
   unconvertedUsd,
   currency,
@@ -52,7 +50,6 @@ export function Hero({
   weekPct,
 }: {
   org: BudgetEvaluation;
-  status: VerdictStatus;
   pctProjected: number | null;
   unconvertedUsd: number;
   currency: string;
@@ -66,10 +63,10 @@ export function Hero({
     : money(org.projection ?? 0, currency);
 
   return (
-    <Card size="sm" className="min-h-full">
+    <Card className="min-h-full">
       <CardHeader>
         <CardTitle className="text-sm font-medium">{c.title}</CardTitle>
-        <p className="flex flex-wrap items-baseline gap-x-2.5 pt-2 text-4xl font-semibold tracking-tight tabular-nums sm:text-5xl">
+        <p className="flex flex-wrap items-baseline gap-x-2 pt-2 text-4xl font-medium tracking-tight tabular-nums sm:text-5xl">
           {money(org.spent, currency)}
           <span className="text-base font-normal tracking-normal text-muted-foreground">
             {c.ofBudget(money(org.budget, currency))}
@@ -78,12 +75,12 @@ export function Hero({
         <WeekDelta pct={weekPct} />
       </CardHeader>
 
-      <CardContent className="-mt-2 flex flex-1 flex-col gap-4">
+      <CardContent className="flex flex-1 flex-col gap-4">
+
         <PacingBar
           pctSpent={org.pctSpent}
           pctProjected={pctProjected}
           pctElapsed={org.pctElapsed}
-          status={status}
           dayOfPeriod={dayOfPeriod}
           daysInPeriod={daysInPeriod}
         />
@@ -91,7 +88,7 @@ export function Hero({
         {/* ONE KPI (de-noise): the projection is the decision number left in
             this card — the projected margin moved into the verdict sentence,
             and the old callout repeated it in words. Neutral ink (principle #5). */}
-        <dl className="border-t pt-3">
+        <dl className="border-t pt-4">
           <div className="min-w-0">
             <dt className="truncate text-xs text-muted-foreground">{c.kpiProjection}</dt>
             <dd className="mt-0.5 text-base font-semibold tabular-nums">{projectionValue}</dd>

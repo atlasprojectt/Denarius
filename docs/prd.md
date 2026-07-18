@@ -141,7 +141,7 @@ The headline metric is **spend in money governed against a budget**; tokens are 
 - Mechanism: **read-only connectors + manual seed**. **No proxy/gateway** (doesn't fit the employee case, adds friction, and — critically — means Denarius governs by *warning*, never by *blocking*).
 - v1 mandatory connectors: **OpenAI** (Admin API) and **Anthropic** (Admin API). Both are token-metered, which is the core of the product.
 - Sync: **daily Vercel Cron** firing a serverless function that pulls and stores aggregates; plus on-demand sync after connecting. Data freshness is **daily, not real-time** — and the UI says so ("as of <date>").
-- **Time base:** all daily buckets in **UTC** (provider-native). Disclosed in the UI next to the freshness stamp. No per-tenant timezone math in v1.
+- **Time base:** all daily buckets remain **UTC** (provider-native). Freshness copy is rendered in `America/Sao_Paulo` as human local time (`Atualizado hoje, às HH:mm`; older dates include `DD/MM/AAAA`), with no per-tenant timezone math in v1.
 
 **Budget semantics (what counts, and the edge rules)**
 - A `budget` is set per **org** and per **team** for a period (default monthly).
@@ -247,7 +247,7 @@ Resolved in a dedicated UX grilling (P1–P11), extended by the founder's focus 
 
 **Verdict & pacing (P15 — new, the headline)**
 - The home opens with a **single verdict sentence + status color** answering "am I in control?": red ("Engineering exceeded its budget by 19%" — the named team's **own** overrun, plus a "Ver time" action linking to that team; the org projection lives in the hero one glance below), amber ("Attention — projected R$ 4.2k over budget"), green ("In control — projected R$ 3.1k under budget"). Deterministic; the CEO reads a conclusion, not ingredients. (Shortened 2026-07-17, founder-directed — the original longer templates carried the org projection and the close date inside the sentence.)
-- The hero pairs **% of budget spent against % of the period elapsed** — a percentage of budget is meaningless without the time context; the pairing is the real control signal (spending faster than time passes = trouble). Since the 2026-07-17 de-noise the pairing renders as ONE bar: the semaphore spend bar with a neutral "hoje · dia N de M" time marker on the same scale, not a second bar.
+- The hero pairs **% of budget spent against % of the period elapsed** — a percentage of budget is meaningless without the time context; the pairing is the real control signal (spending faster than time passes = trouble). Since the 2026-07-17 de-noise the pairing renders as ONE bar: the fixed medium brand-accent spend bar (red only after a real org breach) with a neutral "hoje · dia N de M" time marker on the same scale, not a second bar. This visual accent does not replace the green/amber/red semantic verdict and status pills.
 - **All-clear is a designed, affirmative state** (the most common state of a healthy account): green verdict + "✓ Everything under control · next digest Friday", never an empty-looking screen.
 
 **Onboarding (P3)**

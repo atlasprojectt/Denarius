@@ -29,11 +29,11 @@ import { homeCopy } from "./copy";
 const c = homeCopy.composition;
 
 const chartColors = [
-  "var(--chart-1)",
-  "var(--chart-2)",
-  "var(--chart-3)",
-  "var(--chart-4)",
-  "var(--chart-5)",
+  "color-mix(in oklab, var(--foreground) 72%, transparent)",
+  "color-mix(in oklab, var(--foreground) 58%, transparent)",
+  "color-mix(in oklab, var(--foreground) 46%, transparent)",
+  "color-mix(in oklab, var(--foreground) 36%, transparent)",
+  "color-mix(in oklab, var(--foreground) 28%, transparent)",
 ];
 
 // Known composition keys → marks; unknown keys render without an icon.
@@ -139,6 +139,8 @@ export function ProviderComposition({
               asChild
               variant="tertiary"
               size="sm"
+              shape="pill"
+              motion="forward"
               className="ml-1 bg-muted/15 text-foreground/75"
             >
               <Link href="/ajustes/atribuicao">

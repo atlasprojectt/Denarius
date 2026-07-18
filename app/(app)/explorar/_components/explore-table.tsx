@@ -58,7 +58,7 @@ function SortButton({
       variant="ghost"
       size="xs"
       onClick={() => onSort(field)}
-      className="h-auto rounded-sm p-0 hover:bg-transparent"
+      className="h-auto p-0 hover:bg-transparent"
     >
       {children}
       <RiArrowUpDownLine className="size-3" aria-hidden />
@@ -171,7 +171,7 @@ export function ExploreTable({
                 <Link
                   key={row.id}
                   href={row.href}
-                  className="rounded-lg border p-4 outline-none transition-colors hover:border-primary-hover/40 hover:bg-muted/30 focus-visible:ring-2 focus-visible:ring-ring/30"
+                  className="rounded-lg border p-4 outline-none transition-colors hover:border-border hover:bg-muted/30 focus-visible:ring-2 focus-visible:ring-ring/30"
                 >
                   {content}
                 </Link>
@@ -220,7 +220,7 @@ export function ExploreTable({
                     }}
                   >
                     <TableCell>
-                      <p className="font-medium group-hover:text-primary-hover">{row.label}</p>
+                      <p className="font-medium group-hover:text-foreground">{row.label}</p>
                       {row.note && <p className="mt-0.5 text-xs text-muted-foreground">{row.note}</p>}
                     </TableCell>
                     {tokensHeader && (

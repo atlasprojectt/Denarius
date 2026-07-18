@@ -424,10 +424,10 @@ function ControlPlanSection({ team }: { team: CockpitTeam }) {
               {href ? (
                 <Link
                   href={href}
-                  className="group flex items-start justify-between gap-4 rounded-lg border p-3.5 outline-none transition-colors hover:border-primary-hover/40 hover:bg-muted/30 focus-visible:ring-2 focus-visible:ring-ring/30"
+                  className="group flex items-start justify-between gap-4 rounded-lg border p-3.5 outline-none transition-colors hover:border-border hover:bg-muted/30 focus-visible:ring-2 focus-visible:ring-ring/30"
                 >
                   {body}
-                  <RiArrowRightLine className="mt-0.5 size-4 shrink-0 text-primary transition-transform group-hover:translate-x-0.5 dark:text-primary-hover" />
+                  <RiArrowRightLine className="mt-0.5 size-4 shrink-0 text-muted-foreground transition-colors group-hover:text-brand-accent-light" />
                 </Link>
               ) : (
                 <div className="rounded-lg border p-3.5">{body}</div>
