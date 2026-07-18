@@ -4,6 +4,7 @@
 
 export const homeCopy = {
   question: "Você está no controle do gasto com IA?",
+  verdictAction: "Ver time",
   meta: (day: number, days: number, pctElapsed: string) =>
     `dia ${day} de ${days} · ${pctElapsed} do mês`,
   dataAsOf: (stamp: string) => `dados de ${stamp}`,

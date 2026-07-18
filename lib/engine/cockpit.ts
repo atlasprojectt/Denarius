@@ -32,7 +32,8 @@ export type CockpitTeamInput = ScopeSpend & {
 export type CockpitInput = {
   period: PeriodProgress;
   currency: string;
-  /** e.g. "31 de julho" — the period close, for the amber verdict sentence. */
+  /** e.g. "31 de julho" — the period close, for display (drawer/labels), not
+   *  for the verdict sentence (shortened 2026-07-17, founder-directed). */
   periodEndLabel: string;
   /** null → cold start: no org budget, so there is no verdict to give. */
   org: (ScopeSpend & { thresholds: number[] }) | null;
@@ -209,9 +210,8 @@ export function buildCockpit(input: CockpitInput): Cockpit {
 
   const verdict = computeVerdict({
     org,
-    teams: teams.map((t) => ({ name: t.teamName, evaluation: t.evaluation })),
+    teams: teams.map((t) => ({ teamId: t.teamId, name: t.teamName, evaluation: t.evaluation })),
     currency,
-    periodEndLabel,
   });
 
   // Needs-attention teams carry a finding; order them by the same budget-impact
