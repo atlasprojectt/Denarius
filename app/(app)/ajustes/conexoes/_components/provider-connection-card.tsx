@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { utcStamp } from "@/lib/format";
+import { syncStamp } from "@/lib/format";
 import {
   revokeAnthropicKey,
   revokeOpenAIKey,
@@ -37,7 +37,7 @@ const sharedCopy = {
   active: "Ativo",
   error: "Erro na sincronização",
   revoked: "Revogado",
-  lastSync: (stamp: string) => `Última sincronização: ${stamp}`,
+  lastSync: (stamp: string) => `Última sincronização ${stamp}`,
   neverSynced: "Nunca sincronizado",
   keyLabel: "Admin Key (somente leitura)",
   connect: "Conectar e sincronizar",
@@ -138,8 +138,8 @@ function KeyForm({ provider, formAction, pending }: KeyFormProps) {
         {copy.groupingTip}
       </p>
       <div>
-        <Button type="submit" disabled={pending}>
-          {pending ? sharedCopy.connecting : sharedCopy.connect}
+        <Button type="submit" loading={pending} loadingText={sharedCopy.connecting}>
+          {sharedCopy.connect}
         </Button>
       </div>
     </form>
@@ -162,8 +162,14 @@ function ActiveControls({ keyForm }: { keyForm: KeyFormProps }) {
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-2">
         <form action={syncAction}>
-          <Button type="submit" variant="outline" size="sm" disabled={syncing}>
-            {syncing ? sharedCopy.syncing : sharedCopy.syncNow}
+          <Button
+            type="submit"
+            variant="secondary"
+            size="sm"
+            loading={syncing}
+            loadingText={sharedCopy.syncing}
+          >
+            {sharedCopy.syncNow}
           </Button>
         </form>
         <Button
@@ -217,7 +223,7 @@ export function ProviderConnectionCard({
   };
 
   const connected = status === "active" || status === "error";
-  const stamp = lastSyncAt ? utcStamp(lastSyncAt) : null;
+  const stamp = lastSyncAt ? syncStamp(lastSyncAt) : null;
 
   return (
     <Card>

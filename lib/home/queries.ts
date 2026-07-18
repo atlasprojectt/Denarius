@@ -6,6 +6,7 @@ import { attributeSeats } from "@/lib/engine/accrual";
 import type { SeatSubscription } from "@/lib/engine/accrual";
 import { combinedSpend } from "@/lib/engine/budget";
 import { budgetedTeams, buildCockpit, type Cockpit } from "@/lib/engine/cockpit";
+import { buildMonthlyPace, type MonthlyPace } from "@/lib/engine/monthly-pace";
 import { oldestActiveSync } from "@/lib/engine/freshness";
 import { periodFx, type FrozenFx } from "@/lib/engine/money-model";
 import { currentPeriod, monthStartUtc, type Period } from "@/lib/engine/period";
@@ -13,6 +14,7 @@ import { combineTeamSpend } from "@/lib/engine/team-spend";
 import { isoDaysAgo, weekOverWeek } from "@/lib/engine/week-change";
 import { buildApontamentos } from "@/lib/findings/apontamentos";
 import { buildSeatWaste } from "@/lib/findings/seats-vs-roster";
+import { money } from "@/lib/money";
 import { listBudgets } from "@/lib/budgets/queries";
 import { listSubscriptions } from "@/lib/subscriptions/queries";
 import { listTeams } from "@/lib/teams/queries";
@@ -40,6 +42,9 @@ export type Observation = {
   kind: "observation" | "action";
   href?: string;
   actionLabel?: string;
+  title?: string;
+  context?: string;
+  impact?: string;
 };
 
 export type HomeData = CockpitData & {
@@ -61,6 +66,10 @@ export type HomeData = CockpitData & {
   unattributed: { display: number; unconvertedUsd: number };
   /** Freshness stamp (oldest active sync, same rule/format as Explore). */
   lastSyncAt: string | null;
+  /** The "Evolução do mês" per-day series (cumulative + daily bars +
+   *  projection). null before an org budget exists (cold-start renders no
+   *  chart). Built here from the daily cost read, never in the component. */
+  pace: MonthlyPace | null;
 };
 
 type ConnectionRow = {
@@ -77,6 +86,23 @@ async function orgWeekCosts(now: Date): Promise<{ date: string; amount: number }
     .select("date, amount")
     .gte("date", isoDaysAgo(now, 14));
   return (data ?? []) as { date: string; amount: number }[];
+}
+
+/** Month-to-date provider-reported cost (USD, the headline truth), summed per
+ *  calendar day — the daily grain the pace chart's cumulative + bars need. Same
+ *  source as `providerCostToDate` (their totals reconcile), one row per day. */
+async function orgDailyCosts(): Promise<{ date: string; usd: number }[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("cost_daily")
+    .select("date, amount")
+    .gte("date", monthStartUtc());
+
+  const byDate = new Map<string, number>();
+  for (const row of (data ?? []) as { date: string; amount: number }[]) {
+    byDate.set(row.date, (byDate.get(row.date) ?? 0) + row.amount);
+  }
+  return [...byDate.entries()].map(([date, usd]) => ({ date, usd }));
 }
 
 /** Month-to-date provider-reported cost (USD, the headline truth), by provider. */
@@ -157,6 +183,9 @@ type CockpitAssembly = CockpitData & {
   subscriptions: SeatSubscription[];
   seatByTeam: Map<string, number>;
   apiByTeam: Map<string, number>;
+  /** Seat cost accrued through today across the whole org (Σ teams +
+   *  unattributed) — the pace chart's seat baseline. */
+  orgSeatTotal: number;
   seatUnattributed: number;
   apiUnattributedUsd: number;
   connected: boolean;
@@ -237,6 +266,7 @@ const assembleCockpit = cache(async function assembleCockpit(): Promise<CockpitA
     subscriptions,
     seatByTeam,
     apiByTeam,
+    orgSeatTotal: seats.orgTotal,
     seatUnattributed: seats.unattributed,
     apiUnattributedUsd: apiTeams.unattributedUsd,
     connected: connections.some((connection) => connection.status === "active"),
@@ -317,6 +347,14 @@ function buildObservations(
   roster: Map<string, number>,
 ): Observation[] {
   const { cockpit } = assembly;
+  const spendMix = combineTeamSpend({
+    teams: assembly.teams,
+    seatByTeam: assembly.seatByTeam,
+    apiUsdByTeam: assembly.apiByTeam,
+    seatUnattributed: assembly.seatUnattributed,
+    apiUnattributedUsd: assembly.apiUnattributedUsd,
+    fxRate: assembly.fx?.rate ?? null,
+  });
   // A warned team never re-appears as an apontamento — one event, one channel;
   // the warning flag comes from the finding itself, the cockpit's truth.
   const apontamentos = buildApontamentos({
@@ -330,14 +368,7 @@ function buildObservations(
       name: assembly.teamName.get(w.teamId) ?? "—",
       pct: w.pct,
     })),
-    spendMix: combineTeamSpend({
-      teams: assembly.teams,
-      seatByTeam: assembly.seatByTeam,
-      apiUsdByTeam: assembly.apiByTeam,
-      seatUnattributed: assembly.seatUnattributed,
-      apiUnattributedUsd: assembly.apiUnattributedUsd,
-      fxRate: assembly.fx?.rate ?? null,
-    }),
+    spendMix,
   });
 
   // Secondary waste (#22): seats paid vs roster people. Ordered AFTER the
@@ -357,14 +388,31 @@ function buildObservations(
       kind: a.kind === "unattributed" ? ("action" as const) : ("observation" as const),
       href: a.kind === "unattributed" ? "/ajustes/atribuicao" : undefined,
       actionLabel: a.kind === "unattributed" ? "Mapear atribuição" : undefined,
+      title:
+        a.kind === "unattributed" && spendMix !== null
+          ? `${money(spendMix.unattributed, assembly.currency)} sem atribuição`
+          : undefined,
+      context:
+        a.kind === "unattributed"
+          ? "Gastos ainda não associados a times ou projetos"
+          : undefined,
     })),
-    ...seatWaste.map((w) => ({
-      id: `seat:${w.id}`,
-      text: w.text,
-      kind: "action" as const,
-      href: "/ajustes/assinaturas",
-      actionLabel: "Revisar assinaturas",
-    })),
+    ...seatWaste.map((w) => {
+      const subscription = assembly.subscriptions.find((s) => s.id === w.id);
+      return {
+        id: `seat:${w.id}`,
+        text: w.text,
+        kind: "action" as const,
+        href: "/ajustes/assinaturas",
+        actionLabel: "Revisar assinaturas",
+        title:
+          w.excessSeats === 1
+            ? "1 assento acima do roster"
+            : `${w.excessSeats} assentos acima do roster`,
+        context: `${w.tool} · ${subscription?.teamName ?? "Toda a empresa"}`,
+        impact: `Impacto aproximado de ${money(w.monthlySavings, assembly.currency)}/mês`,
+      };
+    }),
   ];
 }
 
@@ -372,15 +420,32 @@ export async function getHomeData(): Promise<HomeData> {
   const now = new Date();
   // None of the footer/delta reads need anything from the cockpit — one
   // parallel batch.
-  const [assembly, weekRows, roster, weekCosts] = await Promise.all([
+  const [assembly, weekRows, roster, weekCosts, dailyCosts] = await Promise.all([
     assembleCockpit(),
     teamWeekChanges(now),
     rosterHeadcount(),
     orgWeekCosts(now),
+    orgDailyCosts(),
   ]);
 
   const observations = buildObservations(assembly, weekRows, roster);
   const rosterTotal = [...roster.values()].reduce((sum, n) => sum + n, 0);
+
+  // The pace series only exists once there is an org budget to evaluate against
+  // (cockpit.org). Built from the frozen-FX combine, so its today point lands on
+  // the same spent-to-date the Hero shows.
+  const org = assembly.cockpit.state === "cold-start" ? null : assembly.cockpit.org;
+  const pace = org
+    ? buildMonthlyPace({
+        apiByDay: dailyCosts,
+        fxRate: assembly.fx?.rate ?? null,
+        seatAccrued: assembly.orgSeatTotal,
+        budget: org.budget,
+        projection: org.projection,
+        dayOfPeriod: assembly.period.dayOfPeriod,
+        daysInPeriod: assembly.period.daysInPeriod,
+      })
+    : null;
 
   return {
     cockpit: assembly.cockpit,
@@ -400,6 +465,7 @@ export async function getHomeData(): Promise<HomeData> {
       fxRate: assembly.fx?.rate ?? null,
     }),
     lastSyncAt: assembly.lastSyncAt,
+    pace,
   };
 }
 

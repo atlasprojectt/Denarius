@@ -63,8 +63,13 @@ export function ConfirmationDialog({
                 {copy.cancel}
               </Button>
             </DialogClose>
-            <Button type="submit" variant="destructive" disabled={pending}>
-              {pending ? (pendingLabel ?? confirmLabel) : confirmLabel}
+            <Button
+              type="submit"
+              variant="destructive"
+              loading={pending}
+              loadingText={pendingLabel ?? confirmLabel}
+            >
+              {confirmLabel}
             </Button>
           </DialogFooter>
         </form>

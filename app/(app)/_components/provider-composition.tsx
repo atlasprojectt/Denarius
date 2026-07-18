@@ -1,36 +1,39 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { RiGroupLine } from "@remixicon/react";
+import { RiArrowRightSLine, RiGroupLine } from "@remixicon/react";
 
 import {
   Card,
   CardContent,
-  CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import { ProviderIcon } from "@/components/domain/provider-icon";
+import { Button } from "@/components/ui/button";
 import { cut, TICKS } from "@/lib/bars";
 import type { CompositionEntry } from "@/lib/engine/cockpit";
 import { percent } from "@/lib/format";
 import { money } from "@/lib/money";
+import { InfoTip } from "./info-tip";
 import { homeCopy } from "./copy";
 
-// "Para onde vai o dinheiro" (frontend §3.8): provider/seat composition as
-// ranked horizontal tick bars (2026-07 restyle — F3: hand-rolled CSS, the
-// donut is gone). Each source is a provider mark + label, the amount with its
-// share, and a tick bar cut to the share. Neutral chart-ramp colors — this is
+// "Gasto por fonte" (frontend §3.7): provider/seat composition as ranked
+// horizontal tick bars (2026-07 restyle — F3: hand-rolled CSS, the donut is
+// gone). Each source is a provider mark + label, the amount with its share,
+// and a tick bar cut to the share. Neutral chart-ramp colors — this is
 // composition, not budget status, so no semaphore (product principle #5).
+// De-noise 2026-07-17: the "Total convertido" block left (the total is the
+// hero's) and the explainer moved into the title's InfoTip.
 
 const c = homeCopy.composition;
 
 const chartColors = [
-  "var(--chart-1)",
-  "var(--chart-2)",
-  "var(--chart-3)",
-  "var(--chart-4)",
-  "var(--chart-5)",
+  "color-mix(in oklab, var(--foreground) 72%, transparent)",
+  "color-mix(in oklab, var(--foreground) 58%, transparent)",
+  "color-mix(in oklab, var(--foreground) 46%, transparent)",
+  "color-mix(in oklab, var(--foreground) 36%, transparent)",
+  "color-mix(in oklab, var(--foreground) 28%, transparent)",
 ];
 
 // Known composition keys → marks; unknown keys render without an icon.
@@ -54,7 +57,6 @@ export function ProviderComposition({
    *  team cut lives INSIDE the source cut, a slice would double-count). */
   unattributed: { display: number; unconvertedUsd: number } | null;
 }) {
-  const total = entries.reduce((sum, entry) => sum + entry.amount, 0);
   const unattributedLine =
     unattributed === null
       ? null
@@ -68,8 +70,10 @@ export function ProviderComposition({
   return (
     <Card size="sm" className="min-h-full">
       <CardHeader>
-        <CardTitle className="text-sm">{c.title}</CardTitle>
-        <CardDescription>{c.drillNote}</CardDescription>
+        <CardTitle className="flex items-center gap-1.5 text-sm">
+          {c.title}
+          <InfoTip label={c.title}>{c.info}</InfoTip>
+        </CardTitle>
       </CardHeader>
       <CardContent className="flex flex-1 flex-col">
         {entries.length === 0 ? (
@@ -78,20 +82,12 @@ export function ProviderComposition({
           <div
             data-reveal="composition"
             // data-reveal-state is stamped by the RevealController pre-hydration.
-            // Distributed, not centered: the total anchors the top and the
-            // entry list spreads over whatever height the hero gives the row,
-            // so a taller row widens the breathing room between bars instead
-            // of pooling voids above and below the content.
+            // Distributed, not centered: the entry list spreads over whatever
+            // height the hero gives the row, so a taller row widens the
+            // breathing room between bars instead of pooling voids.
             suppressHydrationWarning
-            className="flex flex-1 flex-col gap-4"
+            className="flex flex-1 flex-col"
           >
-            <div data-reveal-legend>
-              <p className="text-xs text-muted-foreground">{c.total}</p>
-              <p className="mt-1 text-xl font-semibold tabular-nums">
-                {money(total, currency)}
-              </p>
-            </div>
-
             <ul className="flex flex-1 flex-col justify-evenly gap-3">
               {entries.map((entry, index) => (
                 <li
@@ -99,7 +95,7 @@ export function ProviderComposition({
                   data-reveal-legend
                   style={{ animationDelay: `${120 + index * 70}ms` }}
                 >
-                  <div className="flex items-baseline justify-between gap-3 text-sm">
+                  <div className="flex items-baseline justify-between gap-3">
                     <span className="flex min-w-0 items-center gap-2">
                       {entryIcon[entry.key] && (
                         <span className="shrink-0 self-center">
@@ -138,13 +134,20 @@ export function ProviderComposition({
       {unattributedLine !== null && (
         <CardFooter className="text-xs/relaxed text-muted-foreground">
           <p className="tabular-nums">
-            {unattributedLine}{" "}
-            <Link
-              href="/ajustes/atribuicao"
-              className="whitespace-nowrap font-medium text-foreground underline-offset-4 hover:underline"
+            {unattributedLine} —{" "}
+            <Button
+              asChild
+              variant="tertiary"
+              size="sm"
+              shape="pill"
+              motion="forward"
+              className="ml-1 bg-muted/15 text-foreground/75"
             >
-              {c.mapCta} →
-            </Link>
+              <Link href="/ajustes/atribuicao">
+                {c.mapCta}
+                <RiArrowRightSLine className="size-3.5" data-icon="inline-end" aria-hidden />
+              </Link>
+            </Button>
           </p>
         </CardFooter>
       )}

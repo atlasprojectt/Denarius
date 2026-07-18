@@ -42,6 +42,7 @@ export function GoogleButton({ className }: { className?: string }) {
   return (
     <Button
       variant="outline"
+      size="lg"
       type="button"
       onClick={handleClick}
       className={className}

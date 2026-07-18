@@ -23,6 +23,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import type { CockpitTeam } from "@/lib/engine/cockpit";
 import { percent } from "@/lib/format";
 import { money } from "@/lib/money";
@@ -48,7 +54,7 @@ import { money } from "@/lib/money";
 // Copy (F2: pt-BR, isolated). Owned here now that the table is a cross-screen
 // domain component rather than a Home-only piece.
 const c = {
-  title: "Orçamentos por time",
+  title: "Orçamento dos times",
   subtitleAttention: (n: number, total: number) =>
     n === 1
       ? `1 de ${total} times precisa de atenção neste mês.`
@@ -94,6 +100,34 @@ function warningLine(team: CockpitTeam, currency: string): string | null {
   return c.warnThreshold(percent(ev.pctSpent));
 }
 
+// The status pill; for at-risk teams it carries the full reason in a tooltip
+// (de-noise 2026-07-17): the chip is the resting signal, the sentence is one
+// hover/focus away, so the same detail no longer sits permanently under every
+// team name. When there is no finding the pill renders bare.
+function TeamStatus({ team, currency }: { team: CockpitTeam; currency: string }) {
+  const reason = warningLine(team, currency);
+  if (reason === null) return <StatusPill status={team.status} />;
+  return (
+    <TooltipProvider delayDuration={150}>
+      <Tooltip>
+        <TooltipTrigger
+          type="button"
+          aria-label={reason}
+          className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring/30"
+          // The row is itself a link; stop the pill's click from navigating so
+          // a tap on the chip reveals the reason instead of leaving the page.
+          onClick={(event) => event.stopPropagation()}
+        >
+          <StatusPill status={team.status} />
+        </TooltipTrigger>
+        <TooltipContent side="top" className="max-w-xs text-xs/relaxed">
+          {reason}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+}
+
 export function TeamBudgetTable({
   teams,
   attentionCount,
@@ -135,7 +169,7 @@ export function TeamBudgetTable({
               : c.subtitleAllOk(teams.length)}
         </CardDescription>
         <CardAction>
-          <Button variant="outline" size="sm" asChild>
+          <Button variant="secondary" size="sm" asChild>
             <Link href="/ajustes/orcamentos">
               {teams.length === 0 ? c.emptyCta : c.manage}
             </Link>
@@ -148,24 +182,16 @@ export function TeamBudgetTable({
           <div className="grid gap-2 @2xl:hidden">
             {teams.map((team) => {
               const ev = team.evaluation;
-              const warning = warningLine(team, currency);
               return (
                 <Link
                   key={team.teamId}
                   href={`/times?focus=${team.teamId}`}
                   aria-label={c.detail(team.teamName)}
-                  className="group rounded-lg border p-3 outline-none transition-colors hover:border-primary-hover/40 hover:bg-muted/30 focus-visible:ring-2 focus-visible:ring-ring/30"
+                  className="group rounded-lg border p-3 outline-none transition-colors hover:border-border hover:bg-muted/30 focus-visible:ring-2 focus-visible:ring-ring/30"
                 >
                   <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="font-medium">{team.teamName}</p>
-                      {warning && (
-                        <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                          {warning}
-                        </p>
-                      )}
-                    </div>
-                    <StatusPill status={team.status} />
+                    <p className="min-w-0 truncate font-medium">{team.teamName}</p>
+                    <TeamStatus team={team} currency={currency} />
                   </div>
                   <dl className="mt-2.5 grid grid-cols-3 gap-2 text-[11px] leading-relaxed">
                     <div>
@@ -206,7 +232,7 @@ export function TeamBudgetTable({
           </div>
           )}
           <div className={forceTable ? "block" : "hidden @2xl:block"}>
-          <Table>
+          <Table className="[&_th]:text-muted-foreground">
             <TableHeader>
               <TableRow>
                 <TableHead>{c.colTeam}</TableHead>
@@ -223,14 +249,13 @@ export function TeamBudgetTable({
             <TableBody>
               {teams.map((team) => {
                 const ev = team.evaluation;
-                const warning = warningLine(team, currency);
                 return (
                   <TableRow
                     key={team.teamId}
                     role="link"
                     tabIndex={0}
                     aria-label={c.detail(team.teamName)}
-                    className="group cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/30"
+                    className="group cursor-pointer border-border/60 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/30"
                     onClick={() => router.push(`/times?focus=${team.teamId}`)}
                     onKeyDown={(event) => {
                       if (event.key === "Enter" || event.key === " ") {
@@ -240,17 +265,12 @@ export function TeamBudgetTable({
                     }}
                   >
                     <TableCell className="max-w-64">
-                      <span className="block truncate font-medium transition-colors group-hover:text-primary-hover">
+                      <span className="block truncate font-medium transition-colors group-hover:text-foreground">
                         {team.teamName}
                       </span>
-                      {warning && (
-                        <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                          {warning}
-                        </p>
-                      )}
                     </TableCell>
                     <TableCell>
-                      <StatusPill status={team.status} />
+                      <TeamStatus team={team} currency={currency} />
                     </TableCell>
                     <TableCell className="text-right tabular-nums">
                       {money(ev.spent, currency)}

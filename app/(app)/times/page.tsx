@@ -227,7 +227,7 @@ export default async function TimesPage({
             className="group flex items-center gap-3 px-(--card-spacing) py-(--card-spacing) outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/30"
           >
             <div className="min-w-0 flex-1">
-              <p className="truncate font-medium transition-colors group-hover:text-primary-hover">
+              <p className="truncate font-medium transition-colors group-hover:text-foreground">
                 {copy.unattributed}
               </p>
               <p className="mt-0.5 truncate text-xs text-muted-foreground">

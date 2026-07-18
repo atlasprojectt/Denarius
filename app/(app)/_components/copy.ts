@@ -5,9 +5,7 @@
 export const homeCopy = {
   question: "Você está no controle do gasto com IA?",
   verdictAction: "Ver time",
-  meta: (day: number, days: number, pctElapsed: string) =>
-    `dia ${day} de ${days} · ${pctElapsed} do mês`,
-  dataAsOf: (stamp: string) => `dados de ${stamp}`,
+  dataAsOf: (stamp: string) => `Atualizado ${stamp}`,
 
   setup: {
     title: "Prepare o primeiro veredito",
@@ -20,46 +18,55 @@ export const homeCopy = {
   },
 
   hero: {
-    spentLabel: "Gasto no período",
+    title: "Gasto do mês",
     ofBudget: (budget: string) => `de ${budget}`,
     weekDelta: (pct: string) => `${pct} vs semana anterior`,
     kpiProjection: "Projeção de fechamento",
-    kpiMargin: "Margem projetada",
     collectingShort: "coletando ritmo",
-    pacingSpend: "Gasto",
-    pacingTime: (day: number, days: number) => `Mês: dia ${day} de ${days}`,
-    projectedOver: (over: string) => `No ritmo atual, ${over} acima do orçamento no fim do mês.`,
-    projectedUnder: (under: string) => `No ritmo atual, fecha ${under} abaixo do orçamento.`,
-    collecting: "Coletando ritmo — a projeção de fechamento aparece a partir do dia 5.",
+    today: (day: number, days: number) => `hoje · dia ${day} de ${days}`,
     unconverted: (usd: string) =>
       `+ ${usd} de API ainda sem câmbio congelado — fora do total até o câmbio ser capturado.`,
   },
 
   composition: {
-    title: "Para onde vai o dinheiro",
-    drillNote: "O mesmo gasto do período, agora agrupado por fonte. Tokens e modelos ficam em Explorar.",
+    title: "Gasto por fonte",
+    info: "O mesmo gasto do período, agrupado por fonte — o total da empresa é a soma dos times mais o não atribuído. Tokens e modelos ficam em Explorar.",
     empty: "Sem gasto de API convertido ainda neste período.",
-    total: "Total convertido",
     entryValue: (amount: string, pct: string) => `${amount} (${pct})`,
-    unattributed: (amount: string) =>
-      `Deste total, ${amount} ainda não têm time — total da empresa = soma dos times + não atribuído.`,
+    unattributed: (amount: string) => `${amount} sem atribuição`,
     unattributedNoFx: (seats: string, usd: string) =>
-      `Deste total, ${seats} em assentos (+ ${usd} de API em US$, sem câmbio do período) ainda não têm time.`,
-    mapCta: "Mapear atribuição",
+      `${seats} sem atribuição (+ ${usd} de API sem câmbio do período)`,
+    mapCta: "Atribuir",
   },
 
   monthlyPace: {
-    title: "Ritmo do mês",
-    subtitle:
-      "Gasto acumulado contra o tempo do período — a linha tracejada é a projeção linear.",
+    title: "Evolução do mês",
+    info: "Gasto acumulado dia a dia contra o ritmo esperado — a linha tracejada é a projeção linear; as barras inferiores são o gasto de cada dia.",
     empty: "Sem gasto registrado neste período ainda.",
-    aria: "Gráfico de linha do gasto atual, orçamento e projeção do mês",
+    aria: (realized: string, pace: string, projection: string) =>
+      `Evolução do gasto do mês: ${realized} realizados até hoje, ritmo esperado de ${pace}, projeção de fechamento de ${projection}. Barras inferiores mostram o gasto diário.`,
+    ariaCollecting: (realized: string, pace: string) =>
+      `Evolução do gasto do mês: ${realized} realizados até hoje, ritmo esperado de ${pace}. Projeção ainda coletando ritmo. Barras inferiores mostram o gasto diário.`,
+    // Header metrics row — labels secondary, values in the foreground.
+    realizedLabel: "Realizado",
+    paceTodayLabel: "Ritmo esperado hoje",
+    projectionLabel: "Projeção",
+    collectingShort: "coletando ritmo",
+    // Series + tooltip labels.
     spent: "Gasto",
     projected: "Projeção",
     budget: "Orçamento",
-    start: "Início",
+    pace: "Ritmo esperado",
+    dailySpend: "Gasto no dia",
+    cumulative: "Acumulado",
+    paceAhead: (delta: string) => `${delta} acima do ritmo`,
+    paceBehind: (delta: string) => `${delta} abaixo do ritmo`,
+    paceOnTrack: "no ritmo esperado",
     today: "Hoje",
-    close: "Fechamento",
+    dayLabel: (day: number, month: string) => `${day} de ${month}`,
+    todayValue: (value: string) => `Hoje · ${value}`,
+    projectionOver: (delta: string) => `+${delta} vs orçamento`,
+    crossingOn: (date: string) => `Estouro previsto em ${date}`,
   },
 
   coldStart: {

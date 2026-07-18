@@ -172,8 +172,13 @@ export function ProjectMapForm({
       <ActionStatus error={state.error} />
 
       <div className="flex flex-wrap items-center gap-3">
-        <Button type="submit" disabled={pending || !dirty}>
-          {pending ? copy.submitting : copy.submit}
+        <Button
+          type="submit"
+          disabled={!dirty}
+          loading={pending}
+          loadingText={copy.submitting}
+        >
+          {copy.submit}
         </Button>
         <p className="text-xs text-muted-foreground" role="status">
           {dirty ? copy.dirty : copy.unchanged}

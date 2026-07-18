@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import {
-  RiArrowRightLine,
+  RiArrowDownSLine,
+  RiArrowRightSLine,
   RiCheckboxCircleLine,
-  RiLightbulbLine,
+  RiListCheck2,
 } from "@remixicon/react";
 
 import { Button } from "@/components/ui/button";
@@ -14,33 +15,161 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { fetchNextActions } from "@/lib/home/actions";
 import type { Observation } from "@/lib/home/queries";
 
-// Global header control (2026-07-12): "Próximas ações" moved off Home into a
-// button in the app header, on every screen. This is where the product saves
-// the CEO's time, so the trigger uses the design-system Button `accent` variant
-// (tonal brand) as a rounded pill with a count badge (2026-07-15). The badge is
-// fed by one prefetch on mount — the header's client island persists across
-// client-side navigations, so that's one query per full page load, not per
-// navigation — and the items are refetched on open so the list reflects the
-// latest sync/budget state. Empty → a calm "tudo em dia" state (no "0" badge —
-// that would nag).
-
 const copy = {
   title: "Próximas ações",
-  subtitle: "Caminhos claros para manter o orçamento no controle.",
+  subtitle: "Ajustes recomendados para manter os gastos sob controle",
   defaultAction: "Investigar",
-  loading: "Carregando…",
+  loading: "Carregando ações",
   allClearTitle: "Tudo em dia",
   allClearBody: "Nenhuma ação recomendada agora. O Denarius avisa quando surgir.",
   error: "Não foi possível carregar agora. Tente reabrir.",
+  pending: (n: number) => (n === 1 ? "1 pendência" : `${n} pendências`),
   badgeAria: (n: number) =>
-    n === 1 ? "Próximas ações: 1 ação recomendada" : `Próximas ações: ${n} ações recomendadas`,
+    n === 1
+      ? "Próximas ações: 1 ação recomendada"
+      : `Próximas ações: ${n} ações recomendadas`,
 };
 
+function ActionsPanel({
+  panelId,
+  mobile,
+  items,
+  loading,
+  failed,
+  onNavigate,
+}: {
+  panelId: string;
+  mobile: boolean;
+  items: Observation[] | null;
+  loading: boolean;
+  failed: boolean;
+  onNavigate: () => void;
+}) {
+  const count = items?.length ?? 0;
+  const titleId = `${panelId}-title`;
+  const descriptionId = `${panelId}-description`;
+
+  return (
+    <div className="flex min-h-0 flex-1 flex-col">
+      {mobile ? (
+        <SheetHeader className="gap-1 border-b px-5 py-4 pr-12 text-left">
+          <div className="flex items-baseline gap-2.5">
+            <SheetTitle id={titleId} className="text-sm font-semibold">
+              {copy.title}
+            </SheetTitle>
+            {count > 0 && (
+              <span className="text-xs text-muted-foreground tabular-nums">
+                {copy.pending(count)}
+              </span>
+            )}
+          </div>
+          <SheetDescription id={descriptionId}>{copy.subtitle}</SheetDescription>
+        </SheetHeader>
+      ) : (
+        <div className="border-b px-4 py-3.5">
+          <div className="flex items-baseline gap-2.5">
+            <p id={titleId} className="text-sm font-semibold">
+              {copy.title}
+            </p>
+            {count > 0 && (
+              <span className="text-xs text-muted-foreground tabular-nums">
+                {copy.pending(count)}
+              </span>
+            )}
+          </div>
+          <p id={descriptionId} className="mt-0.5 text-xs/relaxed text-muted-foreground">
+            {copy.subtitle}
+          </p>
+        </div>
+      )}
+
+      <div className="min-h-0 overflow-y-auto overscroll-contain">
+        {loading ? (
+          <div aria-label={copy.loading} className="space-y-0 px-4">
+            {[0, 1, 2].map((item) => (
+              <div key={item} className="space-y-2 border-b py-4 last:border-b-0">
+                <Skeleton className="h-4 w-2/3 rounded-sm" />
+                <Skeleton className="h-3 w-1/2 rounded-sm" />
+                <Skeleton className="h-7 w-32 rounded-pill" />
+              </div>
+            ))}
+          </div>
+        ) : failed ? (
+          <p className="px-4 py-5 text-sm text-muted-foreground">{copy.error}</p>
+        ) : items && items.length > 0 ? (
+          <ul className="divide-y divide-border/70">
+            {items.map((item) => (
+              <li
+                key={item.id}
+                className="px-4 py-4 transition-colors duration-150 hover:bg-muted/30 focus-within:bg-muted/20"
+              >
+                <p className="text-sm font-semibold text-foreground">
+                  {item.title ?? item.text}
+                </p>
+                {item.context && (
+                  <p className="mt-1 text-xs/relaxed text-muted-foreground">
+                    {item.context}
+                  </p>
+                )}
+                {item.impact && (
+                  <p className="mt-1 text-xs text-foreground/80 tabular-nums">
+                    {item.impact}
+                  </p>
+                )}
+                <Button
+                  asChild
+                  variant="tertiary"
+                  size="sm"
+                  motion="forward"
+                  className="mt-3"
+                >
+                  <Link href={item.href ?? "/explorar"} onClick={onNavigate}>
+                    {item.actionLabel ?? copy.defaultAction}
+                    <RiArrowRightSLine
+                      className="size-3.5"
+                      data-icon="inline-end"
+                      aria-hidden
+                    />
+                  </Link>
+                </Button>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <div className="flex items-start gap-2.5 px-4 py-5">
+            <RiCheckboxCircleLine
+              className="mt-0.5 size-4 shrink-0 text-status-green"
+              aria-hidden
+            />
+            <div>
+              <p className="text-sm font-medium">{copy.allClearTitle}</p>
+              <p className="mt-0.5 text-xs/relaxed text-muted-foreground">
+                {copy.allClearBody}
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function NextActionsButton() {
+  const isMobile = useIsMobile();
+  const panelId = useId();
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<Observation[] | null>(null);
   const [loading, setLoading] = useState(false);
@@ -58,96 +187,82 @@ export function NextActionsButton() {
     }
   }
 
-  // Badge prefetch — silent on failure (no badge is fine; the on-open fetch
-  // has its own error state).
   useEffect(() => {
     fetchNextActions().then(setItems, () => {});
   }, []);
 
   const count = items?.length ?? 0;
+  const handleOpenChange = (next: boolean) => {
+    setOpen(next);
+    if (next) void load();
+  };
+  const trigger = (
+    <Button
+      variant="secondary"
+      size="default"
+      shape="compact"
+      motion="disclosure"
+      aria-label={count > 0 ? copy.badgeAria(count) : copy.title}
+      aria-expanded={open}
+      aria-controls={panelId}
+      className="gap-2"
+    >
+      <RiListCheck2 className="size-4 text-muted-foreground/75" aria-hidden />
+      <span className="hidden sm:inline">{copy.title}</span>
+      {count > 0 && (
+        <span
+          aria-hidden
+          className="flex size-4.5 min-w-4.5 items-center justify-center rounded-pill bg-brand-accent-muted px-1 text-[10px] font-medium leading-none text-brand-accent-light tabular-nums"
+        >
+          {count}
+        </span>
+      )}
+      <RiArrowDownSLine
+        className="-ml-0.5 size-3.5 text-muted-foreground/70"
+        data-icon="disclosure"
+        aria-hidden
+      />
+    </Button>
+  );
+  const panel = (
+    <ActionsPanel
+      panelId={panelId}
+      mobile={isMobile}
+      items={items}
+      loading={loading}
+      failed={failed}
+      onNavigate={() => setOpen(false)}
+    />
+  );
+
+  if (isMobile) {
+    return (
+      <Sheet open={open} onOpenChange={handleOpenChange}>
+        <SheetTrigger asChild>{trigger}</SheetTrigger>
+        <SheetContent
+          id={panelId}
+          side="bottom"
+          className="next-actions-sheet max-h-[85svh] overflow-hidden rounded-t-lg border-border bg-popover p-0"
+        >
+          {panel}
+        </SheetContent>
+      </Sheet>
+    );
+  }
 
   return (
-    <Popover
-      open={open}
-      onOpenChange={(next) => {
-        setOpen(next);
-        // Refetch each open so the actions reflect the latest sync/budget state.
-        if (next) void load();
-      }}
-    >
-      <PopoverTrigger
-        aria-label={count > 0 ? copy.badgeAria(count) : copy.title}
-        render={
-          <Button
-            variant="accent"
-            size="lg"
-            className="h-8 gap-1.5 rounded-full px-3 font-semibold"
-          >
-            <RiLightbulbLine className="size-4" aria-hidden />
-            <span className="hidden sm:inline">{copy.title}</span>
-            {count > 0 && (
-              <span
-                aria-hidden
-                className="min-w-4 rounded-full bg-primary px-1 text-center text-[10px] font-semibold leading-4 text-primary-foreground tabular-nums"
-              >
-                {count}
-              </span>
-            )}
-          </Button>
-        }
-      />
-      <PopoverContent side="bottom" align="end" className="w-96 max-w-[calc(100vw-2rem)] p-0">
-        <div className="border-b px-4 py-3">
-          <p className="text-sm font-medium">{copy.title}</p>
-          <p className="mt-0.5 text-xs/relaxed text-muted-foreground">
-            {copy.subtitle}
-          </p>
-        </div>
-
-        <div className="p-2">
-          {loading ? (
-            <div className="flex flex-col gap-1.5 p-1.5">
-              <Skeleton className="h-12 w-full rounded-lg" />
-              <Skeleton className="h-12 w-full rounded-lg" />
-            </div>
-          ) : failed ? (
-            <p className="p-3 text-sm text-muted-foreground">{copy.error}</p>
-          ) : items && items.length > 0 ? (
-            <ul className="flex flex-col gap-1">
-              {items.map((item) => (
-                <li key={item.id}>
-                  <Link
-                    href={item.href ?? "/explorar"}
-                    onClick={() => setOpen(false)}
-                    className="group block rounded-lg px-3 py-2.5 outline-none transition-colors hover:bg-muted focus-visible:bg-muted"
-                  >
-                    <span className="block text-sm/relaxed">{item.text}</span>
-                    {/* Dark `--primary` is a button-fill orange (2.4:1 as text on
-                        the popover); `--primary-hover` is the legible one — same
-                        split the Button `accent` variant makes. */}
-                    <span className="mt-1.5 flex items-center gap-1 text-xs font-medium text-primary dark:text-primary-hover">
-                      {item.actionLabel ?? copy.defaultAction}
-                      <RiArrowRightLine className="size-3.5 transition-transform group-hover:translate-x-0.5" />
-                    </span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <div className="flex items-start gap-2.5 p-3">
-              <RiCheckboxCircleLine
-                className="mt-0.5 size-4 shrink-0 text-status-green"
-                aria-hidden
-              />
-              <div>
-                <p className="text-sm font-medium">{copy.allClearTitle}</p>
-                <p className="mt-0.5 text-xs/relaxed text-muted-foreground">
-                  {copy.allClearBody}
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
+    <Popover open={open} onOpenChange={handleOpenChange}>
+      <PopoverTrigger render={trigger} />
+      <PopoverContent
+        id={panelId}
+        side="bottom"
+        sideOffset={10}
+        align="end"
+        aria-labelledby={`${panelId}-title`}
+        aria-describedby={`${panelId}-description`}
+        className="next-actions-popover flex max-h-[min(70vh,640px)] w-[440px] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-lg border-border bg-popover p-0 shadow-lg"
+      >
+        {panel}
       </PopoverContent>
     </Popover>
   );

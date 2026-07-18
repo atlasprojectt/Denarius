@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { RiComputerLine, RiMoonLine, RiSunLine } from "@remixicon/react";
 
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 // Local appearance preference. No dependency: it flips the `.dark` class on
@@ -113,13 +114,15 @@ export function ThemeToggle({ className }: { className?: string }) {
   }
 
   return (
-    <button
+    <Button
       type="button"
+      variant="ghost"
+      size="icon-sm"
       onClick={toggle}
       aria-label={isDark ? copy.toLight : copy.toDark}
       title={isDark ? copy.toLight : copy.toDark}
       className={cn(
-        "inline-flex size-8 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
+        "size-8 border border-border",
         className,
       )}
     >
@@ -128,7 +131,7 @@ export function ThemeToggle({ className }: { className?: string }) {
       ) : (
         <RiMoonLine className="size-4" />
       )}
-    </button>
+    </Button>
   );
 }
 
@@ -201,13 +204,16 @@ function ThemeOption({
   onSelect: () => void;
 }) {
   return (
-    <button
+    <Button
       type="button"
+      variant="outline"
       onClick={onSelect}
       aria-pressed={selected}
       className={cn(
-        "group flex min-w-0 flex-col gap-3 rounded-xl border bg-card p-3 text-left transition-colors hover:bg-muted/40",
-        selected ? "border-primary ring-1 ring-primary/25" : "border-border",
+        "group relative h-auto min-w-0 flex-col items-stretch gap-3 rounded-xl bg-card p-3 text-left whitespace-normal hover:bg-muted/40",
+        selected
+          ? "border-border bg-muted/25 after:absolute after:right-5 after:bottom-1 after:left-5 after:h-0.5 after:rounded-full after:bg-brand-accent after:content-['']"
+          : "border-border",
       )}
     >
       <ThemePreview variant={variant} />
@@ -215,7 +221,7 @@ function ThemeOption({
         <span
           className={cn(
             "mt-0.5 inline-flex size-6 shrink-0 items-center justify-center",
-            selected ? "text-primary" : "text-muted-foreground",
+            selected ? "text-brand-accent-light" : "text-muted-foreground",
           )}
         >
           {icon}
@@ -227,7 +233,7 @@ function ThemeOption({
           </span>
         </span>
       </span>
-    </button>
+    </Button>
   );
 }
 

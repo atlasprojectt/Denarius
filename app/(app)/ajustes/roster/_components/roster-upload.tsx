@@ -116,13 +116,20 @@ export function RosterUpload() {
               name="intent"
               value="preview"
               variant="outline"
-              disabled={pending}
+              loading={pending}
+              loadingText={copy.validating}
             >
-              {pending ? copy.validating : copy.preview}
+              {copy.preview}
             </Button>
             {canCommit && (
-              <Button type="submit" name="intent" value="commit" disabled={pending}>
-                {pending ? copy.importing : copy.commit(preview!.validCount)}
+              <Button
+                type="submit"
+                name="intent"
+                value="commit"
+                loading={pending}
+                loadingText={copy.importing}
+              >
+                {copy.commit(preview!.validCount)}
               </Button>
             )}
           </div>

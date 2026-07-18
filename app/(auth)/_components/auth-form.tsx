@@ -94,7 +94,7 @@ export function AuthForm({ oauthError }: { oauthError?: string }) {
   // meaningful in login mode and only until a form submission returns its own.
   const shownError = state.error ?? (isSignup ? undefined : oauthError);
 
-  const inputClassName = "h-11 rounded-lg bg-background pl-10 text-[15px]";
+  const inputClassName = "h-11 bg-background pl-10 text-[15px]";
   const iconClassName = "size-4";
 
   return (
@@ -117,7 +117,7 @@ export function AuthForm({ oauthError }: { oauthError?: string }) {
             <div className="relative grid grid-cols-2 rounded-lg bg-muted p-1">
               <span
                 aria-hidden
-                className="absolute inset-y-1 left-1 w-[calc(50%-0.25rem)] rounded-md bg-background shadow-sm transition-transform duration-300"
+                className="absolute inset-y-1 left-1 w-[calc(50%-0.25rem)] rounded-md bg-background shadow-sm transition-transform duration-300 after:absolute after:right-3 after:bottom-0 after:left-3 after:h-0.5 after:rounded-full after:bg-brand-accent after:content-['']"
                 style={{
                   transitionTimingFunction: EASE,
                   transform: isSignup ? "translateX(100%)" : "translateX(0)",
@@ -129,19 +129,20 @@ export function AuthForm({ oauthError }: { oauthError?: string }) {
                   ["signup", copy.modeSignup],
                 ] as const
               ).map(([value, label]) => (
-                <button
+                <Button
                   key={value}
                   type="button"
+                  variant="ghost"
                   aria-pressed={mode === value}
                   onClick={() => setMode(value)}
-                  className={`relative z-10 h-9 rounded-md text-sm font-medium transition-colors duration-300 ${
+                  className={`relative z-10 h-9 bg-transparent text-sm font-medium transition-colors duration-300 hover:bg-transparent ${
                     mode === value
-                      ? "text-foreground"
+                      ? "text-brand-accent-light"
                       : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
                   {label}
-                </button>
+                </Button>
               ))}
             </div>
           </div>
@@ -200,20 +201,22 @@ export function AuthForm({ oauthError }: { oauthError?: string }) {
             <IconInput
               icon={<RiKey2Line className={iconClassName} />}
               trailing={
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="icon-sm"
                   aria-label={
                     showPassword ? copy.hidePassword : copy.showPassword
                   }
                   onClick={() => setShowPassword((v) => !v)}
-                  className="absolute inset-y-0 right-0 flex w-10 items-center justify-center rounded-r-lg text-muted-foreground transition-colors hover:text-foreground"
+                  className="absolute top-1/2 right-1 -translate-y-1/2"
                 >
                   {showPassword ? (
                     <RiEyeOffLine className={iconClassName} />
                   ) : (
                     <RiEyeLine className={iconClassName} />
                   )}
-                </button>
+                </Button>
               }
             >
               <Input
@@ -241,16 +244,12 @@ export function AuthForm({ oauthError }: { oauthError?: string }) {
           <Field className="denarius-auth-enter [animation-delay:180ms]">
             <Button
               type="submit"
-              disabled={pending}
-              className="h-11 w-full rounded-lg text-sm"
+              size="lg"
+              loading={pending}
+              loadingText={isSignup ? copy.submittingSignup : copy.submittingLogin}
+              className="w-full"
             >
-              {pending
-                ? isSignup
-                  ? copy.submittingSignup
-                  : copy.submittingLogin
-                : isSignup
-                  ? copy.submitSignup
-                  : copy.submitLogin}
+              {isSignup ? copy.submitSignup : copy.submitLogin}
             </Button>
           </Field>
 
@@ -258,7 +257,7 @@ export function AuthForm({ oauthError }: { oauthError?: string }) {
             {copy.or}
           </FieldSeparator>
           <Field className="denarius-auth-enter [animation-delay:240ms]">
-            <GoogleButton className="h-11 rounded-lg text-sm" />
+            <GoogleButton className="w-full" />
           </Field>
         </FieldGroup>
       </form>

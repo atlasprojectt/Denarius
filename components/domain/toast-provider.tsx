@@ -40,7 +40,7 @@ function ToastList() {
             <Toast.Description className="mt-0.5 text-xs/relaxed text-muted-foreground" />
           </div>
           <Toast.Close
-            className="absolute top-2.5 right-2.5 inline-flex size-7 items-center justify-center rounded-md text-muted-foreground outline-none hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/30"
+            className="absolute top-2.5 right-2.5 inline-flex size-7 items-center justify-center rounded-pill text-muted-foreground outline-none hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/30"
             aria-label="Fechar notificação"
           >
             <RiCloseLine className="size-4" />

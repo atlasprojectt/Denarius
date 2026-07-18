@@ -15,9 +15,9 @@ const copy: Record<VerdictStatus, string> = {
 // background alone read faint on dark surfaces — the border lifts the tag off
 // the card and sharpens the semaphore signal.
 const styles: Record<VerdictStatus, string> = {
-  green: "border border-status-green/40 bg-status-green-soft text-status-green-fg",
-  amber: "border border-status-amber/40 bg-status-amber-soft text-status-amber-fg",
-  red: "border border-status-red/40 bg-status-red-soft text-status-red-fg",
+  green: "border border-status-green/25 bg-status-green-soft text-status-green-fg",
+  amber: "border border-status-amber/25 bg-status-amber-soft text-status-amber-fg",
+  red: "border border-status-red/25 bg-status-red-soft text-status-red-fg",
   collecting: "border border-border bg-muted text-muted-foreground",
 };
 
@@ -31,7 +31,7 @@ const dot: Record<VerdictStatus, string> = {
 export function StatusPill({ status }: { status: VerdictStatus }) {
   return (
     <span
-      className={`inline-flex h-5 items-center gap-1.5 rounded-full px-2 text-xs font-medium ${styles[status]}`}
+      className={`inline-flex h-5 items-center gap-1.5 rounded-pill px-2 text-xs font-medium ${styles[status]}`}
     >
       <span aria-hidden className={`size-1.5 rounded-full ${dot[status]}`} />
       {copy[status]}

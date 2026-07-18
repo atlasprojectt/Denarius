@@ -50,7 +50,7 @@ function RevokeButton({ invitationId }: { invitationId: string }) {
       />
       <ConfirmationDialog
         trigger={
-          <Button type="button" variant="outline" size="sm">
+          <Button type="button" variant="destructive" size="sm">
             {copy.revoke}
           </Button>
         }

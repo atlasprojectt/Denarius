@@ -87,7 +87,7 @@ export function OtpDialog({
         <DialogHeader>
           <span
             aria-hidden
-            className="mb-1 flex size-10 items-center justify-center rounded-full bg-primary/10 text-primary dark:text-primary-hover"
+            className="mb-1 flex size-10 items-center justify-center rounded-full bg-muted text-muted-foreground"
           >
             <RiMailSendLine className="size-5" />
           </span>
@@ -109,7 +109,7 @@ export function OtpDialog({
             maxLength={6}
             required
             autoFocus
-            className="h-12 rounded-lg bg-background text-center text-2xl font-medium tracking-[0.5em] tabular-nums"
+            className="h-12 bg-background text-center text-2xl font-medium tracking-[0.5em] tabular-nums"
           />
           {error && (
             <p
@@ -127,7 +127,7 @@ export function OtpDialog({
           <Button
             type="submit"
             disabled={verifying}
-            className="h-11 w-full rounded-lg text-sm"
+            className="h-11 w-full text-sm"
           >
             {verifying ? copy.submitting : copy.submit}
           </Button>

@@ -1,13 +1,15 @@
 import Link from "next/link";
+import { RiArrowRightSLine } from "@remixicon/react";
 
+import { Button } from "@/components/ui/button";
 import type { Verdict } from "@/lib/engine/verdict";
 
 // The verdict line (frontend §3.3): always present, a status dot + the one
 // deterministic sentence the engine produced. Verdict-first — this is the
 // 10-second answer; everything below justifies it. The dot carries the semaphore
 // color; "collecting" stays neutral (no judgement before day 5). An optional
-// action ("Ver time" on a red verdict) renders as a brand-accent link — orange
-// is action, never status (§4 contrast rule for resting brand text).
+// action ("Ver time" on a red verdict) uses the shared contextual Button; only
+// its chevron moves, while the control remains stable.
 
 const dot: Record<Verdict["status"], string> = {
   green: "bg-status-green",
@@ -56,13 +58,12 @@ export function VerdictLine({
           {verdict.sentence}
         </p>
         {action !== null && (
-          <Link
-            href={action.href}
-            className="text-sm font-medium whitespace-nowrap text-primary hover:underline dark:text-primary-hover"
-          >
-            {action.label}
-            {" →"}
-          </Link>
+          <Button asChild variant="tertiary" size="sm" shape="pill" motion="forward">
+            <Link href={action.href}>
+              {action.label}
+              <RiArrowRightSLine className="size-3.5" data-icon="inline-end" aria-hidden />
+            </Link>
+          </Button>
         )}
       </div>
     </div>

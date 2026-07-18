@@ -111,8 +111,8 @@ export function InviteForm() {
           </Select>
         </div>
 
-        <Button type="submit" disabled={pending}>
-          {pending ? copy.submitting : copy.submit}
+        <Button type="submit" loading={pending} loadingText={copy.submitting}>
+          {copy.submit}
         </Button>
       </div>
 
