@@ -14,7 +14,7 @@ export function CoverPanel() {
         {/* unoptimized: serve the lossless artwork at its native resolution —
             the optimizer's resized variants soften the fine grain texture. */}
         <Image
-          src="/login-cover.webp"
+          src="/login-cover.png"
           alt=""
           fill
           priority
