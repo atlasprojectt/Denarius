@@ -111,6 +111,19 @@ describe("buildMonthlyPace", () => {
     });
     // day = 10 + (2000-1000)/(3100-1000) × (31-10) = 10 + (1000/2100)×21 = 20
     expect(pace.crossing?.day).toBeCloseTo(20);
+    expect(pace.crossing?.displayDay).toBe(20);
+    expect(pace.projectionBudgetDelta).toBe(1100);
+    expect(pace.projectionBudgetDeltaRatio).toBeCloseTo(0.55);
+  });
+
+  it("exposes no projection-to-budget delta while collecting or without a budget", () => {
+    const collecting = buildMonthlyPace(base);
+    expect(collecting.projectionBudgetDelta).toBeNull();
+    expect(collecting.projectionBudgetDeltaRatio).toBeNull();
+
+    const noBudget = buildMonthlyPace({ ...base, budget: 0, projection: 3100 });
+    expect(noBudget.projectionBudgetDelta).toBeNull();
+    expect(noBudget.projectionBudgetDeltaRatio).toBeNull();
   });
 
   it("has no crossing while collecting, when already breached, or when the projection stays under budget", () => {

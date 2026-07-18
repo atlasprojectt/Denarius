@@ -1,8 +1,8 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 
-import { ActionStatus } from "@/components/domain/action-status";
+import { ActionToast } from "@/components/domain/toast-provider";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -12,9 +12,11 @@ import {
 } from "@/lib/settings/actions";
 
 const copy = {
-  label: "Receber o resumo semanal por e-mail",
-  hint: "Enviado às sextas para administradores. Alertas de orçamento não são afetados.",
-  save: "Salvar preferência",
+  label: "Receber resumo semanal por e-mail",
+  description:
+    "Enviado às sextas-feiras para administradores, com os principais números do período.",
+  note: "Alertas de orçamento não são afetados.",
+  save: "Salvar notificações",
   saving: "Salvando...",
 };
 
@@ -25,27 +27,58 @@ export function DigestForm({ receiveDigest }: { receiveDigest: boolean }) {
     updateDigestPreference,
     initialState,
   );
+  const [receive, setReceive] = useState(receiveDigest);
+
+  const changed = receive !== receiveDigest;
 
   return (
-    <form action={formAction} className="flex w-full flex-col gap-4">
-      <div className="flex w-full items-start justify-between gap-4 rounded-xl border bg-muted/30 p-4">
-        <div className="flex flex-col gap-0.5">
-          <Label htmlFor="receiveDigest">{copy.label}</Label>
-          <p className="text-sm/relaxed text-muted-foreground">{copy.hint}</p>
+    <form action={formAction} className="flex w-full flex-col gap-5">
+      <div className="flex min-h-11 items-start justify-between gap-5">
+        <div className="min-w-0 flex-1">
+          <Label htmlFor="receiveDigest" className="cursor-pointer text-[13px]">
+            {copy.label}
+          </Label>
+          <p
+            id="digest-description"
+            className="mt-1 text-xs/relaxed text-muted-foreground"
+          >
+            {copy.description}
+          </p>
+          <p
+            id="digest-note"
+            className="mt-1.5 text-xs/relaxed text-muted-foreground"
+          >
+            {copy.note}
+          </p>
         </div>
         <Switch
           id="receiveDigest"
           name="receiveDigest"
-          defaultChecked={receiveDigest}
+          checked={receive}
+          onCheckedChange={setReceive}
+          aria-describedby="digest-description digest-note"
+          className="mt-0.5"
         />
       </div>
 
-      <div className="flex flex-wrap items-center gap-3">
-        <Button type="submit" loading={pending} loadingText={copy.saving}>
+      <div className="flex justify-end">
+        <Button
+          type="submit"
+          loading={pending}
+          loadingText={copy.saving}
+          disabled={!changed || pending}
+          className="w-full md:w-auto"
+        >
           {copy.save}
         </Button>
-        <ActionStatus error={state.error} success={state.success} />
       </div>
+
+      <ActionToast
+        id="digest-preference"
+        state={state}
+        success={state.success}
+        error={state.error}
+      />
     </form>
   );
 }

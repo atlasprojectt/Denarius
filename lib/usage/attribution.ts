@@ -148,8 +148,8 @@ export type TeamsDiagnosis = {
 };
 
 /**
- * Month-to-date diagnosis for EVERY team in one pass (the Times page renders
- * all cards server-side): one usage_daily fetch resolved to teams via
+ * Month-to-date diagnosis for EVERY team in one pass (the Times index/detail
+ * reuse this batched read): one usage_daily fetch resolved to teams via
  * project_map, grouped by the pure lib/usage/diagnose.ts. Unmapped rows are
  * the Unattributed bucket — surfaced at the list level, never diagnosed here.
  * Privacy decides at the data layer (#23): names never leave the server when

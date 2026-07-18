@@ -98,7 +98,7 @@ export default async function HomePage() {
             cockpit.verdict.teamId !== null
               ? {
                   label: homeCopy.verdictAction,
-                  href: `/times?focus=${cockpit.verdict.teamId}`,
+                  href: `/times/${cockpit.verdict.teamId}`,
                 }
               : null
           }

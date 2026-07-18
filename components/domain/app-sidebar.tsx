@@ -70,7 +70,7 @@ type NavItem = (typeof cockpitItems)[number];
 // fade-out on collapse, delayed fade-in on expand so text appears as the
 // space opens. Pairs with the sidebar width override in globals.css.
 const fadeLabel =
-  "translate-x-0 transition-[opacity,transform] duration-200 delay-100 ease-out group-data-[collapsible=icon]:pointer-events-none group-data-[collapsible=icon]:-translate-x-1 group-data-[collapsible=icon]:opacity-0 group-data-[collapsible=icon]:delay-0 group-data-[collapsible=icon]:duration-150";
+  "translate-x-0 transition-[opacity,transform] duration-200 delay-100 ease-(--motion-ease-expressive) group-data-[collapsible=icon]:pointer-events-none group-data-[collapsible=icon]:-translate-x-1 group-data-[collapsible=icon]:opacity-0 group-data-[collapsible=icon]:delay-0 group-data-[collapsible=icon]:duration-150";
 
 // Keep the visual slot fixed while the button narrows. The expanded width is
 // absolute relative to the rail variable: animating from 100% would compound
@@ -85,7 +85,7 @@ const navIconSlot =
 const profileSlot = "grid size-8 shrink-0 place-items-center";
 
 // "/" only matches exactly; sections stay lit on their subroutes and query
-// variants (/times?focus=<id> keeps Times active — pathname stays /times).
+// variants (/times/<id> keeps Times active through the pathname prefix).
 function isActivePath(pathname: string, href: string): boolean {
   if (href === "/") return pathname === "/";
   return pathname === href || pathname.startsWith(`${href}/`);
@@ -164,10 +164,10 @@ export function AppSidebar({
           <Link
             href="/"
             aria-label={copy.brand}
-            className="relative flex h-9 items-center overflow-hidden rounded-md px-1.5 transition-[color,background-color,height,padding] duration-[320ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:bg-sidebar-accent group-data-[collapsible=icon]:h-9 group-data-[collapsible=icon]:px-0"
+            className="relative flex h-9 items-center overflow-hidden rounded-md px-1.5 transition-[color,background-color,height,padding] duration-[320ms] ease-(--motion-ease-expressive) hover:bg-sidebar-accent group-data-[collapsible=icon]:h-9 group-data-[collapsible=icon]:px-0"
           >
             <LogoWordmark className={`h-5.5 w-auto shrink-0 text-foreground ${fadeLabel}`} />
-            <LogoMark className="absolute top-1/2 left-1/2 size-5.5 -translate-x-1/2 -translate-y-1/2 scale-90 text-brand-accent opacity-0 transition-[opacity,scale] duration-200 ease-out group-data-[collapsible=icon]:scale-100 group-data-[collapsible=icon]:opacity-100 group-data-[collapsible=icon]:delay-100" />
+            <LogoMark className="absolute top-1/2 left-1/2 size-5.5 -translate-x-1/2 -translate-y-1/2 scale-90 text-brand-accent opacity-0 transition-[opacity,scale] duration-200 ease-(--motion-ease-expressive) group-data-[collapsible=icon]:scale-100 group-data-[collapsible=icon]:opacity-100 group-data-[collapsible=icon]:delay-100" />
           </Link>
         </SidebarHeader>
 
@@ -200,10 +200,10 @@ export function AppSidebar({
                     SidebarMenuButton. */}
                 <DropdownMenuTrigger
                   aria-label={copy.profileMenu}
-                  className="mx-auto flex h-12 w-[calc(var(--sidebar-width)-2rem)] items-center gap-0 overflow-hidden rounded-md py-0 pr-1 pl-2 text-left outline-hidden ring-sidebar-ring transition-[width,height,padding] duration-[320ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 data-open:bg-sidebar-accent data-open:text-sidebar-accent-foreground group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-0!"
+                  className="mx-auto flex h-12 w-[calc(var(--sidebar-width)-2rem)] items-center gap-0 overflow-hidden rounded-md py-0 pr-1 pl-2 text-left outline-hidden ring-sidebar-ring transition-[width,height,padding] duration-[320ms] ease-(--motion-ease-expressive) hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 data-open:bg-sidebar-accent data-open:text-sidebar-accent-foreground group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-0!"
                 >
                   <span data-sidebar-profile-slot className={profileSlot}>
-                    <Avatar className="size-8 shrink-0 transition-[width,height] duration-[320ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-data-[collapsible=icon]:size-7">
+                    <Avatar className="size-8 shrink-0 transition-[width,height] duration-[320ms] ease-(--motion-ease-expressive) group-data-[collapsible=icon]:size-7">
                       <AvatarFallback className="bg-sidebar-accent text-xs font-semibold text-sidebar-accent-foreground">
                         {userInitials}
                       </AvatarFallback>

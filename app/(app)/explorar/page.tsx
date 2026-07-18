@@ -1,10 +1,13 @@
 import Link from "next/link";
-import { RiCompass3Line } from "@remixicon/react";
+import {
+  RiCheckboxCircleLine,
+  RiCompass3Line,
+  RiInformationLine,
+} from "@remixicon/react";
 
 import { EmptyState } from "@/components/domain/empty-state";
-import { PageHeader } from "@/components/domain/page-header";
 import { PageContainer } from "@/components/domain/page-container";
-import { UsdValue } from "@/components/domain/usd-value";
+import { PageHeader } from "@/components/domain/page-header";
 import {
   Card,
   CardContent,
@@ -13,25 +16,35 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import { listBudgets } from "@/lib/budgets/queries";
 import { attributeSeats } from "@/lib/engine/accrual";
 import { oldestActiveSync } from "@/lib/engine/freshness";
-import { periodFx, usdDisplay } from "@/lib/engine/money-model";
+import {
+  periodFx,
+  usdDisplay,
+  type UsdDisplay,
+} from "@/lib/engine/money-model";
 import { currentPeriod } from "@/lib/engine/period";
+import { reconcile } from "@/lib/engine/reconcile";
 import { syncStamp } from "@/lib/format";
 import { money } from "@/lib/money";
 import { listSubscriptions } from "@/lib/subscriptions/queries";
 import { listTeams } from "@/lib/teams/queries";
 import { createClient } from "@/lib/supabase/server";
 import { apiSpendMonthToDate } from "@/lib/usage/queries";
+import {
+  CalculationDetails,
+  type CalculationItem,
+} from "./_components/calculation-details";
 import { ExploreTable, type ExploreRow } from "./_components/explore-table";
+import { ExploreTabs } from "./_components/explore-tabs";
 
 const copy = {
   title: "Explorar",
-  subtitle:
-    "Para onde o gasto vai: por modelo e por assinatura. A visão por time fica na aba Times; pessoas só aparecem no detalhamento de um time, quando permitido.",
+  subtitle: "Analise onde os gastos se concentram por modelo e por assentos.",
   asOf: (label: string, day: number, days: number) =>
-    `${label}, dia ${day} de ${days}`,
+    `${capitalize(label)} · dia ${day} de ${days}`,
   emptyTitle: "Sem dados para explorar ainda",
   emptyBody:
     "Conecte a OpenAI e a Anthropic para importar o gasto real de API, ou registre assinaturas e assentos para acompanhar o custo fixo por time.",
@@ -40,29 +53,38 @@ const copy = {
   seatsTitle: "Assentos por time",
   seatsSub: "Custo de assinaturas distribuído dia a dia no período.",
   colTeam: "Time",
-  colSpend: "Gasto (acumulado)",
+  colSpend: "Gasto acumulado",
   unattributed: "Não atribuído",
-  mapIt: "mapear",
-  reconcile: (total: string) =>
-    `Total da empresa = soma dos times + não atribuído = ${total} — sempre reconcilia.`,
-  apiTitle: (label: string) => `Uso de API por modelo — ${label}`,
-  apiHeadlineSuffix: "neste mês",
+  mapIt: "Mapear",
+  reconcile: (total: string) => `Total reconciliado: ${total}`,
+  apiTitle: (label: string) => `Uso de API por modelo — ${capitalize(label)}`,
   apiAsOf: (stamp: string) => `Atualizado ${stamp}`,
+  reported: "Gasto reportado",
+  priced: "Gasto precificado por modelo",
+  pricedDetail: "Total detalhado na lista",
+  unpriced: "Ainda sem precificação",
   colModel: "Modelo",
   colTokens: "Tokens",
-  colDerived: "Gasto derivado",
-  uncosted: "não precificado",
-  uncostedNote:
-    "Modelos sem preço na tabela aparecem como “não precificado” em vez de sumir do total.",
+  colDerived: "Gasto",
+  unpricedNote:
+    "Modelos sem preço aparecem em uma seção própria e seus tokens permanecem visíveis.",
   derivedNote: (derived: string, reported: string) =>
     `Derivado de tokens × preço: ${derived} · reportado pelos provedores: ${reported}.`,
   fxNote: (rate: string, date: string) =>
     `Convertido de US$ no câmbio congelado do período (${rate} por US$ 1, capturado em ${date}).`,
   fxMissingNote:
     "Câmbio do período indisponível — valores de API exibidos em US$ (originais), sem conversão estimada.",
-  navLabel: "Seções de exploração",
-  navModels: "Por modelo",
-  navSeats: "Assentos",
+  unpricedBand: (amount: string) =>
+    `${amount} ainda não foram distribuídos entre modelos porque existem modelos sem preço cadastrado.`,
+  overDerivedBand: (amount: string) =>
+    `O valor precificado supera o total reportado em ${amount}. Consulte os detalhes do cálculo.`,
+  calculationReported: "Total reportado pelo provedor",
+  calculationDerived: "Total derivado de tokens × preço",
+  calculationUnpriced: "Valor sem precificação",
+  calculationFx: "Câmbio congelado do período",
+  fxUnavailable: "Indisponível",
+  fxCaptured: (rate: string, date: string) =>
+    `${rate} por US$ 1 · capturado em ${date}`,
   zero: "Sem gasto neste período.",
 };
 
@@ -71,6 +93,12 @@ type ConnectionRow = {
   status: string;
   last_sync_at: string | null;
 };
+
+function capitalize(value: string): string {
+  return value.length === 0
+    ? value
+    : value[0].toLocaleUpperCase("pt-BR") + value.slice(1);
+}
 
 export default async function ExplorePage() {
   const period = currentPeriod();
@@ -101,17 +129,26 @@ export default async function ExplorePage() {
       ? `${money(usd * fx.rate, currency)} (${money(usd, "USD")})`
       : money(usd, "USD");
 
-  // Honest stamp across providers: totals are only as fresh as the LEAST
-  // fresh active connection — the shared oldestActiveSync rule, so this
-  // stamp can never disagree with the Home one for the same snapshot.
   const lastSyncAt = oldestActiveSync(
-    ((connectionData ?? []) as ConnectionRow[]).map((c) => ({
-      status: c.status,
-      lastSyncAt: c.last_sync_at,
+    ((connectionData ?? []) as ConnectionRow[]).map((connection) => ({
+      status: connection.status,
+      lastSyncAt: connection.last_sync_at,
     })),
   );
 
   const coldStart = subscriptions.length === 0 && !apiSpend.hasData;
+  const reconciliation = reconcile(apiSpend.derivedUsd, apiSpend.monthUsd);
+  const unpricedDisplay = usdDisplay(reconciliation.driftUsd, currency, fx);
+  const absoluteDifference = usdDisplay(
+    Math.abs(reconciliation.driftUsd),
+    currency,
+    fx,
+  );
+  const differenceAmount = primaryMoney(absoluteDifference);
+  const differenceNotice =
+    reconciliation.driftUsd >= 0
+      ? copy.unpricedBand(differenceAmount)
+      : copy.overDerivedBand(differenceAmount);
   const fxNote =
     fx !== null
       ? copy.fxNote(money(fx.rate, currency), fx.date ?? "—")
@@ -126,43 +163,79 @@ export default async function ExplorePage() {
       amount: row.uncosted ? null : display.display,
       originalUsd: row.uncosted ? undefined : usd,
       tokens: row.inputTokens + row.outputTokens,
-      note: row.uncosted ? copy.uncosted : undefined,
+      share:
+        !row.uncosted && apiSpend.derivedUsd > 0
+          ? usd / apiSpend.derivedUsd
+          : 0,
+      state: row.uncosted ? "unpriced" : "default",
     };
   });
 
-  const seatsByTeam = new Map(breakdown.teams.map((team) => [team.teamId, team.accrued]));
-  const seatRows: ExploreRow[] = allTeams.map((team) => ({
-    id: team.id,
-    label: team.name,
-    amount: seatsByTeam.get(team.id) ?? 0,
-    note: (seatsByTeam.get(team.id) ?? 0) === 0 ? copy.zero : undefined,
-  }));
+  const seatsByTeam = new Map(
+    breakdown.teams.map((team) => [team.teamId, team.accrued]),
+  );
+  const seatRows: ExploreRow[] = allTeams.map((team) => {
+    const amount = seatsByTeam.get(team.id) ?? 0;
+    return {
+      id: team.id,
+      label: team.name,
+      amount,
+      share: breakdown.orgTotal > 0 ? amount / breakdown.orgTotal : 0,
+      note: amount === 0 ? copy.zero : undefined,
+    };
+  });
   if (breakdown.unattributed > 0) {
     seatRows.push({
       id: "__unattributed__",
       label: copy.unattributed,
       amount: breakdown.unattributed,
+      share:
+        breakdown.orgTotal > 0
+          ? breakdown.unattributed / breakdown.orgTotal
+          : 0,
       href: "/ajustes/assinaturas",
-      note: copy.mapIt,
+      state: "unattributed",
+      actionLabel: copy.mapIt,
     });
   }
+
+  const calculationItems: CalculationItem[] = [
+    {
+      label: copy.calculationReported,
+      value: inDisplay(apiSpend.monthUsd),
+    },
+    {
+      label: copy.calculationDerived,
+      value: inDisplay(apiSpend.derivedUsd),
+    },
+    {
+      label: copy.calculationUnpriced,
+      value: primaryMoney(unpricedDisplay),
+    },
+    {
+      label: copy.calculationFx,
+      value:
+        fx !== null
+          ? copy.fxCaptured(money(fx.rate, currency), fx.date ?? "—")
+          : copy.fxUnavailable,
+    },
+  ];
+
+  const periodLabel = copy.asOf(
+    period.monthLabel,
+    period.dayOfPeriod,
+    period.daysInPeriod,
+  );
 
   return (
     <PageContainer variant="wide" className="gap-6">
       <PageHeader
         title={copy.title}
         description={copy.subtitle}
-        meta={copy.asOf(period.monthLabel, period.dayOfPeriod, period.daysInPeriod)}
+        meta={periodLabel}
       />
 
-      {!coldStart && (
-        <nav aria-label={copy.navLabel} className="sticky top-16 z-[5] flex flex-wrap gap-1 rounded-lg border bg-background/95 p-1 shadow-xs backdrop-blur">
-          {apiSpend.hasData && <a href="#por-modelo" className="rounded-md px-3 py-2 text-sm font-medium hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring/30">{copy.navModels}</a>}
-          {subscriptions.length > 0 && <a href="#assentos" className="rounded-md px-3 py-2 text-sm font-medium hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring/30">{copy.navSeats}</a>}
-        </nav>
-      )}
-
-      {coldStart && (
+      {coldStart ? (
         <EmptyState
           icon={<RiCompass3Line />}
           title={copy.emptyTitle}
@@ -174,78 +247,156 @@ export default async function ExplorePage() {
             <Link href="/ajustes/assinaturas">{copy.emptySeatsCta}</Link>
           }
         />
-      )}
+      ) : (
+        <ExploreTabs
+          models={
+            apiSpend.hasData ? (
+              <Card id="por-modelo" className="gap-0 py-0">
+                <CardHeader className="py-4">
+                  <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                    <CardTitle>{copy.apiTitle(period.monthLabel)}</CardTitle>
+                    {lastSyncAt && (
+                      <p className="text-[11px] text-muted-foreground tabular-nums">
+                        {copy.apiAsOf(syncStamp(lastSyncAt))}
+                      </p>
+                    )}
+                  </div>
+                </CardHeader>
 
-      {apiSpend.hasData && (
-        <Card id="por-modelo" className="scroll-mt-32">
-          <CardHeader>
-            <CardTitle className="text-sm">
-              {copy.apiTitle(period.monthLabel)}
-            </CardTitle>
-            {lastSyncAt && (
-              <CardAsOf>{copy.apiAsOf(syncStamp(lastSyncAt))}</CardAsOf>
-            )}
-          </CardHeader>
-          <CardContent className="flex flex-col gap-3">
-            <p className="text-2xl font-semibold tracking-tight tabular-nums">
-              <UsdValue value={usdDisplay(apiSpend.monthUsd, currency, fx)} />
-              <span className="ml-2 text-sm font-normal tracking-normal text-muted-foreground">
-                {copy.apiHeadlineSuffix}
-              </span>
-            </p>
-            <ExploreTable
-              rows={modelRows}
-              currency={currency}
-              labelHeader={copy.colModel}
-              tokensHeader={copy.colTokens}
-              amountHeader={copy.colDerived}
-            />
-          </CardContent>
-          <CardFooter className="flex-col items-start gap-1 text-xs/relaxed text-muted-foreground">
-            <p>
-              {copy.derivedNote(
-                inDisplay(apiSpend.derivedUsd),
-                inDisplay(apiSpend.monthUsd),
-              )}
-            </p>
-            <p>{copy.uncostedNote}</p>
-            <p>{fxNote}</p>
-          </CardFooter>
-        </Card>
-      )}
+                <CardContent className="p-0">
+                  <div className="flex flex-col border-y border-border/70 bg-muted/10 md:grid md:grid-cols-[1fr_auto_1fr_auto_1fr]">
+                    <FinancialMetric
+                      label={copy.reported}
+                      value={usdDisplay(apiSpend.monthUsd, currency, fx)}
+                      primary
+                    />
+                    <Separator className="md:hidden" />
+                    <Separator
+                      orientation="vertical"
+                      className="my-4 hidden md:block"
+                    />
+                    <FinancialMetric
+                      label={copy.priced}
+                      detail={copy.pricedDetail}
+                      value={usdDisplay(apiSpend.derivedUsd, currency, fx)}
+                    />
+                    <Separator className="md:hidden" />
+                    <Separator
+                      orientation="vertical"
+                      className="my-4 hidden md:block"
+                    />
+                    <FinancialMetric
+                      label={copy.unpriced}
+                      value={unpricedDisplay}
+                    />
+                  </div>
 
-      {subscriptions.length > 0 && (
-        <Card id="assentos" className="scroll-mt-32">
-          <CardHeader>
-            <CardTitle className="text-sm">{copy.seatsTitle}</CardTitle>
-            <CardDescription>{copy.seatsSub}</CardDescription>
-            <CardAsOf>
-              {copy.asOf(period.monthLabel, period.dayOfPeriod, period.daysInPeriod)}
-            </CardAsOf>
-          </CardHeader>
-          <CardContent>
-            <ExploreTable
-              rows={seatRows}
-              currency={currency}
-              labelHeader={copy.colTeam}
-              amountHeader={copy.colSpend}
-            />
-          </CardContent>
-          <CardFooter className="text-xs/relaxed text-muted-foreground">
-            <p>{copy.reconcile(money(breakdown.orgTotal, currency))}</p>
-          </CardFooter>
-        </Card>
+                  <div className="flex flex-col gap-3 p-4">
+                    <ExploreTable
+                      rows={modelRows}
+                      currency={currency}
+                      labelHeader={copy.colModel}
+                      tokensHeader={copy.colTokens}
+                      amountHeader={copy.colDerived}
+                    />
+
+                    <div className="flex items-start gap-2 rounded-lg border border-border/70 bg-muted/25 px-3 py-2.5 text-xs/relaxed text-muted-foreground">
+                      <RiInformationLine
+                        aria-hidden
+                        className="mt-0.5 size-3.5 shrink-0"
+                      />
+                      <p>{differenceNotice}</p>
+                    </div>
+
+                    <CalculationDetails
+                      items={calculationItems}
+                      notes={[
+                        copy.derivedNote(
+                          inDisplay(apiSpend.derivedUsd),
+                          inDisplay(apiSpend.monthUsd),
+                        ),
+                        copy.unpricedNote,
+                        fxNote,
+                      ]}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            ) : undefined
+          }
+          seats={
+            subscriptions.length > 0 ? (
+              <Card id="assentos" className="gap-0 py-0">
+                <CardHeader className="py-4">
+                  <CardTitle>{copy.seatsTitle}</CardTitle>
+                  <CardDescription>{copy.seatsSub}</CardDescription>
+                  <p className="text-[11px] text-muted-foreground tabular-nums">
+                    {periodLabel}
+                  </p>
+                </CardHeader>
+                <CardContent className="border-t border-border/70 p-4">
+                  <ExploreTable
+                    rows={seatRows}
+                    currency={currency}
+                    labelHeader={copy.colTeam}
+                    amountHeader={copy.colSpend}
+                  />
+                </CardContent>
+                <CardFooter className="border-t border-border/70 py-3 text-xs text-muted-foreground">
+                  <RiCheckboxCircleLine
+                    aria-hidden
+                    className="mr-2 size-3.5 shrink-0"
+                  />
+                  <p className="font-medium text-foreground tabular-nums">
+                    {copy.reconcile(money(breakdown.orgTotal, currency))}
+                  </p>
+                </CardFooter>
+              </Card>
+            ) : undefined
+          }
+        />
       )}
     </PageContainer>
   );
 }
 
-/**
- * "As of" honesty stamp inside a CardHeader (principle #3). Normal flow, under
- * the description — never competes with the title for width.
- */
-function CardAsOf({ children }: { children: React.ReactNode }) {
+function primaryMoney(value: UsdDisplay): string {
+  return value.display === null
+    ? money(value.usd, "USD")
+    : money(value.display, value.currency);
+}
+
+function FinancialMetric({
+  label,
+  detail,
+  value,
+  primary = false,
+}: {
+  label: string;
+  detail?: string;
+  value: UsdDisplay;
+  primary?: boolean;
+}) {
   return (
-    <div className="text-xs text-muted-foreground tabular-nums">{children}</div>
+    <div className="min-w-0 px-4 py-4">
+      <p className="text-[11px] font-medium text-muted-foreground">{label}</p>
+      <p
+        className={
+          primary
+            ? "mt-1 text-xl font-semibold tracking-tight text-foreground tabular-nums"
+            : "mt-1 text-lg font-medium tracking-tight text-foreground tabular-nums"
+        }
+      >
+        {primaryMoney(value)}
+      </p>
+      {value.display !== null && (
+        <p className="mt-0.5 text-[11px] text-muted-foreground tabular-nums">
+          {money(value.usd, "USD")}
+        </p>
+      )}
+      {detail && (
+        <p className="mt-1 text-[11px] text-muted-foreground">{detail}</p>
+      )}
+    </div>
   );
 }

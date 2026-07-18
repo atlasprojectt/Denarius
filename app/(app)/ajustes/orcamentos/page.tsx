@@ -69,7 +69,7 @@ export default async function BudgetsPage() {
   ];
 
   return (
-    <PageContainer variant="wide" className="gap-6">
+    <PageContainer variant="settings" className="gap-6">
       <PageHeader
         title={copy.title}
         description={copy.subtitle}

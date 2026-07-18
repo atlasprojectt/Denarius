@@ -1,59 +1,51 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { RiArrowRightSLine, RiTeamLine } from "@remixicon/react";
 
 import { EmptyState } from "@/components/domain/empty-state";
 import { PageContainer } from "@/components/domain/page-container";
 import { PageHeader } from "@/components/domain/page-header";
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { budgetedTeams } from "@/lib/engine/cockpit";
 import { getTimesData } from "@/lib/home/queries";
 import { money } from "@/lib/money";
 import { teamsDiagnosis } from "@/lib/usage/attribution";
-import {
-  BudgetedSummary,
-  BudgetedSummaryDetails,
-  DiagnosisBody,
-  UnbudgetedSummary,
-  UnbudgetedSummaryDetails,
-} from "./_components/diagnosis-sections";
-import { TeamDiagnosisCard } from "./_components/team-diagnosis-card";
-
-// The Times tab, Fase 1 da reestruturação triagem/gestão (2026-07): Home
-// triages, THIS page diagnoses. Every team — budgeted or not — is a
-// collapsible diagnosis card answering "o que aconteceu e o que eu ajusto?":
-// daily pace vs expected, spend decomposition, contributors (Admin-only),
-// state/projection, [Simular] and inline budget editing. `?focus=<team_id>`
-// (the Home warning's landing) opens that team's card and scrolls to it; the
-// cold sidebar entry shows all teams collapsed — completeness is the job, no
-// healthy-team collapse here. The unattributed bucket closes the list so
-// spend never silently disappears (invariant #3). No arithmetic here — the
-// engine and the diagnosis grouping already did it (architecture §9).
+import { TeamIndex } from "./_components/team-index";
 
 const copy = {
   title: "Times",
-  subtitle:
-    "O que aconteceu em cada setor — ritmo, decomposição, contribuintes e simulação. Expanda um time para diagnosticar.",
+  subtitle: "Compare gasto, orçamento e projeção por time.",
   asOf: (label: string, day: number, days: number) =>
-    `${label}, dia ${day} de ${days}`,
-  manageAll: "Gerenciar todos os orçamentos",
+    `${capitalize(label)} · dia ${day} de ${days}`,
+  manage: "Gerenciar orçamentos",
+  attention: "Precisa de atenção",
+  control: "No controle",
+  withoutBudget: "Sem orçamento",
+  withoutBudgetSub:
+    "O gasto continua visível; defina um limite para habilitar projeção e avisos.",
+  spent: "Gasto atual",
+  defineBudget: "Definir orçamento",
+  open: (team: string) => `Abrir diagnóstico de ${team}`,
   emptyTitle: "Nenhum time ainda",
   emptyBody:
     "Importe o roster para ver seus setores aqui, ou conecte os provedores para começar a atribuir o gasto.",
   emptyRosterCta: "Importar roster",
   emptyConnectCta: "Conectar provedores",
-  budgetedHeading: "Com orçamento",
-  unbudgetedHeading: "Sem orçamento",
-  unbudgetedLead:
-    "Setores ainda sem orçamento definido. O diagnóstico funciona; defina um orçamento para destravar veredito, projeção e avisos.",
   zero: "Sem gasto neste período.",
   noFx: "API em US$ não somada — câmbio do período indisponível.",
-  unattributed: "Não atribuído",
-  mapIt: "Gasto sem time — mapeie em Ajustes → Atribuição.",
+  unattributedTitle: "Gasto sem atribuição",
+  unattributedBody: (amount: string) =>
+    `${amount} ainda não estão associados a um time.`,
+  map: "Mapear gasto",
 };
 
-/** Cent-rounded comparisons — a sub-cent float must not suppress the zero note
- *  while money() displays it as 0,00. */
 const cents = (value: number) => Math.round(value * 100);
+
+function capitalize(value: string): string {
+  return value.length === 0
+    ? value
+    : value[0].toLocaleUpperCase("pt-BR") + value.slice(1);
+}
 
 export default async function TimesPage({
   searchParams,
@@ -67,7 +59,6 @@ export default async function TimesPage({
   ]);
   const { cockpit, period, currency, teams } = data;
 
-  // No teams at all → cold-start CTA, never a blank screen (F5 required state).
   if (teams.length === 0) {
     return (
       <PageContainer variant="wide" className="gap-6">
@@ -76,9 +67,7 @@ export default async function TimesPage({
           icon={<RiTeamLine />}
           title={copy.emptyTitle}
           description={copy.emptyBody}
-          primaryAction={
-            <Link href="/ajustes/roster">{copy.emptyRosterCta}</Link>
-          }
+          primaryAction={<Link href="/ajustes/roster">{copy.emptyRosterCta}</Link>}
           secondaryAction={
             <Link href="/ajustes/conexoes">{copy.emptyConnectCta}</Link>
           }
@@ -87,69 +76,30 @@ export default async function TimesPage({
     );
   }
 
-  const budgeted = budgetedTeams(cockpit);
-  const budgetedIds = new Set(budgeted.map((t) => t.teamId));
-  const teamName = new Map(teams.map((t) => [t.id, t.name]));
+  const teamIds = new Set(teams.map((team) => team.id));
+  if (focus && teamIds.has(focus)) redirect(`/times/${focus}`);
 
-  // Only a real team id focuses — a stale or foreign id degrades to the cold
-  // entry instead of scrolling nowhere.
-  const focusId = focus !== undefined && teamName.has(focus) ? focus : null;
-
+  const attention = cockpit.state === "ready" ? cockpit.needsAttention : [];
+  const control = cockpit.state === "ready" ? cockpit.underControl : [];
+  const budgetedIds = new Set(
+    [...attention, ...control].map((team) => team.teamId),
+  );
+  const withoutBudget = teams.filter((team) => !budgetedIds.has(team.id));
   const org =
     cockpit.state === "ready"
       ? { projection: cockpit.org.projection, budget: cockpit.org.budget }
       : null;
 
-  const unbudgeted = teams.filter((t) => !budgetedIds.has(t.id));
-
-  /** Combined-spend summary line for a team without a budget (FX-missing
-   *  disclosed, never guessed — invariant #4). */
-  const unbudgetedSpend = (teamId: string): { spend: string; note?: string } => {
-    if (data.combinedByTeam !== null) {
-      const combined = data.combinedByTeam.get(teamId) ?? 0;
-      return {
-        spend: money(combined, currency),
-        note: cents(combined) === 0 ? copy.zero : undefined,
-      };
-    }
-    const seat = data.seatByTeam.get(teamId) ?? 0;
-    const apiUsd = data.apiUsdByTeam.get(teamId) ?? 0;
-    return {
-      spend: money(seat, currency),
-      note: apiUsd > 0 ? copy.noFx : cents(seat) === 0 ? copy.zero : undefined,
-    };
-  };
-
-  const diagnosisBody = (teamId: string, name: string) => (
-    <DiagnosisBody
-      teamId={teamId}
-      teamName={name}
-      currency={currency}
-      period={period}
-      fx={data.fx}
-      seatAccrued={data.seatByTeam.get(teamId) ?? 0}
-      apiUsd={data.apiUsdByTeam.get(teamId) ?? 0}
-      diagnosis={diagnosis.byTeam.get(teamId) ?? null}
-      cockpitTeam={budgeted.find((t) => t.teamId === teamId) ?? null}
-      org={org}
-      isAdmin={diagnosis.isAdmin}
-      namesHidden={diagnosis.namesHidden}
-    />
-  );
-
-  // The unattributed bucket is first-class (invariant #3): shared seats and
-  // unmapped API spend close the list with a nudge to Atribuição.
   const unattributed = (() => {
     if (data.combinedUnattributed !== null) {
       return cents(data.combinedUnattributed) > 0
-        ? { spend: money(data.combinedUnattributed, currency), note: copy.mapIt }
+        ? money(data.combinedUnattributed, currency)
         : null;
     }
     if (cents(data.seatUnattributed) > 0 || data.apiUnattributedUsd > 0) {
-      return {
-        spend: money(data.seatUnattributed, currency),
-        note: data.apiUnattributedUsd > 0 ? copy.noFx : copy.mapIt,
-      };
+      return data.apiUnattributedUsd > 0
+        ? `${money(data.seatUnattributed, currency)} + ${money(data.apiUnattributedUsd, "USD")}`
+        : money(data.seatUnattributed, currency);
     }
     return null;
   })();
@@ -162,83 +112,112 @@ export default async function TimesPage({
         meta={copy.asOf(period.monthLabel, period.dayOfPeriod, period.daysInPeriod)}
         actions={
           diagnosis.isAdmin ? (
-            <Link
-              href="/ajustes/orcamentos"
-              className="text-xs text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline"
-            >
-              {copy.manageAll}
-            </Link>
+          <Button asChild variant="secondary" size="sm" shape="compact">
+            <Link href="/ajustes/orcamentos">{copy.manage}</Link>
+          </Button>
           ) : undefined
         }
       />
 
-      {budgeted.length > 0 && (
-        <section aria-label={copy.budgetedHeading} className="flex flex-col gap-3">
-          {budgeted.map((team) => (
-            <TeamDiagnosisCard
-              key={team.teamId}
-              teamName={team.teamName}
-              focused={focusId === team.teamId}
-              header={<BudgetedSummary team={team} />}
-              headerDetails={
-                <BudgetedSummaryDetails team={team} currency={currency} />
-              }
-            >
-              {diagnosisBody(team.teamId, team.teamName)}
-            </TeamDiagnosisCard>
-          ))}
-        </section>
+      {org && (
+        <div className="flex flex-col gap-5">
+          <TeamIndex
+            title={copy.attention}
+            teams={attention}
+            currency={currency}
+            org={org}
+            priority="attention"
+          />
+          <TeamIndex
+            title={copy.control}
+            teams={control}
+            currency={currency}
+            org={org}
+            priority="control"
+          />
+        </div>
       )}
 
-      {unbudgeted.length > 0 && (
-        <section aria-label={copy.unbudgetedHeading} className="flex flex-col gap-3">
-          <div>
-            <h2 className="text-sm font-medium">{copy.unbudgetedHeading}</h2>
-            <p className="mt-0.5 text-xs/relaxed text-muted-foreground">
-              {copy.unbudgetedLead}
+      {withoutBudget.length > 0 && (
+        <section aria-labelledby="without-budget-title">
+          <div className="mb-2">
+            <h2 id="without-budget-title" className="text-sm font-medium">
+              {copy.withoutBudget}
+            </h2>
+            <p className="mt-0.5 text-[11px] text-muted-foreground">
+              {copy.withoutBudgetSub}
             </p>
           </div>
-          {unbudgeted.map((team) => {
-            const summary = unbudgetedSpend(team.id);
-            return (
-              <TeamDiagnosisCard
-                key={team.id}
-                teamName={team.name}
-                focused={focusId === team.id}
-                header={<UnbudgetedSummary name={team.name} />}
-                headerDetails={
-                  <UnbudgetedSummaryDetails
-                    spend={summary.spend}
-                    note={summary.note}
-                  />
-                }
-              >
-                {diagnosisBody(team.id, team.name)}
-              </TeamDiagnosisCard>
-            );
-          })}
+          <Card className="gap-0 py-0">
+            <div className="divide-y divide-border/60">
+              {withoutBudget.map((team) => {
+                const combined = data.combinedByTeam?.get(team.id);
+                const seat = data.seatByTeam.get(team.id) ?? 0;
+                const apiUsd = data.apiUsdByTeam.get(team.id) ?? 0;
+                const spend =
+                  combined !== undefined
+                    ? money(combined, currency)
+                    : apiUsd > 0
+                      ? `${money(seat, currency)} + ${money(apiUsd, "USD")}`
+                      : money(seat, currency);
+                const note =
+                  combined !== undefined && cents(combined) === 0
+                    ? copy.zero
+                    : combined === undefined && apiUsd > 0
+                      ? copy.noFx
+                      : undefined;
+
+                return (
+                  <Link
+                    key={team.id}
+                    href={`/times/${team.id}`}
+                    aria-label={copy.open(team.name)}
+                    className="group flex min-h-14 items-center gap-4 px-4 py-3 outline-none transition-colors duration-(--motion-duration-standard) ease-(--motion-ease-standard) hover:bg-muted/20 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/40"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-[13px] font-medium">{team.name}</p>
+                      {note && (
+                        <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
+                          {note}
+                        </p>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[11px] text-muted-foreground">{copy.spent}</p>
+                      <p className="text-[13px] font-medium tabular-nums">{spend}</p>
+                    </div>
+                    <span className="hidden text-[11px] text-muted-foreground sm:block">
+                      {copy.defineBudget}
+                    </span>
+                    <RiArrowRightSLine className="size-4 shrink-0 text-muted-foreground transition-transform duration-(--motion-duration-fast) ease-(--motion-ease-standard) group-hover:translate-x-0.5" />
+                  </Link>
+                );
+              })}
+            </div>
+          </Card>
         </section>
       )}
 
-      {unattributed !== null && (
-        <Card className="py-0">
-          <Link
-            href="/ajustes/atribuicao"
-            className="group flex items-center gap-3 px-(--card-spacing) py-(--card-spacing) outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/30"
-          >
+      {unattributed && (
+        <Card className="gap-0 py-0">
+          <div className="flex flex-col gap-3 px-4 py-3.5 sm:flex-row sm:items-center">
+            <span
+              aria-hidden
+              className="size-2 shrink-0 rounded-full bg-muted-foreground"
+            />
             <div className="min-w-0 flex-1">
-              <p className="truncate font-medium transition-colors group-hover:text-foreground">
-                {copy.unattributed}
-              </p>
-              <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                {unattributed.note}
+              <h2 className="text-[13px] font-medium">{copy.unattributedTitle}</h2>
+              <p className="mt-0.5 text-[11px] text-muted-foreground tabular-nums">
+                {copy.unattributedBody(unattributed)}
               </p>
             </div>
-            <span className="shrink-0 text-sm tabular-nums text-muted-foreground">
-              {unattributed.spend}
-            </span>
-            <RiArrowRightSLine className="size-4 shrink-0 text-muted-foreground transition-transform duration-150 group-hover:translate-x-0.5" />
-          </Link>
+            <Button asChild variant="tertiary" size="xs" motion="forward">
+              <Link href="/ajustes/atribuicao">
+                {copy.map}
+                <RiArrowRightSLine data-icon="inline-end" aria-hidden />
+              </Link>
+            </Button>
+          </div>
         </Card>
       )}
     </PageContainer>

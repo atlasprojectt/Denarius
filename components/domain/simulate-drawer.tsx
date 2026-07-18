@@ -66,6 +66,7 @@ export type SimulateDrawerProps = {
   currency: string;
   team: { spent: number; projection: number | null; budget: number };
   org: { projection: number | null; budget: number };
+  triggerLabel?: string;
 };
 
 function deltaLabel(deltaPct: number): string {
@@ -75,7 +76,7 @@ function deltaLabel(deltaPct: number): string {
 }
 
 export function SimulateDrawer(props: SimulateDrawerProps) {
-  const { teamName, currency, team, org } = props;
+  const { teamName, currency, team, org, triggerLabel = copy.title } = props;
   const [deltaPct, setDeltaPct] = useState(0);
 
   // Before day 5 the projection guard holds — nothing honest to simulate.
@@ -88,7 +89,7 @@ export function SimulateDrawer(props: SimulateDrawerProps) {
       <SheetTrigger asChild>
         <Button variant="outline" size="sm">
           <RiEqualizer2Line className="size-4" />
-          {copy.title}
+          {triggerLabel}
         </Button>
       </SheetTrigger>
       <SheetContent className="w-full sm:max-w-md">

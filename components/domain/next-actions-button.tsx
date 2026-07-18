@@ -114,7 +114,7 @@ function ActionsPanel({
             {items.map((item) => (
               <li
                 key={item.id}
-                className="px-4 py-4 transition-colors duration-150 hover:bg-muted/30 focus-within:bg-muted/20"
+                className="px-4 py-4 transition-colors duration-(--motion-duration-standard) ease-(--motion-ease-standard) hover:bg-muted/30 focus-within:bg-muted/20"
               >
                 <p className="text-sm font-semibold text-foreground">
                   {item.title ?? item.text}
@@ -194,7 +194,9 @@ export function NextActionsButton() {
   const count = items?.length ?? 0;
   const handleOpenChange = (next: boolean) => {
     setOpen(next);
-    if (next) void load();
+    // The mount effect already prefetched once per page load; refetch on open
+    // only when that prefetch hasn't landed (or failed), never in duplicate.
+    if (next && items === null && !loading) void load();
   };
   const trigger = (
     <Button
@@ -218,7 +220,7 @@ export function NextActionsButton() {
         </span>
       )}
       <RiArrowDownSLine
-        className="-ml-0.5 size-3.5 text-muted-foreground/70"
+        className={`-ml-0.5 size-3.5 text-muted-foreground/70 transition-transform duration-(--motion-duration-fast) ease-(--motion-ease-standard) ${open ? "rotate-180" : ""}`}
         data-icon="disclosure"
         aria-hidden
       />

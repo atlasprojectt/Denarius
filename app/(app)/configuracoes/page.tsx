@@ -1,46 +1,33 @@
 import { redirect } from "next/navigation";
-import {
-  RiNotification3Line,
-  RiBrushLine,
-  RiUserLine,
-} from "@remixicon/react";
 
 import { PageHeader } from "@/components/domain/page-header";
 import { PageContainer } from "@/components/domain/page-container";
 import { ThemePicker } from "@/components/domain/theme-toggle";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import {
-  Item,
-  ItemActions,
-  ItemContent,
-  ItemDescription,
-  ItemFooter,
-  ItemGroup,
-  ItemMedia,
-  ItemTitle,
-} from "@/components/ui/item";
+import { Separator } from "@/components/ui/separator";
 import { profileInitials, profileLabel } from "@/lib/settings/account";
 import { createClient } from "@/lib/supabase/server";
 import { DigestForm } from "./_components/digest-form";
+import { PreferenceSection } from "./_components/preference-section";
 import { ProfileForm } from "./_components/profile-form";
 
 const copy = {
-  title: "Configurações",
-  subtitle: "Perfil, aparência e preferências locais deste navegador.",
-  profileTitle: "Seu perfil",
-  profileSub: "Este nome aparece dentro do Denarius. O e-mail vem do login.",
-  email: "E-mail",
+  title: "Preferências",
+  subtitle: "Gerencie seu perfil, aparência e preferências de comunicação.",
+  profileTitle: "Perfil",
+  profileSub: "Informações usadas para identificar você dentro do Denarius.",
   roleLabel: {
     admin: "Administrador",
     viewer: "Visualizador",
   } as Record<string, string>,
   appearanceTitle: "Aparência",
   appearanceSub:
-    "O tema fica salvo neste navegador — Sistema acompanha o seu sistema operacional. Não altera dados da empresa.",
+    "O tema é salvo neste navegador e não altera as preferências da empresa.",
   notificationsTitle: "Notificações",
   notificationsSub:
-    "O resumo semanal chega por e-mail às sextas, com os números do período.",
+    "Escolha quais comunicações deseja receber por e-mail.",
 };
 
 type AccountRow = {
@@ -77,84 +64,62 @@ export default async function PersonalSettingsPage() {
   });
 
   return (
-    <PageContainer className="gap-6">
+    <PageContainer variant="form" className="gap-6">
       <PageHeader title={copy.title} description={copy.subtitle} />
 
-      <Card>
+      <Card className="gap-0 py-0">
         <CardContent className="p-0">
-          <ItemGroup className="gap-0">
-            <Item className="rounded-none border-0 px-5 py-5">
-              <Avatar size="lg" className="size-16">
-                <AvatarFallback className="text-lg font-semibold">
-                  {initials}
-                </AvatarFallback>
-              </Avatar>
+          <PreferenceSection
+            id="profile-preferences-title"
+            title={copy.profileTitle}
+            description={copy.profileSub}
+          >
+            <div className="flex flex-col gap-5">
+              <div className="flex items-center gap-3.5 sm:gap-4">
+                <Avatar size="lg" className="size-14 sm:size-16">
+                  <AvatarFallback className="text-lg font-semibold">
+                    {initials}
+                  </AvatarFallback>
+                </Avatar>
 
-              <ItemContent>
-                <ItemTitle className="text-base">
-                  <RiUserLine
-                    className="size-4 text-muted-foreground"
-                    aria-hidden
-                  />
-                  {displayName}
-                </ItemTitle>
-                <ItemDescription>
-                  {copy.profileSub} {copy.email}: {account.email}
-                </ItemDescription>
-              </ItemContent>
-
-              <ItemActions className="self-start">
-                <span className="rounded-full border bg-muted/40 px-2.5 py-1 text-xs font-medium">
-                  {copy.roleLabel[account.role] ?? account.role}
-                </span>
-              </ItemActions>
-
-              <ItemFooter className="mt-4">
-                <div className="w-full rounded-xl border bg-muted/30 p-4">
-                  <ProfileForm displayName={displayName} />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-base font-semibold">{displayName}</p>
+                  <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                    {account.email}
+                  </p>
                 </div>
-              </ItemFooter>
-            </Item>
 
-            <div className="border-t" />
+                <Badge variant="outline" className="self-start sm:self-center">
+                  {copy.roleLabel[account.role] ?? account.role}
+                </Badge>
+              </div>
 
-            <Item className="rounded-none border-0 px-5 py-5">
-              <ItemMedia
-                variant="icon"
-                className="size-8 text-muted-foreground"
+              <ProfileForm displayName={displayName} />
+            </div>
+          </PreferenceSection>
+
+          <Separator />
+
+          <PreferenceSection
+            id="appearance-preferences-title"
+            title={copy.appearanceTitle}
+            description={copy.appearanceSub}
+          >
+            <ThemePicker />
+          </PreferenceSection>
+
+          {account.role === "admin" && (
+            <>
+              <Separator />
+              <PreferenceSection
+                id="notification-preferences-title"
+                title={copy.notificationsTitle}
+                description={copy.notificationsSub}
               >
-                <RiBrushLine className="size-4" aria-hidden />
-              </ItemMedia>
-              <ItemContent>
-                <ItemTitle>{copy.appearanceTitle}</ItemTitle>
-                <ItemDescription>{copy.appearanceSub}</ItemDescription>
-              </ItemContent>
-              <ItemFooter className="mt-4">
-                <ThemePicker />
-              </ItemFooter>
-            </Item>
-
-            {account.role === "admin" && (
-              <>
-                <div className="border-t" />
-                <Item className="rounded-none border-0 px-5 py-5">
-                  <ItemMedia
-                    variant="icon"
-                    className="size-8 text-muted-foreground"
-                  >
-                    <RiNotification3Line className="size-4" aria-hidden />
-                  </ItemMedia>
-                  <ItemContent>
-                    <ItemTitle>{copy.notificationsTitle}</ItemTitle>
-                    <ItemDescription>{copy.notificationsSub}</ItemDescription>
-                  </ItemContent>
-                  <ItemFooter className="mt-4">
-                    <DigestForm receiveDigest={!account.digest_opt_out} />
-                  </ItemFooter>
-                </Item>
-              </>
-            )}
-          </ItemGroup>
+                <DigestForm receiveDigest={!account.digest_opt_out} />
+              </PreferenceSection>
+            </>
+          )}
         </CardContent>
       </Card>
     </PageContainer>

@@ -1,5 +1,5 @@
 // Denarius — per-team API diagnosis grouping (pure, no I/O). One pass over the
-// month's mapped usage rows produces everything a team's diagnosis card shows:
+// month's mapped usage rows produces everything a team's diagnosis page shows:
 // the costed daily series (feeds buildCumulativeSpend), the by-provider split
 // (derived cost only — cost_daily has no team grain, so a per-team source
 // split can only be honest at the token-derived grain, disclosed at the UI),

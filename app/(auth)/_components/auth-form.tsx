@@ -47,7 +47,7 @@ const initialState: AuthFormState = {};
 
 type Mode = "login" | "signup";
 
-const EASE = "cubic-bezier(0.16,1,0.3,1)";
+const EASE = "var(--motion-ease-expressive)";
 
 // Local icon-input composition — the shared Input primitive stays untouched
 // (F5); the icon is decorative, the trailing slot hosts the password eye.
@@ -117,7 +117,7 @@ export function AuthForm({ oauthError }: { oauthError?: string }) {
             <div className="relative grid grid-cols-2 rounded-lg bg-muted p-1">
               <span
                 aria-hidden
-                className="absolute inset-y-1 left-1 w-[calc(50%-0.25rem)] rounded-md bg-background shadow-sm transition-transform duration-300 after:absolute after:right-3 after:bottom-0 after:left-3 after:h-0.5 after:rounded-full after:bg-brand-accent after:content-['']"
+                className="absolute inset-y-1 left-1 w-[calc(50%-0.25rem)] rounded-md bg-background shadow-sm transition-transform duration-(--motion-duration-max)"
                 style={{
                   transitionTimingFunction: EASE,
                   transform: isSignup ? "translateX(100%)" : "translateX(0)",
@@ -135,9 +135,9 @@ export function AuthForm({ oauthError }: { oauthError?: string }) {
                   variant="ghost"
                   aria-pressed={mode === value}
                   onClick={() => setMode(value)}
-                  className={`relative z-10 h-9 bg-transparent text-sm font-medium transition-colors duration-300 hover:bg-transparent ${
+                  className={`relative z-10 h-9 bg-transparent text-sm font-medium transition-colors duration-(--motion-duration-standard) hover:bg-transparent ${
                     mode === value
-                      ? "text-brand-accent-light"
+                      ? "text-foreground"
                       : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
@@ -152,7 +152,7 @@ export function AuthForm({ oauthError }: { oauthError?: string }) {
               while hidden, so login submissions never carry it. */}
           <div
             aria-hidden={!isSignup}
-            className={`grid transition-[grid-template-rows,opacity] duration-300 ${
+            className={`grid transition-[grid-template-rows,opacity] duration-(--motion-duration-max) ${
               isSignup
                 ? "[grid-template-rows:1fr] opacity-100"
                 : "[grid-template-rows:0fr] opacity-0"

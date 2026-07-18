@@ -1,96 +1,91 @@
 import Link from "next/link";
 import { RiArrowRightLine } from "@remixicon/react";
 
-import { BudgetBar } from "@/components/domain/budget-bar";
 import { ProviderIcon, type ProviderIconName } from "@/components/domain/provider-icon";
-import { SimulateDrawer } from "@/components/domain/simulate-drawer";
-import { StatusPill } from "@/components/domain/status-pill";
 import { UsdValue } from "@/components/domain/usd-value";
+import { Badge } from "@/components/ui/badge";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableFooter,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import type { CockpitTeam } from "@/lib/engine/cockpit";
+import { cut, TICKS } from "@/lib/bars";
 import { buildCumulativeSpend } from "@/lib/engine/cumulative";
 import { costBridge, usdDisplay, type FrozenFx } from "@/lib/engine/money-model";
 import type { Period } from "@/lib/engine/period";
 import { percent } from "@/lib/format";
 import { money } from "@/lib/money";
 import type { TeamApiDiagnosis } from "@/lib/usage/diagnose";
-import { BudgetEditDialog } from "./budget-edit-dialog";
 import { CumulativeChart } from "./cumulative-chart";
-
-// The diagnosis body of one team card (Fase 1 da reestruturação: /times é a
-// página de gestão). Server-rendered sections answering "o que aconteceu?":
-// estado e projeção (same engine numbers as Home), ritmo diário, decomposição
-// do gasto (assentos vs API, por fonte), contribuintes (Admin-only — controle,
-// não vigilância) and the curated control plan. All arithmetic is
-// engine-provided; this file only lays it out (architecture §9).
+import { SpendCalculationDetails } from "./spend-calculation-details";
+import { TeamProgress } from "./team-progress";
 
 const copy = {
-  simulate: "Simular",
-  stateTitle: "Estado e projeção",
-  stateSub: "Assentos + API convertidos no câmbio congelado do período.",
+  summaryTitle: "Resumo executivo",
+  summarySub: "Situação do time no período atual.",
   spent: "Gasto",
   budget: "Orçamento",
-  usage: "Consumo",
-  projection: "Projeção de fechamento",
+  projection: "Projeção",
   projectedMargin: "Margem projetada",
-  collecting: "coletando ritmo",
+  collecting: "Coletando ritmo",
+  consumption: (value: string) => `${value} do orçamento consumido`,
+  noBudget: "Este time ainda não tem orçamento definido.",
+  conclusionBreach: (amount: string) =>
+    `O time já ultrapassou o orçamento em ${amount}.`,
+  conclusionRisk: (amount: string) =>
+    `O gasto ainda está dentro do orçamento, mas deve fechar ${amount} acima.`,
+  conclusionControl: (amount: string) =>
+    `No ritmo atual, o time deve fechar ${amount} abaixo do orçamento.`,
+  conclusionCollecting:
+    "Ainda não há histórico suficiente para projetar o fechamento deste período.",
+  chartTitle: "Evolução do gasto",
+  chartSub:
+    "Gasto acumulado, projeção, orçamento e ritmo esperado ao longo do período.",
+  chartSubNoBudget:
+    "Gasto acumulado no período. Defina um orçamento para habilitar projeção e ritmo esperado.",
+  chartEmpty: "Sem gasto registrado neste período ainda.",
   collectingNote:
-    "Coletando ritmo — a projeção de fechamento aparece a partir do dia 5 do período.",
-  warnBreach: (spent: string, budget: string, pct: string) =>
-    `Estourou o orçamento: ${spent} de ${budget} (${pct}).`,
-  warnProjected: (projection: string, over: string) =>
-    `No ritmo atual, fecha em ${projection} — ${over} acima do orçamento.`,
-  warnThreshold: (pct: string) => `Já em ${pct} do orçamento neste ponto do mês.`,
-  paceTitle: "Ritmo diário",
-  paceSub:
-    "Gasto acumulado dia a dia contra o ritmo esperado (orçamento distribuído pelos dias) — a linha tracejada é a projeção de fechamento.",
-  paceSubNoBudget:
-    "Gasto acumulado dia a dia no período. Defina um orçamento para ver o ritmo esperado e a projeção.",
-  paceEmpty: "Sem gasto registrado neste período ainda.",
-  mixTitle: "Decomposição do gasto",
+    "A projeção de fechamento aparece a partir do dia 5 do período.",
+  mixTitle: "Composição do gasto",
+  mixSub: "Fontes que formam o gasto deste time, ordenadas por valor.",
   mixSeats: "Assentos",
-  mixApi: (provider: string) => `API — ${provider}`,
+  mixApi: (provider: string) => `API · ${provider}`,
   mixZero: "Sem gasto neste período.",
   bridge: (seats: string, api: string, apiUsd: string) =>
-    `Composição do gasto: ${seats} em assentos + ${api} de API (${apiUsd} convertidos no câmbio congelado).`,
+    `${seats} em assentos + ${api} de API (${apiUsd} convertidos no câmbio congelado).`,
   bridgeNoFx: (seats: string, apiUsd: string) =>
-    `Composição do gasto: ${seats} em assentos + ${apiUsd} de API — câmbio do período indisponível, os valores não são somados.`,
+    `${seats} em assentos + ${apiUsd} de API. Os valores não são somados sem o câmbio do período.`,
   mixDerivedNote:
-    "A fatia por fonte usa o custo derivado de tokens × preço — o total reportado pelos provedores fica no Explorar.",
+    "A composição por provedor usa o custo derivado de tokens × preço; o total reportado fica em Explorar.",
   uncostedNote:
-    "Modelos sem preço aparecem como “não precificado” em vez de sumir do total.",
+    "Modelos sem preço aparecem como não precificados em vez de desaparecer do total.",
   fxNote: (rate: string, date: string) =>
-    `Convertido de US$ no câmbio congelado do período (${rate} por US$ 1, capturado em ${date}).`,
+    `Valores em US$ convertidos pelo câmbio congelado do período (${rate} por US$ 1, capturado em ${date}).`,
   fxMissingNote:
-    "Câmbio do período indisponível — valores exibidos em US$ (originais), sem conversão estimada.",
-  personTitle: "Custo por pessoa",
-  personSub:
-    "Contribuintes deste time neste mês. Chaves compartilhadas ficam no time, nunca em uma pessoa.",
-  personAsOf: (label: string, day: number, days: number) =>
-    `${label}, dia ${day} de ${days}`,
+    "Câmbio do período indisponível: valores de API permanecem em US$ e não são somados aos assentos.",
+  contributorsTitle: "Contribuintes do gasto",
+  contributorsSub:
+    "Origens que mais contribuíram para o gasto deste time no período.",
+  asOf: (label: string, day: number, days: number) =>
+    `${label} · dia ${day} de ${days}`,
   namesHiddenNote:
-    "Nomes ocultos pela política de privacidade — os contribuintes aparecem anonimizados.",
-  personAdminOnly:
-    "O custo por pessoa é visível apenas para administradores — controle, não vigilância.",
-  personEmpty:
-    "Nenhum uso de API atribuído a este time ainda. Mapeie um projeto ou workspace em Ajustes → Atribuição.",
-  personEmptyCta: "Ir para Atribuição",
-  colPerson: "Pessoa / chave",
-  colTokens: "Tokens",
-  colDerived: "Gasto derivado",
+    "Os nomes estão anonimizados pela política de privacidade da organização.",
+  adminOnly:
+    "Os contribuintes são visíveis apenas para administradores — controle, não vigilância.",
+  contributorsEmpty:
+    "Nenhum uso de API foi atribuído a este time neste período.",
+  attributionCta: "Revisar atribuição",
+  person: "Pessoa ou origem",
+  tokens: "Tokens",
+  derived: "Gasto derivado",
   sharedKey: "Chave compartilhada",
-  uncosted: "não precificado",
+  uncosted: "Não precificado",
   total: "Total do time",
-  planTitle: "O que dá para fazer",
-  planSub: "Plano de contenção sugerido — o Denarius aponta, a decisão é sua.",
+  planTitle: "Plano de controle",
+  planSub: "Ações sugeridas pelo Denarius. A decisão continua sendo sua.",
 };
 
 const PROVIDER_LABEL: Record<string, string> = {
@@ -103,187 +98,240 @@ const compactTokens = new Intl.NumberFormat("pt-BR", {
   maximumFractionDigits: 1,
 });
 
-function warningLine(team: CockpitTeam, currency: string): string | null {
-  const f = team.finding;
-  if (f === null) return null;
-  const ev = team.evaluation;
-  if (f.level === "breach") {
-    return copy.warnBreach(
-      money(ev.spent, currency),
-      money(ev.budget, currency),
-      percent(ev.pctSpent),
-    );
-  }
-  if (f.level === "projected_breach" && ev.projection !== null) {
-    const over = money(ev.projection - ev.budget, currency);
-    return copy.warnProjected(money(ev.projection, currency), over);
-  }
-  return copy.warnThreshold(percent(ev.pctSpent));
-}
-
-function Section({
-  title,
-  sub,
-  children,
-  id,
-}: {
-  title: string;
-  sub?: string;
-  children: React.ReactNode;
-  id?: string;
-}) {
+function Metric({ label, value }: { label: string; value: string }) {
   return (
-    <section id={id} className="scroll-mt-20">
-      <h3 className="text-sm font-medium">{title}</h3>
-      {sub && <p className="mt-0.5 text-xs/relaxed text-muted-foreground">{sub}</p>}
-      <div className="mt-3">{children}</div>
-    </section>
-  );
-}
-
-/** Budget state + closing projection — the same engine numbers Home shows. */
-function StateSection({
-  team,
-  currency,
-}: {
-  team: CockpitTeam;
-  currency: string;
-}) {
-  const ev = team.evaluation;
-  const warning = warningLine(team, currency);
-  return (
-    <Section title={copy.stateTitle} sub={copy.stateSub}>
-      <div className="flex flex-col gap-4">
-        <div className="flex items-center gap-3">
-          <BudgetBar
-            animate
-            className="flex-1"
-            pctSpent={ev.pctSpent}
-            pctProjected={team.pctProjected}
-            status={team.status}
-          />
-          <span className="shrink-0 text-sm tabular-nums text-muted-foreground">
-            {percent(ev.pctSpent)}
-          </span>
-        </div>
-        <dl className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-          <Fact label={copy.spent} value={money(ev.spent, currency)} />
-          <Fact label={copy.budget} value={money(ev.budget, currency)} />
-          <Fact label={copy.usage} value={percent(ev.pctSpent)} />
-          <Fact
-            label={copy.projection}
-            value={
-              ev.projection === null
-                ? `— ${copy.collecting}`
-                : money(ev.projection, currency)
-            }
-          />
-          <Fact
-            label={copy.projectedMargin}
-            value={
-              ev.projectedMargin === null
-                ? `— ${copy.collecting}`
-                : money(ev.projectedMargin, currency)
-            }
-          />
-        </dl>
-        {warning && <p className="text-sm/relaxed">{warning}</p>}
-      </div>
-    </Section>
-  );
-}
-
-function Fact({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <dt className="text-xs text-muted-foreground">{label}</dt>
-      <dd className="mt-0.5 text-sm font-medium tabular-nums">{value}</dd>
+    <div className="min-w-0">
+      <dt className="text-[11px] text-muted-foreground">{label}</dt>
+      <dd className="mt-1 truncate text-base font-medium tabular-nums">{value}</dd>
     </div>
   );
 }
 
-/** Seats vs API, and API by source — derived cost, disclosed. */
+function conclusion(team: CockpitTeam, currency: string): string {
+  const evaluation = team.evaluation;
+  if (evaluation.breached) {
+    return copy.conclusionBreach(
+      money(evaluation.spent - evaluation.budget, currency),
+    );
+  }
+  if (evaluation.projectedMargin === null) return copy.conclusionCollecting;
+  if (evaluation.projectedMargin < 0) {
+    return copy.conclusionRisk(money(-evaluation.projectedMargin, currency));
+  }
+  return copy.conclusionControl(money(evaluation.projectedMargin, currency));
+}
+
+function ExecutiveSummary({
+  team,
+  currency,
+  currentSpend,
+}: {
+  team: CockpitTeam | null;
+  currency: string;
+  currentSpend: string;
+}) {
+  if (team === null) {
+    return (
+      <Card data-reveal="team-summary" suppressHydrationWarning>
+        <CardHeader>
+          <CardTitle>{copy.summaryTitle}</CardTitle>
+          <CardDescription>{copy.summarySub}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <dl className="grid gap-4 sm:grid-cols-2">
+            <Metric label={copy.spent} value={currentSpend} />
+            <Metric label={copy.budget} value="—" />
+          </dl>
+          <p className="mt-4 border-t border-border/60 pt-3 text-sm text-muted-foreground">
+            {copy.noBudget}
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const evaluation = team.evaluation;
+  return (
+    <Card data-reveal="team-summary" suppressHydrationWarning>
+      <CardHeader>
+        <CardTitle>{copy.summaryTitle}</CardTitle>
+        <CardDescription>{copy.summarySub}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <dl className="grid grid-cols-2 gap-x-5 gap-y-4 lg:grid-cols-4">
+          <Metric label={copy.spent} value={money(evaluation.spent, currency)} />
+          <Metric label={copy.budget} value={money(evaluation.budget, currency)} />
+          <Metric
+            label={copy.projection}
+            value={
+              evaluation.projection === null
+                ? "—"
+                : money(evaluation.projection, currency)
+            }
+          />
+          <Metric
+            label={copy.projectedMargin}
+            value={
+              evaluation.projectedMargin === null
+                ? "—"
+                : money(evaluation.projectedMargin, currency)
+            }
+          />
+        </dl>
+        <div className="mt-5 flex items-center gap-3">
+          <TeamProgress
+            className="flex-1"
+            pctSpent={evaluation.pctSpent}
+            pctProjected={team.pctProjected}
+            status={team.status}
+          />
+          <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
+            {copy.consumption(percent(evaluation.pctSpent))}
+          </span>
+        </div>
+        <p className="mt-4 border-t border-border/60 pt-3 text-sm/relaxed">
+          {conclusion(team, currency)}
+        </p>
+      </CardContent>
+    </Card>
+  );
+}
+
+type MixRow = {
+  key: string;
+  label: string;
+  icon?: ProviderIconName;
+  displayAmount: number | null;
+  value: React.ReactNode;
+};
+
 function MixSection({
   seatAccrued,
   byProvider,
-  hasUncosted,
   currency,
   fx,
   bridgeLine,
+  hasUncosted,
 }: {
   seatAccrued: number;
   byProvider: { provider: string; usd: number }[];
-  hasUncosted: boolean;
   currency: string;
   fx: FrozenFx | null;
   bridgeLine: string;
+  hasUncosted: boolean;
 }) {
-  const rows: { key: string; label: string; icon?: ProviderIconName; value: React.ReactNode }[] = [];
+  const rows: MixRow[] = [];
   if (seatAccrued > 0) {
     rows.push({
       key: "seats",
       label: copy.mixSeats,
-      value: (
-        <span className="tabular-nums">{money(seatAccrued, currency)}</span>
-      ),
+      displayAmount: seatAccrued,
+      value: money(seatAccrued, currency),
     });
   }
-  for (const p of byProvider) {
-    if (p.usd <= 0) continue;
+  for (const provider of byProvider) {
+    if (provider.usd <= 0) continue;
     rows.push({
-      key: p.provider,
-      label: copy.mixApi(PROVIDER_LABEL[p.provider] ?? p.provider),
+      key: provider.provider,
+      label: copy.mixApi(PROVIDER_LABEL[provider.provider] ?? provider.provider),
       icon:
-        p.provider === "openai" || p.provider === "anthropic"
-          ? p.provider
+        provider.provider === "openai" || provider.provider === "anthropic"
+          ? provider.provider
           : undefined,
-      value: (
-        <UsdValue
-          className="tabular-nums"
-          value={usdDisplay(p.usd, currency, fx)}
-        />
-      ),
+      displayAmount: fx === null ? null : provider.usd * fx.rate,
+      value: <UsdValue value={usdDisplay(provider.usd, currency, fx)} />,
     });
   }
+  if (fx !== null) {
+    rows.sort((a, b) => (b.displayAmount ?? 0) - (a.displayAmount ?? 0));
+  }
+  const total = rows.reduce((sum, row) => sum + (row.displayAmount ?? 0), 0);
+  const notes = [
+    copy.mixDerivedNote,
+    ...(hasUncosted ? [copy.uncostedNote] : []),
+    fx !== null
+      ? copy.fxNote(money(fx.rate, currency), fx.date ?? "—")
+      : copy.fxMissingNote,
+  ];
 
   return (
-    <Section title={copy.mixTitle}>
-      <div className="flex flex-col gap-3">
+    <Card data-reveal="team-mix" suppressHydrationWarning>
+      <CardHeader>
+        <CardTitle>{copy.mixTitle}</CardTitle>
+        <CardDescription>{copy.mixSub}</CardDescription>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-4">
         {rows.length === 0 ? (
-          <p className="text-sm text-muted-foreground">{copy.mixZero}</p>
-        ) : (
-          <ul className="flex flex-col divide-y rounded-lg border">
-            {rows.map((row) => (
-              <li
-                key={row.key}
-                className="flex items-center justify-between gap-4 px-3.5 py-2.5"
-              >
-                <span className="flex items-center gap-2 text-sm">
-                  {row.icon && <ProviderIcon provider={row.icon} className="size-4" />}
-                  {row.label}
-                </span>
-                <span className="text-sm font-medium">{row.value}</span>
-              </li>
-            ))}
-          </ul>
-        )}
-        <div className="flex flex-col gap-1 text-xs/relaxed text-muted-foreground">
-          <p className="tabular-nums">{bridgeLine}</p>
-          <p>{copy.mixDerivedNote}</p>
-          {hasUncosted && <p>{copy.uncostedNote}</p>}
-          <p>
-            {fx !== null
-              ? copy.fxNote(money(fx.rate, currency), fx.date ?? "—")
-              : copy.fxMissingNote}
+          <p className="py-6 text-center text-sm text-muted-foreground">
+            {copy.mixZero}
           </p>
-        </div>
-      </div>
-    </Section>
+        ) : (
+          <ol className="flex flex-col gap-4">
+            {rows.map((row, index) => {
+              const share = total > 0 ? (row.displayAmount ?? 0) / total : 0;
+              return (
+                <li key={row.key}>
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex min-w-0 items-center gap-2">
+                      <span className="w-4 shrink-0 text-[11px] text-muted-foreground tabular-nums">
+                        {index + 1}
+                      </span>
+                      {row.icon && (
+                        <ProviderIcon provider={row.icon} className="size-4" />
+                      )}
+                      <span className="truncate text-sm">{row.label}</span>
+                    </div>
+                    <span className="shrink-0 text-sm font-medium tabular-nums">
+                      {row.value}
+                    </span>
+                  </div>
+                  {fx !== null && (
+                    <div className="relative ml-6 mt-2 h-2 w-[calc(100%-1.5rem)]">
+                      <div
+                        aria-hidden
+                        className="absolute inset-0 text-foreground/15"
+                        style={TICKS}
+                      />
+                      <div
+                        data-reveal-bar
+                        className="absolute inset-0 text-brand-accent/70"
+                        style={{
+                          ...TICKS,
+                          clipPath: cut(0, share),
+                          animationDelay: `${140 + index * 80}ms`,
+                        }}
+                      />
+                    </div>
+                  )}
+                </li>
+              );
+            })}
+          </ol>
+        )}
+        <SpendCalculationDetails summary={bridgeLine} notes={notes} />
+      </CardContent>
+    </Card>
   );
 }
 
-/** Top contributors — Admin-only content; Viewers get the calm disclosure. */
-function PersonsSection({
+function ContributorValue({
+  derivedUsd,
+  uncosted,
+  currency,
+  fx,
+}: {
+  derivedUsd: number;
+  uncosted: boolean;
+  currency: string;
+  fx: FrozenFx | null;
+}) {
+  if (uncosted && derivedUsd === 0) {
+    return <Badge variant="outline">{copy.uncosted}</Badge>;
+  }
+  return <UsdValue value={usdDisplay(derivedUsd, currency, fx)} />;
+}
+
+function ContributorsSection({
   teamId,
   diagnosis,
   currency,
@@ -300,189 +348,207 @@ function PersonsSection({
   isAdmin: boolean;
   namesHidden: boolean;
 }) {
-  if (!isAdmin) {
-    return (
-      <Section title={copy.personTitle}>
-        <p className="text-xs/relaxed text-muted-foreground">
-          {copy.personAdminOnly}
-        </p>
-      </Section>
-    );
-  }
-
   const persons = diagnosis?.persons ?? [];
-  const sub =
-    persons.length > 0 && namesHidden && persons.some((p) => !p.isShared)
-      ? `${copy.personSub} ${copy.namesHiddenNote}`
-      : copy.personSub;
-
   return (
-    <Section id={`contribuidores-${teamId}`} title={copy.personTitle} sub={sub}>
-      {persons.length === 0 ? (
-        <p className="text-sm text-muted-foreground">
-          {copy.personEmpty}{" "}
-          <Link
-            href="/ajustes/atribuicao"
-            className="font-medium text-foreground underline underline-offset-4"
-          >
-            {copy.personEmptyCta}
-          </Link>
-        </p>
-      ) : (
-        <div className="flex flex-col gap-2">
-          <p className="text-xs text-muted-foreground tabular-nums">
-            {copy.personAsOf(
-              period.monthLabel,
-              period.dayOfPeriod,
-              period.daysInPeriod,
-            )}
+    <Card
+      id={`contribuidores-${teamId}`}
+      data-reveal="team-contributors"
+      suppressHydrationWarning
+      className="scroll-mt-20"
+    >
+      <CardHeader>
+        <CardTitle>{copy.contributorsTitle}</CardTitle>
+        <CardDescription>{copy.contributorsSub}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        {!isAdmin ? (
+          <p className="py-6 text-sm/relaxed text-muted-foreground">
+            {copy.adminOnly}
           </p>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>{copy.colPerson}</TableHead>
-                <TableHead className="text-right">{copy.colTokens}</TableHead>
-                <TableHead className="text-right">{copy.colDerived}</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
+        ) : persons.length === 0 ? (
+          <div className="py-6 text-sm text-muted-foreground">
+            <p>{copy.contributorsEmpty}</p>
+            <Link
+              href="/ajustes/atribuicao"
+              className="mt-2 inline-flex font-medium text-foreground underline underline-offset-4"
+            >
+              {copy.attributionCta}
+            </Link>
+          </div>
+        ) : (
+          <>
+            <div className="hidden md:block">
+              <div className="grid grid-cols-[minmax(0,1fr)_100px_132px] gap-4 border-b border-border/60 pb-2 text-[11px] font-medium text-muted-foreground">
+                <span>{copy.person}</span>
+                <span className="text-right">{copy.tokens}</span>
+                <span className="text-right">{copy.derived}</span>
+              </div>
+              <div className="divide-y divide-border/60">
+                {persons.map((person) => (
+                  <div
+                    key={person.userId || "__shared__"}
+                    className="grid grid-cols-[minmax(0,1fr)_100px_132px] items-center gap-4 py-3"
+                  >
+                    <div className="flex min-w-0 items-center gap-2">
+                      <span className="truncate text-sm font-medium">
+                        {person.isShared ? copy.sharedKey : person.userId}
+                      </span>
+                      {person.isShared && (
+                        <Badge variant="outline">{copy.sharedKey}</Badge>
+                      )}
+                    </div>
+                    <span className="text-right text-xs text-muted-foreground tabular-nums">
+                      {compactTokens.format(person.inputTokens + person.outputTokens)}
+                    </span>
+                    <span className="text-right text-sm font-medium tabular-nums">
+                      <ContributorValue
+                        derivedUsd={person.derivedUsd}
+                        uncosted={person.uncosted}
+                        currency={currency}
+                        fx={fx}
+                      />
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="flex flex-col divide-y divide-border/60 md:hidden">
               {persons.map((person) => (
-                <TableRow key={person.userId || "__shared__"}>
-                  <TableCell className="max-w-56 truncate font-medium">
-                    {person.isShared ? (
-                      <span className="text-muted-foreground">
-                        {copy.sharedKey}
-                      </span>
-                    ) : (
-                      person.userId
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right tabular-nums">
-                    {compactTokens.format(
-                      person.inputTokens + person.outputTokens,
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right tabular-nums">
-                    {person.uncosted && person.derivedUsd === 0 ? (
-                      <span className="text-muted-foreground">
-                        {copy.uncosted}
-                      </span>
-                    ) : (
-                      <UsdValue value={usdDisplay(person.derivedUsd, currency, fx)} />
-                    )}
-                  </TableCell>
-                </TableRow>
+                <div key={person.userId || "__shared__"} className="py-3 first:pt-0">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium">
+                        {person.isShared ? copy.sharedKey : person.userId}
+                      </p>
+                      <p className="mt-0.5 text-[11px] text-muted-foreground tabular-nums">
+                        {compactTokens.format(person.inputTokens + person.outputTokens)} {copy.tokens.toLocaleLowerCase("pt-BR")}
+                      </p>
+                    </div>
+                    <span className="shrink-0 text-sm font-medium tabular-nums">
+                      <ContributorValue
+                        derivedUsd={person.derivedUsd}
+                        uncosted={person.uncosted}
+                        currency={currency}
+                        fx={fx}
+                      />
+                    </span>
+                  </div>
+                </div>
               ))}
-            </TableBody>
-            <TableFooter>
-              <TableRow>
-                <TableCell>{copy.total}</TableCell>
-                <TableCell />
-                <TableCell className="text-right tabular-nums">
-                  <UsdValue
-                    value={usdDisplay(diagnosis?.totalUsd ?? 0, currency, fx)}
-                  />
-                </TableCell>
-              </TableRow>
-            </TableFooter>
-          </Table>
-        </div>
-      )}
-    </Section>
+            </div>
+            <div className="mt-2 flex items-center justify-between gap-4 border-t border-border/60 pt-3">
+              <div>
+                <p className="text-xs font-medium">{copy.total}</p>
+                <p className="mt-0.5 text-[11px] text-muted-foreground tabular-nums">
+                  {copy.asOf(period.monthLabel, period.dayOfPeriod, period.daysInPeriod)}
+                </p>
+              </div>
+              <span className="text-sm font-semibold tabular-nums">
+                <UsdValue value={usdDisplay(diagnosis?.totalUsd ?? 0, currency, fx)} />
+              </span>
+            </div>
+            {namesHidden && persons.some((person) => !person.isShared) && (
+              <p className="mt-3 text-[11px]/relaxed text-muted-foreground">
+                {copy.namesHiddenNote}
+              </p>
+            )}
+          </>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
-// UX-13: default investigation targets come from the catalog contract
-// (lib/findings/catalog.ts). Two get in-context destinations: the contributors
-// block is inside this same card, and provider consoles via Conexões.
-function controlPlanHref(actionId: string, fallback: string | undefined, teamId: string) {
+function controlPlanHref(
+  actionId: string,
+  fallback: string | undefined,
+  teamId: string,
+) {
   if (actionId === "talk-to-top-team") return `#contribuidores-${teamId}`;
   if (actionId === "set-provider-limit") return "/ajustes/conexoes";
   return fallback;
 }
 
-/** The curated control plan — catalog-only, read-only (invariant #2). */
 function ControlPlanSection({ team }: { team: CockpitTeam }) {
-  if (team.finding === null || team.finding.controlPlan.length === 0) {
-    return null;
-  }
+  if (team.finding === null || team.finding.controlPlan.length === 0) return null;
   return (
-    <Section title={copy.planTitle} sub={copy.planSub}>
-      <ul className="flex flex-col gap-2.5">
-        {team.finding.controlPlan.map((action) => {
-          const href = controlPlanHref(action.id, action.href, team.teamId);
-          const body = (
-            <span>
-              <span className="block text-sm font-medium">{action.title}</span>
-              <p className="mt-0.5 text-xs/relaxed text-muted-foreground">
-                {action.detail}
-              </p>
-            </span>
-          );
-          return (
-            <li key={action.id}>
-              {href ? (
-                <Link
-                  href={href}
-                  className="group flex items-start justify-between gap-4 rounded-lg border p-3.5 outline-none transition-colors hover:border-border hover:bg-muted/30 focus-visible:ring-2 focus-visible:ring-ring/30"
-                >
-                  {body}
-                  <RiArrowRightLine className="mt-0.5 size-4 shrink-0 text-muted-foreground transition-colors group-hover:text-brand-accent-light" />
-                </Link>
-              ) : (
-                <div className="rounded-lg border p-3.5">{body}</div>
-              )}
-            </li>
-          );
-        })}
-      </ul>
-    </Section>
+    <Card data-reveal="team-plan" suppressHydrationWarning>
+      <CardHeader>
+        <CardTitle>{copy.planTitle}</CardTitle>
+        <CardDescription>{copy.planSub}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <ol className="divide-y divide-border/60 rounded-md border border-border/70">
+          {team.finding.controlPlan.map((action, index) => {
+            const href = controlPlanHref(action.id, action.href, team.teamId);
+            const content = (
+              <>
+                <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-medium tabular-nums">
+                  {index + 1}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-sm font-medium">{action.title}</span>
+                  <span className="mt-0.5 block text-xs/relaxed text-muted-foreground">
+                    {action.detail}
+                  </span>
+                </span>
+                {href && (
+                  <RiArrowRightLine className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+                )}
+              </>
+            );
+            return (
+              <li key={action.id}>
+                {href ? (
+                  <Link
+                    href={href}
+                    className="group flex items-start gap-3 px-3 py-3 outline-none transition-colors hover:bg-muted/25 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/40"
+                  >
+                    {content}
+                  </Link>
+                ) : (
+                  <div className="flex items-start gap-3 px-3 py-3">{content}</div>
+                )}
+              </li>
+            );
+          })}
+        </ol>
+      </CardContent>
+    </Card>
   );
 }
 
 export type DiagnosisBodyProps = {
   teamId: string;
-  teamName: string;
   currency: string;
   period: Period;
   fx: FrozenFx | null;
-  /** Seat cost accrued to date, display currency. */
   seatAccrued: number;
-  /** Token-derived API cost to date, USD (evaluation-consistent). */
   apiUsd: number;
-  /** Mapped-usage diagnosis, or null when nothing is attributed yet. */
   diagnosis: TeamApiDiagnosis | null;
-  /** Budget evaluation + finding — null for a team without a budget. */
   cockpitTeam: CockpitTeam | null;
-  /** Org scope for the simulator; null before an org budget exists. */
-  org: { projection: number | null; budget: number } | null;
   isAdmin: boolean;
   namesHidden: boolean;
 };
 
-export function DiagnosisBody(props: DiagnosisBodyProps) {
-  const {
-    teamId,
-    teamName,
-    currency,
-    period,
-    fx,
-    seatAccrued,
-    apiUsd,
-    diagnosis,
-    cockpitTeam,
-    org,
-    isAdmin,
-    namesHidden,
-  } = props;
-
+export function DiagnosisBody({
+  teamId,
+  currency,
+  period,
+  fx,
+  seatAccrued,
+  apiUsd,
+  diagnosis,
+  cockpitTeam,
+  isAdmin,
+  namesHidden,
+}: DiagnosisBodyProps) {
   const cumulativePoints = buildCumulativeSpend({
     apiByDay: diagnosis?.daily ?? [],
     fxRate: fx?.rate ?? null,
     seatAccrued,
     dayOfPeriod: period.dayOfPeriod,
   });
-
   const bridge = costBridge({ currency, seatDisplay: seatAccrued, apiUsd, fx });
   const bridgeLine =
     bridge.apiDisplay !== null
@@ -495,179 +561,66 @@ export function DiagnosisBody(props: DiagnosisBodyProps) {
           money(bridge.seatDisplay, currency),
           money(bridge.apiUsd, "USD"),
         );
-
+  const currentSpend =
+    bridge.apiDisplay !== null
+      ? money(bridge.seatDisplay + bridge.apiDisplay, currency)
+      : `${money(bridge.seatDisplay, currency)} + ${money(bridge.apiUsd, "USD")}`;
   const evaluation = cockpitTeam?.evaluation ?? null;
-  const collecting = evaluation !== null && evaluation.projection === null;
 
   return (
-    <>
-      {(cockpitTeam !== null || isAdmin) && (
-        <div className="flex flex-wrap items-center gap-2">
-          {cockpitTeam !== null && org !== null && (
-            <SimulateDrawer
-              teamName={teamName}
-              currency={currency}
-              team={{
-                spent: cockpitTeam.evaluation.spent,
-                projection: cockpitTeam.evaluation.projection,
-                budget: cockpitTeam.evaluation.budget,
-              }}
-              org={org}
-            />
-          )}
-          {isAdmin && (
-            <BudgetEditDialog
-              teamId={teamId}
-              teamName={teamName}
-              currency={currency}
-              existing={
-                cockpitTeam !== null
-                  ? {
-                      amount: cockpitTeam.evaluation.budget,
-                      warnPct: cockpitTeam.warnPct,
-                    }
-                  : null
-              }
-            />
-          )}
-        </div>
-      )}
+    <div className="flex flex-col gap-5">
+      <ExecutiveSummary
+        team={cockpitTeam}
+        currency={currency}
+        currentSpend={currentSpend}
+      />
 
-      {cockpitTeam !== null && (
-        <StateSection team={cockpitTeam} currency={currency} />
-      )}
+      <Card data-reveal="team-chart" suppressHydrationWarning>
+        <CardHeader>
+          <CardTitle>{copy.chartTitle}</CardTitle>
+          <CardDescription>
+            {cockpitTeam === null ? copy.chartSubNoBudget : copy.chartSub}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <CumulativeChart
+            points={cumulativePoints}
+            projection={evaluation?.projection ?? null}
+            budget={evaluation?.budget ?? null}
+            currency={currency}
+            dayOfPeriod={period.dayOfPeriod}
+            daysInPeriod={period.daysInPeriod}
+            emptyLabel={copy.chartEmpty}
+          />
+          {evaluation !== null && evaluation.projection === null && (
+            <p className="mt-2 text-xs/relaxed text-muted-foreground">
+              {copy.collectingNote}
+            </p>
+          )}
+        </CardContent>
+      </Card>
 
-      <Section
-        title={copy.paceTitle}
-        sub={cockpitTeam !== null ? copy.paceSub : copy.paceSubNoBudget}
-      >
-        <CumulativeChart
-          points={cumulativePoints}
-          projection={evaluation?.projection ?? null}
-          budget={evaluation?.budget ?? null}
+      <div className="grid gap-5 xl:grid-cols-2">
+        <MixSection
+          seatAccrued={seatAccrued}
+          byProvider={diagnosis?.byProvider ?? []}
           currency={currency}
-          dayOfPeriod={period.dayOfPeriod}
-          daysInPeriod={period.daysInPeriod}
-          emptyLabel={copy.paceEmpty}
+          fx={fx}
+          bridgeLine={bridgeLine}
+          hasUncosted={diagnosis?.hasUncosted ?? false}
         />
-        {collecting && (
-          <p className="mt-2 text-xs/relaxed text-muted-foreground">
-            {copy.collectingNote}
-          </p>
-        )}
-      </Section>
-
-      <MixSection
-        seatAccrued={seatAccrued}
-        byProvider={diagnosis?.byProvider ?? []}
-        hasUncosted={diagnosis?.hasUncosted ?? false}
-        currency={currency}
-        fx={fx}
-        bridgeLine={bridgeLine}
-      />
-
-      <PersonsSection
-        teamId={teamId}
-        diagnosis={diagnosis}
-        currency={currency}
-        fx={fx}
-        period={period}
-        isAdmin={isAdmin}
-        namesHidden={namesHidden}
-      />
+        <ContributorsSection
+          teamId={teamId}
+          diagnosis={diagnosis}
+          currency={currency}
+          fx={fx}
+          period={period}
+          isAdmin={isAdmin}
+          namesHidden={namesHidden}
+        />
+      </div>
 
       {cockpitTeam !== null && <ControlPlanSection team={cockpitTeam} />}
-    </>
-  );
-}
-
-/** Title row for a budgeted team — always visible, expanded or not. The
- *  numbers live in BudgetedSummaryDetails (collapsed only): once the card is
- *  open, Estado e projeção is the single place they render. */
-export function BudgetedSummary({ team }: { team: CockpitTeam }) {
-  return (
-    <div className="flex items-center justify-between gap-3">
-      <p className="min-w-0 truncate font-medium">{team.teamName}</p>
-      <StatusPill status={team.status} />
-    </div>
-  );
-}
-
-/** Collapsed-only summary for a budgeted team: warning, the three numbers
- *  and the bar — the situation at a glance without expanding. */
-export function BudgetedSummaryDetails({
-  team,
-  currency,
-}: {
-  team: CockpitTeam;
-  currency: string;
-}) {
-  const ev = team.evaluation;
-  const warning = warningLine(team, currency);
-  return (
-    <div className="mt-2 flex flex-col gap-2.5">
-      {warning && (
-        <p className="truncate text-xs text-muted-foreground">{warning}</p>
-      )}
-      <dl className="grid grid-cols-3 gap-2 text-[11px] leading-relaxed">
-        <div>
-          <dt className="text-muted-foreground">{copy.spent}</dt>
-          <dd className="mt-0.5 font-medium tabular-nums">
-            {money(ev.spent, currency)}
-          </dd>
-        </div>
-        <div>
-          <dt className="text-muted-foreground">{copy.budget}</dt>
-          <dd className="mt-0.5 font-medium tabular-nums">
-            {money(ev.budget, currency)}
-          </dd>
-        </div>
-        <div>
-          <dt className="text-muted-foreground">{copy.projection}</dt>
-          <dd className="mt-0.5 font-medium tabular-nums">
-            {ev.projection === null ? "—" : money(ev.projection, currency)}
-          </dd>
-        </div>
-      </dl>
-      <div className="flex items-center gap-2.5">
-        <BudgetBar
-          animate
-          className="h-2 flex-1"
-          pctSpent={ev.pctSpent}
-          pctProjected={team.pctProjected}
-          status={team.status}
-        />
-        <span className="text-xs tabular-nums text-muted-foreground">
-          {percent(ev.pctSpent)}
-        </span>
-      </div>
-    </div>
-  );
-}
-
-/** Title row for a team without a budget — always visible. */
-export function UnbudgetedSummary({ name }: { name: string }) {
-  return <p className="truncate font-medium">{name}</p>;
-}
-
-/** Collapsed-only summary for a budget-less team: note + combined spend. Once
- *  open, the decomposição section is the single source of these figures. */
-export function UnbudgetedSummaryDetails({
-  spend,
-  note,
-}: {
-  /** Combined spend, already formatted upstream (FX-missing disclosed). */
-  spend: string;
-  note?: string;
-}) {
-  return (
-    <div className="mt-1 flex items-center justify-between gap-4">
-      <p className="min-w-0 truncate text-xs text-muted-foreground">
-        {note ?? ""}
-      </p>
-      <span className="shrink-0 text-sm tabular-nums text-muted-foreground">
-        {spend}
-      </span>
     </div>
   );
 }

@@ -48,7 +48,7 @@ export default async function RosterPage() {
   const employees = (employeesData ?? []) as unknown as EmployeeRow[];
 
   return (
-    <PageContainer variant="wide" className="gap-6">
+    <PageContainer variant="settings" className="gap-6">
       <PageHeader
         title={copy.title}
         description={copy.subtitle}

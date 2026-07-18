@@ -7,9 +7,14 @@ const widths = {
   // direction 2026-07-09/11: the big spend number is the product identity and
   // the analytical rows benefit from the full horizontal space).
   full: "max-w-none",
-  // Every other screen shares ONE width (founder 2026-07-11): no width jumps
-  // between routes — the audit's S7/QA-12 complaint — Home is the exception.
+  // Default analytical and form width; narrower navigation hubs opt into the
+  // settings variant explicitly rather than changing this shared default.
   wide: "max-w-7xl",
+  // Navigation hubs use a contained, centered scanning measure instead of
+  // stretching to the analytical dashboard width.
+  settings: "max-w-5xl",
+  // Personal preferences and other compact forms use a shorter reading line.
+  form: "max-w-4xl",
 } as const;
 
 export type PageContainerProps = ComponentProps<"div"> & {

@@ -28,13 +28,19 @@ const dot: Record<VerdictStatus, string> = {
   collecting: "bg-muted-foreground",
 };
 
-export function StatusPill({ status }: { status: VerdictStatus }) {
+export function StatusPill({
+  status,
+  label,
+}: {
+  status: VerdictStatus;
+  label?: string;
+}) {
   return (
     <span
       className={`inline-flex h-5 items-center gap-1.5 rounded-pill px-2 text-xs font-medium ${styles[status]}`}
     >
       <span aria-hidden className={`size-1.5 rounded-full ${dot[status]}`} />
-      {copy[status]}
+      {label ?? copy[status]}
     </span>
   );
 }

@@ -52,7 +52,7 @@ const titleTone: Record<SidebarNoticeTone, string> = {
 
 const iconSlot = "grid size-8 shrink-0 place-items-center";
 const reveal =
-  "motion-safe:animate-in motion-safe:fade-in motion-safe:duration-300";
+  "motion-safe:animate-in motion-safe:fade-in motion-safe:duration-(--motion-duration-max)";
 
 export type SidebarNoticeProps = {
   /** Rendered as the Alert's leading svg — pass an element, e.g. <RiHistoryLine />. */
@@ -114,7 +114,7 @@ export function SidebarNotice({
   );
 
   const motion = closing
-    ? "pointer-events-none motion-safe:animate-out motion-safe:fade-out-0 motion-safe:zoom-out-95 motion-safe:duration-150"
+    ? "pointer-events-none motion-safe:animate-out motion-safe:fade-out-0 motion-safe:zoom-out-95 motion-safe:duration-(--motion-duration-standard)"
     : reveal;
 
   return (

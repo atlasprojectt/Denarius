@@ -33,7 +33,7 @@ export default async function UsersSettingsPage() {
   const isAdmin = canEditCompanySettings((appUserData as { role: string } | null)?.role ?? "viewer");
 
   return (
-    <PageContainer className="gap-6">
+    <PageContainer variant="settings" className="gap-6">
       <PageHeader
         title={copy.title}
         description={copy.subtitle}

@@ -37,7 +37,7 @@ import { money } from "@/lib/money";
 // every budgeted team, at-risk first — no expanding rows, no collapsed groups,
 // no inline dialogs. Shared by Home and the Times tab (§F5 domain component).
 // The row states the situation; acting on it lives in dedicated routes: the row
-// links to /times?focus=<id> (the team's diagnosis card, expanded) and
+// links to /times/<id> (the team's dedicated diagnosis) and
 // "Gerenciar orçamentos" → /ajustes/orcamentos (editing). All numbers are
 // engine-provided; this component only formats them.
 //
@@ -113,7 +113,7 @@ function TeamStatus({ team, currency }: { team: CockpitTeam; currency: string })
         <TooltipTrigger
           type="button"
           aria-label={reason}
-          className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring/30"
+          className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
           // The row is itself a link; stop the pill's click from navigating so
           // a tap on the chip reveals the reason instead of leaving the page.
           onClick={(event) => event.stopPropagation()}
@@ -185,9 +185,9 @@ export function TeamBudgetTable({
               return (
                 <Link
                   key={team.teamId}
-                  href={`/times?focus=${team.teamId}`}
+                  href={`/times/${team.teamId}`}
                   aria-label={c.detail(team.teamName)}
-                  className="group rounded-lg border p-3 outline-none transition-colors hover:border-border hover:bg-muted/30 focus-visible:ring-2 focus-visible:ring-ring/30"
+                  className="group rounded-lg border p-3 outline-none transition-colors hover:border-border hover:bg-muted/30 focus-visible:ring-2 focus-visible:ring-ring/40"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <p className="min-w-0 truncate font-medium">{team.teamName}</p>
@@ -224,7 +224,7 @@ export function TeamBudgetTable({
                     <span className="text-xs tabular-nums text-muted-foreground">
                       {percent(ev.pctSpent)}
                     </span>
-                    <RiArrowRightSLine className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+                    <RiArrowRightSLine className="size-4 text-muted-foreground transition-transform duration-(--motion-duration-fast) ease-(--motion-ease-standard) group-hover:translate-x-0.5" />
                   </div>
                 </Link>
               );
@@ -255,12 +255,12 @@ export function TeamBudgetTable({
                     role="link"
                     tabIndex={0}
                     aria-label={c.detail(team.teamName)}
-                    className="group cursor-pointer border-border/60 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/30"
-                    onClick={() => router.push(`/times?focus=${team.teamId}`)}
+                    className="group cursor-pointer border-border/60 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/40"
+                    onClick={() => router.push(`/times/${team.teamId}`)}
                     onKeyDown={(event) => {
                       if (event.key === "Enter" || event.key === " ") {
                         event.preventDefault();
-                        router.push(`/times?focus=${team.teamId}`);
+                        router.push(`/times/${team.teamId}`);
                       }
                     }}
                   >
@@ -298,7 +298,7 @@ export function TeamBudgetTable({
                         : money(ev.projection, currency)}
                     </TableCell>
                     <TableCell className="p-0 pr-2 text-right">
-                      <RiArrowRightSLine className="ml-auto size-4 text-muted-foreground transition-transform duration-150 group-hover:translate-x-0.5" />
+                      <RiArrowRightSLine className="ml-auto size-4 text-muted-foreground transition-transform duration-(--motion-duration-fast) ease-(--motion-ease-standard) group-hover:translate-x-0.5" />
                     </TableCell>
                   </TableRow>
                 );

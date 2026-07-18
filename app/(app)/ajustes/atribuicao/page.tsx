@@ -35,7 +35,7 @@ export default async function AttributionPage() {
   const auth = await requireAdmin();
   if (auth.error !== undefined) {
     return (
-      <PageContainer className="gap-6">
+      <PageContainer variant="settings" className="gap-6">
         <PageHeader
           title={copy.title}
           description={copy.subtitle}
@@ -58,7 +58,7 @@ export default async function AttributionPage() {
   ]);
 
   return (
-    <PageContainer className="gap-6">
+    <PageContainer variant="settings" className="gap-6">
       <PageHeader
         title={copy.title}
         description={copy.subtitle}

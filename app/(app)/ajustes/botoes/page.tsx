@@ -24,7 +24,7 @@ const sizes = ["sm", "default", "lg"] as const;
 
 export default function ButtonShowcasePage() {
   return (
-    <PageContainer className="gap-6">
+    <PageContainer variant="settings" className="gap-6">
       <PageHeader
         title="Sistema de botões"
         description="Referência interna das variantes, tamanhos e estados oficiais do Denarius."

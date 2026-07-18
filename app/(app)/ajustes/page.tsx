@@ -1,129 +1,76 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
   RiBuildingLine,
-  RiPieChartLine,
-  RiArrowRightSLine,
   RiCoinsLine,
+  RiPieChartLine,
   RiPlugLine,
   RiShieldKeyholeLine,
-  RiUserSettingsLine,
   RiTeamLine,
+  RiUserSettingsLine,
   RiWallet3Line,
 } from "@remixicon/react";
 
 import { PageContainer } from "@/components/domain/page-container";
 import { PageHeader } from "@/components/domain/page-header";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
-import {
-  Item,
-  ItemActions,
-  ItemContent,
-  ItemDescription,
-  ItemGroup,
-  ItemMedia,
-  ItemSeparator,
-  ItemTitle,
-} from "@/components/ui/item";
 import { monthStartUtc } from "@/lib/engine/period";
+import { counted } from "@/lib/plural";
 import { createClient } from "@/lib/supabase/server";
+import {
+  SettingsItemStatus,
+  SettingsNavigationItem,
+  SettingsSection,
+} from "./_components/settings-navigation";
 
 const copy = {
   title: "Ajustes",
-  subtitle: "Empresa, fontes de gasto e governança operacional.",
+  subtitle:
+    "Gerencie a empresa, as fontes de gasto, os acessos e as regras de governança.",
   groupCompany: "Empresa",
   groupSources: "Fontes de gasto",
   groupGovernance: "Governança",
   companyTitle: "Empresa e moeda",
-  companySub: (name: string, currency: string) => `${name} · Valores exibidos em ${currency}.`,
+  companyDescription:
+    "Configure os dados da empresa e a moeda de exibição.",
   connectionsTitle: "Conexões",
-  connectionsNone: "Nenhum provedor conectado ainda.",
-  providerNames: { openai: "OpenAI", anthropic: "Anthropic" } as Record<string, string>,
-  providerStatus: {
-    active: "Ativo",
-    error: "Erro na sincronização",
-    revoked: "Revogado",
-    none: "Não conectado",
-  } as Record<string, string>,
+  connectionsDescription: "Gerencie as integrações com provedores.",
+  connectionHealthy: (count: number) =>
+    counted(count, "conexão ativa", "conexões ativas"),
+  connectionAttention: (count: number) =>
+    counted(count, "requer atenção", "requerem atenção"),
   attributionTitle: "Atribuição",
-  attributionSub: "Mapeie projetos e workspaces para times.",
+  attributionDescription: "Associe projetos e workspaces aos times.",
   rosterTitle: "Roster",
-  rosterEmpty: "Nenhuma pessoa importada ainda.",
-  rosterCount: (people: number, teams: number) => `${people} pessoa(s) em ${teams} time(s).`,
+  rosterDescription: "Gerencie as pessoas e seus respectivos times.",
+  people: (count: number) => counted(count, "pessoa", "pessoas"),
+  teams: (count: number) => counted(count, "time", "times"),
   seatsTitle: "Assinaturas e assentos",
-  seatsEmpty: "Nenhuma assinatura registrada ainda.",
-  seatsCount: (subs: number) => `${subs} assinatura(s) registrada(s).`,
+  seatsDescription: "Gerencie ferramentas, preços e responsáveis.",
+  subscriptions: (count: number) =>
+    counted(count, "assinatura", "assinaturas"),
   budgetsTitle: "Orçamentos",
-  budgetsSet: (org: boolean, teams: number) =>
-    org
-      ? `Empresa definida${teams > 0 ? ` · ${teams} time(s)` : ""}.`
-      : teams > 0
-        ? `${teams} time(s) definidos · falta a empresa.`
-        : "Nenhum orçamento definido ainda.",
+  budgetsDescription: "Defina limites para a empresa e para os times.",
+  companyBudget: "Empresa",
+  companyPending: "empresa pendente",
+  budgetNone: "Não definido",
   privacyTitle: "Privacidade",
-  privacySub: "Visibilidade de nomes e minimização de dados por pessoa.",
+  privacyDescription: "Controle nomes, permissões e retenção de dados.",
   usersTitle: "Usuários",
-  usersSub: (count: number) => `${count} usuário(s) com acesso a este espaço.`,
+  usersDescription: "Gerencie quem pode acessar este espaço.",
+  users: (count: number) => counted(count, "usuário", "usuários"),
 };
 
-type TenantRow = { name: string; display_currency: string };
+type TenantRow = { display_currency: string };
+type ConnectionRow = { status: string };
 
-function GroupLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <h2 className="text-xs font-medium tracking-wider text-muted-foreground uppercase">
-      {children}
-    </h2>
-  );
-}
-
-function SettingsLink({
-  href,
-  icon,
-  title,
-  description,
-  status,
-}: {
-  href: string;
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-  status?: React.ReactNode;
-}) {
-  return (
-    <Item asChild>
-      <Link href={href} className="rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring/30">
-        <ItemMedia variant="icon" className="text-muted-foreground">{icon}</ItemMedia>
-        <ItemContent>
-          <ItemTitle>{title}</ItemTitle>
-          <ItemDescription>{description}</ItemDescription>
-        </ItemContent>
-        <ItemActions>
-          {status}
-          <RiArrowRightSLine className="size-4 text-muted-foreground" aria-hidden />
-        </ItemActions>
-      </Link>
-    </Item>
-  );
-}
-
-function SettingsGroup({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section className="flex flex-col gap-3">
-      <GroupLabel>{title}</GroupLabel>
-      <Card size="sm" className="py-2">
-        <CardContent className="px-2">
-          <ItemGroup className="gap-0">{children}</ItemGroup>
-        </CardContent>
-      </Card>
-    </section>
-  );
+function budgetSummary(hasOrgBudget: boolean, teamBudgetCount: number): string {
+  if (hasOrgBudget && teamBudgetCount > 0) {
+    return `${copy.companyBudget} + ${copy.teams(teamBudgetCount)}`;
+  }
+  if (hasOrgBudget) return copy.companyBudget;
+  if (teamBudgetCount > 0) {
+    return `${copy.teams(teamBudgetCount)} · ${copy.companyPending}`;
+  }
+  return copy.budgetNone;
 }
 
 export default async function SettingsPage() {
@@ -138,12 +85,17 @@ export default async function SettingsPage() {
     { data: connectionData },
     { data: budgetData },
   ] = await Promise.all([
-    supabase.from("tenant").select("name, display_currency").maybeSingle(),
+    supabase.from("tenant").select("display_currency").maybeSingle(),
     supabase.from("employee").select("id", { count: "exact", head: true }),
-    supabase.from("team").select("id", { count: "exact", head: true }).eq("is_unattributed", false),
-    supabase.from("subscription").select("id", { count: "exact", head: true }),
+    supabase
+      .from("team")
+      .select("id", { count: "exact", head: true })
+      .eq("is_unattributed", false),
+    supabase
+      .from("subscription")
+      .select("id", { count: "exact", head: true }),
     supabase.from("app_user").select("id", { count: "exact", head: true }),
-    supabase.from("provider_connection").select("provider, status"),
+    supabase.from("provider_connection").select("status"),
     supabase.from("budget").select("scope").eq("period_month", period),
   ]);
   const tenant = tenantData as TenantRow | null;
@@ -151,69 +103,111 @@ export default async function SettingsPage() {
 
   const budgets = (budgetData ?? []) as { scope: string }[];
   const hasOrgBudget = budgets.some((budget) => budget.scope === "org");
-  const teamBudgetCount = budgets.filter((budget) => budget.scope === "team").length;
-  const connections = (connectionData ?? []) as { provider: string; status: string }[];
-  const activeCount = connections.filter((connection) => connection.status === "active").length;
-  const connectionSummary =
-    connections.length === 0
-      ? copy.connectionsNone
-      : connections
-          .map((connection) =>
-            `${copy.providerNames[connection.provider] ?? connection.provider}: ${copy.providerStatus[connection.status] ?? connection.status}`,
-          )
-          .join(" · ");
+  const teamBudgetCount = budgets.filter(
+    (budget) => budget.scope === "team",
+  ).length;
+  const connections = (connectionData ?? []) as ConnectionRow[];
+  const activeCount = connections.filter(
+    (connection) => connection.status === "active",
+  ).length;
+  const attentionCount = connections.length - activeCount;
+  const connectionMeta =
+    attentionCount > 0
+      ? copy.connectionAttention(attentionCount)
+      : copy.connectionHealthy(activeCount);
 
   return (
-    <PageContainer className="gap-8">
+    <PageContainer variant="settings" className="gap-8">
       <PageHeader title={copy.title} description={copy.subtitle} />
 
-      <SettingsGroup title={copy.groupCompany}>
-        <SettingsLink
-          href="/ajustes/empresa"
-          icon={<RiBuildingLine />}
-          title={copy.companyTitle}
-          description={copy.companySub(tenant.name, tenant.display_currency)}
-        />
-      </SettingsGroup>
+      <div className="flex flex-col gap-7">
+        <SettingsSection id="settings-company" title={copy.groupCompany}>
+          <SettingsNavigationItem
+            href="/ajustes/empresa"
+            icon={<RiBuildingLine />}
+            title={copy.companyTitle}
+            description={copy.companyDescription}
+            meta={
+              <SettingsItemStatus>
+                {tenant.display_currency}
+              </SettingsItemStatus>
+            }
+          />
+        </SettingsSection>
 
-      <SettingsGroup title={copy.groupSources}>
-        <SettingsLink
-          href="/ajustes/conexoes"
-          icon={<RiPlugLine />}
-          title={copy.connectionsTitle}
-          description={connectionSummary}
-          status={activeCount > 0 ? <Badge variant="secondary">{activeCount} ativa(s)</Badge> : undefined}
-        />
-        <ItemSeparator className="my-0" />
-        <SettingsLink href="/ajustes/atribuicao" icon={<RiPieChartLine />} title={copy.attributionTitle} description={copy.attributionSub} />
-        <ItemSeparator className="my-0" />
-        <SettingsLink
-          href="/ajustes/roster"
-          icon={<RiTeamLine />}
-          title={copy.rosterTitle}
-          description={employeeCount ? copy.rosterCount(employeeCount, teamCount ?? 0) : copy.rosterEmpty}
-        />
-        <ItemSeparator className="my-0" />
-        <SettingsLink
-          href="/ajustes/assinaturas"
-          icon={<RiCoinsLine />}
-          title={copy.seatsTitle}
-          description={subscriptionCount ? copy.seatsCount(subscriptionCount) : copy.seatsEmpty}
-        />
-      </SettingsGroup>
+        <SettingsSection id="settings-sources" title={copy.groupSources}>
+          <SettingsNavigationItem
+            href="/ajustes/conexoes"
+            icon={<RiPlugLine />}
+            title={copy.connectionsTitle}
+            description={copy.connectionsDescription}
+            meta={
+              <SettingsItemStatus indicator={connections.length > 0}>
+                {connectionMeta}
+              </SettingsItemStatus>
+            }
+          />
+          <SettingsNavigationItem
+            href="/ajustes/atribuicao"
+            icon={<RiPieChartLine />}
+            title={copy.attributionTitle}
+            description={copy.attributionDescription}
+          />
+          <SettingsNavigationItem
+            href="/ajustes/roster"
+            icon={<RiTeamLine />}
+            title={copy.rosterTitle}
+            description={copy.rosterDescription}
+            meta={
+              <SettingsItemStatus>
+                {copy.people(employeeCount ?? 0)} · {copy.teams(teamCount ?? 0)}
+              </SettingsItemStatus>
+            }
+          />
+          <SettingsNavigationItem
+            href="/ajustes/assinaturas"
+            icon={<RiCoinsLine />}
+            title={copy.seatsTitle}
+            description={copy.seatsDescription}
+            meta={
+              <SettingsItemStatus>
+                {copy.subscriptions(subscriptionCount ?? 0)}
+              </SettingsItemStatus>
+            }
+          />
+        </SettingsSection>
 
-      <SettingsGroup title={copy.groupGovernance}>
-        <SettingsLink
-          href="/ajustes/orcamentos"
-          icon={<RiWallet3Line />}
-          title={copy.budgetsTitle}
-          description={copy.budgetsSet(hasOrgBudget, teamBudgetCount)}
-        />
-        <ItemSeparator className="my-0" />
-        <SettingsLink href="/ajustes/privacidade" icon={<RiShieldKeyholeLine />} title={copy.privacyTitle} description={copy.privacySub} />
-        <ItemSeparator className="my-0" />
-        <SettingsLink href="/ajustes/usuarios" icon={<RiUserSettingsLine />} title={copy.usersTitle} description={copy.usersSub(userCount ?? 0)} />
-      </SettingsGroup>
+        <SettingsSection id="settings-governance" title={copy.groupGovernance}>
+          <SettingsNavigationItem
+            href="/ajustes/orcamentos"
+            icon={<RiWallet3Line />}
+            title={copy.budgetsTitle}
+            description={copy.budgetsDescription}
+            meta={
+              <SettingsItemStatus>
+                {budgetSummary(hasOrgBudget, teamBudgetCount)}
+              </SettingsItemStatus>
+            }
+          />
+          <SettingsNavigationItem
+            href="/ajustes/privacidade"
+            icon={<RiShieldKeyholeLine />}
+            title={copy.privacyTitle}
+            description={copy.privacyDescription}
+          />
+          <SettingsNavigationItem
+            href="/ajustes/usuarios"
+            icon={<RiUserSettingsLine />}
+            title={copy.usersTitle}
+            description={copy.usersDescription}
+            meta={
+              <SettingsItemStatus>
+                {copy.users(userCount ?? 0)}
+              </SettingsItemStatus>
+            }
+          />
+        </SettingsSection>
+      </div>
     </PageContainer>
   );
 }

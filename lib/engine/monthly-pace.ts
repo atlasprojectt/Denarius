@@ -40,10 +40,14 @@ export type MonthlyPace = {
   /** Run-rate close, or null while the day-5 guard holds (collecting). */
   projection: number | null;
   budget: number;
+  /** Signed close projection minus budget, in display currency. */
+  projectionBudgetDelta: number | null;
+  /** Signed close projection delta as a fraction of budget. */
+  projectionBudgetDeltaRatio: number | null;
   /** The day the projection is estimated to cross the budget (fractional,
    *  1-based), when spend is under budget today but projected to breach; null
    *  otherwise. Presentation formats the calendar date from it. */
-  crossing: { day: number } | null;
+  crossing: { day: number; displayDay: number } | null;
 };
 
 function roundCents(value: number): number {
@@ -124,12 +128,18 @@ export function buildMonthlyPace(input: {
   // Crossing: the projection passes the budget between today and the close.
   // Only when we are under budget today (a realized breach has no future
   // crossing) and the projection actually clears it.
-  let crossing: { day: number } | null = null;
+  let crossing: { day: number; displayDay: number } | null = null;
   if (hasTail && todayValue < budget && (projection as number) > budget) {
     const span = daysInPeriod - today;
     const frac = (budget - todayValue) / ((projection as number) - todayValue);
-    crossing = { day: today + frac * span };
+    const crossingDay = today + frac * span;
+    crossing = { day: crossingDay, displayDay: Math.ceil(crossingDay) };
   }
+
+  const projectionBudgetDelta =
+    projection !== null && budget > 0 ? roundCents(projection - budget) : null;
+  const projectionBudgetDeltaRatio =
+    projection !== null && budget > 0 ? (projection - budget) / budget : null;
 
   return {
     rows,
@@ -138,6 +148,8 @@ export function buildMonthlyPace(input: {
     paceToday: paceAt(today),
     projection,
     budget,
+    projectionBudgetDelta,
+    projectionBudgetDeltaRatio,
     crossing,
   };
 }

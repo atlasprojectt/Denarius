@@ -1,8 +1,8 @@
 import * as React from "react";
 import { Button as ButtonPrimitive } from "@base-ui/react/button";
-import { RiLoader4Line } from "@remixicon/react";
 import { cva, type VariantProps } from "class-variance-authority";
 
+import { Spokes } from "@/components/loading-ui/spokes";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
@@ -23,11 +23,6 @@ const buttonVariants = cva(
         outline:
           "border-border bg-transparent text-foreground hover:bg-muted/50 active:bg-muted/70 dark:bg-input/10",
         link: "rounded-none text-primary underline-offset-4 hover:underline dark:text-primary-hover",
-        // Compatibility aliases while downstream call sites finish migrating.
-        default:
-          "bg-primary text-primary-foreground hover:bg-primary-hover active:bg-primary/90",
-        accent:
-          "border-border/60 bg-muted/10 text-muted-foreground [transition-duration:var(--motion-duration-fast)] hover:border-border/85 hover:bg-muted/40 hover:text-foreground hover:[&_svg]:text-brand-accent-light active:bg-muted/55",
       },
       size: {
         sm: "h-7 gap-1.5 px-3 text-xs [&_svg:not([class*='size-'])]:size-3.5",
@@ -58,7 +53,7 @@ function buttonShapeFor(
   variant: ButtonProps["variant"],
   size: ButtonProps["size"],
 ): NonNullable<ButtonProps["shape"]> {
-  const isContextual = variant === "tertiary" || variant === "accent";
+  const isContextual = variant === "tertiary";
   const isIconOnly = typeof size === "string" && size.startsWith("icon");
   return isContextual || isIconOnly ? "pill" : "default";
 }
@@ -110,7 +105,7 @@ function Button({
           loading && "opacity-100",
         )}
       >
-        <RiLoader4Line className="size-4 animate-spin motion-reduce:animate-none" aria-hidden />
+        <Spokes className="size-4 motion-reduce:[animation:none]" aria-hidden />
         {loadingText ? <span>{loadingText}</span> : null}
       </span>
     </>

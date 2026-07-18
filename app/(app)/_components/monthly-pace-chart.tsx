@@ -3,20 +3,16 @@
 import { useId } from "react";
 
 import {
-  ChartContainer,
-  ChartLegend,
-  ChartLegendContent,
-  ChartTooltip,
-  ChartTooltipContent,
-  type ChartConfig,
-} from "@/components/ui/chart";
+  SpendAreaGradient,
+  SpendChartGrid,
+} from "@/components/domain/spend-chart-visuals";
+import { ChartContainer, ChartTooltip, type ChartConfig } from "@/components/ui/chart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { MonthlyPace, MonthlyPaceRow } from "@/lib/engine/monthly-pace";
+import { percent } from "@/lib/format";
 import { compactMoney, money } from "@/lib/money";
 import {
   Area,
-  Bar,
-  CartesianGrid,
   ComposedChart,
   Label,
   Line,
@@ -24,45 +20,30 @@ import {
   ReferenceLine,
   XAxis,
   YAxis,
+  type CartesianViewBox,
+  type LabelProps,
+  type TooltipContentProps,
+  type TooltipValueType,
 } from "recharts";
 import { homeCopy } from "./copy";
 import { InfoTip } from "./info-tip";
 
-// Home's "Evolução do mês" (redesigned 2026-07-18): a composed cumulative +
-// daily-bars chart, one point PER DAY of the period. The realized cumulative
-// (solid brand line + soft area) sits in the top ~70% band; the daily spend
-// bars in the bottom ~30% (a hidden second Y axis scaled so they never climb
-// past the band). The projection is a dashed tail from today; the budget and
-// the expected-pace diagonal are neutral references (semaphore is budget-status
-// only, P5); the one place status-red appears is the soft overrun band above
-// the budget on the projection, marking a genuine breach. Every number is
-// engine-provided (buildMonthlyPace) — this component only draws.
-
+// The engine owns the point-per-day data and the day-5 projection guard. This
+// component deliberately draws only the executive reading: realized spend,
+// its projected tail, the monthly budget, and today.
 const c = homeCopy.monthlyPace;
 
-// Share of the plot the daily bars may fill (the ~30% bottom band). The hidden
-// bar axis is scaled to maxDaily / BAND, so the tallest bar lands at the top of
-// the band and the rest read relative to it.
-const BAND = 0.3;
-
 const chartConfig = {
-  // chart-1, not the deep primary: the lighter brand orange reads cleaner as a
-  // line and doesn't collide with the status red on adjacent cards.
   realized: { label: c.spent, color: "var(--brand-accent)" },
   projected: {
     label: c.projected,
-    color: "color-mix(in oklab, var(--brand-accent) 55%, transparent)",
-  },
-  daily: {
-    label: c.dailySpend,
-    color: "color-mix(in oklab, var(--brand-accent) 45%, transparent)",
+    color: "color-mix(in oklab, var(--brand-accent) 58%, transparent)",
   },
 } satisfies ChartConfig;
 
-/** A compact header metric (label secondary, value in the foreground). */
 function Metric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex flex-col gap-0.5">
+    <div className="flex min-w-28 flex-col gap-0.5">
       <span className="text-xs text-muted-foreground">{label}</span>
       <span className="text-sm font-medium text-foreground tabular-nums">
         {value}
@@ -71,10 +52,94 @@ function Metric({ label, value }: { label: string; value: string }) {
   );
 }
 
-// The full candidate set; Recharts thins it by `minTickGap` on narrow widths
-// (preserveStartEnd keeps day 1 and the last day), so no manual measurement.
 function xTicks(daysInPeriod: number): number[] {
-  return [...[1, 5, 10, 15, 20, 25].filter((d) => d < daysInPeriod), daysInPeriod];
+  return [
+    ...[1, 5, 10, 15, 20, 25].filter((day) => day < daysInPeriod),
+    daysInPeriod,
+  ];
+}
+
+function DayTick({
+  x = 0,
+  y = 0,
+  payload,
+  todayDay,
+}: {
+  x?: number;
+  y?: number;
+  payload?: { value?: number };
+  todayDay: number;
+}) {
+  const day = Number(payload?.value ?? 0);
+  const isToday = day === todayDay;
+
+  return (
+    <text
+      x={x}
+      y={y + 12}
+      textAnchor="middle"
+      fill={isToday ? "var(--foreground)" : "var(--muted-foreground)"}
+      fontSize={12}
+      fontWeight={isToday ? 600 : 400}
+      className="tabular-nums"
+    >
+      {day}
+    </text>
+  );
+}
+
+function cartesianViewBox(viewBox: LabelProps["viewBox"]): CartesianViewBox {
+  if (viewBox && "x" in viewBox) return viewBox;
+  return {};
+}
+
+function EndLabel({
+  viewBox,
+  parentViewBox,
+  value,
+  tone,
+}: LabelProps & { tone: "budget" | "projection" }) {
+  const box = cartesianViewBox(viewBox);
+  const parent = cartesianViewBox(parentViewBox);
+  const x = box.x ?? 0;
+  const y = box.y ?? 0;
+  const width = box.width ?? 0;
+  const height = box.height ?? 0;
+  const text = String(value ?? "");
+  const isProjection = tone === "projection";
+  const anchorX = isProjection ? x + width / 2 - 8 : x + width - 6;
+  const anchorY = isProjection ? y + height / 2 - 28 : y - 7;
+  const labelWidth = Math.min(150, Math.max(92, text.length * 5.8 + 14));
+  const plotLeft = parent.x ?? x;
+  const rectX = Math.max(plotLeft + 4, anchorX - labelWidth);
+  // On the first zero-width layout pass the plot clamp can land right of the
+  // anchor; a negative width is invalid SVG and logs a console error.
+  const rectWidth = Math.max(0, anchorX - rectX);
+
+  return (
+    <g aria-hidden pointerEvents="none">
+      <rect
+        x={rectX}
+        y={anchorY - 12}
+        width={rectWidth}
+        height={17}
+        rx={3}
+        fill="var(--card)"
+        fillOpacity={0.96}
+      />
+      <text
+        x={anchorX - 6}
+        y={anchorY}
+        textAnchor="end"
+        fill={isProjection ? "var(--foreground)" : "var(--muted-foreground)"}
+        fontSize={11}
+        fontWeight={isProjection ? 500 : 400}
+        className="tabular-nums"
+      >
+        {text}
+      </text>
+    </g>
+  );
 }
 
 export function MonthlyPaceChart({
@@ -84,14 +149,20 @@ export function MonthlyPaceChart({
 }: {
   pace: MonthlyPace;
   currency: string;
-  /** pt-BR month name for the tooltip's day label ("14 de julho"). */
   monthLabel: string;
 }) {
-  // One chart instance, but the gradient id must still be unique per mount so a
-  // second chart on the page can't resolve to this one's fill def.
   const fillId = useId().replace(/:/g, "");
-  const { rows, todayDay, todayValue, paceToday, projection, budget, crossing } =
-    pace;
+  const {
+    rows,
+    todayDay,
+    todayValue,
+    paceToday,
+    projection,
+    budget,
+    crossing,
+    projectionBudgetDelta,
+    projectionBudgetDeltaRatio,
+  } = pace;
 
   if (todayValue <= 0) {
     return (
@@ -112,12 +183,7 @@ export function MonthlyPaceChart({
   }
 
   const daysInPeriod = rows.length;
-  const maxDaily = rows.reduce((max, r) => Math.max(max, r.daily ?? 0), 0);
-  const maxY =
-    Math.max(budget, projection ?? 0, todayValue, 1) * 1.08;
-  const ticks = xTicks(daysInPeriod);
-  const tickLabel = (day: number) => String(day);
-
+  const maxY = Math.max(budget, projection ?? 0, todayValue, 1) * 1.08;
   const projectionText =
     projection === null ? c.collectingShort : money(projection, currency);
   const ariaLabel =
@@ -131,16 +197,18 @@ export function MonthlyPaceChart({
           paceToday === null ? "—" : money(paceToday, currency),
           money(projection, currency),
         );
+  const projectionLabel =
+    projection === null
+      ? null
+      : c.projectionValue(compactMoney(projection, currency, 2));
 
   return (
     <Card className="min-h-full">
-      <CardHeader className="gap-3">
+      <CardHeader className="gap-2.5 pb-2">
         <CardTitle className="flex items-center gap-1.5 text-sm">
           {c.title}
           <InfoTip label={c.title}>{c.info}</InfoTip>
         </CardTitle>
-        {/* Metrics row — no new cards, small aligned blocks. Wraps to two lines
-            on narrow widths (mobile); never compresses. */}
         <div className="flex flex-wrap gap-x-6 gap-y-2">
           <Metric label={c.realizedLabel} value={money(todayValue, currency)} />
           <Metric
@@ -150,16 +218,14 @@ export function MonthlyPaceChart({
           <Metric label={c.projectionLabel} value={projectionText} />
         </div>
       </CardHeader>
-      <CardContent className="flex flex-1 flex-col justify-center">
+      <CardContent className="flex flex-1 flex-col justify-center pt-0">
         <div
           data-reveal="monthly-pace"
           suppressHydrationWarning
-          className="flex flex-1 flex-col"
+          className="flex min-h-[220px] flex-1 flex-col"
         >
+          <p className="sr-only">{ariaLabel}</p>
           <div data-reveal-wipe className="min-h-0 flex-1">
-            <p className="sr-only">{ariaLabel}</p>
-            {/* debounce: stretch-while-frozen during continuous resizes
-                (sidebar collapse) instead of per-frame re-renders. */}
             <ChartContainer
               config={chartConfig}
               debounce={80}
@@ -168,199 +234,111 @@ export function MonthlyPaceChart({
               <ComposedChart
                 accessibilityLayer
                 data={rows}
-                margin={{ top: 16, right: 16, bottom: 4, left: 8 }}
+                margin={{ top: 28, right: 28, bottom: 6, left: 4 }}
               >
-                <defs>
-                  {/* Soft orange fill under the realized line only — the
-                      EvilCharts "gradient" variant: color at the top fading to
-                      transparent. */}
-                  <linearGradient id={fillId} x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="var(--color-realized)" stopOpacity={0.14} />
-                    <stop offset="100%" stopColor="var(--color-realized)" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid vertical={false} strokeDasharray="3 3" />
-                <ChartLegend
-                  verticalAlign="top"
-                  align="right"
-                  content={<ChartLegendContent className="justify-end pb-2 pt-0" />}
-                />
+                <SpendChartGrid />
+                <SpendAreaGradient id={fillId} />
                 <XAxis
                   dataKey="day"
                   type="number"
                   domain={[1, daysInPeriod]}
-                  ticks={ticks}
-                  tickFormatter={tickLabel}
+                  ticks={xTicks(daysInPeriod)}
+                  tick={<DayTick todayDay={todayDay} />}
                   tickLine={false}
-                  axisLine={false}
+                  axisLine={{ stroke: "var(--border)", strokeOpacity: 0.65 }}
                   tickMargin={8}
                   minTickGap={24}
                   interval="preserveStartEnd"
                   allowDecimals={false}
                 />
                 <YAxis
-                  yAxisId="cumulative"
                   domain={[0, maxY]}
+                  tickCount={5}
                   tickLine={false}
                   axisLine={false}
                   tickMargin={6}
-                  width={72}
+                  width={68}
                   tickFormatter={(value: number) => compactMoney(value, currency)}
                 />
-                {/* Hidden bar axis: scaled so the tallest daily bar lands at the
-                    top of the bottom BAND and never intrudes on the line. */}
-                <YAxis
-                  yAxisId="daily"
-                  orientation="right"
-                  hide
-                  domain={[0, Math.max(maxDaily / BAND, 1)]}
-                />
-                {/* Expected pace: the budget spread evenly over the days — a
-                    neutral, finely dotted diagonal so real spend visibly
-                    detaches from plan. Never semaphore-colored. */}
+
                 {budget > 0 && (
                   <ReferenceLine
-                    yAxisId="cumulative"
-                    segment={[
-                      { x: 1, y: budget / daysInPeriod },
-                      { x: daysInPeriod, y: budget },
-                    ]}
-                    stroke="var(--muted-foreground)"
-                    strokeDasharray="2 5"
-                    strokeOpacity={0.5}
-                    label={{
-                      value: c.pace,
-                      position: "center",
-                      fill: "var(--muted-foreground)",
-                      fontSize: 11,
-                      dy: -8,
-                    }}
-                  />
-                )}
-                {budget > 0 && (
-                  <ReferenceLine
-                    yAxisId="cumulative"
                     y={budget}
                     stroke="var(--muted-foreground)"
-                    strokeDasharray="4 4"
-                    strokeOpacity={0.45}
-                    label={{
-                      value: c.budget,
-                      position: "insideBottomRight",
-                      fill: "var(--muted-foreground)",
-                      fontSize: 11,
-                      dy: -6,
-                    }}
-                  />
-                )}
-                <ChartTooltip
-                  cursor={{ strokeDasharray: "3 3", strokeOpacity: 0.6 }}
-                  content={
-                    <ChartTooltipContent
-                      indicator="line"
-                      labelFormatter={(_, payload) =>
-                        c.dayLabel(
-                          Number(payload?.[0]?.payload?.day ?? 0),
-                          monthLabel,
-                        )
-                      }
-                      formatter={(_value, _name, item) => (
-                        <PaceTooltipRows
-                          row={item.payload as MonthlyPaceRow}
-                          currency={currency}
-                        />
+                    strokeDasharray="7 5"
+                    strokeOpacity={0.46}
+                    strokeWidth={1}
+                  >
+                    <Label
+                      value={c.budgetValue(compactMoney(budget, currency))}
+                      content={(labelProps) => (
+                        <EndLabel {...labelProps} tone="budget" />
                       )}
                     />
-                  }
-                />
-                {/* Daily spend bars (bottom band). Neutral-brand, low opacity —
-                    secondary to the line; the hovered bar lifts via activeBar. */}
-                <Bar
-                  yAxisId="daily"
-                  dataKey="daily"
-                  fill="var(--color-daily)"
-                  fillOpacity={0.55}
-                  radius={[2, 2, 0, 0]}
-                  isAnimationActive={false}
-                  activeBar={{ fillOpacity: 0.9 }}
-                />
-                {/* Soft red overrun: only the region above the budget along the
-                    projection. baseValue pins the fill floor to the budget. */}
-                {budget > 0 && (
-                  <Area
-                    yAxisId="cumulative"
-                    dataKey="overrun"
-                    type="monotone"
-                    baseValue={budget}
-                    stroke="none"
-                    fill="var(--status-red)"
-                    fillOpacity={0.1}
-                    connectNulls={false}
-                    isAnimationActive={false}
-                    tooltipType="none"
-                    legendType="none"
-                    activeDot={false}
-                  />
+                  </ReferenceLine>
                 )}
-                <Area
-                  yAxisId="cumulative"
-                  dataKey="realized"
-                  type="monotone"
-                  stroke="none"
-                  fill={`url(#${fillId})`}
-                  connectNulls={false}
-                  isAnimationActive={false}
-                  tooltipType="none"
-                  legendType="none"
-                  activeDot={false}
+
+                <ChartTooltip
+                  cursor={{
+                    stroke: "var(--muted-foreground)",
+                    strokeDasharray: "3 3",
+                    strokeOpacity: 0.5,
+                    strokeWidth: 1,
+                  }}
+                  isAnimationActive="auto"
+                  animationDuration={160}
+                  content={(tooltipProps) => (
+                    <PaceTooltip
+                      {...tooltipProps}
+                      currency={currency}
+                      monthLabel={monthLabel}
+                      budget={budget}
+                      daysInPeriod={daysInPeriod}
+                      projectionBudgetDelta={projectionBudgetDelta}
+                      projectionBudgetDeltaRatio={projectionBudgetDeltaRatio}
+                      crossingDay={crossing?.displayDay ?? null}
+                    />
+                  )}
                 />
-                <Line
-                  yAxisId="cumulative"
+
+                <Area
                   dataKey="realized"
                   type="monotone"
                   stroke="var(--color-realized)"
                   strokeWidth={2.25}
                   strokeLinecap="round"
+                  fill={`url(#${fillId})`}
                   dot={false}
                   connectNulls={false}
                   isAnimationActive={false}
-                  activeDot={{ r: 4, strokeWidth: 0 }}
+                  activeDot={{
+                    r: 4,
+                    fill: "var(--background)",
+                    stroke: "var(--brand-accent)",
+                    strokeWidth: 2.25,
+                  }}
                 />
                 <Line
-                  yAxisId="cumulative"
                   dataKey="projected"
                   type="monotone"
                   stroke="var(--color-projected)"
-                  strokeWidth={2.25}
+                  strokeWidth={1.8}
                   strokeDasharray="6 6"
                   strokeLinecap="round"
                   dot={false}
-                  connectNulls
+                  connectNulls={false}
                   isAnimationActive={false}
                   activeDot={{ r: 3, strokeWidth: 0 }}
                 />
-                {/* Today guide + marker. */}
+
                 <ReferenceLine
-                  yAxisId="cumulative"
                   x={todayDay}
                   stroke="var(--muted-foreground)"
-                  strokeDasharray="2 3"
-                  strokeOpacity={0.5}
+                  strokeDasharray="2 4"
+                  strokeOpacity={0.44}
+                  strokeWidth={1}
                 />
-                {crossing !== null && projection !== null && (
-                  <ReferenceDot
-                    yAxisId="cumulative"
-                    x={crossing.day}
-                    y={budget}
-                    r={3.5}
-                    fill="var(--status-red)"
-                    stroke="var(--background)"
-                    strokeWidth={1.5}
-                    ifOverflow="extendDomain"
-                  />
-                )}
                 <ReferenceDot
-                  yAxisId="cumulative"
                   x={todayDay}
                   y={todayValue}
                   r={4}
@@ -371,12 +349,42 @@ export function MonthlyPaceChart({
                   <Label
                     value={c.todayValue(compactMoney(todayValue, currency))}
                     position="top"
-                    offset={12}
+                    offset={11}
                     fill="var(--foreground)"
-                    fontSize={12}
-                    fontWeight={500}
+                    fontSize={11}
+                    fontWeight={600}
                   />
                 </ReferenceDot>
+                {crossing !== null && (
+                  <ReferenceDot
+                    x={crossing.day}
+                    y={budget}
+                    r={2.5}
+                    fill="var(--brand-accent)"
+                    fillOpacity={0.58}
+                    stroke="var(--background)"
+                    strokeWidth={1}
+                    ifOverflow="extendDomain"
+                  />
+                )}
+                {projection !== null && projectionLabel !== null && (
+                  <ReferenceDot
+                    x={daysInPeriod}
+                    y={projection}
+                    r={4.5}
+                    fill="var(--brand-accent)"
+                    stroke="var(--background)"
+                    strokeWidth={1.5}
+                    ifOverflow="visible"
+                  >
+                    <Label
+                      value={projectionLabel}
+                      content={(labelProps) => (
+                        <EndLabel {...labelProps} tone="projection" />
+                      )}
+                    />
+                  </ReferenceDot>
+                )}
               </ComposedChart>
             </ChartContainer>
           </div>
@@ -386,50 +394,88 @@ export function MonthlyPaceChart({
   );
 }
 
-/** Tooltip body for one day: cumulative, daily, expected pace, delta, and the
- *  projection once the tail has begun. Orange marker for the main series. */
-function PaceTooltipRows({
-  row,
+function PaceTooltip({
+  active,
+  payload,
   currency,
-}: {
-  row: MonthlyPaceRow;
+  monthLabel,
+  budget,
+  daysInPeriod,
+  projectionBudgetDelta,
+  projectionBudgetDeltaRatio,
+  crossingDay,
+}: TooltipContentProps<TooltipValueType, string | number> & {
   currency: string;
+  monthLabel: string;
+  budget: number;
+  daysInPeriod: number;
+  projectionBudgetDelta: number | null;
+  projectionBudgetDeltaRatio: number | null;
+  crossingDay: number | null;
 }) {
-  const value = row.realized ?? row.projected;
-  if (value === null) return null;
+  if (!active || !payload.length) return null;
 
-  const paceDelta =
-    row.pace === null || row.realized === null ? null : row.realized - row.pace;
-  const deltaText =
-    paceDelta === null
-      ? null
-      : Math.abs(paceDelta) < 0.005
-        ? c.paceOnTrack
-        : paceDelta > 0
-          ? c.paceAhead(money(paceDelta, currency))
-          : c.paceBehind(money(-paceDelta, currency));
+  const row = payload[0]?.payload as MonthlyPaceRow | undefined;
+  if (!row) return null;
+
+  const isClose = row.day === daysInPeriod && row.projected !== null;
 
   return (
-    <div className="flex min-w-[12rem] flex-col gap-1">
-      <Row
-        label={row.realized === null ? c.projected : c.cumulative}
-        value={money(value, currency)}
-        marker
-      />
-      {row.daily !== null && (
-        <Row label={c.dailySpend} value={money(row.daily, currency)} />
-      )}
-      {row.pace !== null && (
-        <Row label={c.pace} value={money(row.pace, currency)} muted />
-      )}
-      {deltaText !== null && (
-        <p className="text-xs text-muted-foreground">{deltaText}</p>
-      )}
+    <div className="min-w-56 rounded-lg border border-white/10 bg-zinc-950 px-3 py-2.5 text-xs text-zinc-50 shadow-lg">
+      <p className="mb-2 font-medium">{c.dayLabel(row.day, monthLabel)}</p>
+      <div className="grid grid-cols-[1fr_auto] gap-x-5 gap-y-1.5">
+        {row.realized !== null && (
+          <TooltipRow
+            label={c.cumulative}
+            value={money(row.realized, currency)}
+            marker
+          />
+        )}
+        {row.projected !== null && row.realized === null && (
+          <TooltipRow label={c.projected} value={money(row.projected, currency)} />
+        )}
+        {budget > 0 && (
+          <TooltipRow label={c.budget} value={money(budget, currency)} muted />
+        )}
+        {isClose &&
+          projectionBudgetDelta !== null &&
+          projectionBudgetDeltaRatio !== null && (
+          <TooltipRow
+            label={c.versusBudget}
+            value={
+              projectionBudgetDelta >= 0
+                ? c.aboveBudget(
+                    money(projectionBudgetDelta, currency),
+                    percent(projectionBudgetDeltaRatio, 1),
+                  )
+                : c.belowBudget(
+                    money(projectionBudgetDelta, currency),
+                    percent(projectionBudgetDeltaRatio, 1),
+                  )
+            }
+            muted
+          />
+        )}
+        {isClose && (
+          <TooltipRow
+            label={c.closingDate}
+            value={c.dayLabel(daysInPeriod, monthLabel)}
+            muted
+          />
+        )}
+        {isClose && crossingDay !== null && (
+          <TooltipRow
+            label={c.estimatedBreach}
+            value={c.dayLabel(crossingDay, monthLabel)}
+            muted
+          />
+        )}
+      </div>
     </div>
   );
 }
 
-function Row({
+function TooltipRow({
   label,
   value,
   marker = false,
@@ -441,22 +487,18 @@ function Row({
   muted?: boolean;
 }) {
   return (
-    <div className="flex items-center justify-between gap-4">
-      <span className="flex items-center gap-1.5 text-muted-foreground">
+    <>
+      <span className="flex items-center gap-1.5 text-zinc-400">
         {marker && (
-          <span
-            aria-hidden
-            className="size-2 rounded-full"
-            style={{ backgroundColor: "var(--brand-accent)" }}
-          />
+          <span aria-hidden className="size-2 rounded-full bg-brand-accent" />
         )}
         {label}
       </span>
       <span
-        className={`text-sm tabular-nums ${muted ? "text-muted-foreground" : "font-medium text-foreground"}`}
+        className={`text-right tabular-nums ${muted ? "text-zinc-300" : "font-medium text-zinc-50"}`}
       >
         {value}
       </span>
-    </div>
+    </>
   );
 }

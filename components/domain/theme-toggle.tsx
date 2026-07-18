@@ -2,9 +2,19 @@
 
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
-import { RiComputerLine, RiMoonLine, RiSunLine } from "@remixicon/react";
+import {
+  RiCheckLine,
+  RiComputerLine,
+  RiMoonLine,
+  RiSunLine,
+} from "@remixicon/react";
 
 import { Button } from "@/components/ui/button";
+import {
+  RadioGroup,
+  RadioGroupIndicator,
+  RadioGroupItem,
+} from "@/components/ui/radio-group";
 import { cn } from "@/lib/utils";
 
 // Local appearance preference. No dependency: it flips the `.dark` class on
@@ -26,8 +36,8 @@ const copy = {
   light: "Claro",
   dark: "Escuro",
   systemHint: "Acompanha o tema do seu sistema operacional.",
-  lightHint: "Fundo claro para uso durante o dia.",
-  darkHint: "Contraste reduzido para ambientes escuros.",
+  lightHint: "Usa o tema claro neste navegador.",
+  darkHint: "Usa o tema escuro neste navegador.",
 };
 
 function prefersDark() {
@@ -141,7 +151,7 @@ function ThemePreview({ variant }: { variant: ThemePreference }) {
     return (
       <span
         aria-hidden
-        className="relative flex h-16 overflow-hidden rounded-lg border border-zinc-300 shadow-xs dark:border-zinc-700"
+        className="relative flex h-14 overflow-hidden rounded-md border border-zinc-300 dark:border-zinc-700"
       >
         <span className="flex-1 bg-zinc-50" />
         <span
@@ -159,7 +169,7 @@ function ThemePreview({ variant }: { variant: ThemePreference }) {
     <span
       aria-hidden
       className={cn(
-        "flex h-16 rounded-lg border p-2 shadow-xs",
+        "flex h-14 rounded-md border p-2",
         dark ? "border-zinc-700 bg-zinc-950" : "border-zinc-200 bg-zinc-50",
       )}
     >
@@ -194,46 +204,58 @@ function ThemeOption({
   label,
   hint,
   icon,
-  onSelect,
 }: {
   variant: ThemePreference;
   selected: boolean;
   label: string;
   hint: string;
   icon: ReactNode;
-  onSelect: () => void;
 }) {
+  const descriptionId = `theme-option-${variant}-description`;
+
   return (
-    <Button
-      type="button"
-      variant="outline"
-      onClick={onSelect}
-      aria-pressed={selected}
+    <div
       className={cn(
-        "group relative h-auto min-w-0 flex-col items-stretch gap-3 rounded-xl bg-card p-3 text-left whitespace-normal hover:bg-muted/40",
+        "group relative min-h-32 min-w-0 rounded-lg border p-3 transition-colors",
         selected
-          ? "border-border bg-muted/25 after:absolute after:right-5 after:bottom-1 after:left-5 after:h-0.5 after:rounded-full after:bg-brand-accent after:content-['']"
-          : "border-border",
+          ? "border-foreground/20 bg-muted/40"
+          : "border-border bg-card hover:bg-muted/25",
       )}
     >
-      <ThemePreview variant={variant} />
-      <span className="flex items-start gap-2">
+      <RadioGroupItem
+        value={variant}
+        aria-label={label}
+        aria-describedby={descriptionId}
+        className="absolute inset-0 z-10 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+      >
+        <RadioGroupIndicator className="absolute top-2 right-2 flex size-5 items-center justify-center rounded-full border border-brand-accent bg-card text-brand-accent">
+          <RiCheckLine className="size-3.5" aria-hidden />
+        </RadioGroupIndicator>
+      </RadioGroupItem>
+
+      <div className="flex flex-col gap-3">
+        <ThemePreview variant={variant} />
+        <span className="flex items-start gap-2">
         <span
           className={cn(
             "mt-0.5 inline-flex size-6 shrink-0 items-center justify-center",
-            selected ? "text-brand-accent-light" : "text-muted-foreground",
+            selected ? "text-brand-accent" : "text-muted-foreground",
           )}
         >
           {icon}
         </span>
         <span className="min-w-0">
           <span className="block text-sm font-semibold">{label}</span>
-          <span className="mt-0.5 block text-xs/relaxed text-muted-foreground">
+          <span
+            id={descriptionId}
+            className="mt-0.5 block text-xs/relaxed text-muted-foreground"
+          >
             {hint}
           </span>
         </span>
       </span>
-    </Button>
+      </div>
+    </div>
   );
 }
 
@@ -241,14 +263,18 @@ export function ThemePicker() {
   const preference = useThemePreference();
 
   return (
-    <div className="grid w-full gap-3 sm:grid-cols-3">
+    <RadioGroup<ThemePreference>
+      value={preference}
+      onValueChange={setPreference}
+      aria-label="Aparência"
+      className="grid w-full gap-3 md:grid-cols-3"
+    >
       <ThemeOption
         variant="system"
         selected={preference === "system"}
         label={copy.system}
         hint={copy.systemHint}
         icon={<RiComputerLine className="size-4" />}
-        onSelect={() => setPreference("system")}
       />
       <ThemeOption
         variant="light"
@@ -256,7 +282,6 @@ export function ThemePicker() {
         label={copy.light}
         hint={copy.lightHint}
         icon={<RiSunLine className="size-4" />}
-        onSelect={() => setPreference("light")}
       />
       <ThemeOption
         variant="dark"
@@ -264,8 +289,7 @@ export function ThemePicker() {
         label={copy.dark}
         hint={copy.darkHint}
         icon={<RiMoonLine className="size-4" />}
-        onSelect={() => setPreference("dark")}
       />
-    </div>
+    </RadioGroup>
   );
 }

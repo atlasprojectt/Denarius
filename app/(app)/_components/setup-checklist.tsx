@@ -32,7 +32,7 @@ export function SetupChecklist({
               <li key={step.key}>
                 <Link
                   href={step.href}
-                  className="flex h-full items-start gap-3 rounded-lg border p-4 outline-none transition-colors hover:bg-muted/40 focus-visible:ring-2 focus-visible:ring-ring/30"
+                  className="flex h-full items-start gap-3 rounded-lg border p-4 outline-none transition-colors hover:bg-muted/40 focus-visible:ring-2 focus-visible:ring-ring/40"
                 >
                   {done ? (
                     <RiCheckLine className="mt-0.5 size-4 shrink-0 text-muted-foreground" />

@@ -44,7 +44,7 @@ export default async function ConnectionsPage() {
   const connections = (data ?? []) as ConnectionRow[];
 
   return (
-    <PageContainer className="gap-6">
+    <PageContainer variant="settings" className="gap-6">
       <PageHeader
         title={copy.title}
         description={copy.subtitle}
