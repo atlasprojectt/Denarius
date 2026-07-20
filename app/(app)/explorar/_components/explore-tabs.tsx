@@ -20,11 +20,19 @@ type TabValue = "models" | "seats";
 export function ExploreTabs({
   models,
   seats,
+  defaultTab,
 }: {
   models?: React.ReactNode;
   seats?: React.ReactNode;
+  /** Preferred landing tab — the one with data (empty tabs stay reachable). */
+  defaultTab?: TabValue;
 }) {
-  const defaultValue: TabValue = models ? "models" : "seats";
+  const defaultValue: TabValue =
+    defaultTab && (defaultTab === "models" ? models : seats)
+      ? defaultTab
+      : models
+        ? "models"
+        : "seats";
   const [value, setValue] = useState<TabValue>(defaultValue);
   const hasModels = Boolean(models);
   const hasSeats = Boolean(seats);

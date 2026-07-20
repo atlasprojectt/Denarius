@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { RiArrowRightSLine, RiTeamLine } from "@remixicon/react";
+import { RiArrowRightSLine, RiPieChartLine, RiTeamLine } from "@remixicon/react";
 
 import { EmptyState } from "@/components/domain/empty-state";
+import { Notice } from "@/components/domain/notice";
 import { PageContainer } from "@/components/domain/page-container";
 import { PageHeader } from "@/components/domain/page-header";
 import { Button } from "@/components/ui/button";
@@ -199,26 +200,20 @@ export default async function TimesPage({
       )}
 
       {unattributed && (
-        <Card className="gap-0 py-0">
-          <div className="flex flex-col gap-3 px-4 py-3.5 sm:flex-row sm:items-center">
-            <span
-              aria-hidden
-              className="size-2 shrink-0 rounded-full bg-muted-foreground"
-            />
-            <div className="min-w-0 flex-1">
-              <h2 className="text-[13px] font-medium">{copy.unattributedTitle}</h2>
-              <p className="mt-0.5 text-[11px] text-muted-foreground tabular-nums">
-                {copy.unattributedBody(unattributed)}
-              </p>
-            </div>
+        <Notice
+          icon={<RiPieChartLine />}
+          title={copy.unattributedTitle}
+          action={
             <Button asChild variant="tertiary" size="xs" motion="forward">
               <Link href="/ajustes/atribuicao">
                 {copy.map}
                 <RiArrowRightSLine data-icon="inline-end" aria-hidden />
               </Link>
             </Button>
-          </div>
-        </Card>
+          }
+        >
+          <span className="tabular-nums">{copy.unattributedBody(unattributed)}</span>
+        </Notice>
       )}
     </PageContainer>
   );

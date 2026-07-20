@@ -114,6 +114,11 @@ export default async function HomePage() {
         )}
       </div>
 
+      {/* Setup guide (PRD story: first verdict): a verdict can exist while a
+          step is still missing (e.g. budget set, roster pending) — keep the
+          compact strip until all three are done. Renders null when complete. */}
+      <SetupChecklist state={setup} variant="compact" />
+
       {/* The 2x2 grid. min-w-0 wrappers matter: grid children default to
           min-width auto, and the table + long tabular-nums strings would
           otherwise push the track past the viewport (horizontal overflow).

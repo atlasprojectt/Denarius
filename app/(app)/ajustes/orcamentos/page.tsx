@@ -1,8 +1,10 @@
-import { RiInformationLine } from "@remixicon/react";
+import Link from "next/link";
+import { RiErrorWarningLine, RiInformationLine, RiTeamLine } from "@remixicon/react";
 
+import { EmptyState } from "@/components/domain/empty-state";
+import { Notice } from "@/components/domain/notice";
 import { PageHeader } from "@/components/domain/page-header";
 import { PageContainer } from "@/components/domain/page-container";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Card,
   CardContent,
@@ -26,8 +28,10 @@ const copy = {
   periodNote: (label: string) => `Período atual — ${label}`,
   tableTitle: "Empresa e times",
   tableSub: "Edite todos os limites e salve uma vez. Empresa e times são guardrails independentes.",
-  noTeams:
-    "Nenhum time ainda. Importe o roster para definir orçamentos por time.",
+  noTeamsTitle: "Nenhum time ainda",
+  noTeamsBody:
+    "Importe o roster para definir orçamentos por time. O orçamento da empresa acima já funciona sozinho.",
+  noTeamsCta: "Importar roster",
   mismatchOver: (delta: string) =>
     `A soma dos orçamentos dos times está ${delta} acima do orçamento da empresa. Guardrails independentes — apenas um aviso.`,
   mismatchUnder: (delta: string) =>
@@ -85,27 +89,33 @@ export default async function BudgetsPage() {
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           {org && mismatch !== 0 && (
-            <Alert>
-              <RiInformationLine />
-              <AlertDescription>
-                {mismatch > 0
-                  ? copy.mismatchOver(money(mismatch, currency))
-                  : copy.mismatchUnder(money(-mismatch, currency))}
-              </AlertDescription>
-            </Alert>
+            <Notice icon={<RiInformationLine />}>
+              {mismatch > 0
+                ? copy.mismatchOver(money(mismatch, currency))
+                : copy.mismatchUnder(money(-mismatch, currency))}
+            </Notice>
+          )}
+          {org && org.currency !== "USD" && org.frozenFxRate === null && (
+            <Notice tone="amber" icon={<RiErrorWarningLine />}>
+              {copy.fxMissing}
+            </Notice>
           )}
 
-          {teams.length === 0 && (
-            <p className="text-sm text-muted-foreground">{copy.noTeams}</p>
-          )}
           <BudgetTableForm rows={rows} currency={currency} />
+          {teams.length === 0 && (
+            <EmptyState
+              icon={<RiTeamLine />}
+              title={copy.noTeamsTitle}
+              description={copy.noTeamsBody}
+              primaryAction={<Link href="/ajustes/roster">{copy.noTeamsCta}</Link>}
+              className="border-none py-4"
+            />
+          )}
         </CardContent>
-        {org && org.currency !== "USD" && (
-          <CardFooter className={`text-xs/relaxed ${org.frozenFxRate === null ? "text-status-amber-fg" : "text-muted-foreground"}`}>
+        {org && org.currency !== "USD" && org.frozenFxRate !== null && (
+          <CardFooter className="text-xs/relaxed text-muted-foreground">
             <p>
-              {org.frozenFxRate !== null
-                ? copy.fxDisclosure(money(org.frozenFxRate, org.currency), org.fxRateSource ?? "—", org.fxRateDate ?? "—")
-                : copy.fxMissing}
+              {copy.fxDisclosure(money(org.frozenFxRate, org.currency), org.fxRateSource ?? "—", org.fxRateDate ?? "—")}
             </p>
           </CardFooter>
         )}

@@ -1,11 +1,11 @@
 "use client";
 
 import { useActionState } from "react";
-import { RiMailLine } from "@remixicon/react";
+import { RiMailCloseLine, RiMailLine } from "@remixicon/react";
 
 import { ConfirmationDialog } from "@/components/domain/confirmation-dialog";
+import { StateBadge } from "@/components/domain/state-badge";
 import { ActionToast } from "@/components/domain/toast-provider";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Item,
@@ -61,6 +61,7 @@ function RevokeButton({ invitationId }: { invitationId: string }) {
         action={formAction}
         pending={pending}
         success={state.success}
+        icon={<RiMailCloseLine />}
       >
         <input type="hidden" name="invitationId" value={invitationId} />
       </ConfirmationDialog>
@@ -94,9 +95,7 @@ export function PendingInvitations({
           <ItemContent>
             <ItemTitle>
               {invitation.email}
-              <Badge variant="outline" className="text-muted-foreground">
-                {copy.pending}
-              </Badge>
+              <StateBadge>{copy.pending}</StateBadge>
             </ItemTitle>
             <ItemDescription>
               {copy.roleLabel[invitation.role] ?? invitation.role} ·{" "}

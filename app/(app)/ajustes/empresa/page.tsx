@@ -2,9 +2,9 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { RiInformationLine } from "@remixicon/react";
 
+import { Notice } from "@/components/domain/notice";
 import { PageContainer } from "@/components/domain/page-container";
 import { PageHeader } from "@/components/domain/page-header";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { canEditCompanySettings } from "@/lib/settings/account";
@@ -56,17 +56,13 @@ export default async function CompanySettingsPage() {
         </CardContent>
       </Card>
       {!currencyEditable && (
-        <Alert>
-          <RiInformationLine />
-          <AlertTitle>{copy.lockedTitle}</AlertTitle>
-          <AlertDescription>
-            <p>{copy.lockedBody}</p>
-            <p className="mt-2 flex flex-wrap gap-3">
-              <Link href="/ajustes/orcamentos" className="font-medium underline underline-offset-4">{copy.budgets}</Link>
-              <Link href="/ajustes/assinaturas" className="font-medium underline underline-offset-4">{copy.subscriptions}</Link>
-            </p>
-          </AlertDescription>
-        </Alert>
+        <Notice icon={<RiInformationLine />} title={copy.lockedTitle}>
+          <p>{copy.lockedBody}</p>
+          <p className="mt-2 flex flex-wrap gap-3">
+            <Link href="/ajustes/orcamentos" className="font-medium underline underline-offset-4">{copy.budgets}</Link>
+            <Link href="/ajustes/assinaturas" className="font-medium underline underline-offset-4">{copy.subscriptions}</Link>
+          </p>
+        </Notice>
       )}
     </PageContainer>
   );

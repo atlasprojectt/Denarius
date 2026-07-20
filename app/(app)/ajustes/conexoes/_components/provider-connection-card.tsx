@@ -1,11 +1,13 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { RiLightbulbLine } from "@remixicon/react";
+import { RiErrorWarningLine, RiKey2Line, RiLightbulbLine } from "@remixicon/react";
 
 import { ActionStatus } from "@/components/domain/action-status";
 import { ConfirmationDialog } from "@/components/domain/confirmation-dialog";
+import { Notice } from "@/components/domain/notice";
 import { ProviderIcon } from "@/components/domain/provider-icon";
+import { StateBadge } from "@/components/domain/state-badge";
 import { ActionToast } from "@/components/domain/toast-provider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -100,8 +102,12 @@ function statusLabel(status: string | null): string {
 }
 
 function StatusBadge({ status }: { status: string | null }) {
-  // Neutral chrome — connection state is data quality, not budget status, so it
-  // never wears the semaphore (product principle #5).
+  // Connection state is data quality, not budget status, so it never wears the
+  // semaphore (product principle #5) — a failing sync is the one state that
+  // earns the destructive tint; everything else stays neutral chrome.
+  if (status === "error") {
+    return <StateBadge tone="destructive">{statusLabel(status)}</StateBadge>;
+  }
   return (
     <Badge variant={status === "active" ? "secondary" : "outline"}>
       {statusLabel(status)}
@@ -189,6 +195,7 @@ function ActiveControls({ keyForm }: { keyForm: KeyFormProps }) {
           action={revokeAction}
           pending={revoking}
           success={revokeState.success}
+          icon={<RiKey2Line />}
         />
       </div>
       <ActionToast id={`${keyForm.provider}:sync`} state={syncState} error={syncState.error} success={syncState.success} />
@@ -241,7 +248,9 @@ export function ProviderConnectionCard({
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
         {status === "error" && lastSyncError && (
-          <ActionStatus error={lastSyncError} />
+          <Notice tone="destructive" icon={<RiErrorWarningLine />} title={sharedCopy.error}>
+            {lastSyncError}
+          </Notice>
         )}
         <ActionStatus error={saveState.error} success={saveState.success} />
         {connected ? <ActiveControls keyForm={keyForm} /> : <KeyForm {...keyForm} />}

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import {
+  RiBarChartHorizontalLine,
   RiCheckboxCircleLine,
   RiCompass3Line,
   RiInformationLine,
@@ -50,6 +51,9 @@ const copy = {
     "Conecte a OpenAI e a Anthropic para importar o gasto real de API, ou registre assinaturas e assentos para acompanhar o custo fixo por time.",
   emptySeatsCta: "Adicionar assinaturas",
   emptyConnectCta: "Conectar provedores",
+  modelsEmptyTitle: "Sem uso de API neste período",
+  modelsEmptyBody:
+    "Conecte um provedor ou aguarde a próxima sincronização para ver o gasto por modelo.",
   seatsTitle: "Assentos por time",
   seatsSub: "Custo de assinaturas distribuído dia a dia no período.",
   colTeam: "Time",
@@ -249,6 +253,7 @@ export default async function ExplorePage() {
         />
       ) : (
         <ExploreTabs
+          defaultTab={apiSpend.hasData ? "models" : "seats"}
           models={
             apiSpend.hasData ? (
               <Card id="por-modelo" className="gap-0 py-0">
@@ -322,7 +327,18 @@ export default async function ExplorePage() {
                   </div>
                 </CardContent>
               </Card>
-            ) : undefined
+            ) : (
+              // The tab stays visible with a contextual empty instead of
+              // silently disappearing while seats carry the screen.
+              <EmptyState
+                icon={<RiBarChartHorizontalLine />}
+                title={copy.modelsEmptyTitle}
+                description={copy.modelsEmptyBody}
+                primaryAction={
+                  <Link href="/ajustes/conexoes">{copy.emptyConnectCta}</Link>
+                }
+              />
+            )
           }
           seats={
             subscriptions.length > 0 ? (

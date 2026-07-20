@@ -10,10 +10,14 @@ export const homeCopy = {
   setup: {
     title: "Prepare o primeiro veredito",
     subtitle: "Três passos deixam o Denarius pronto para responder se o gasto está sob controle.",
-    step: (number: number) => `Passo ${number}`,
+    progress: (done: number, total: number) => `${done} de ${total} concluídos`,
+    stepDone: (label: string) => `${label} — concluído`,
     connected: "Conectar um provedor",
+    connectedDetail: "OpenAI ou Anthropic, com uma Admin Key somente leitura.",
     hasRoster: "Importar o roster",
+    hasRosterDetail: "Times e pessoas para atribuir cada real gasto.",
     hasBudget: "Definir o orçamento",
+    hasBudgetDetail: "O limite mensal que destrava veredito e avisos.",
     continue: "Continuar configuração",
   },
 

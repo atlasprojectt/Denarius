@@ -10,7 +10,7 @@ import {
   RiSearchLine,
 } from "@remixicon/react";
 
-import { Badge } from "@/components/ui/badge";
+import { StateBadge } from "@/components/domain/state-badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
@@ -155,14 +155,9 @@ function MoneyValue({
   currency: string;
 }) {
   if (row.state === "unpriced") {
-    return (
-      <Badge
-        variant="outline"
-        className="border-border/80 bg-muted/30 text-muted-foreground"
-      >
-        {copy.unpricedBadge}
-      </Badge>
-    );
+    // Amber = data quality (honest numbers, principle #3): an unpriced model is
+    // a gap in the total, not neutral trivia.
+    return <StateBadge tone="amber">{copy.unpricedBadge}</StateBadge>;
   }
 
   const primary =

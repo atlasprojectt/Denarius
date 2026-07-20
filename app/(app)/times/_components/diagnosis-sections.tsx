@@ -2,6 +2,7 @@ import Link from "next/link";
 import { RiArrowRightLine } from "@remixicon/react";
 
 import { ProviderIcon, type ProviderIconName } from "@/components/domain/provider-icon";
+import { StateBadge } from "@/components/domain/state-badge";
 import { UsdValue } from "@/components/domain/usd-value";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -326,7 +327,7 @@ function ContributorValue({
   fx: FrozenFx | null;
 }) {
   if (uncosted && derivedUsd === 0) {
-    return <Badge variant="outline">{copy.uncosted}</Badge>;
+    return <StateBadge tone="amber">{copy.uncosted}</StateBadge>;
   }
   return <UsdValue value={usdDisplay(derivedUsd, currency, fx)} />;
 }

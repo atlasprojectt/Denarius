@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type ReactElement, type ReactNode } from "react";
+import { RiErrorWarningLine } from "@remixicon/react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -25,6 +26,7 @@ export function ConfirmationDialog({
   action,
   pending,
   success,
+  icon,
   children,
 }: {
   trigger: ReactElement;
@@ -35,6 +37,8 @@ export function ConfirmationDialog({
   action: (payload: FormData) => void;
   pending: boolean;
   success?: string;
+  /** Per-action icon for the destructive header medallion. */
+  icon?: ReactNode;
   children?: ReactNode;
 }) {
   const [open, setOpen] = useState(false);
@@ -52,9 +56,17 @@ export function ConfirmationDialog({
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent showCloseButton={false}>
         <form action={action} className="contents">
-          <DialogHeader>
-            <DialogTitle>{title}</DialogTitle>
-            <DialogDescription>{description}</DialogDescription>
+          <DialogHeader className="flex-row items-start gap-3">
+            <span
+              aria-hidden
+              className="grid size-10 shrink-0 place-items-center rounded-full bg-destructive/10 text-destructive [&>svg]:size-5"
+            >
+              {icon ?? <RiErrorWarningLine />}
+            </span>
+            <div className="flex min-w-0 flex-col gap-1 pt-0.5">
+              <DialogTitle>{title}</DialogTitle>
+              <DialogDescription>{description}</DialogDescription>
+            </div>
           </DialogHeader>
           {children}
           <DialogFooter>

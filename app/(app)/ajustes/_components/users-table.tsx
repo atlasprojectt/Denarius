@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { RiUserUnfollowLine } from "@remixicon/react";
 
 import { ConfirmationDialog } from "@/components/domain/confirmation-dialog";
 import { ActionToast } from "@/components/domain/toast-provider";
@@ -58,6 +59,7 @@ function RemoveButton({ userId }: { userId: string }) {
         action={formAction}
         pending={pending}
         success={state.success}
+        icon={<RiUserUnfollowLine />}
       >
         <input type="hidden" name="userId" value={userId} />
       </ConfirmationDialog>
