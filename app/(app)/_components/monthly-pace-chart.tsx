@@ -17,7 +17,6 @@ import {
   Label,
   Line,
   ReferenceDot,
-  ReferenceLine,
   XAxis,
   YAxis,
   type CartesianViewBox,
@@ -29,8 +28,9 @@ import { homeCopy } from "./copy";
 import { InfoTip } from "./info-tip";
 
 // The engine owns the point-per-day data and the day-5 projection guard. This
-// component deliberately draws only the executive reading: realized spend,
-// its projected tail, the monthly budget, and today.
+// component deliberately draws only the executive reading: realized spend, its
+// projected tail, and today's point (budget context lives in the tooltip —
+// the reference lines were removed 2026-07-20, founder-directed).
 const c = homeCopy.monthlyPace;
 
 const chartConfig = {
@@ -93,12 +93,7 @@ function cartesianViewBox(viewBox: LabelProps["viewBox"]): CartesianViewBox {
   return {};
 }
 
-function EndLabel({
-  viewBox,
-  parentViewBox,
-  value,
-  tone,
-}: LabelProps & { tone: "budget" | "projection" }) {
+function EndLabel({ viewBox, parentViewBox, value }: LabelProps) {
   const box = cartesianViewBox(viewBox);
   const parent = cartesianViewBox(parentViewBox);
   const x = box.x ?? 0;
@@ -106,9 +101,8 @@ function EndLabel({
   const width = box.width ?? 0;
   const height = box.height ?? 0;
   const text = String(value ?? "");
-  const isProjection = tone === "projection";
-  const anchorX = isProjection ? x + width / 2 - 8 : x + width - 6;
-  const anchorY = isProjection ? y + height / 2 - 28 : y - 7;
+  const anchorX = x + width / 2 - 8;
+  const anchorY = y + height / 2 - 28;
   const labelWidth = Math.min(150, Math.max(92, text.length * 5.8 + 14));
   const plotLeft = parent.x ?? x;
   const rectX = Math.max(plotLeft + 4, anchorX - labelWidth);
@@ -131,9 +125,9 @@ function EndLabel({
         x={anchorX - 6}
         y={anchorY}
         textAnchor="end"
-        fill={isProjection ? "var(--foreground)" : "var(--muted-foreground)"}
+        fill="var(--foreground)"
         fontSize={11}
-        fontWeight={isProjection ? 500 : 400}
+        fontWeight={500}
         className="tabular-nums"
       >
         {text}
@@ -261,23 +255,6 @@ export function MonthlyPaceChart({
                   tickFormatter={(value: number) => compactMoney(value, currency)}
                 />
 
-                {budget > 0 && (
-                  <ReferenceLine
-                    y={budget}
-                    stroke="var(--muted-foreground)"
-                    strokeDasharray="7 5"
-                    strokeOpacity={0.46}
-                    strokeWidth={1}
-                  >
-                    <Label
-                      value={c.budgetValue(compactMoney(budget, currency))}
-                      content={(labelProps) => (
-                        <EndLabel {...labelProps} tone="budget" />
-                      )}
-                    />
-                  </ReferenceLine>
-                )}
-
                 <ChartTooltip
                   cursor={{
                     stroke: "var(--muted-foreground)",
@@ -331,13 +308,6 @@ export function MonthlyPaceChart({
                   activeDot={{ r: 3, strokeWidth: 0 }}
                 />
 
-                <ReferenceLine
-                  x={todayDay}
-                  stroke="var(--muted-foreground)"
-                  strokeDasharray="2 4"
-                  strokeOpacity={0.44}
-                  strokeWidth={1}
-                />
                 <ReferenceDot
                   x={todayDay}
                   y={todayValue}
@@ -379,9 +349,7 @@ export function MonthlyPaceChart({
                   >
                     <Label
                       value={projectionLabel}
-                      content={(labelProps) => (
-                        <EndLabel {...labelProps} tone="projection" />
-                      )}
+                      content={(labelProps) => <EndLabel {...labelProps} />}
                     />
                   </ReferenceDot>
                 )}

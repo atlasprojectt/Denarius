@@ -2,21 +2,26 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 // Soft semantic badge for compact non-budget states (connection failures,
-// data-quality flags, pending invitations). Semaphore colors stay reserved for
-// budget status (StatusPill, principle #5): amber here marks data quality —
-// the one non-budget tint the product already discloses in (the FX-missing
-// footer precedent) — and green is deliberately not offered.
+// data-quality flags, pending invitations). Styling copies the shadcnui-blocks
+// "Badge 08 Soft" recipe verbatim (founder-directed 2026-07-20): status dot +
+// the block's own palette, no adaptation to the --status-* tokens. Green is
+// still not offered — the semaphore stays budget-only (principle #5).
 
 export type StateBadgeTone = "neutral" | "amber" | "destructive";
 
 const toneClasses: Record<StateBadgeTone, string> = {
-  neutral: "text-muted-foreground",
-  amber: "border-status-amber/25 bg-status-amber-soft text-status-amber-fg",
-  destructive: "",
+  neutral: "gap-1.5 text-muted-foreground",
+  amber:
+    "gap-1.5 border-transparent bg-amber-600/10 text-amber-500 shadow-none hover:bg-amber-600/10 dark:bg-amber-600/20",
+  destructive: "gap-1.5",
 };
 
-// Amber rides the `default` variant (no dark:bg override to fight); the other
-// tones map straight onto the existing Badge variants.
+const dotClasses: Record<StateBadgeTone, string> = {
+  neutral: "bg-muted-foreground",
+  amber: "bg-amber-500",
+  destructive: "bg-red-400",
+};
+
 const toneVariant: Record<StateBadgeTone, "outline" | "default" | "destructive"> = {
   neutral: "outline",
   amber: "default",
@@ -34,6 +39,7 @@ export function StateBadge({
 }) {
   return (
     <Badge variant={toneVariant[tone]} className={cn(toneClasses[tone], className)}>
+      <div className={cn("h-1.5 w-1.5 rounded-full", dotClasses[tone])} />
       {children}
     </Badge>
   );

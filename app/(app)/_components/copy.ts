@@ -68,7 +68,6 @@ export const homeCopy = {
     estimatedBreach: "Estouro estimado",
     dayLabel: (day: number, month: string) => `${day} de ${month}`,
     todayValue: (value: string) => `Hoje · ${value}`,
-    budgetValue: (value: string) => `Orçamento · ${value}`,
     projectionValue: (value: string) => `Projeção · ${value}`,
   },
 
