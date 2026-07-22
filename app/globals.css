@@ -343,6 +343,31 @@ input[type="number"]::-webkit-outer-spin-button {
   transition-timing-function: var(--motion-ease-expressive);
 }
 
+/* Nav entrance — the destinations cascade in on first paint (a fade + a small
+   left drift, the sidebar's horizontal motion language), staggered per item via
+   an inline animation-delay. Self-contained (not the RevealController), so it
+   plays once on load and never replays on client navigation, where the sidebar
+   never remounts. `both` holds the pre-delay hidden state and the settled end
+   state; under reduced motion the rule is skipped, so items render at their
+   natural (visible) position with no motion. */
+@keyframes denarius-sidebar-nav-enter {
+  0% {
+    opacity: 0;
+    transform: translateX(-6px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  [data-sidebar-nav-enter] {
+    animation: denarius-sidebar-nav-enter 420ms var(--motion-ease-expressive) both;
+    will-change: transform, opacity;
+  }
+}
+
 /* ---------------------------------------------------------------------------
    Status-dot pulse — the verdict dot pulses (an expanding, fading ring + a
    subtle breathe on the dot) instead of blinking, in the dot's own semaphore

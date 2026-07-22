@@ -3,8 +3,8 @@ import { notFound } from "next/navigation";
 import { PageContainer } from "@/components/domain/page-container";
 import { PageHeader } from "@/components/domain/page-header";
 import { SimulateDrawer } from "@/components/domain/simulate-drawer";
+import { StateBadge } from "@/components/domain/state-badge";
 import { StatusPill } from "@/components/domain/status-pill";
-import { Badge } from "@/components/ui/badge";
 import { findCockpitTeam, type CockpitTeam } from "@/lib/engine/cockpit";
 import { getTimesData } from "@/lib/home/queries";
 import { teamsDiagnosis } from "@/lib/usage/attribution";
@@ -74,7 +74,7 @@ export default async function TeamDetailPage({
                 label={statusLabel(cockpitTeam.status)}
               />
             ) : (
-              <Badge variant="outline">{copy.noBudget}</Badge>
+              <StateBadge>{copy.noBudget}</StateBadge>
             )}
             {cockpitTeam !== null && org !== null && (
               <SimulateDrawer

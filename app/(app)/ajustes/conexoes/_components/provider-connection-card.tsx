@@ -9,7 +9,6 @@ import { Notice } from "@/components/domain/notice";
 import { ProviderIcon } from "@/components/domain/provider-icon";
 import { StateBadge } from "@/components/domain/state-badge";
 import { ActionToast } from "@/components/domain/toast-provider";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -102,17 +101,17 @@ function statusLabel(status: string | null): string {
 }
 
 function StatusBadge({ status }: { status: string | null }) {
-  // Connection state is data quality, not budget status, so it never wears the
-  // semaphore (product principle #5) — a failing sync is the one state that
-  // earns the destructive tint; everything else stays neutral chrome.
+  // Connection state is data quality, not budget status. A failing sync earns
+  // the destructive tint; a healthy connection wears the emerald "positive"
+  // tone (founder-directed exception to principle #5's budget-only green,
+  // 2026-07-21); revoked/not-connected stay neutral chrome.
   if (status === "error") {
     return <StateBadge tone="destructive">{statusLabel(status)}</StateBadge>;
   }
-  return (
-    <Badge variant={status === "active" ? "secondary" : "outline"}>
-      {statusLabel(status)}
-    </Badge>
-  );
+  if (status === "active") {
+    return <StateBadge tone="positive">{statusLabel(status)}</StateBadge>;
+  }
+  return <StateBadge>{statusLabel(status)}</StateBadge>;
 }
 
 type KeyFormProps = {

@@ -53,6 +53,9 @@ const copy = {
   logout: "Sair",
 };
 
+// Two labelled groups (restored 2026-07-21, founder-directed): the "Cockpit"
+// and "Conta" subtitles frame the destinations. Stagger indices run across both
+// groups so the nav still cascades in as one list on first paint.
 const cockpitItems = [
   { title: copy.home, href: "/", icon: RiHome5Line },
   { title: copy.teams, href: "/times", icon: RiTeamLine },
@@ -95,10 +98,12 @@ function NavGroup({
   label,
   items,
   pathname,
+  startIndex,
 }: {
   label: string;
   items: NavItem[];
   pathname: string;
+  startIndex: number;
 }) {
   return (
     <SidebarGroup>
@@ -111,8 +116,13 @@ function NavGroup({
       </SidebarGroupLabel>
       <SidebarGroupContent>
         <SidebarMenu>
-          {items.map((item) => (
-            <SidebarMenuItem key={item.href} className="w-full">
+          {items.map((item, index) => (
+            <SidebarMenuItem
+              key={item.href}
+              className="w-full"
+              data-sidebar-nav-enter
+              style={{ animationDelay: `${60 + (startIndex + index) * 55}ms` }}
+            >
               <SidebarMenuButton
                 asChild
                 isActive={isActivePath(pathname, item.href)}
@@ -176,11 +186,13 @@ export function AppSidebar({
             label={copy.groupCockpit}
             items={cockpitItems}
             pathname={pathname}
+            startIndex={0}
           />
           <NavGroup
             label={copy.groupAccount}
             items={accountItems}
             pathname={pathname}
+            startIndex={cockpitItems.length}
           />
         </SidebarContent>
 
