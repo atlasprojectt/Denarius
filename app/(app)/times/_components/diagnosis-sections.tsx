@@ -589,7 +589,6 @@ export function DiagnosisBody({
             projection={evaluation?.projection ?? null}
             budget={evaluation?.budget ?? null}
             currency={currency}
-            dayOfPeriod={period.dayOfPeriod}
             daysInPeriod={period.daysInPeriod}
             emptyLabel={copy.chartEmpty}
           />

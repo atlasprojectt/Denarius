@@ -9,11 +9,11 @@ import {
 import {
   ChartContainer,
   ChartTooltip,
-  ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart";
 import {
-  expectedPaceSegment,
+  buildCumulativeComparison,
+  type CumulativeComparisonRow,
   type CumulativePoint,
 } from "@/lib/engine/cumulative";
 import { compactMoney, money } from "@/lib/money";
@@ -21,10 +21,12 @@ import {
   Area,
   ComposedChart,
   Label,
+  Line,
   ReferenceDot,
-  ReferenceLine,
   XAxis,
   YAxis,
+  type TooltipContentProps,
+  type TooltipValueType,
 } from "recharts";
 
 const copy = {
@@ -33,7 +35,6 @@ const copy = {
   budget: "Orçamento",
   pace: "Ritmo esperado",
   today: (value: string) => `Hoje · ${value}`,
-  budgetValue: (value: string) => `Orçamento · ${value}`,
   dayTick: (day: number) => `dia ${day}`,
 };
 
@@ -43,20 +44,11 @@ const chartConfig = {
     label: copy.projected,
     color: "color-mix(in oklab, var(--brand-accent) 58%, transparent)",
   },
+  pace: {
+    label: copy.pace,
+    color: "var(--muted-foreground)",
+  },
 } satisfies ChartConfig;
-
-function projectionSegment(
-  points: CumulativePoint[],
-  projection: number | null,
-  daysInPeriod: number,
-) {
-  const last = points.at(-1);
-  if (!last || projection === null || daysInPeriod <= last.day) return null;
-  return [
-    { x: last.day, y: last.spent },
-    { x: daysInPeriod, y: projection },
-  ] as const;
-}
 
 function xTicks(daysInPeriod: number): number[] {
   return [
@@ -70,7 +62,6 @@ export function CumulativeChart({
   projection,
   budget,
   currency,
-  dayOfPeriod,
   daysInPeriod,
   emptyLabel,
 }: {
@@ -78,15 +69,19 @@ export function CumulativeChart({
   projection: number | null;
   budget: number | null;
   currency: string;
-  dayOfPeriod: number;
   daysInPeriod: number;
   emptyLabel: string;
 }) {
   const fillId = useId().replace(/:/g, "");
   const today = points.at(-1);
   const hasSpend = points.some((point) => point.spent > 0);
-  const projected = projectionSegment(points, projection, daysInPeriod);
-  const pace = expectedPaceSegment(budget, daysInPeriod);
+  const rows = buildCumulativeComparison({
+    points,
+    projection,
+    budget,
+    daysInPeriod,
+  });
+  const hasProjection = rows.some((row) => row.projected !== null);
   const maxY = Math.max(budget ?? 0, projection ?? 0, today?.spent ?? 0, 1) * 1.08;
 
   if (!hasSpend || !today) {
@@ -107,7 +102,7 @@ export function CumulativeChart({
         >
           <ComposedChart
             accessibilityLayer
-            data={points}
+            data={rows}
             margin={{ top: 30, right: 28, bottom: 6, left: 4 }}
           >
             <SpendChartGrid />
@@ -134,43 +129,6 @@ export function CumulativeChart({
               tickFormatter={(value: number) => compactMoney(value, currency)}
             />
 
-            {pace && (
-              <ReferenceLine
-                segment={[
-                  { x: pace.start.day, y: pace.start.spent },
-                  { x: pace.end.day, y: pace.end.spent },
-                ]}
-                stroke="var(--muted-foreground)"
-                strokeDasharray="2 6"
-                strokeOpacity={0.34}
-                strokeWidth={1}
-                label={{
-                  value: copy.pace,
-                  position: "center",
-                  fill: "var(--muted-foreground)",
-                  fontSize: 10,
-                  dy: -8,
-                }}
-              />
-            )}
-
-            {budget !== null && budget > 0 && (
-              <ReferenceLine
-                y={budget}
-                stroke="var(--muted-foreground)"
-                strokeDasharray="7 5"
-                strokeOpacity={0.46}
-                strokeWidth={1}
-                label={{
-                  value: copy.budgetValue(compactMoney(budget, currency, 2)),
-                  position: "insideTopRight",
-                  fill: "var(--muted-foreground)",
-                  fontSize: 11,
-                  dy: -6,
-                }}
-              />
-            )}
-
             <ChartTooltip
               cursor={{
                 stroke: "var(--muted-foreground)",
@@ -180,22 +138,9 @@ export function CumulativeChart({
               }}
               isAnimationActive="auto"
               animationDuration={160}
-              content={
-                <ChartTooltipContent
-                  indicator="line"
-                  labelFormatter={(_, payload) =>
-                    copy.dayTick(Number(payload?.[0]?.payload?.day ?? 0))
-                  }
-                  formatter={(value) => (
-                    <div className="flex min-w-[10rem] items-center justify-between gap-4">
-                      <span className="text-muted-foreground">{copy.spent}</span>
-                      <span className="font-medium tabular-nums">
-                        {money(Number(value), currency)}
-                      </span>
-                    </div>
-                  )}
-                />
-              }
+              content={(tooltipProps) => (
+                <ComparisonTooltip {...tooltipProps} currency={currency} />
+              )}
             />
 
             <Area
@@ -216,23 +161,32 @@ export function CumulativeChart({
               }}
             />
 
-            {projected && (
-              <ReferenceLine
-                segment={projected}
-                stroke="var(--color-projected)"
-                strokeWidth={1.8}
-                strokeDasharray="6 6"
-                strokeLinecap="round"
-              />
-            )}
-
-            <ReferenceLine
-              x={dayOfPeriod}
-              stroke="var(--muted-foreground)"
-              strokeDasharray="2 4"
-              strokeOpacity={0.44}
-              strokeWidth={1}
+            <Line
+              dataKey="projected"
+              type="monotone"
+              stroke="var(--color-projected)"
+              strokeWidth={1.8}
+              strokeDasharray="6 6"
+              strokeLinecap="round"
+              dot={false}
+              connectNulls={false}
+              isAnimationActive={false}
+              activeDot={{ r: 3, strokeWidth: 0 }}
             />
+            <Line
+              dataKey="pace"
+              type="monotone"
+              stroke="var(--color-pace)"
+              strokeWidth={1.15}
+              strokeDasharray="2 6"
+              strokeLinecap="round"
+              strokeOpacity={0.42}
+              dot={false}
+              connectNulls={false}
+              isAnimationActive={false}
+              activeDot={{ r: 3, strokeWidth: 0 }}
+            />
+
             <ReferenceDot
               x={today.day}
               y={today.spent}
@@ -250,7 +204,7 @@ export function CumulativeChart({
                 fontWeight={600}
               />
             </ReferenceDot>
-            {projected && projection !== null && (
+            {hasProjection && projection !== null && (
               <ReferenceDot
                 x={daysInPeriod}
                 y={projection}
@@ -265,5 +219,75 @@ export function CumulativeChart({
         </ChartContainer>
       </div>
     </div>
+  );
+}
+
+function ComparisonTooltip({
+  active,
+  payload,
+  currency,
+}: TooltipContentProps<TooltipValueType, string | number> & {
+  currency: string;
+}) {
+  if (!active || !payload.length) return null;
+
+  const row = payload[0]?.payload as CumulativeComparisonRow | undefined;
+  if (!row) return null;
+
+  return (
+    <div className="min-w-52 rounded-lg border border-white/10 bg-zinc-950 px-3 py-2.5 text-xs text-zinc-50 shadow-lg">
+      <p className="mb-2 font-medium">{copy.dayTick(row.day)}</p>
+      <div className="grid grid-cols-[1fr_auto] gap-x-5 gap-y-1.5">
+        {row.spent !== null && (
+          <TooltipRow
+            label={copy.spent}
+            value={money(row.spent, currency)}
+            tone="spent"
+          />
+        )}
+        {row.projected !== null && row.spent === null && (
+          <TooltipRow
+            label={copy.projected}
+            value={money(row.projected, currency)}
+            tone="projected"
+          />
+        )}
+        {row.pace !== null && (
+          <TooltipRow
+            label={copy.pace}
+            value={money(row.pace, currency)}
+            tone="pace"
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
+function TooltipRow({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: string;
+  tone: "spent" | "projected" | "pace";
+}) {
+  const marker = {
+    spent: "bg-brand-accent",
+    projected: "bg-brand-accent/60",
+    pace: "bg-zinc-500",
+  }[tone];
+
+  return (
+    <>
+      <span className="flex items-center gap-1.5 text-zinc-400">
+        <span aria-hidden className={`size-2 rounded-full ${marker}`} />
+        {label}
+      </span>
+      <span className="text-right font-medium tabular-nums text-zinc-50">
+        {value}
+      </span>
+    </>
   );
 }

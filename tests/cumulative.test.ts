@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { buildCumulativeSpend, expectedPaceSegment } from "@/lib/engine/cumulative";
+import {
+  buildCumulativeComparison,
+  buildCumulativeSpend,
+  expectedPaceSegment,
+} from "@/lib/engine/cumulative";
 
 // The drill-down cumulative series must mirror the evaluation combine exactly:
 // frozen-FX conversion, API dropped when FX is missing, seats spread evenly.
@@ -111,5 +115,58 @@ describe("expectedPaceSegment", () => {
       start: { day: 1, spent: 50 },
       end: { day: 1, spent: 50 },
     });
+  });
+});
+
+describe("buildCumulativeComparison", () => {
+  const points = [
+    { day: 1, spent: 100 },
+    { day: 2, spent: 250 },
+  ];
+
+  it("builds interactive projection and expected-pace values through close", () => {
+    const rows = buildCumulativeComparison({
+      points,
+      projection: 700,
+      budget: 500,
+      daysInPeriod: 5,
+    });
+
+    expect(rows).toEqual([
+      { day: 1, spent: 100, projected: null, pace: 100 },
+      { day: 2, spent: 250, projected: 250, pace: 200 },
+      { day: 3, spent: null, projected: 400, pace: 300 },
+      { day: 4, spent: null, projected: 550, pace: 400 },
+      { day: 5, spent: null, projected: 700, pace: 500 },
+    ]);
+  });
+
+  it("keeps future comparison values honest while projection is unavailable", () => {
+    const rows = buildCumulativeComparison({
+      points,
+      projection: null,
+      budget: 500,
+      daysInPeriod: 5,
+    });
+
+    expect(rows.map((row) => row.projected)).toEqual([
+      null,
+      null,
+      null,
+      null,
+      null,
+    ]);
+    expect(rows.at(-1)?.pace).toBe(500);
+  });
+
+  it("omits expected pace without a positive budget", () => {
+    const rows = buildCumulativeComparison({
+      points,
+      projection: 700,
+      budget: null,
+      daysInPeriod: 5,
+    });
+
+    expect(rows.every((row) => row.pace === null)).toBe(true);
   });
 });
