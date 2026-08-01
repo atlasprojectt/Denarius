@@ -1,7 +1,14 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { RiErrorWarningLine, RiKey2Line, RiLightbulbLine } from "@remixicon/react";
+import {
+  RiCheckboxCircleFill,
+  RiErrorWarningFill,
+  RiErrorWarningLine,
+  RiKey2Line,
+  RiLightbulbLine,
+  RiLinkUnlink,
+} from "@remixicon/react";
 
 import { ActionStatus } from "@/components/domain/action-status";
 import { ConfirmationDialog } from "@/components/domain/confirmation-dialog";
@@ -106,12 +113,20 @@ function StatusBadge({ status }: { status: string | null }) {
   // tone (founder-directed exception to principle #5's budget-only green,
   // 2026-07-21); revoked/not-connected stay neutral chrome.
   if (status === "error") {
-    return <StateBadge tone="destructive">{statusLabel(status)}</StateBadge>;
+    return (
+      <StateBadge icon={RiErrorWarningFill} tone="destructive">
+        {statusLabel(status)}
+      </StateBadge>
+    );
   }
   if (status === "active") {
-    return <StateBadge tone="positive">{statusLabel(status)}</StateBadge>;
+    return (
+      <StateBadge icon={RiCheckboxCircleFill} tone="positive">
+        {statusLabel(status)}
+      </StateBadge>
+    );
   }
-  return <StateBadge>{statusLabel(status)}</StateBadge>;
+  return <StateBadge icon={RiLinkUnlink}>{statusLabel(status)}</StateBadge>;
 }
 
 type KeyFormProps = {

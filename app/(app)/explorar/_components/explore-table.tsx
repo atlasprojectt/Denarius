@@ -7,6 +7,7 @@ import {
   RiArrowRightSLine,
   RiArrowUpDownLine,
   RiArrowUpLine,
+  RiPriceTag3Line,
   RiSearchLine,
 } from "@remixicon/react";
 
@@ -157,7 +158,11 @@ function MoneyValue({
   if (row.state === "unpriced") {
     // Amber = data quality (honest numbers, principle #3): an unpriced model is
     // a gap in the total, not neutral trivia.
-    return <StateBadge tone="amber">{copy.unpricedBadge}</StateBadge>;
+    return (
+      <StateBadge icon={RiPriceTag3Line} tone="amber">
+        {copy.unpricedBadge}
+      </StateBadge>
+    );
   }
 
   const primary =

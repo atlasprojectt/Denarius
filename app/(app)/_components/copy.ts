@@ -27,9 +27,19 @@ export const homeCopy = {
     weekDelta: (pct: string) => `${pct} vs semana anterior`,
     kpiProjection: "Projeção de fechamento",
     collectingShort: "coletando ritmo",
-    today: (day: number, days: number) => `hoje · dia ${day} de ${days}`,
     unconverted: (usd: string) =>
       `+ ${usd} de API ainda sem câmbio congelado — fora do total até o câmbio ser capturado.`,
+    // Pacing bar. The meta row pairs the two figures the bar exists to
+    // compare: how much of the budget is gone against how much of the month.
+    periodDay: (day: number, days: number) => `dia ${day} de ${days}`,
+    pace: {
+      spent: "Gasto",
+      projected: "Projeção",
+      budget: "Orçamento",
+      /** Always present for assistive tech — the visual legend is hover-only. */
+      description: (spent: string, elapsed: string) =>
+        `Barra de ritmo: ${spent} do orçamento gasto, com ${elapsed} do mês decorrido. A parte cheia é o gasto, a parte clara é a projeção de fechamento e a linha marca o orçamento.`,
+    },
   },
 
   composition: {

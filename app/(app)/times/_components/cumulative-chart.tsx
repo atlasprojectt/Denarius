@@ -1,16 +1,11 @@
 "use client";
 
-import { useId } from "react";
-
 import {
-  SpendAreaGradient,
-  SpendChartGrid,
-} from "@/components/domain/spend-chart-visuals";
-import {
-  ChartContainer,
-  ChartTooltip,
-  type ChartConfig,
-} from "@/components/ui/chart";
+  CHART_ANNOTATION_Z_INDEX,
+  SpendTrendChart,
+  type TrendLine,
+} from "@/components/domain/spend-trend-chart";
+import type { ChartConfig } from "@/components/ui/chart";
 import {
   buildCumulativeComparison,
   type CumulativeComparisonRow,
@@ -18,16 +13,15 @@ import {
 } from "@/lib/engine/cumulative";
 import { compactMoney, money } from "@/lib/money";
 import {
-  Area,
-  ComposedChart,
   Label,
-  Line,
   ReferenceDot,
-  XAxis,
-  YAxis,
   type TooltipContentProps,
   type TooltipValueType,
 } from "recharts";
+
+// The team drill-down's cumulative view. Same chart grammar and hover focus as
+// Home's "Evolução do mês" (both come from SpendTrendChart); what differs is the
+// third series — this screen also plots the expected pace to compare against.
 
 const copy = {
   spent: "Realizado",
@@ -49,6 +43,11 @@ const chartConfig = {
     color: "var(--muted-foreground)",
   },
 } satisfies ChartConfig;
+
+const trendLines: TrendLine[] = [
+  { key: "projected", dash: "6 6", width: 1.8 },
+  { key: "pace", dash: "2 6", width: 1.15, opacity: 0.42 },
+];
 
 function xTicks(daysInPeriod: number): number[] {
   return [
@@ -72,7 +71,6 @@ export function CumulativeChart({
   daysInPeriod: number;
   emptyLabel: string;
 }) {
-  const fillId = useId().replace(/:/g, "");
   const today = points.at(-1);
   const hasSpend = points.some((point) => point.spent > 0);
   const rows = buildCumulativeComparison({
@@ -94,130 +92,55 @@ export function CumulativeChart({
 
   return (
     <div data-reveal="team-cumulative" suppressHydrationWarning>
-      <div data-reveal-wipe>
-        <ChartContainer
-          config={chartConfig}
-          debounce={80}
-          className="h-[280px] w-full overflow-hidden"
+      <SpendTrendChart
+        data-reveal-wipe
+        className="h-[280px] w-full"
+        rows={rows}
+        xKey="day"
+        xDomain={[1, daysInPeriod]}
+        xTicks={xTicks(daysInPeriod)}
+        todayDay={today.day}
+        yMax={maxY}
+        yTickFormatter={(value) => compactMoney(value, currency)}
+        config={chartConfig}
+        areaKey="spent"
+        lines={trendLines}
+        pillLabel={(day) => copy.dayTick(day)}
+        renderTooltip={(tooltipProps) => (
+          <ComparisonTooltip {...tooltipProps} currency={currency} />
+        )}
+      >
+        <ReferenceDot
+          zIndex={CHART_ANNOTATION_Z_INDEX}
+          x={today.day}
+          y={today.spent}
+          r={4}
+          fill="var(--background)"
+          stroke="var(--brand-accent)"
+          strokeWidth={2.5}
         >
-          <ComposedChart
-            accessibilityLayer
-            data={rows}
-            margin={{ top: 30, right: 28, bottom: 6, left: 4 }}
-          >
-            <SpendChartGrid />
-            <SpendAreaGradient id={fillId} />
-
-            <XAxis
-              dataKey="day"
-              type="number"
-              domain={[1, daysInPeriod]}
-              ticks={xTicks(daysInPeriod)}
-              tickLine={false}
-              axisLine={{ stroke: "var(--border)", strokeOpacity: 0.65 }}
-              tickMargin={8}
-              minTickGap={24}
-              allowDecimals={false}
-            />
-            <YAxis
-              domain={[0, maxY]}
-              tickCount={5}
-              tickLine={false}
-              axisLine={false}
-              tickMargin={6}
-              width={68}
-              tickFormatter={(value: number) => compactMoney(value, currency)}
-            />
-
-            <ChartTooltip
-              cursor={{
-                stroke: "var(--muted-foreground)",
-                strokeDasharray: "3 3",
-                strokeOpacity: 0.5,
-                strokeWidth: 1,
-              }}
-              isAnimationActive="auto"
-              animationDuration={160}
-              content={(tooltipProps) => (
-                <ComparisonTooltip {...tooltipProps} currency={currency} />
-              )}
-            />
-
-            <Area
-              dataKey="spent"
-              type="monotone"
-              stroke="var(--color-spent)"
-              strokeWidth={2.25}
-              strokeLinecap="round"
-              fill={`url(#${fillId})`}
-              dot={false}
-              connectNulls={false}
-              isAnimationActive={false}
-              activeDot={{
-                r: 4,
-                fill: "var(--background)",
-                stroke: "var(--brand-accent)",
-                strokeWidth: 2.25,
-              }}
-            />
-
-            <Line
-              dataKey="projected"
-              type="monotone"
-              stroke="var(--color-projected)"
-              strokeWidth={1.8}
-              strokeDasharray="6 6"
-              strokeLinecap="round"
-              dot={false}
-              connectNulls={false}
-              isAnimationActive={false}
-              activeDot={{ r: 3, strokeWidth: 0 }}
-            />
-            <Line
-              dataKey="pace"
-              type="monotone"
-              stroke="var(--color-pace)"
-              strokeWidth={1.15}
-              strokeDasharray="2 6"
-              strokeLinecap="round"
-              strokeOpacity={0.42}
-              dot={false}
-              connectNulls={false}
-              isAnimationActive={false}
-              activeDot={{ r: 3, strokeWidth: 0 }}
-            />
-
-            <ReferenceDot
-              x={today.day}
-              y={today.spent}
-              r={4}
-              fill="var(--background)"
-              stroke="var(--brand-accent)"
-              strokeWidth={2.5}
-            >
-              <Label
-                value={copy.today(compactMoney(today.spent, currency, 2))}
-                position="top"
-                offset={11}
-                fill="var(--foreground)"
-                fontSize={11}
-                fontWeight={600}
-              />
-            </ReferenceDot>
-            {hasProjection && projection !== null && (
-              <ReferenceDot
-                x={daysInPeriod}
-                y={projection}
-                r={3.5}
-                fill="var(--brand-accent)"
-                fillOpacity={0.7}
-                stroke="var(--background)"
-                strokeWidth={1.25}
-              />
-            )}
-          </ComposedChart>
-        </ChartContainer>
-      </div>
+          <Label
+            value={copy.today(compactMoney(today.spent, currency, 2))}
+            position="top"
+            offset={11}
+            fill="var(--foreground)"
+            fontSize={11}
+            fontWeight={600}
+          />
+        </ReferenceDot>
+        {hasProjection && projection !== null && (
+          <ReferenceDot
+            zIndex={CHART_ANNOTATION_Z_INDEX}
+            x={daysInPeriod}
+            y={projection}
+            r={3.5}
+            fill="var(--brand-accent)"
+            fillOpacity={0.7}
+            stroke="var(--background)"
+            strokeWidth={1.25}
+          />
+        )}
+      </SpendTrendChart>
     </div>
   );
 }
@@ -235,30 +158,34 @@ function ComparisonTooltip({
   if (!row) return null;
 
   return (
-    <div className="min-w-52 rounded-lg border border-white/10 bg-zinc-950 px-3 py-2.5 text-xs text-zinc-50 shadow-lg">
-      <p className="mb-2 font-medium">{copy.dayTick(row.day)}</p>
-      <div className="grid grid-cols-[1fr_auto] gap-x-5 gap-y-1.5">
-        {row.spent !== null && (
-          <TooltipRow
-            label={copy.spent}
-            value={money(row.spent, currency)}
-            tone="spent"
-          />
-        )}
-        {row.projected !== null && row.spent === null && (
-          <TooltipRow
-            label={copy.projected}
-            value={money(row.projected, currency)}
-            tone="projected"
-          />
-        )}
-        {row.pace !== null && (
-          <TooltipRow
-            label={copy.pace}
-            value={money(row.pace, currency)}
-            tone="pace"
-          />
-        )}
+    <div className="min-w-52">
+      <p className="mb-1.5 pl-0.5 text-xs font-medium text-foreground">
+        {copy.dayTick(row.day)}
+      </p>
+      <div className="rounded-lg border border-white/10 bg-zinc-950 px-3 py-2.5 text-xs text-zinc-50 shadow-lg">
+        <div className="grid grid-cols-[1fr_auto] gap-x-5 gap-y-1.5">
+          {row.spent !== null && (
+            <TooltipRow
+              label={copy.spent}
+              value={money(row.spent, currency)}
+              tone="spent"
+            />
+          )}
+          {row.projected !== null && row.spent === null && (
+            <TooltipRow
+              label={copy.projected}
+              value={money(row.projected, currency)}
+              tone="projected"
+            />
+          )}
+          {row.pace !== null && (
+            <TooltipRow
+              label={copy.pace}
+              value={money(row.pace, currency)}
+              tone="pace"
+            />
+          )}
+        </div>
       </div>
     </div>
   );

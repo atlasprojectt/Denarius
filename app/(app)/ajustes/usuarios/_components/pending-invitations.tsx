@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { RiMailCloseLine, RiMailLine } from "@remixicon/react";
+import { RiMailCloseLine, RiMailLine, RiTimeLine } from "@remixicon/react";
 
 import { ConfirmationDialog } from "@/components/domain/confirmation-dialog";
 import { StateBadge } from "@/components/domain/state-badge";
@@ -95,7 +95,7 @@ export function PendingInvitations({
           <ItemContent>
             <ItemTitle>
               {invitation.email}
-              <StateBadge>{copy.pending}</StateBadge>
+              <StateBadge icon={RiTimeLine}>{copy.pending}</StateBadge>
             </ItemTitle>
             <ItemDescription>
               {copy.roleLabel[invitation.role] ?? invitation.role} ·{" "}

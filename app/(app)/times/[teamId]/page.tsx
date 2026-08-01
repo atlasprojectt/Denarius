@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { RiWallet3Line } from "@remixicon/react";
 
 import { PageContainer } from "@/components/domain/page-container";
 import { PageHeader } from "@/components/domain/page-header";
@@ -74,7 +75,7 @@ export default async function TeamDetailPage({
                 label={statusLabel(cockpitTeam.status)}
               />
             ) : (
-              <StateBadge>{copy.noBudget}</StateBadge>
+              <StateBadge icon={RiWallet3Line}>{copy.noBudget}</StateBadge>
             )}
             {cockpitTeam !== null && org !== null && (
               <SimulateDrawer

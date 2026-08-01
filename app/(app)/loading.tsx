@@ -15,7 +15,7 @@ export default function AppLoading() {
       </div>
 
       <div className="grid gap-6 xl:grid-cols-2">
-        <div className="flex flex-col gap-5 rounded-xl border bg-card p-6 shadow-xs">
+        <div className="flex flex-col gap-5 rounded-xl border p-6">
           <div className="flex flex-col gap-2">
             <Skeleton className="h-4 w-28" />
             <Skeleton className="h-10 w-64" />
@@ -27,18 +27,18 @@ export default function AppLoading() {
             <Skeleton className="h-10" />
           </div>
         </div>
-        <div className="flex flex-col gap-4 rounded-xl border bg-card p-6 shadow-xs">
+        <div className="flex flex-col gap-4 rounded-xl border p-6">
           <Skeleton className="h-4 w-40" />
           <Skeleton className="h-7 w-32" />
           <Skeleton className="h-2 w-full" />
           <Skeleton className="h-2 w-full" />
           <Skeleton className="h-2 w-full" />
         </div>
-        <div className="flex flex-col gap-4 rounded-xl border bg-card p-6 shadow-xs">
+        <div className="flex flex-col gap-4 rounded-xl border p-6">
           <Skeleton className="h-4 w-32" />
           <Skeleton className="h-44 w-full" />
         </div>
-        <div className="flex flex-col gap-3 rounded-xl border bg-card p-6 shadow-xs">
+        <div className="flex flex-col gap-3 rounded-xl border p-6">
           <Skeleton className="h-4 w-44" />
           <Skeleton className="h-4 w-full" />
           <Skeleton className="h-10 w-full" />

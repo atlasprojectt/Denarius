@@ -24,6 +24,14 @@
   --color-status-red: var(--status-red);
   --color-status-red-soft: var(--status-red-soft);
   --color-status-red-fg: var(--status-red-fg);
+  --color-badge-neutral: var(--badge-neutral);
+  --color-badge-neutral-soft: var(--badge-neutral-soft);
+  --color-badge-amber: var(--badge-amber);
+  --color-badge-amber-soft: var(--badge-amber-soft);
+  --color-badge-positive: var(--badge-positive);
+  --color-badge-positive-soft: var(--badge-positive-soft);
+  --color-badge-destructive: var(--badge-destructive);
+  --color-badge-destructive-soft: var(--badge-destructive-soft);
   --color-brand-accent: var(--brand-accent);
   --color-brand-accent-light: var(--brand-accent-light);
   --color-brand-accent-muted: var(--brand-accent-muted);
@@ -502,6 +510,17 @@ input[type="number"]::-webkit-outer-spin-button {
   --status-red: #dc2626;
   --status-red-soft: #fdf1f1;
   --status-red-fg: #991b1b;
+
+  /* Icon-led badges: vivid ink repeated as a 10% wash. Light-mode ink is
+     deliberately darker so 12px labels retain readable contrast. */
+  --badge-neutral: #57534e;
+  --badge-neutral-soft: color-mix(in oklab, var(--badge-neutral) 10%, transparent);
+  --badge-amber: #b45309;
+  --badge-amber-soft: color-mix(in oklab, var(--badge-amber) 10%, transparent);
+  --badge-positive: #15803d;
+  --badge-positive-soft: color-mix(in oklab, var(--badge-positive) 10%, transparent);
+  --badge-destructive: #dc2626;
+  --badge-destructive-soft: color-mix(in oklab, var(--badge-destructive) 10%, transparent);
 }
 
 .dark {
@@ -537,7 +556,9 @@ input[type="number"]::-webkit-outer-spin-button {
   --chart-3: color-mix(in oklab, var(--foreground) 70%, transparent);
   --chart-4: color-mix(in oklab, var(--foreground) 52%, transparent);
   --chart-5: color-mix(in oklab, var(--foreground) 36%, transparent);
-  --sidebar: oklch(0.216 0.006 56.043);
+  /* The inset shell needs a real depth step: the rail is the darkest plane,
+     then the app canvas, then transient/card surfaces. */
+  --sidebar: oklch(0.11 0.003 49.25);
   --sidebar-foreground: oklch(0.985 0.001 106.423);
   --sidebar-primary: oklch(0.705 0.213 47.604);
   --sidebar-primary-foreground: oklch(0.98 0.016 73.684);
@@ -555,6 +576,15 @@ input[type="number"]::-webkit-outer-spin-button {
   --status-red: #ef4444;
   --status-red-soft: #2c131387;
   --status-red-fg: #fca5a5;
+
+  --badge-neutral: #a8a29e;
+  --badge-neutral-soft: color-mix(in oklab, var(--badge-neutral) 10%, transparent);
+  --badge-amber: #f59e0b;
+  --badge-amber-soft: color-mix(in oklab, var(--badge-amber) 10%, transparent);
+  --badge-positive: #22c55e;
+  --badge-positive-soft: color-mix(in oklab, var(--badge-positive) 10%, transparent);
+  --badge-destructive: #fb2c36;
+  --badge-destructive-soft: color-mix(in oklab, var(--badge-destructive) 10%, transparent);
 }
 
 /* Description links inside the empty/field/item primitives hover in the brand
@@ -565,4 +595,87 @@ input[type="number"]::-webkit-outer-spin-button {
 [data-slot="field-description"] > a:hover,
 [data-slot="item-description"] > a:hover {
   color: var(--primary-hover);
+}
+
+/* Outlined cards (2026-07-30, founder-directed): a card is defined by its
+   contour alone — no fill, so every surface sits on the page background and the
+   only ink on screen is content. The primitive's `ring-1 ring-foreground/10` is
+   what draws that contour; only its `bg-card` is dropped. Unlayered so it beats
+   the layered utility, and here rather than in components/ui/card.tsx (F5).
+   Alerts and the theme swatches keep their own bg-card fill on purpose — they
+   are not cards and need to read as raised against one. */
+[data-slot="card"] {
+  background-color: transparent;
+}
+
+/* ---------------------------------------------------------------------------
+   Chart hover focus — the hairline, the date pill, the focus dot and the lit
+   window that track the hovered day in SpendTrendChart. Their POSITION is
+   written imperatively from the Recharts hooks (SVG pixel space); only the
+   glide and the fade live here, so reduced motion drops the movement while the
+   focus itself keeps working.
+
+   The ruler responds quickly so it never feels detached from the pointer, and
+   the highlight window keeps a light trail behind it. Measured 2026-08-01: the
+   earlier 260ms + 35ms head start left the two 223px apart 40ms into a jump
+   and still 28px apart at 120ms — the ruler arrived, then the highlight
+   crawled after it, which reads as stuttering rather than as trailing. The
+   trail has to stay close enough that they move as one object. (Frame timing
+   was clean throughout, so the SVG mask is not the cost.)
+--------------------------------------------------------------------------- */
+:root {
+  --chart-ruler-move: 90ms;
+  --chart-ruler-ease: ease-out;
+  --chart-highlight-move: 150ms;
+  --chart-highlight-delay: 0ms;
+  /* Same CURVE as the ruler, only a longer one. With the expressive ease here
+     the highlight sprinted ahead and led the ruler by ~100px mid-jump — a
+     desync either way. Sharing the shape makes it trail and converge. */
+  --chart-highlight-ease: ease-out;
+  --chart-focus-fade: 120ms;
+  /* The plot settling into its dimmed state is the one moment here that should
+     be FELT rather than merely fast — it is a change of mode, not a follow.
+     Kept separate from --chart-focus-fade, which the hairline/pill/dot use to
+     appear and must stay snappy. */
+  --chart-veil-fade: 260ms;
+}
+
+.denarius-chart-focus {
+  opacity: 0;
+}
+
+.denarius-chart-focus[data-visible="true"] {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .denarius-chart-focus {
+    transition:
+      opacity var(--chart-focus-fade) var(--chart-ruler-ease),
+      transform var(--chart-ruler-move) var(--chart-ruler-ease);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* FocusScrim owns its 0/0.62 opacity as an SVG attribute, so even a stale
+     stylesheet cannot turn the rect into an opaque black surface. CSS owns
+     only the fade between those safe values. */
+  .denarius-chart-scrim {
+    transition: opacity var(--chart-veil-fade) ease-in-out;
+  }
+
+  /* The window revealing the lit copy: a fixed-shape mask that slides, so it
+     decelerates into the ruler instead of jumping between days. */
+  .denarius-chart-window {
+    transition: transform var(--chart-highlight-move)
+      var(--chart-highlight-ease) var(--chart-highlight-delay);
+  }
+}
+
+/* Recharts' wrapper sets its own cursor, which beat the utility class on the
+   ChartContainer — unlayered here so the crosshair actually reaches the
+   pointer (F5 keeps components/ui untouched). */
+[data-slot="chart"] .recharts-wrapper,
+[data-slot="chart"] .recharts-surface {
+  cursor: crosshair;
 }

@@ -1,5 +1,6 @@
-import { RiArrowDownSFill, RiArrowUpSFill } from "@remixicon/react";
+import { RiArrowDownCircleFill, RiArrowUpCircleFill } from "@remixicon/react";
 
+import { StateBadge } from "@/components/domain/state-badge";
 import {
   Card,
   CardContent,
@@ -30,13 +31,12 @@ const WEEK_DELTA_MIN = 0.005;
  *  without judging it — the signed percent carries it for screen readers. */
 function WeekDelta({ pct }: { pct: number | null }) {
   if (pct === null || Math.abs(pct) < WEEK_DELTA_MIN) return null;
-  const Arrow = pct < 0 ? RiArrowDownSFill : RiArrowUpSFill;
+  const Arrow = pct < 0 ? RiArrowDownCircleFill : RiArrowUpCircleFill;
   const signed = `${pct > 0 ? "+" : ""}${percent(pct, 1)}`;
   return (
-    <p className="mt-1 inline-flex w-fit items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground tabular-nums">
-      <Arrow className="size-3.5 shrink-0" aria-hidden />
-      {c.weekDelta(signed)}
-    </p>
+    <StateBadge icon={Arrow} className="mt-1">
+      <span className="tabular-nums">{c.weekDelta(signed)}</span>
+    </StateBadge>
   );
 }
 

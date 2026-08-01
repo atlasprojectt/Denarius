@@ -1,11 +1,17 @@
 "use client";
 
 import { useActionState, useMemo, useState } from "react";
+import {
+  RiAnthropicFill,
+  RiLinksLine,
+  RiOpenaiFill,
+  type RemixiconComponentType,
+} from "@remixicon/react";
 
 import { ActionStatus } from "@/components/domain/action-status";
+import { StateBadge } from "@/components/domain/state-badge";
 import { ActionToast } from "@/components/domain/toast-provider";
 import { UsdValue } from "@/components/domain/usd-value";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -48,6 +54,26 @@ const providerLabel: Record<string, string> = {
   openai: "OpenAI",
   anthropic: "Anthropic",
 };
+
+const providerIcon: Record<string, RemixiconComponentType> = {
+  openai: RiOpenaiFill,
+  anthropic: RiAnthropicFill,
+};
+
+function ProviderBadge({
+  provider,
+  className,
+}: {
+  provider: string;
+  className?: string;
+}) {
+  const Icon = providerIcon[provider] ?? RiLinksLine;
+  return (
+    <StateBadge icon={Icon} className={className}>
+      {providerLabel[provider] ?? provider}
+    </StateBadge>
+  );
+}
 
 type Team = { id: string; name: string };
 
@@ -109,7 +135,7 @@ export function ProjectMapForm({
               <input type="hidden" name="project" value={key} />
               <div className="flex items-start justify-between gap-3">
                 <span className="font-medium">{project.projectId}</span>
-                <Badge variant="secondary">{providerLabel[project.provider] ?? project.provider}</Badge>
+                <ProviderBadge provider={project.provider} />
               </div>
               <p className="mt-2 text-xs text-muted-foreground tabular-nums">
                 {project.uncosted ? copy.uncosted : <UsdValue value={usdDisplay(project.derivedUsd, currency, fx)} />}
@@ -143,9 +169,7 @@ export function ProjectMapForm({
                 <TableCell>
                   <input type="hidden" name="project" value={key} />
                   <span className="font-medium">{project.projectId}</span>
-                  <Badge variant="secondary" className="ml-2">
-                    {providerLabel[project.provider] ?? project.provider}
-                  </Badge>
+                  <ProviderBadge provider={project.provider} className="ml-2" />
                 </TableCell>
                 <TableCell className="text-right tabular-nums">
                   {project.uncosted ? (

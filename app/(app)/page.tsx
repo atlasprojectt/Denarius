@@ -42,7 +42,7 @@ export default async function HomePage() {
         <h1 className="text-2xl font-semibold tracking-tight">
           {homeCopy.question}
         </h1>
-        <div className="rounded-xl border bg-card p-6 shadow-xs md:p-8">
+        <div className="rounded-xl border p-6 md:p-8">
           <RiDashboard3Line className="size-8 text-muted-foreground" aria-hidden />
           <h2 className="mt-4 text-lg font-semibold tracking-tight">
             {homeCopy.coldStart.title}

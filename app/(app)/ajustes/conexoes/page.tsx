@@ -1,6 +1,8 @@
+import { RiTimeLine } from "@remixicon/react";
+
 import { PageHeader } from "@/components/domain/page-header";
 import { PageContainer } from "@/components/domain/page-container";
-import { Badge } from "@/components/ui/badge";
+import { StateBadge } from "@/components/domain/state-badge";
 import {
   Item,
   ItemContent,
@@ -76,9 +78,9 @@ export default async function ConnectionsPage() {
               <ItemDescription>{item.description}</ItemDescription>
             </ItemContent>
             <ItemActions>
-              <Badge variant="outline" className="text-muted-foreground">
+              <StateBadge icon={RiTimeLine}>
                 {item.status}
-              </Badge>
+              </StateBadge>
             </ItemActions>
           </Item>
         ))}

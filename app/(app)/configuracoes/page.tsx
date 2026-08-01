@@ -1,10 +1,11 @@
 import { redirect } from "next/navigation";
+import { RiAdminLine, RiUserLine } from "@remixicon/react";
 
 import { PageHeader } from "@/components/domain/page-header";
 import { PageContainer } from "@/components/domain/page-container";
+import { StateBadge } from "@/components/domain/state-badge";
 import { ThemePicker } from "@/components/domain/theme-toggle";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { profileInitials, profileLabel } from "@/lib/settings/account";
@@ -62,6 +63,7 @@ export default async function PersonalSettingsPage() {
     displayName: account.display_name,
     email: account.email,
   });
+  const RoleIcon = account.role === "admin" ? RiAdminLine : RiUserLine;
 
   return (
     <PageContainer variant="form" className="gap-6">
@@ -89,9 +91,9 @@ export default async function PersonalSettingsPage() {
                   </p>
                 </div>
 
-                <Badge variant="outline" className="self-start sm:self-center">
+                <StateBadge icon={RoleIcon} className="self-start sm:self-center">
                   {copy.roleLabel[account.role] ?? account.role}
-                </Badge>
+                </StateBadge>
               </div>
 
               <ProfileForm displayName={displayName} />

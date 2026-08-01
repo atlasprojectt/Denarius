@@ -10,19 +10,51 @@ import type { CSSProperties } from "react";
 // every bar layer paints the SAME full-width tick grid (currentColor) and is
 // cut by clip-path, so track/fill/ghost tick columns always align — a
 // left-offset layer would start its own grid.
+//
+// The ticks are painted as a MASK over a currentColor fill, not as a repeating
+// gradient (2026-08-01, founder-directed): a gradient stop cannot have rounded
+// ends. A mask carries alpha only, so the color still comes from each layer's
+// `color` exactly as before, and filters like `brightness-115` keep working.
 
-/** Standard tick texture: 2px stroke on a 6px grid, painted in currentColor. */
-export const TICKS: CSSProperties = {
-  backgroundImage:
-    "repeating-linear-gradient(90deg, currentColor 0 2px, transparent 2px 6px)",
+/** One tick tile: a rounded bar of `width` on a `step` period. `mask-size`
+ *  stretches the tile to the bar's height, which stretches the corner radius
+ *  with it — so `authoredHeight` should track the heights the variant is used
+ *  at, or a tall bar ends up with pill-shaped caps. `fill='black'` is opaque,
+ *  which is all an alpha mask reads. */
+const tickMask = (
+  width: number,
+  step: number,
+  authoredHeight: number,
+): CSSProperties => {
+  const h = authoredHeight;
+  const svg = `%3Csvg xmlns='http://www.w3.org/2000/svg' width='${step}' height='${h}'%3E%3Crect width='${width}' height='${h}' rx='1.5' fill='black'/%3E%3C/svg%3E`;
+  const image = `url("data:image/svg+xml,${svg}")`;
+  const size = `${step}px 100%`;
+  return {
+    backgroundColor: "currentColor",
+    maskImage: image,
+    maskSize: size,
+    maskRepeat: "repeat-x",
+    // Inline styles are never autoprefixed; without this Safari < 15.4 drops
+    // the mask and paints a solid bar instead of ticks.
+    WebkitMaskImage: image,
+    WebkitMaskSize: size,
+    WebkitMaskRepeat: "repeat-x",
+  };
 };
 
-/** Bold variant for the hero spend bar: 3px stroke on the SAME 6px period, so
- *  its tick columns stay aligned with the standard grid stacked below it. */
-export const TICKS_BOLD: CSSProperties = {
-  backgroundImage:
-    "repeating-linear-gradient(90deg, currentColor 0 3px, transparent 3px 6px)",
-};
+/** Standard tick texture: 4.5px rounded tick on a 7px grid, in currentColor.
+ *  Authored at 12px for the ~8–14px bars it paints. */
+export const TICKS: CSSProperties = tickMask(4.5, 7, 12);
+
+/** Bold variant for the hero "Gasto do mês" bar, which is also the tallest —
+ *  a fat tick on a wide period, so it reads as chunky WITHOUT closing the gap
+ *  (founder-directed: the period grew with the tick, holding the air at 4px).
+ *  Authored at its own 32px so the caps stay 1.5px instead of stretching into
+ *  pills. Its own period is safe because the alignment invariant is per-bar:
+ *  PacingBar paints track, ghost and fill all with THIS variant, and no
+ *  standard-grid bar is stacked under it. */
+export const TICKS_BOLD: CSSProperties = tickMask(7.5, 11.5, 32);
 
 /** clip-path inset cutting a full-width layer to the [from..to] fraction. */
 export const cut = (from: number, to: number): string =>

@@ -15,6 +15,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { Separator } from "@/components/ui/separator";
 import {
   Sheet,
   SheetContent,
@@ -207,20 +208,30 @@ export function NextActionsButton() {
       aria-label={count > 0 ? copy.badgeAria(count) : copy.title}
       aria-expanded={open}
       aria-controls={panelId}
-      className="gap-2"
+      className="gap-1.5 border-border/80 bg-muted/35 px-2 shadow-xs hover:bg-muted/55 aria-expanded:border-border aria-expanded:bg-muted/65"
     >
-      <RiListCheck2 className="size-4 text-muted-foreground/75" aria-hidden />
-      <span className="hidden sm:inline">{copy.title}</span>
+      <span
+        aria-hidden
+        className="flex size-6 items-center justify-center rounded-md bg-brand-accent-muted text-brand-accent-light"
+      >
+        <RiListCheck2 />
+      </span>
+      <span className="hidden px-0.5 font-semibold sm:inline">{copy.title}</span>
       {count > 0 && (
         <span
           aria-hidden
-          className="flex size-4.5 min-w-4.5 items-center justify-center rounded-pill bg-brand-accent-muted px-1 text-[10px] font-medium leading-none text-brand-accent-light tabular-nums"
+          className="flex h-5 min-w-5 items-center justify-center rounded-pill bg-brand-accent-muted px-1.5 text-[11px] font-semibold leading-none text-brand-accent-light tabular-nums"
         >
           {count}
         </span>
       )}
+      <Separator
+        aria-hidden
+        orientation="vertical"
+        className="mx-0.5 h-4! bg-border/70"
+      />
       <RiArrowDownSLine
-        className={`-ml-0.5 size-3.5 text-muted-foreground/70 transition-transform duration-(--motion-duration-fast) ease-(--motion-ease-standard) ${open ? "rotate-180" : ""}`}
+        className={`text-muted-foreground/65 transition-transform duration-(--motion-duration-fast) ease-(--motion-ease-standard) ${open ? "rotate-180" : ""}`}
         data-icon="disclosure"
         aria-hidden
       />

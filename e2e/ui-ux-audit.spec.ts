@@ -165,6 +165,44 @@ test("Home keeps the verdict visible and team rows predictable", async ({ page }
   await expect(page.locator("main")).toHaveJSProperty("scrollWidth", await page.locator("main").evaluate((node) => node.clientWidth));
 });
 
+test("State badges keep the shared icon-led geometry", async ({ page }) => {
+  await page.goto("/ajustes/conexoes");
+  const badge = page.locator('[data-slot="state-badge"]').first();
+  await expect(badge).toBeVisible();
+
+  const metrics = await badge.evaluate((node) => {
+    const style = getComputedStyle(node);
+    const icon = node.querySelector("svg");
+    const iconStyle = icon ? getComputedStyle(icon) : null;
+    return {
+      height: style.height,
+      fontSize: style.fontSize,
+      fontWeight: style.fontWeight,
+      borderWidth: style.borderTopWidth,
+      iconWidth: iconStyle?.width ?? null,
+      iconHeight: iconStyle?.height ?? null,
+    };
+  });
+
+  expect(metrics).toEqual({
+    height: "20px",
+    fontSize: "12px",
+    fontWeight: "600",
+    borderWidth: "0px",
+    iconWidth: "12px",
+    iconHeight: "12px",
+  });
+
+  const darkDestructive = await page.evaluate(() => {
+    document.documentElement.classList.add("dark");
+    return getComputedStyle(document.documentElement)
+      .getPropertyValue("--badge-destructive")
+      .trim()
+      .toLowerCase();
+  });
+  expect(darkDestructive).toBe("#fb2c36");
+});
+
 test("Explore exposes anchored sections and no horizontal page overflow", async ({ page }) => {
   await page.goto("/explorar");
   await expect(page.getByRole("navigation", { name: "Seções de exploração" })).toBeVisible();

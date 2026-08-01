@@ -9,7 +9,7 @@ export default function PersonalSettingsLoading() {
         <Skeleton className="h-4 w-96 max-w-full" />
       </div>
 
-      <div className="overflow-hidden rounded-md bg-card ring-1 ring-foreground/10">
+      <div className="overflow-hidden rounded-md ring-1 ring-foreground/10">
         <section className="px-5 py-6 sm:px-6">
           <Skeleton className="h-4 w-14" />
           <Skeleton className="mt-2 h-3 w-80 max-w-full" />

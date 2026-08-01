@@ -27,7 +27,7 @@ function SettingsGroupSkeleton({
   return (
     <section className="flex flex-col gap-2.5">
       <Skeleton className="h-3 w-28" />
-      <div className="divide-y divide-border/60 overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10">
+      <div className="divide-y divide-border/60 overflow-hidden rounded-xl ring-1 ring-foreground/10">
         {Array.from({ length: rows }, (_, index) => (
           <SettingsRowSkeleton
             key={index}

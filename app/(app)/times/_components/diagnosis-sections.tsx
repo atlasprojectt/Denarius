@@ -1,10 +1,9 @@
 import Link from "next/link";
-import { RiArrowRightLine } from "@remixicon/react";
+import { RiArrowRightLine, RiKey2Line, RiPriceTag3Line } from "@remixicon/react";
 
 import { ProviderIcon, type ProviderIconName } from "@/components/domain/provider-icon";
 import { StateBadge } from "@/components/domain/state-badge";
 import { UsdValue } from "@/components/domain/usd-value";
-import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
@@ -327,7 +326,11 @@ function ContributorValue({
   fx: FrozenFx | null;
 }) {
   if (uncosted && derivedUsd === 0) {
-    return <StateBadge tone="amber">{copy.uncosted}</StateBadge>;
+    return (
+      <StateBadge icon={RiPriceTag3Line} tone="amber">
+        {copy.uncosted}
+      </StateBadge>
+    );
   }
   return <UsdValue value={usdDisplay(derivedUsd, currency, fx)} />;
 }
@@ -395,7 +398,7 @@ function ContributorsSection({
                         {person.isShared ? copy.sharedKey : person.userId}
                       </span>
                       {person.isShared && (
-                        <Badge variant="outline">{copy.sharedKey}</Badge>
+                        <StateBadge icon={RiKey2Line}>{copy.sharedKey}</StateBadge>
                       )}
                     </div>
                     <span className="text-right text-xs text-muted-foreground tabular-nums">

@@ -1,12 +1,12 @@
 "use client";
 
 import { useActionState } from "react";
-import { RiUserUnfollowLine } from "@remixicon/react";
+import { RiLockLine, RiUserUnfollowLine } from "@remixicon/react";
 
 import { ConfirmationDialog } from "@/components/domain/confirmation-dialog";
+import { StateBadge } from "@/components/domain/state-badge";
 import { ActionToast } from "@/components/domain/toast-provider";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Item,
@@ -106,9 +106,9 @@ export function UsersTable({
               <ItemActions>
                 {isAdmin && !isSelf && <RemoveButton userId={u.id} />}
                 {isSelf && (
-                  <Badge variant="outline" className="text-muted-foreground">
+                  <StateBadge icon={RiLockLine}>
                     {copy.selfNote}
-                  </Badge>
+                  </StateBadge>
                 )}
               </ItemActions>
             </Item>
