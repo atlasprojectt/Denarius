@@ -14,6 +14,10 @@ import {
 
 import { AllClear } from "@/components/domain/all-clear";
 import { LogoMark, LogoWordmark } from "@/components/domain/logo";
+import {
+  NavGroup,
+  type SidebarNavGroup,
+} from "@/components/domain/nav-group";
 import { StaleBanner } from "@/components/domain/stale-banner";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -27,9 +31,6 @@ import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
@@ -39,6 +40,11 @@ import {
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { logout } from "@/lib/auth/actions";
 import type { ConnectionFreshness } from "@/lib/engine/freshness";
+
+// Shell rebuilt on the shadcn block @efferd/app-shell-3 (2026-08-02,
+// founder-directed): header logo row → labelled NavGroups → footer. The
+// collapse choreography is the primitive's own (200ms ease-linear) — the app
+// no longer overrides it, so what you see is the block's native motion.
 
 const copy = {
   brand: "Denarius",
@@ -53,100 +59,31 @@ const copy = {
   logout: "Sair",
 };
 
-// Two labelled groups (restored 2026-07-21, founder-directed): the "Cockpit"
-// and "Conta" subtitles frame the destinations. Stagger indices run across both
-// groups so the nav still cascades in as one list on first paint.
-const cockpitItems = [
-  { title: copy.home, href: "/", icon: RiHome5Line },
-  { title: copy.teams, href: "/times", icon: RiTeamLine },
-  { title: copy.explore, href: "/explorar", icon: RiLineChartLine },
+const navigation: { label: string; items: { title: string; path: string; icon: React.ReactNode }[] }[] = [
+  {
+    label: copy.groupCockpit,
+    items: [
+      { title: copy.home, path: "/", icon: <RiHome5Line /> },
+      { title: copy.teams, path: "/times", icon: <RiTeamLine /> },
+      { title: copy.explore, path: "/explorar", icon: <RiLineChartLine /> },
+    ],
+  },
+  {
+    label: copy.groupAccount,
+    items: [{ title: copy.settings, path: "/ajustes", icon: <RiSettings3Line /> }],
+  },
 ];
 
-const accountItems = [
-  { title: copy.settings, href: "/ajustes", icon: RiSettings3Line },
-];
-
-type NavItem = (typeof cockpitItems)[number];
-
-// Collapse/expand label choreography: labels stay mounted (the buttons'
-// overflow-hidden clips them) and crossfade with the width easing — fast
-// fade-out on collapse, delayed fade-in on expand so text appears as the
-// space opens. Pairs with the sidebar width override in globals.css.
-const fadeLabel =
-  "translate-x-0 transition-[opacity,transform] duration-200 delay-100 ease-(--motion-ease-expressive) group-data-[collapsible=icon]:pointer-events-none group-data-[collapsible=icon]:-translate-x-1 group-data-[collapsible=icon]:opacity-0 group-data-[collapsible=icon]:delay-0 group-data-[collapsible=icon]:duration-150";
-
-// Keep the visual slot fixed while the button narrows. The expanded width is
-// absolute relative to the rail variable: animating from 100% would compound
-// with the parent's own width transition and pull the icon sideways.
-// Resting nav items (label + icon) sit at 65% of the sidebar ink so the active
-// item reads as the only lit one; the primitive's hover/data-active rules
-// restore full `--sidebar-accent-foreground`.
-const navButton =
-  "mx-auto h-9 w-[calc(var(--sidebar-width)-2rem)] gap-0 py-0 pr-0 pl-1 text-sidebar-foreground/65 transition-colors data-active:font-medium group-data-[collapsible=icon]:p-0! [&_svg]:size-4.5";
-const navIconSlot =
-  "grid size-8 shrink-0 place-items-center";
-const profileSlot = "grid size-8 shrink-0 place-items-center";
+// The wordmark rides the collapse: a fast fade-out as the rail closes, a
+// delayed fade-in on expand so the letters appear once the space is there.
+const fadeWordmark =
+  "transition-[opacity,transform] duration-200 delay-100 ease-(--motion-ease-expressive) group-data-[collapsible=icon]:pointer-events-none group-data-[collapsible=icon]:-translate-x-1 group-data-[collapsible=icon]:opacity-0 group-data-[collapsible=icon]:delay-0 group-data-[collapsible=icon]:duration-150";
 
 // "/" only matches exactly; sections stay lit on their subroutes and query
 // variants (/times/<id> keeps Times active through the pathname prefix).
 function isActivePath(pathname: string, href: string): boolean {
   if (href === "/") return pathname === "/";
   return pathname === href || pathname.startsWith(`${href}/`);
-}
-
-function NavGroup({
-  label,
-  items,
-  pathname,
-  startIndex,
-}: {
-  label: string;
-  items: NavItem[];
-  pathname: string;
-  startIndex: number;
-}) {
-  return (
-    <SidebarGroup>
-      {/* Collapsed rail: the label fades out (opacity-0 -mt-8) but the shadcn
-          primitive leaves it hovering OVER the first menu item, swallowing
-          clicks and tooltip hovers (2026-07-11 audit, UX-07/QA-07). Kill its
-          pointer events when the rail is in icon mode. */}
-      <SidebarGroupLabel className="translate-x-0 transition-[margin,opacity,transform] group-data-[collapsible=icon]:pointer-events-none group-data-[collapsible=icon]:-translate-x-1">
-        {label}
-      </SidebarGroupLabel>
-      <SidebarGroupContent>
-        <SidebarMenu>
-          {items.map((item, index) => (
-            <SidebarMenuItem
-              key={item.href}
-              className="w-full"
-              data-sidebar-nav-enter
-              style={{ animationDelay: `${60 + (startIndex + index) * 55}ms` }}
-            >
-              <SidebarMenuButton
-                asChild
-                isActive={isActivePath(pathname, item.href)}
-                tooltip={item.title}
-                className={navButton}
-              >
-                <Link href={item.href}>
-                  <span
-                    data-sidebar-nav-icon={item.href}
-                    className={navIconSlot}
-                  >
-                    <item.icon />
-                  </span>
-                  <span className={`${fadeLabel} ml-1 shrink-0 whitespace-nowrap`}>
-                    {item.title}
-                  </span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
-        </SidebarMenu>
-      </SidebarGroupContent>
-    </SidebarGroup>
-  );
 }
 
 export function AppSidebar({
@@ -164,36 +101,43 @@ export function AppSidebar({
 }) {
   const pathname = usePathname();
 
+  const navGroups: SidebarNavGroup[] = navigation.map((group) => ({
+    label: group.label,
+    items: group.items.map((item) => ({
+      ...item,
+      isActive: isActivePath(pathname, item.path),
+    })),
+  }));
+
   return (
     <TooltipProvider delayDuration={0}>
-      <Sidebar variant="inset" collapsible="icon">
-        <SidebarHeader className="px-3 pt-2">
-          {/* Wordmark ↔ coin mark crossfade: both stay mounted (overflow-hidden
-              clips the wordmark as the width eases) so the swap fades instead
-              of jump-cutting; the mark scales in slightly on top. */}
-          <Link
-            href="/"
-            aria-label={copy.brand}
-            className="relative flex h-9 items-center overflow-hidden rounded-md px-1.5 transition-[color,background-color,height,padding] duration-[320ms] ease-(--motion-ease-expressive) hover:bg-sidebar-accent group-data-[collapsible=icon]:h-9 group-data-[collapsible=icon]:px-0"
+      <Sidebar collapsible="icon" variant="inset">
+        <SidebarHeader className="h-14 justify-center">
+          {/* Wordmark ↔ coin crossfade: both stay mounted (the Link's
+              overflow-hidden clips the wordmark as the rail closes) so the swap
+              fades instead of jump-cutting, on the same clock as the collapse.
+              The size classes carry `!` because sidebarMenuButtonVariants'
+              `[&_svg]:size-4` is a descendant variant and out-specifies a plain
+              utility — without it the lockup renders at 16px. */}
+          <SidebarMenuButton
+            asChild
+            className="h-10 group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-0!"
           >
-            <LogoWordmark className={`h-5.5 w-auto shrink-0 text-foreground ${fadeLabel}`} />
-            <LogoMark className="absolute top-1/2 left-1/2 size-5.5 -translate-x-1/2 -translate-y-1/2 scale-90 text-brand-accent opacity-0 transition-[opacity,scale] duration-200 ease-(--motion-ease-expressive) group-data-[collapsible=icon]:scale-100 group-data-[collapsible=icon]:opacity-100 group-data-[collapsible=icon]:delay-100" />
-          </Link>
+            <Link
+              href="/"
+              aria-label={copy.brand}
+              className="relative overflow-hidden"
+            >
+              <LogoWordmark className={`h-6! w-auto! shrink-0 ${fadeWordmark}`} />
+              <LogoMark className="absolute top-1/2 left-1/2 size-7! -translate-x-1/2 -translate-y-1/2 scale-90 text-brand-accent opacity-0 transition-[opacity,scale] duration-[320ms] ease-(--motion-ease-expressive) group-data-[collapsible=icon]:scale-100 group-data-[collapsible=icon]:opacity-100 group-data-[collapsible=icon]:delay-100" />
+            </Link>
+          </SidebarMenuButton>
         </SidebarHeader>
 
         <SidebarContent>
-          <NavGroup
-            label={copy.groupCockpit}
-            items={cockpitItems}
-            pathname={pathname}
-            startIndex={0}
-          />
-          <NavGroup
-            label={copy.groupAccount}
-            items={accountItems}
-            pathname={pathname}
-            startIndex={cockpitItems.length}
-          />
+          {navGroups.map((group) => (
+            <NavGroup key={group.label} {...group} />
+          ))}
         </SidebarContent>
 
         <SidebarFooter>
@@ -204,26 +148,21 @@ export function AppSidebar({
           <StaleBanner items={staleConnections} />
           {allClear && <AllClear />}
           <SidebarMenu>
-            <SidebarMenuItem className="w-full">
+            <SidebarMenuItem>
               <DropdownMenu>
-                {/* Plain trigger, not asChild: composing Base UI's Menu.Trigger
-                    through SidebarMenuButton's render chain swallowed the
-                    open/close handlers — the menu never opened. Styled to match
-                    SidebarMenuButton. */}
+                {/* No `tooltip` on the rendered button: composing Base UI's
+                    Menu.Trigger through SidebarMenuButton's TooltipTrigger
+                    swallows the open/close handlers and the menu never opens. */}
                 <DropdownMenuTrigger
                   aria-label={copy.profileMenu}
-                  className="mx-auto flex h-12 w-[calc(var(--sidebar-width)-2rem)] items-center gap-0 overflow-hidden rounded-md py-0 pr-1 pl-2 text-left outline-hidden ring-sidebar-ring transition-[width,height,padding] duration-[320ms] ease-(--motion-ease-expressive) hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 data-open:bg-sidebar-accent data-open:text-sidebar-accent-foreground group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-0!"
+                  render={<SidebarMenuButton size="lg" />}
                 >
-                  <span data-sidebar-profile-slot className={profileSlot}>
-                    <Avatar className="size-8 shrink-0 transition-[width,height] duration-[320ms] ease-(--motion-ease-expressive) group-data-[collapsible=icon]:size-7">
-                      <AvatarFallback className="bg-sidebar-accent text-xs font-semibold text-sidebar-accent-foreground">
-                        {userInitials}
-                      </AvatarFallback>
-                    </Avatar>
-                  </span>
-                  <span
-                    className={`ml-2 grid min-w-0 flex-1 text-left text-sm leading-tight ${fadeLabel}`}
-                  >
+                  <Avatar className="size-8">
+                    <AvatarFallback className="bg-sidebar-accent text-xs font-semibold text-sidebar-accent-foreground">
+                      {userInitials}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="grid min-w-0 flex-1 text-left leading-tight">
                     <span className="truncate font-medium">{userLabel}</span>
                     {userLabel !== userEmail && (
                       <span className="truncate text-xs text-sidebar-foreground/60">
@@ -231,12 +170,7 @@ export function AppSidebar({
                       </span>
                     )}
                   </span>
-                  <span
-                    aria-hidden
-                    className={`ml-1 flex size-8 shrink-0 items-center justify-center text-sidebar-foreground/60 ${fadeLabel}`}
-                  >
-                    <RiExpandUpDownLine className="size-4" />
-                  </span>
+                  <RiExpandUpDownLine className="ml-auto text-sidebar-foreground/60" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
                   side="right"
@@ -258,9 +192,9 @@ export function AppSidebar({
                         {userLabel}
                       </span>
                       {userLabel !== userEmail && (
-                      <span className="break-all text-xs font-normal text-muted-foreground">
-                        {userEmail}
-                      </span>
+                        <span className="break-all text-xs font-normal text-muted-foreground">
+                          {userEmail}
+                        </span>
                       )}
                     </span>
                   </div>
@@ -286,12 +220,6 @@ export function AppSidebar({
                   </form>
                 </DropdownMenuContent>
               </DropdownMenu>
-              <span
-                role="tooltip"
-                className="pointer-events-none absolute top-1/2 left-[calc(100%+0.5rem)] z-50 hidden -translate-y-1/2 whitespace-nowrap rounded-md bg-foreground px-3 py-1.5 text-xs text-background shadow-lg group-data-[collapsible=icon]:group-hover/menu-item:block"
-              >
-                {copy.profileMenu}
-              </span>
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarFooter>

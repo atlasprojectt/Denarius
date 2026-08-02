@@ -325,55 +325,32 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 
 /* ---------------------------------------------------------------------------
-   Sidebar motion — the shadcn primitive ships a fast linear width snap
-   (200ms ease-linear). F5 keeps components/ui untouched, so the premium
-   easing is overridden here through the primitive's data-slot hooks; these
-   rules are unlayered, so they win over Tailwind's layered utilities.
+   Sidebar collapse — the shadcn primitive ships a 200ms ease-linear width
+   snap: it arrives at the rail as fast as it left, which reads as a cut rather
+   than movement. The rail is signature motion, so it eases out on
+   --motion-ease-expressive (expo-out) — quick departure, long settle — the same
+   curve the chart reveals and the verdict pulse use. F5 keeps components/ui
+   untouched, so the clock is overridden here through the primitive's data-slot
+   hooks; these rules are unlayered, so they win over Tailwind's layered
+   utilities.
+
+   No prefers-reduced-motion guard, deliberately: this is a direct response to
+   the user's own click, not decorative motion, and neither the primitive nor
+   this app has ever guarded it.
 --------------------------------------------------------------------------- */
 [data-slot="sidebar-gap"],
 [data-slot="sidebar-container"],
-[data-slot="sidebar-group-label"] {
-  transition-duration: 320ms;
-  transition-timing-function: var(--motion-ease-expressive);
-}
-
-/* The inset content card's left margin flips 0↔8px with the collapsed state
-   but the primitive gives it no transition — it snapped while the width
-   eased, a visible hitch at the start of every toggle. */
-[data-slot="sidebar-inset"] {
-  transition: margin 320ms var(--motion-ease-expressive);
-}
-
-/* Menu buttons morph to size-8 with the primitive's default 150ms/ease —
-   out of step with the 320ms rail. Same clock for everything that moves. */
+[data-slot="sidebar-group-label"],
 [data-slot="sidebar-menu-button"] {
   transition-duration: 320ms;
   transition-timing-function: var(--motion-ease-expressive);
 }
 
-/* Nav entrance — the destinations cascade in on first paint (a fade + a small
-   left drift, the sidebar's horizontal motion language), staggered per item via
-   an inline animation-delay. Self-contained (not the RevealController), so it
-   plays once on load and never replays on client navigation, where the sidebar
-   never remounts. `both` holds the pre-delay hidden state and the settled end
-   state; under reduced motion the rule is skipped, so items render at their
-   natural (visible) position with no motion. */
-@keyframes denarius-sidebar-nav-enter {
-  0% {
-    opacity: 0;
-    transform: translateX(-6px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  [data-sidebar-nav-enter] {
-    animation: denarius-sidebar-nav-enter 420ms var(--motion-ease-expressive) both;
-    will-change: transform, opacity;
-  }
+/* The inset card's left margin flips 0↔8px with the collapsed state but the
+   primitive gives it no transition — it snapped while the rail was still
+   travelling, a visible hitch at the start of every toggle. */
+[data-slot="sidebar-inset"] {
+  transition: margin 320ms var(--motion-ease-expressive);
 }
 
 /* ---------------------------------------------------------------------------
