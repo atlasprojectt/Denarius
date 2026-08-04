@@ -22,45 +22,30 @@ export function BudgetBar({
   pctProjected,
   status,
   className = "",
-  animate = false,
 }: {
   pctSpent: number;
   pctProjected: number | null;
   status: VerdictStatus;
   className?: string;
-  animate?: boolean;
 }) {
   const g = barGeometry(pctSpent, pctProjected);
   const pct = (n: number) => `${(n * 100).toFixed(2)}%`;
 
   return (
-    <div
-      data-reveal={animate ? "budget-bar" : undefined}
-      // The RevealController stamps data-reveal-state on this node before the
-      // client island hydrates — the attribute is controller-owned, so React
-      // must not diff it (hydration-mismatch warning otherwise).
-      suppressHydrationWarning
-      className={`relative h-2.5 w-full ${className}`}
-    >
+    <div className={`relative h-2.5 w-full ${className}`}>
       {/* Track: the faint full-width tick grid. */}
       <div aria-hidden className="absolute inset-0 text-foreground/15" style={TICKS} />
       {/* Run-rate ghost: neutral ticks from spend to the projected close. */}
       {g.ghostStart !== null && g.ghostEnd !== null && (
         <div
-          data-reveal-bar={animate ? "" : undefined}
           className="absolute inset-0 text-foreground/35"
-          style={{
-            ...TICKS,
-            clipPath: cut(g.ghostStart, g.ghostEnd),
-            animationDelay: "220ms",
-          }}
+          style={{ ...TICKS, clipPath: cut(g.ghostStart, g.ghostEnd) }}
         />
       )}
       {/* Filled portion: what's been spent. */}
       <div
-        data-reveal-bar={animate ? "" : undefined}
         className={`absolute inset-0 ${fillColor[status]}`}
-        style={{ ...TICKS, clipPath: cut(0, g.fill), animationDelay: "60ms" }}
+        style={{ ...TICKS, clipPath: cut(0, g.fill) }}
       />
       {/* Budget marker: the 100% line. Hidden when spend/projection sit at the
           very edge (marker == 1) so it doesn't merge with the track end. */}
