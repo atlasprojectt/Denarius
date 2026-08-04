@@ -20,25 +20,77 @@ export const UNATTRIBUTED_MIN_SHARE = 0.05;
 /** The footer stays a footer: at most this many observations per sync. */
 export const MAX_APONTAMENTOS = 4;
 
+/**
+ * One run of the sentence. `strong` marks a figure the ENGINE computed and this
+ * module injected — never a word chosen for emphasis. The UI renders those runs
+ * bold, which makes the styling carry provenance: what is bold is exactly what
+ * is auditable (invariant #2). Keep that rule when adding copy.
+ */
+export type Segment = { text: string; strong?: boolean };
+
+/** Plain run. */
+const plain = (text: string): Segment => ({ text });
+/** Engine-computed figure. */
+const figure = (text: string): Segment => ({ text, strong: true });
+
 const copy = {
-  halfwayOne: (team: string) => `${team} cruzou 50% do limite do período.`,
-  halfwayMany: (teams: string) => `${teams} cruzaram 50% dos seus limites.`,
-  accelerationOne: (team: string, pct: string) =>
-    `${team} acelerou ${pct} em relação à semana anterior.`,
-  accelerationMany: (teamsWithPct: string) =>
-    `${teamsWithPct} aceleraram em relação à semana anterior.`,
-  concentration: (n: number, share: string) =>
-    `${n} times concentram ${share} do gasto do período.`,
-  unattributed: (amount: string) =>
-    `${amount} sem atribuição a times — mapear projetos em Ajustes completa o quadro.`,
+  halfwayOne: (team: string): Segment[] => [
+    plain(`${team} cruzou `),
+    figure("50%"),
+    plain(" do limite do período."),
+  ],
+  halfwayMany: (teams: string): Segment[] => [
+    plain(`${teams} cruzaram `),
+    figure("50%"),
+    plain(" dos seus limites."),
+  ],
+  accelerationOne: (team: string, pct: string): Segment[] => [
+    plain(`${team} acelerou `),
+    figure(pct),
+    plain(" em relação à semana anterior."),
+  ],
+  // The many-team case interleaves names and percentages, so it is assembled by
+  // the caller rather than from a fixed shape.
+  accelerationMany: (parts: Segment[]): Segment[] => [
+    ...parts,
+    plain(" aceleraram em relação à semana anterior."),
+  ],
+  concentration: (count: number, share: string): Segment[] => [
+    figure(`${count} times`),
+    plain(" concentram "),
+    figure(share),
+    plain(" do gasto do período."),
+  ],
+  unattributed: (amount: string): Segment[] => [
+    figure(amount),
+    plain(
+      " sem atribuição a times — mapear projetos em Ajustes completa o quadro.",
+    ),
+  ],
 };
 
 export type Apontamento = {
   /** Stable key for rendering (rule + target). */
   id: string;
   kind: "halfway" | "acceleration" | "concentration" | "unattributed";
+  segments: Segment[];
+  /** Derived from `segments` — the flat sentence, for consumers that want a
+   *  plain string (the "Próximas ações" list, tests, any future email). */
   text: string;
 };
+
+/** The one place segments become a sentence, so the two can never disagree. */
+function flatten(segments: Segment[]): string {
+  return segments.map((segment) => segment.text).join("");
+}
+
+function apontamento(
+  id: string,
+  kind: Apontamento["kind"],
+  segments: Segment[],
+): Apontamento {
+  return { id, kind, segments, text: flatten(segments) };
+}
 
 export type ApontamentoInput = {
   currency: string;
@@ -74,14 +126,15 @@ export function buildApontamentos(input: ApontamentoInput): Apontamento[] {
     .map((t) => t.name)
     .sort();
   if (halfway.length > 0) {
-    out.push({
-      id: "halfway",
-      kind: "halfway",
-      text:
+    out.push(
+      apontamento(
+        "halfway",
+        "halfway",
         halfway.length === 1
           ? copy.halfwayOne(halfway[0])
           : copy.halfwayMany(listNames(halfway)),
-    });
+      ),
+    );
   }
 
   // 2. Week-over-week acceleration — a pace observation, distinct from any
@@ -93,23 +146,31 @@ export function buildApontamentos(input: ApontamentoInput): Apontamento[] {
     .filter((t) => t.pct !== null && t.pct >= ACCELERATION_MIN_PCT)
     .sort((a, b) => (b.pct ?? 0) - (a.pct ?? 0));
   if (accelerating.length === 1) {
-    out.push({
-      id: "acceleration",
-      kind: "acceleration",
-      text: copy.accelerationOne(
-        accelerating[0].name,
-        percent(accelerating[0].pct as number),
+    out.push(
+      apontamento(
+        "acceleration",
+        "acceleration",
+        copy.accelerationOne(
+          accelerating[0].name,
+          percent(accelerating[0].pct as number),
+        ),
       ),
-    });
-  } else if (accelerating.length > 1) {
-    const parts = accelerating.map(
-      (t) => `${t.name} (+${percent(t.pct as number)})`,
     );
-    out.push({
-      id: "acceleration",
-      kind: "acceleration",
-      text: copy.accelerationMany(listNames(parts)),
+  } else if (accelerating.length > 1) {
+    // Same "A, B e C" joining as listNames(), but emitted as segments so each
+    // percentage stays a marked figure instead of melting into one string.
+    const parts: Segment[] = [];
+    accelerating.forEach((team, index) => {
+      if (index > 0) {
+        parts.push(plain(index === accelerating.length - 1 ? " e " : ", "));
+      }
+      parts.push(plain(`${team.name} (+`));
+      parts.push(figure(percent(team.pct as number)));
+      parts.push(plain(")"));
     });
+    out.push(
+      apontamento("acceleration", "acceleration", copy.accelerationMany(parts)),
+    );
   }
 
   if (input.spendMix !== null) {
@@ -121,22 +182,26 @@ export function buildApontamentos(input: ApontamentoInput): Apontamento[] {
     const spendingTeams = teamDrivers.filter((d) => d.value > 0).length;
     const topShare = top.reduce((sum, d) => sum + d.share, 0);
     if (spendingTeams >= CONCENTRATION_MIN_TEAMS && topShare >= CONCENTRATION_MIN_SHARE) {
-      out.push({
-        id: "concentration",
-        kind: "concentration",
-        text: copy.concentration(top.length, percent(topShare)),
-      });
+      out.push(
+        apontamento(
+          "concentration",
+          "concentration",
+          copy.concentration(top.length, percent(topShare)),
+        ),
+      );
     }
 
     // 4. Unattributed nudge — spend that maps to no team, once it matters.
     const teamTotal = teamDrivers.reduce((sum, d) => sum + d.value, 0);
     const orgTotal = teamTotal + unattributed;
     if (orgTotal > 0 && unattributed / orgTotal >= UNATTRIBUTED_MIN_SHARE) {
-      out.push({
-        id: "unattributed",
-        kind: "unattributed",
-        text: copy.unattributed(money(unattributed, input.currency)),
-      });
+      out.push(
+        apontamento(
+          "unattributed",
+          "unattributed",
+          copy.unattributed(money(unattributed, input.currency)),
+        ),
+      );
     }
   }
 

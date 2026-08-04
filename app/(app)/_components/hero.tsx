@@ -75,7 +75,11 @@ export function Hero({
         <WeekDelta pct={weekPct} />
       </CardHeader>
 
-      <CardContent className="flex flex-1 flex-col gap-4">
+      {/* justify-between: when the insights+composition stack is the taller side
+          of the row, the leftover lands here as rhythm between the pacing bar and
+          the projection KPI — not as a void under the last block. The hero is one
+          of the two cards allowed to absorb slack (2026-08-02). */}
+      <CardContent className="flex flex-1 flex-col justify-between gap-4">
 
         <PacingBar
           pctSpent={org.pctSpent}

@@ -93,10 +93,11 @@ export const homeCopy = {
     ],
   },
 
-  observations: {
-    title: "Observações",
-    subtitle: "Apontamentos do período — para pensar, não para alarmar.",
-    seatsNote:
-      "Comparação com o roster importado — a detecção real de assentos ociosos chega com o conector do Copilot (v1.5).",
+  aiInsights: {
+    title: "Análise da IA",
+    // The old footer carried "para pensar, não para alarmar" as a subtitle. In a
+    // narrow card that line costs more than it earns, so the calm framing now
+    // lives in the styling (muted ink, no semaphore, no badges) instead.
+    empty: "Nada a apontar neste período.",
   },
 } as const;

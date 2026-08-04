@@ -9,7 +9,7 @@ import { syncStamp } from "@/lib/format";
 import { getHomeData } from "@/lib/home/queries";
 import { Hero } from "./_components/hero";
 import { MonthlyPaceChart } from "./_components/monthly-pace-chart";
-import { ObservationsFooter } from "./_components/observations-footer";
+import { AiInsights } from "./_components/ai-insights";
 import { ProviderComposition } from "./_components/provider-composition";
 import { TeamBudgetTable } from "@/components/domain/team-budget-table";
 import { SetupChecklist } from "./_components/setup-checklist";
@@ -28,7 +28,6 @@ export default async function HomePage() {
     cockpit,
     period,
     observations,
-    hasSeatWaste,
     orgWeekPct,
     setup,
     unattributed,
@@ -88,7 +87,7 @@ export default async function HomePage() {
     Math.round(unattributed.display * 100) > 0 || unattributed.unconvertedUsd > 0;
 
   return (
-    <PageContainer variant="full" className="flex-1 gap-4">
+    <PageContainer variant="full" className="gap-4">
       <h1 className="sr-only">{homeCopy.question}</h1>
 
       <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-2">
@@ -119,15 +118,22 @@ export default async function HomePage() {
           compact strip until all three are done. Renders null when complete. */}
       <SetupChecklist state={setup} variant="compact" />
 
-      {/* The 2x2 grid. min-w-0 wrappers matter: grid children default to
-          min-width auto, and the table + long tabular-nums strings would
-          otherwise push the track past the viewport (horizontal overflow).
-          Row 1 hugs its content (the dense hero sets the height) and row 2
-          takes every leftover pixel — the pace chart grows with it, so the
-          viewport is filled by the chart, not by voids inside the top cards
-          (proportion pass, 2026-07-14). */}
-      <div className="grid flex-1 items-stretch gap-4 xl:grid-cols-2 xl:grid-rows-[auto_minmax(0,1fr)]">
-        <div className="min-w-0">
+      {/* THE ANSWER (2026-08-02 relayout). Nothing here is stretched to fill the
+          viewport any more — that rule (proportion pass, 2026-07-14) worked while
+          every card was dense, and produced large voids the moment short content
+          arrived: a 3-sentence card and a 5-row table were being inflated to the
+          height of the hero and of the leftover screen.
+
+          The rule now: ONLY CARDS THAT CAN BREATHE ABSORB SLACK. The right column
+          is a STACK, so the insights card keeps its natural height and
+          ProviderComposition — which already distributes its bars over whatever
+          height it is given — takes the remainder. When the stack is the taller
+          side, Hero absorbs instead (its CardContent is justify-between).
+
+          min-w-0 stays load-bearing: grid children default to min-width auto, and
+          long tabular-nums strings would push the track past the viewport. */}
+      <section className="grid items-stretch gap-4 xl:grid-cols-12">
+        <div className="min-w-0 xl:col-span-7">
           <Hero
             org={org}
             pctProjected={cockpit.orgPctProjected}
@@ -138,35 +144,37 @@ export default async function HomePage() {
             weekPct={orgWeekPct}
           />
         </div>
-        <div className="min-w-0">
-          <ProviderComposition
-            entries={cockpit.composition}
-            currency={currency}
-            unattributed={showUnattributed ? unattributed : null}
+        <div className="flex min-w-0 flex-col gap-4 xl:col-span-5">
+          <AiInsights
+            items={observations.filter((item) => item.kind === "observation")}
           />
-        </div>
-        <div className="min-w-0">
-          {pace && (
-            <MonthlyPaceChart
-              pace={pace}
+          {/* flex-1: the one card in the stack designed to spread. */}
+          <div className="flex min-h-0 flex-1 flex-col">
+            <ProviderComposition
+              entries={cockpit.composition}
               currency={currency}
-              monthLabel={period.monthLabel}
+              unattributed={showUnattributed ? unattributed : null}
             />
-          )}
+          </div>
         </div>
-        <div className="min-w-0">
-          <TeamBudgetTable
-            teams={allTeams}
-            attentionCount={cockpit.needsAttention.length}
-            currency={currency}
-            variant="table"
-          />
-        </div>
-      </div>
+      </section>
 
-      <ObservationsFooter
-        items={observations.filter((item) => item.kind === "observation")}
-        hasSeatWaste={hasSeatWaste}
+      {/* THE EVIDENCE — full width, each at its own natural height. The chart
+          reads better across 31 daily points than squeezed into half a row, and
+          the table recovers the columns the container query dropped when narrow. */}
+      {pace && (
+        <MonthlyPaceChart
+          pace={pace}
+          currency={currency}
+          monthLabel={period.monthLabel}
+        />
+      )}
+
+      <TeamBudgetTable
+        teams={allTeams}
+        attentionCount={cockpit.needsAttention.length}
+        currency={currency}
+        variant="table"
       />
     </PageContainer>
   );

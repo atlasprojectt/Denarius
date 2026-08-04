@@ -16,6 +16,7 @@ import {
   type TooltipContentProps,
   type TooltipValueType,
 } from "recharts";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { homeCopy } from "./copy";
 import { InfoTip } from "./info-tip";
 
@@ -45,6 +46,46 @@ function Metric({ label, value }: { label: string; value: string }) {
       <span className="text-sm font-medium text-foreground tabular-nums">
         {value}
       </span>
+    </div>
+  );
+}
+
+/** Card shell shared by the three states, so the header never drifts between
+ *  them. A real <h2> rather than CardTitle: this section carries a heading in
+ *  the document outline and did so before the chrome came back. */
+function PaceCard({ children }: { children: React.ReactNode }) {
+  return (
+    <Card>
+      <CardHeader>
+        <h2 className="flex items-center gap-1.5 font-heading text-sm font-medium">
+          {c.title}
+          <InfoTip label={c.title}>{c.info}</InfoTip>
+        </h2>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-2.5">{children}</CardContent>
+    </Card>
+  );
+}
+
+function Metrics({
+  currency,
+  todayValue,
+  paceToday,
+  projectionText,
+}: {
+  currency: string;
+  todayValue: number;
+  paceToday: number | null;
+  projectionText: string;
+}) {
+  return (
+    <div className="flex flex-wrap gap-x-6 gap-y-2">
+      <Metric label={c.realizedLabel} value={money(todayValue, currency)} />
+      <Metric
+        label={c.paceTodayLabel}
+        value={paceToday === null ? "—" : money(paceToday, currency)}
+      />
+      <Metric label={c.projectionLabel} value={projectionText} />
     </div>
   );
 }
@@ -127,17 +168,11 @@ export function MonthlyPaceChart({
 
   if (todayValue <= 0) {
     return (
-      <section className="flex min-h-full flex-col gap-4 py-4">
-        <h2 className="flex items-center gap-1.5 font-heading text-sm font-medium">
-          {c.title}
-          <InfoTip label={c.title}>{c.info}</InfoTip>
-        </h2>
-        <div className="flex flex-1 items-center justify-center">
-          <p className="py-8 text-center text-sm text-muted-foreground">
-            {c.empty}
-          </p>
-        </div>
-      </section>
+      <PaceCard>
+        <p className="py-6 text-center text-sm text-muted-foreground">
+          {c.empty}
+        </p>
+      </PaceCard>
     );
   }
 
@@ -161,30 +196,33 @@ export function MonthlyPaceChart({
       ? null
       : c.projectionValue(compactMoney(projection, currency, 2));
 
+  // The plot is ALWAYS drawn once there is any spend (founder-directed
+  // 2026-08-02). Before day 5 it carries only the realized days and no dashed
+  // tail — the projection guard is disclosed in the metrics row above
+  // ("Projeção — coletando ritmo"), not by hiding the chart. A sparse plot is
+  // an honest reading of a period that has barely started; an absent one makes
+  // the reader wonder what broke.
   return (
-    <section className="flex min-h-full flex-col gap-2.5 py-4">
-      <h2 className="flex items-center gap-1.5 font-heading text-sm font-medium">
-        {c.title}
-        <InfoTip label={c.title}>{c.info}</InfoTip>
-      </h2>
-      <div className="flex flex-wrap gap-x-6 gap-y-2">
-        <Metric label={c.realizedLabel} value={money(todayValue, currency)} />
-        <Metric
-          label={c.paceTodayLabel}
-          value={paceToday === null ? "—" : money(paceToday, currency)}
-        />
-        <Metric label={c.projectionLabel} value={projectionText} />
-      </div>
-      <div className="flex flex-1 flex-col justify-center">
-        <div
-          data-reveal="monthly-pace"
-          suppressHydrationWarning
-          className="flex min-h-[220px] flex-1 flex-col"
-        >
-          <p className="sr-only">{ariaLabel}</p>
-          <SpendTrendChart
-            data-reveal-wipe
-            className="min-h-0 flex-1"
+    <PaceCard>
+      <Metrics
+        currency={currency}
+        todayValue={todayValue}
+        paceToday={paceToday}
+        projectionText={projectionText}
+      />
+      {/* Its own anchor, not the leftover of a stretched grid cell: the plot has
+          a definite height, which is what keeps a full-width chart from reading
+          as floating (the 2026-07-14 concern) now that nothing fills the
+          viewport for it. */}
+      <div
+        data-reveal="monthly-pace"
+        suppressHydrationWarning
+        className="flex h-[300px] flex-col"
+      >
+        <p className="sr-only">{ariaLabel}</p>
+        <SpendTrendChart
+          data-reveal-wipe
+          className="min-h-0 flex-1"
             rows={rows}
             xKey="day"
             xDomain={[1, daysInPeriod]}
@@ -257,10 +295,9 @@ export function MonthlyPaceChart({
                 />
               </ReferenceDot>
             )}
-          </SpendTrendChart>
-        </div>
+        </SpendTrendChart>
       </div>
-    </section>
+    </PaceCard>
   );
 }
 

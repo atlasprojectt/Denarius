@@ -152,13 +152,11 @@ export function TeamBudgetTable({
     : "hidden text-right tabular-nums text-muted-foreground @2xl:table-cell";
 
   return (
-    // min-h-full is Home-only (variant="table"): the 2x2 grid cell stretches
-    // the card. On /times the page column is a definite-height flex chain
-    // (min-h-svh → flex-1), so a percentage min-height makes THIS card absorb
-    // the viewport height and flex-shrink squash its siblings — the
-    // "Times sem orçamento" card collapsed to its header (overflow-hidden
-    // disables the min-content floor). Natural height in "responsive" mode.
-    <Card className={forceTable ? "min-h-full" : undefined}>
+    // Natural height in both variants. Home used to pass min-h-full so the card
+    // filled its stretched grid cell; since the 2026-08-02 relayout no cell is
+    // stretched, and a table of N rows has nothing to stretch WITH — it just
+    // grew a void under the last row.
+    <Card>
       <CardHeader>
         <CardTitle className="text-sm">{c.title}</CardTitle>
         <CardDescription>

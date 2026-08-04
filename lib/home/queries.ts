@@ -12,7 +12,10 @@ import { periodFx, type FrozenFx } from "@/lib/engine/money-model";
 import { currentPeriod, monthStartUtc, type Period } from "@/lib/engine/period";
 import { combineTeamSpend } from "@/lib/engine/team-spend";
 import { isoDaysAgo, weekOverWeek } from "@/lib/engine/week-change";
-import { buildApontamentos } from "@/lib/findings/apontamentos";
+import {
+  buildApontamentos,
+  type Segment,
+} from "@/lib/findings/apontamentos";
 import { buildSeatWaste } from "@/lib/findings/seats-vs-roster";
 import { money } from "@/lib/money";
 import { listBudgets } from "@/lib/budgets/queries";
@@ -39,6 +42,11 @@ export type CockpitData = {
 export type Observation = {
   id: string;
   text: string;
+  /** The sentence split into runs, with engine-computed figures marked — the
+   *  AI-insights card renders those bold. Absent on rows whose text is not
+   *  built from apontamento copy (the seats-vs-roster lines), which render
+   *  plain `text`. */
+  segments?: Segment[];
   kind: "observation" | "action";
   href?: string;
   actionLabel?: string;
@@ -51,8 +59,6 @@ export type HomeData = CockpitData & {
   /** The calm "Observações" feed — in-app only, never emailed (P14). Ordered:
    *  apontamentos first, then the secondary seats-vs-roster waste (#22). */
   observations: Observation[];
-  /** Whether the seats-vs-roster caveat note should show (any waste line). */
-  hasSeatWaste: boolean;
   /** Org week-over-week API cost change (reported USD — same source and math
    *  as the digest, so screen and email can never disagree). Neutral display
    *  only (principle #5); null when the previous week has no spend. */
@@ -385,6 +391,7 @@ function buildObservations(
     ...apontamentos.map((a) => ({
       id: `apontamento:${a.id}`,
       text: a.text,
+      segments: a.segments,
       kind: a.kind === "unattributed" ? ("action" as const) : ("observation" as const),
       href: a.kind === "unattributed" ? "/ajustes/atribuicao" : undefined,
       actionLabel: a.kind === "unattributed" ? "Mapear atribuição" : undefined,
@@ -452,7 +459,6 @@ export async function getHomeData(): Promise<HomeData> {
     period: assembly.period,
     fx: assembly.fx,
     observations,
-    hasSeatWaste: observations.some((o) => o.id.startsWith("seat:")),
     orgWeekPct: weekOverWeek(weekCosts, now).pct,
     setup: {
       connected: assembly.connected,

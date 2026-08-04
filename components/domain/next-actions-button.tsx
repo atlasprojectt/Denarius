@@ -38,6 +38,13 @@ const copy = {
   allClearBody: "Nenhuma ação recomendada agora. O Denarius avisa quando surgir.",
   error: "Não foi possível carregar agora. Tente reabrir.",
   pending: (n: number) => (n === 1 ? "1 pendência" : `${n} pendências`),
+  // Load-bearing honesty (principle #3): the seat findings compare paid seats
+  // against roster headcount, which is not the same as knowing who actually uses
+  // a seat. Without this line "6 assentos acima do roster" reads as measured
+  // idle-seat detection. It lives here because this is where those findings
+  // surface — it used to sit under a list that no longer holds them.
+  seatsNote:
+    "Comparação com o roster importado — a detecção real de assentos ociosos chega com o conector do Copilot (v1.5).",
   badgeAria: (n: number) =>
     n === 1
       ? "Próximas ações: 1 ação recomendada"
@@ -111,44 +118,53 @@ function ActionsPanel({
         ) : failed ? (
           <p className="px-4 py-5 text-sm text-muted-foreground">{copy.error}</p>
         ) : items && items.length > 0 ? (
-          <ul className="divide-y divide-border/70">
-            {items.map((item) => (
-              <li
-                key={item.id}
-                className="px-4 py-4 transition-colors duration-(--motion-duration-standard) ease-(--motion-ease-standard) hover:bg-muted/30 focus-within:bg-muted/20"
-              >
-                <p className="text-sm font-semibold text-foreground">
-                  {item.title ?? item.text}
-                </p>
-                {item.context && (
-                  <p className="mt-1 text-xs/relaxed text-muted-foreground">
-                    {item.context}
-                  </p>
-                )}
-                {item.impact && (
-                  <p className="mt-1 text-xs text-foreground/80 tabular-nums">
-                    {item.impact}
-                  </p>
-                )}
-                <Button
-                  asChild
-                  variant="tertiary"
-                  size="sm"
-                  motion="forward"
-                  className="mt-3"
+          <>
+            <ul className="divide-y divide-border/70">
+              {items.map((item) => (
+                <li
+                  key={item.id}
+                  className="px-4 py-4 transition-colors duration-(--motion-duration-standard) ease-(--motion-ease-standard) hover:bg-muted/30 focus-within:bg-muted/20"
                 >
-                  <Link href={item.href ?? "/explorar"} onClick={onNavigate}>
-                    {item.actionLabel ?? copy.defaultAction}
-                    <RiArrowRightSLine
-                      className="size-3.5"
-                      data-icon="inline-end"
-                      aria-hidden
-                    />
-                  </Link>
-                </Button>
-              </li>
-            ))}
-          </ul>
+                  <p className="text-sm font-semibold text-foreground">
+                    {item.title ?? item.text}
+                  </p>
+                  {item.context && (
+                    <p className="mt-1 text-xs/relaxed text-muted-foreground">
+                      {item.context}
+                    </p>
+                  )}
+                  {item.impact && (
+                    <p className="mt-1 text-xs text-foreground/80 tabular-nums">
+                      {item.impact}
+                    </p>
+                  )}
+                  <Button
+                    asChild
+                    variant="tertiary"
+                    size="sm"
+                    motion="forward"
+                    className="mt-3"
+                  >
+                    <Link href={item.href ?? "/explorar"} onClick={onNavigate}>
+                      {item.actionLabel ?? copy.defaultAction}
+                      <RiArrowRightSLine
+                        className="size-3.5"
+                        data-icon="inline-end"
+                        aria-hidden
+                      />
+                    </Link>
+                  </Button>
+                </li>
+              ))}
+            </ul>
+            {/* The caveat belongs next to the claim it qualifies, not under a
+                different list. Only when a seat finding is actually present. */}
+            {items.some((item) => item.id.startsWith("seat:")) && (
+              <p className="border-t px-4 py-3 text-xs/relaxed text-muted-foreground">
+                {copy.seatsNote}
+              </p>
+            )}
+          </>
         ) : (
           <div className="flex items-start gap-2.5 px-4 py-5">
             <RiCheckboxCircleLine

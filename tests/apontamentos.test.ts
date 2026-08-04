@@ -239,3 +239,102 @@ describe("combineTeamSpend (shared spend mix)", () => {
     expect(combineTeamSpend({ ...input, fxRate: null })).toBeNull();
   });
 });
+
+describe("segments — emphasis means engine-injected figure", () => {
+  // The UI lifts `strong` runs to full-strength ink, so this is not styling
+  // trivia: it is the rule that what a CEO sees emphasised is exactly what the
+  // engine computed (invariant #2). A plain word slipping into a `strong` run
+  // would make emphasis decorative and quietly break that contract.
+
+  const strongTextOf = (segments: { text: string; strong?: boolean }[]) =>
+    segments.filter((s) => s.strong).map((s) => s.text);
+
+  it("keeps text and segments in lockstep for every rule", () => {
+    const out = buildApontamentos(
+      base({
+        budgetedTeams: [{ name: "Data", pctSpent: 0.6, hasWarning: false }],
+        weekByTeam: [{ name: "Eng", pct: 0.47 }],
+        spendMix: {
+          teamDrivers: [
+            { label: "Eng", value: 700 },
+            { label: "Data", value: 200 },
+            { label: "Ops", value: 60 },
+            { label: "Vendas", value: 40 },
+          ],
+          unattributed: 300,
+        },
+      }),
+    );
+
+    expect(out.length).toBeGreaterThan(0);
+    for (const item of out) {
+      expect(item.segments.map((s) => s.text).join("")).toBe(item.text);
+      // Every emphasised run must carry a digit — no bolded prose.
+      for (const text of strongTextOf(item.segments)) {
+        expect(text).toMatch(/\d/);
+      }
+    }
+  });
+
+  it("marks the percentage in an acceleration line", () => {
+    const [item] = buildApontamentos(
+      base({ weekByTeam: [{ name: "Eng", pct: 0.47 }] }),
+    );
+    expect(item.text).toBe("Eng acelerou 47% em relação à semana anterior.");
+    expect(strongTextOf(item.segments)).toEqual(["47%"]);
+  });
+
+  it("marks each team's percentage separately when several accelerate", () => {
+    const [item] = buildApontamentos(
+      base({
+        weekByTeam: [
+          { name: "Eng", pct: 0.62 },
+          { name: "Data", pct: 0.41 },
+        ],
+      }),
+    );
+    expect(item.text).toBe(
+      "Eng (+62%) e Data (+41%) aceleraram em relação à semana anterior.",
+    );
+    expect(strongTextOf(item.segments)).toEqual(["62%", "41%"]);
+  });
+
+  it("marks the count and the share in a concentration line", () => {
+    const [item] = buildApontamentos(
+      base({
+        spendMix: {
+          teamDrivers: [
+            { label: "Eng", value: 700 },
+            { label: "Data", value: 200 },
+            { label: "Ops", value: 60 },
+            { label: "Vendas", value: 40 },
+          ],
+          unattributed: 0,
+        },
+      }),
+    );
+    // top-3 = 700 + 200 + 60 = 960 of 1000
+    expect(strongTextOf(item.segments)).toEqual(["3 times", "96%"]);
+  });
+
+  it("marks the amount in the unattributed nudge", () => {
+    const out = buildApontamentos(
+      base({
+        spendMix: {
+          teamDrivers: [{ label: "Eng", value: 900 }],
+          unattributed: 300,
+        },
+      }),
+    );
+    const item = out.find((o) => o.kind === "unattributed");
+    expect(item).toBeDefined();
+    expect(strongTextOf(item!.segments)).toEqual([money(300, "BRL")]);
+  });
+
+  it("marks the 50% threshold in a halfway line", () => {
+    const [item] = buildApontamentos(
+      base({ budgetedTeams: [{ name: "Data", pctSpent: 0.6, hasWarning: false }] }),
+    );
+    expect(strongTextOf(item.segments)).toEqual(["50%"]);
+  });
+});
