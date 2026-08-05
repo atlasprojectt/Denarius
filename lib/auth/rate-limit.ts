@@ -63,19 +63,41 @@ export function bucketKey(rule: RateLimitRule, subject: string): string {
 }
 
 /**
- * Best-effort identity for an unauthenticated caller.
+ * Headers that identify the caller, most trustworthy FIRST.
  *
- * `x-forwarded-for` is client-controlled in general, but on Vercel the platform
- * rewrites it, so the leftmost entry is the real peer. Behind no proxy at all
- * (local dev) there is nothing to key on and every caller shares one bucket —
- * which throttles harder, not softer, so it fails in the safe direction.
+ * `x-forwarded-for` is a client-supplied header in the general case: anyone can
+ * send one, and it is only trustworthy if the proxy in front **overwrites**
+ * rather than appends. Keying the public accept endpoint on a value the caller
+ * may control would make this limiter bypassable by rotating a single header —
+ * and that limiter is the entire protection on that route. So the platform's
+ * own headers are consulted first: they are stamped at the edge and a request
+ * cannot forge them. `x-forwarded-for` stays last, a fallback rather than the
+ * source of truth.
  */
+const CLIENT_IP_HEADERS = [
+  "x-vercel-forwarded-for",
+  "x-real-ip",
+  "x-forwarded-for",
+] as const;
+
+/** Pure so the precedence itself is testable — that order is the security
+ *  property, not an implementation detail. */
+export function clientIpFrom(header: (name: string) => string | null): string {
+  for (const name of CLIENT_IP_HEADERS) {
+    // A list means proxies appended; the leftmost entry is the original peer.
+    const value = header(name)?.split(",")[0]?.trim();
+    if (value) return value;
+  }
+  // Behind no proxy at all (local dev) there is nothing to key on and every
+  // caller shares one bucket — which throttles harder, not softer, so it fails
+  // in the safe direction.
+  return "unknown";
+}
+
+/** Best-effort identity for an unauthenticated caller. */
 export async function clientFingerprint(): Promise<string> {
   const h = await headers();
-  const forwarded = h.get("x-forwarded-for");
-  const ip =
-    forwarded?.split(",")[0]?.trim() || h.get("x-real-ip")?.trim() || "unknown";
-  return hashSubject(ip);
+  return hashSubject(clientIpFrom((name) => h.get(name)));
 }
 
 /**

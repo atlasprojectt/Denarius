@@ -10,6 +10,7 @@ import {
   INVITE_CREATE,
   RATE_LIMITED_MESSAGE,
   clientFingerprint,
+  hashSubject,
   takeRateLimitSlot,
 } from "@/lib/auth/rate-limit";
 import { requireAdmin } from "@/lib/auth/session";
@@ -64,8 +65,11 @@ export async function inviteUser(
 
   // Keyed by tenant, not by Admin: the sending reputation being spent belongs
   // to the space, and a second Admin account is a trivial way around a per-user
-  // key (#61).
-  if (!(await takeRateLimitSlot(INVITE_CREATE, auth.session.tenantId))) {
+  // key (#61). Hashed like every other subject — the limiter's table is not a
+  // place to learn which tenants exist and how busy each one is.
+  if (
+    !(await takeRateLimitSlot(INVITE_CREATE, hashSubject(auth.session.tenantId)))
+  ) {
     return { error: RATE_LIMITED_MESSAGE };
   }
 

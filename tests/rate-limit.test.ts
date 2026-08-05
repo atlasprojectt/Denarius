@@ -6,14 +6,16 @@ import {
   INVITE_CREATE,
   RATE_LIMITED_MESSAGE,
   bucketKey,
+  clientIpFrom,
   hashSubject,
 } from "@/lib/auth/rate-limit";
 
-// Issue #61 — rate limiting the invitation paths. Two halves: the key derivation
-// is pure and tested here directly; the window itself lives in Postgres (one
-// atomic statement, or two concurrent callers both read "limit - 1" and both
-// proceed), so it is exercised against the real function below and self-skips
-// until the migration is applied.
+// Issue #61 — rate limiting the invitation paths. Two halves: key derivation is
+// pure and tested here directly; the window lives in Postgres behind an
+// advisory lock (without it, two concurrent callers read the same snapshot,
+// neither sees the other's uncommitted insert, and both proceed), so it is
+// exercised against the real function below and self-skips until the migration
+// is applied.
 
 describe("what the limiter stores", () => {
   it("never puts the raw subject in the key", () => {
@@ -34,6 +36,32 @@ describe("what the limiter stores", () => {
     // Otherwise an Admin inviting colleagues would spend the budget that
     // protects the public accept endpoint.
     expect(bucketKey(INVITE_CREATE, "x")).not.toBe(bucketKey(INVITE_ACCEPT, "x"));
+  });
+
+  it("prefers the headers a caller cannot forge", () => {
+    // `x-forwarded-for` is client-supplied unless the proxy overwrites it. If
+    // it won, the accept endpoint's only protection would come off by rotating
+    // one header, so the platform's own headers must take precedence.
+    const forged = "1.1.1.1";
+    const real = "203.0.113.7";
+
+    const withVercel = (n: string) =>
+      n === "x-forwarded-for" ? forged : n === "x-vercel-forwarded-for" ? real : null;
+    const withRealIp = (n: string) =>
+      n === "x-forwarded-for" ? forged : n === "x-real-ip" ? real : null;
+
+    expect(clientIpFrom(withVercel)).toBe(real);
+    expect(clientIpFrom(withRealIp)).toBe(real);
+  });
+
+  it("falls back to x-forwarded-for, then to one shared bucket", () => {
+    expect(
+      clientIpFrom((n) => (n === "x-forwarded-for" ? "203.0.113.7, 10.0.0.1" : null)),
+    ).toBe("203.0.113.7");
+    // No proxy at all (local dev): everyone shares a bucket, which throttles
+    // harder rather than softer.
+    expect(clientIpFrom(() => null)).toBe("unknown");
+    expect(clientIpFrom(() => "")).toBe("unknown");
   });
 
   it("answers without disclosing accounts, tokens or addresses", () => {

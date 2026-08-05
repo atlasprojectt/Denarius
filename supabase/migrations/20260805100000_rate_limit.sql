@@ -20,9 +20,10 @@
 create table public.rate_limit_hit (
   id bigserial primary key,
   -- Opaque scope key built by lib/auth/rate-limit.ts, e.g.
-  -- "invite:create:<tenant uuid>" or "invite:accept:<sha256 of the client ip>".
-  -- NEVER a raw IP, e-mail or token: the subject is hashed before it gets here,
-  -- so this table cannot become a log of who tried what (constitution §14).
+  -- "invite:create:<hash of the tenant id>" or "invite:accept:<hash of the ip>".
+  -- NEVER a raw IP, tenant id, e-mail or token — EVERY subject is hashed before
+  -- it gets here, so this table cannot become a log of who tried what, nor of
+  -- which tenants exist and how busy each one is (constitution §14).
   bucket text not null,
   at timestamptz not null default now()
 );
