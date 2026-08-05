@@ -6,14 +6,25 @@ import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import {
+  fieldErrorsOf,
   loginSchema,
   onboardingSchema,
   otpSchema,
   signupSchema,
 } from "@/lib/validation";
 
+import { passwordSchema, weakPasswordError } from "./password";
+
+/** Signup carries the product's password rule (#58) — the shared schema is the
+ *  only place the minimum is written, so this overrides the placeholder in
+ *  `lib/validation.ts` rather than restating a number. */
+const signupWithPasswordRule = signupSchema.extend({ password: passwordSchema });
+
 export type AuthFormState = {
   error?: string;
+  /** First message per field, so the UI marks the exact input (#58: the
+   *  password rule must fail ON the password field, not as a form error). */
+  fieldErrors?: Record<string, string>;
   notice?: string;
   /** Signup landed but the e-mail still needs the 6-digit confirmation code —
    *  the UI opens the OTP dialog for `email`. */
@@ -46,12 +57,17 @@ export async function signup(
   _prev: AuthFormState,
   formData: FormData,
 ): Promise<AuthFormState> {
-  const parsed = signupSchema.safeParse({
+  const parsed = signupWithPasswordRule.safeParse({
     companyName: formData.get("companyName"),
     email: formData.get("email"),
     password: formData.get("password"),
   });
-  if (!parsed.success) return { error: firstIssue(parsed.error) };
+  if (!parsed.success) {
+    return {
+      error: firstIssue(parsed.error),
+      fieldErrors: fieldErrorsOf(parsed.error),
+    };
+  }
 
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signUp({
@@ -65,6 +81,10 @@ export async function signup(
     if (error.code === "user_already_exists") {
       return { error: "Já existe uma conta com este e-mail. Faça login." };
     }
+    // Supabase refused the password itself — leaked-password protection or the
+    // project's own minimum. Surfaced on the field, never as a generic failure.
+    const weak = weakPasswordError(error);
+    if (weak) return weak;
     return { error: "Não foi possível criar a conta. Tente novamente." };
   }
 

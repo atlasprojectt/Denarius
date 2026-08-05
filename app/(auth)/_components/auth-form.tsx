@@ -12,12 +12,15 @@ import { useActionState, useId, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Field,
+  FieldDescription,
+  FieldError,
   FieldGroup,
   FieldLabel,
   FieldSeparator,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { login, signup, type AuthFormState } from "@/lib/auth/actions";
+import { PASSWORD_MIN } from "@/lib/auth/password";
 
 import { GoogleButton } from "./google-button";
 import { OtpDialog } from "./otp-dialog";
@@ -34,6 +37,7 @@ const copy = {
   emailPlaceholder: "voce@empresa.com",
   password: "Senha",
   passwordPlaceholder: "••••••••",
+  passwordHint: `Pelo menos ${PASSWORD_MIN} caracteres. Sem exigência de maiúscula, número ou símbolo — o que protege é o comprimento.`,
   showPassword: "Mostrar senha",
   hidePassword: "Ocultar senha",
   submitLogin: "Entrar",
@@ -92,7 +96,12 @@ export function AuthForm({ oauthError }: { oauthError?: string }) {
   const pending = isSignup ? signupPending : loginPending;
   // Google errors arrive via the callback redirect (?error=oauth); only
   // meaningful in login mode and only until a form submission returns its own.
-  const shownError = state.error ?? (isSignup ? undefined : oauthError);
+  // A validation failure marks the exact input instead (#58), so the banner
+  // steps aside whenever there are field errors — the message is already there.
+  const fieldErrors = state.fieldErrors;
+  const shownError = fieldErrors
+    ? undefined
+    : (state.error ?? (isSignup ? undefined : oauthError));
 
   const inputClassName = "h-11 bg-background pl-10 text-[15px]";
   const iconClassName = "size-4";
@@ -174,9 +183,13 @@ export function AuthForm({ oauthError }: { oauthError?: string }) {
                     required={isSignup}
                     disabled={!isSignup}
                     tabIndex={isSignup ? undefined : -1}
+                    aria-invalid={fieldErrors?.companyName !== undefined}
                     className={inputClassName}
                   />
                 </IconInput>
+                {fieldErrors?.companyName && (
+                  <FieldError>{fieldErrors.companyName}</FieldError>
+                )}
               </Field>
             </div>
           </div>
@@ -191,9 +204,11 @@ export function AuthForm({ oauthError }: { oauthError?: string }) {
                 placeholder={copy.emailPlaceholder}
                 autoComplete="email"
                 required
+                aria-invalid={fieldErrors?.email !== undefined}
                 className={inputClassName}
               />
             </IconInput>
+            {fieldErrors?.email && <FieldError>{fieldErrors.email}</FieldError>}
           </Field>
 
           <Field className="denarius-auth-enter [animation-delay:120ms]">
@@ -226,10 +241,16 @@ export function AuthForm({ oauthError }: { oauthError?: string }) {
                 placeholder={copy.passwordPlaceholder}
                 autoComplete={isSignup ? "new-password" : "current-password"}
                 required
-                minLength={isSignup ? 8 : undefined}
+                minLength={isSignup ? PASSWORD_MIN : undefined}
+                aria-invalid={fieldErrors?.password !== undefined}
                 className={`${inputClassName} pr-10`}
               />
             </IconInput>
+            {fieldErrors?.password ? (
+              <FieldError>{fieldErrors.password}</FieldError>
+            ) : (
+              isSignup && <FieldDescription>{copy.passwordHint}</FieldDescription>
+            )}
           </Field>
 
           {shownError && (
