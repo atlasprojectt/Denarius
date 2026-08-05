@@ -6,6 +6,7 @@ import {
   PASSWORD_MAX_BYTES,
   PASSWORD_MIN,
   WEAK_PASSWORD_MESSAGE,
+  hasPasswordIdentity,
   passwordSchema,
   weakPasswordError,
   withConfirmation,
@@ -157,6 +158,37 @@ describe("callback destination guard (#68)", () => {
     expect(safeNextPath(null)).toBe("/");
     expect(safeNextPath(undefined)).toBe("/");
     expect(safeNextPath("")).toBe("/");
+  });
+});
+
+describe("does this account even have a password? (#69)", () => {
+  it("yes for an e-mail signup", () => {
+    expect(hasPasswordIdentity({ identities: [{ provider: "email" }] })).toBe(true);
+  });
+
+  it("no for a Google-only account", () => {
+    expect(hasPasswordIdentity({ identities: [{ provider: "google" }] })).toBe(false);
+  });
+
+  it("yes when Google was linked to an account that already had one", () => {
+    expect(
+      hasPasswordIdentity({
+        identities: [{ provider: "google" }, { provider: "email" }],
+      }),
+    ).toBe(true);
+  });
+
+  it("falls back to app_metadata when identities are absent", () => {
+    expect(hasPasswordIdentity({ app_metadata: { providers: ["google"] } })).toBe(false);
+    expect(hasPasswordIdentity({ app_metadata: { providers: ["email"] } })).toBe(true);
+  });
+
+  it("assumes a password when nothing says otherwise", () => {
+    // Hiding the form from someone who HAS a password locks them out of
+    // changing it — the worse of the two failures, so absence means "yes".
+    expect(hasPasswordIdentity({})).toBe(true);
+    expect(hasPasswordIdentity(null)).toBe(true);
+    expect(hasPasswordIdentity({ identities: [], app_metadata: { providers: [] } })).toBe(true);
   });
 });
 

@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -14,7 +15,12 @@ import {
 } from "@/lib/validation";
 
 import { requestOrigin } from "./origin";
-import { passwordSchema, weakPasswordError, withConfirmation } from "./password";
+import {
+  hasPasswordIdentity,
+  passwordSchema,
+  weakPasswordError,
+  withConfirmation,
+} from "./password";
 import {
   RECOVERY_PATH,
   clearRecoveryGrant,
@@ -272,6 +278,106 @@ export async function resetPassword(
   await clearRecoveryGrant();
 
   redirect("/");
+}
+
+const changePasswordSchema = withConfirmation({
+  currentPassword: z.string().min(1, "Informe sua senha atual."),
+});
+
+const CHANGE_SESSION_GONE =
+  "Sua sessão expirou. Entre novamente para trocar a senha.";
+const CHANGE_GOOGLE_ONLY =
+  "Você entra no Denarius pela sua conta Google, então não há senha do Denarius para trocar.";
+const CHANGE_CURRENT_WRONG = "Senha atual incorreta.";
+const CHANGE_SAME_PASSWORD = "A nova senha precisa ser diferente da atual.";
+const CHANGE_FAILED = "Não foi possível alterar a senha. Tente novamente.";
+const CHANGE_DONE =
+  "Senha alterada. As outras sessões da sua conta foram encerradas.";
+
+/**
+ * Checks a password without touching the caller's session.
+ *
+ * `signInWithPassword` on the request-scoped client would rewrite the session
+ * cookies as a side effect of a *verification*, so this uses a throwaway
+ * non-persisting client instead: nothing is stored, and the short-lived session
+ * it mints server-side is revoked moments later by the `scope: "others"` sign
+ * out that follows a successful change.
+ */
+async function passwordIsCorrect(
+  email: string,
+  password: string,
+): Promise<boolean> {
+  const probe = createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { auth: { persistSession: false, autoRefreshToken: false } },
+  );
+  const { error } = await probe.auth.signInWithPassword({ email, password });
+  return !error;
+}
+
+/**
+ * Change your own password from /configuracoes (issue #69).
+ *
+ * **The current password is verified explicitly** — `updateUser` does not check
+ * it. Without that step an unlocked laptop or a stolen session cookie is a
+ * permanent account takeover: the session would *be* the password. This is the
+ * substance of the issue, and it is the same gap the recovery grant closes on
+ * the other door (`lib/auth/recovery.ts`).
+ *
+ * A Google-only account has no password to verify, so it is refused with an
+ * explanation rather than an "invalid credentials" error that would read as a
+ * typo. The screen hides the form for those accounts; this refuses again,
+ * because a server action never trusts the UI that called it.
+ */
+export async function changePassword(
+  _prev: AuthFormState,
+  formData: FormData,
+): Promise<AuthFormState> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user?.email) return { error: CHANGE_SESSION_GONE };
+  if (!hasPasswordIdentity(user)) return { error: CHANGE_GOOGLE_ONLY };
+
+  const parsed = changePasswordSchema.safeParse({
+    currentPassword: formData.get("currentPassword"),
+    password: formData.get("password"),
+    confirmation: formData.get("confirmation"),
+  });
+  if (!parsed.success) {
+    return {
+      error: firstIssue(parsed.error),
+      fieldErrors: fieldErrorsOf(parsed.error),
+    };
+  }
+
+  if (!(await passwordIsCorrect(user.email, parsed.data.currentPassword))) {
+    return {
+      error: CHANGE_CURRENT_WRONG,
+      fieldErrors: { currentPassword: CHANGE_CURRENT_WRONG },
+    };
+  }
+
+  const { error } = await supabase.auth.updateUser({
+    password: parsed.data.password,
+  });
+  if (error) {
+    if (error.code === "same_password") {
+      return {
+        error: CHANGE_SAME_PASSWORD,
+        fieldErrors: { password: CHANGE_SAME_PASSWORD },
+      };
+    }
+    return weakPasswordError(error) ?? { error: CHANGE_FAILED };
+  }
+
+  // Changing a password is also how someone evicts whoever else is holding a
+  // session on this account — including the throwaway one the check above minted.
+  await supabase.auth.signOut({ scope: "others" });
+
+  return { notice: CHANGE_DONE };
 }
 
 export async function logout(): Promise<void> {
