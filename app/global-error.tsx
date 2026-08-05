@@ -7,13 +7,16 @@ import { RiErrorWarningLine } from "@remixicon/react";
 import { EmptyState } from "@/components/domain/empty-state";
 import { LogoWordmark } from "@/components/domain/logo";
 import { Button } from "@/components/ui/button";
+import { THEME_SCRIPT } from "@/lib/theme-script";
 import { cn } from "@/lib/utils";
 
 // Root error boundary: the app's own root layout failed to render, so this
 // file renders its own <html>/<body> instead of relying on app/layout.tsx —
 // Next.js requires that for global-error. Re-declares the same fonts and
 // theme script as the root layout so the fallback still reads as Denarius,
-// not a bare browser error page.
+// not a bare browser error page. The script is IMPORTED rather than copied:
+// the CSP admits it by hash, which only holds while both call sites ship the
+// identical source (issue #60).
 
 const dmSans = DM_Sans({ subsets: ["latin"], variable: "--font-dm-sans" });
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
@@ -21,8 +24,6 @@ const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
 });
-
-const themeScript = `(function(){try{var m=window.matchMedia('(prefers-color-scheme: dark)');function a(){var t=localStorage.getItem('theme');var d=t==='dark'||((t==='system'||!t)&&m.matches);document.documentElement.classList.toggle('dark',d);}a();m.addEventListener('change',a);}catch(e){}})();`;
 
 const copy = {
   title: "Algo deu errado",
@@ -50,7 +51,7 @@ export default function GlobalError({
       )}
     >
       <head>
-        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
       </head>
       <body className="flex min-h-full flex-col items-center justify-center gap-6 p-6 font-sans">
         <LogoWordmark className="h-6 w-auto" />

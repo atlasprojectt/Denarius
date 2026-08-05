@@ -67,6 +67,16 @@
 - Stores **metadata only** (counts, cost, model, key/user id, date). **Never prompts/responses** — structural consequence of having no proxy.
 - RBAC: Admin / Viewer + "who can see names" toggle (Admin-only default) + "store per-person data" toggle (LGPD data minimization).
 
+## 4b. Browser security boundary & CSRF (2026-08-05, issue #60)
+
+HTTP security headers ship in **two layers**, split by what each can do. The request-independent set (HSTS, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`) is served by `next.config.ts` `headers()`, so it also covers `/_next/static` and the other asset paths the proxy matcher deliberately skips. The **Content-Security-Policy** carries a fresh per-request nonce, so it is built in `lib/security/headers.ts` and applied by `proxy.ts` — on redirects and the cron bypass too, because a header applied on the happy path only is a header an attacker routes around.
+
+`script-src` carries **no `'unsafe-inline'`**. Two mechanisms replace it: the per-request nonce (set on the *request* headers, which is where Next reads it to stamp its own bootstrap and flight scripts) and a **sha256 hash** for the static no-FOUC theme script, which also runs from the `global-error` Client Component where no nonce can be read. `style-src` keeps `'unsafe-inline'` as the one documented exception: bar geometry (`lib/bars.ts`), Recharts and Next's critical CSS are *attribute* styles, which no nonce or hash can cover. The two directives are not equally dangerous — injected script runs with the page's full authority, injected style can only mislead — so the looseness is confined to where it costs least. `frame-ancestors 'none'` blocks clickjacking.
+
+`X-Robots-Tag: noindex, nofollow` on every path outside `INDEXABLE_PREFIXES` (`/login`, `/privacidade`, `/termos`): a budget dashboard for a named company must not be indexable, and "there is a login" is not the same as telling a crawler not to try.
+
+**Where CSRF is handled.** This app's entire mutation surface is **server actions** — there is no REST layer and no API route but the two crons — so Next's server-action origin check *is* the CSRF boundary. Next compares the request's `Origin` against the `Host` it was served on and rejects a mismatch, which already covers the production deployment where both are the same host. `experimental.serverActions.allowedOrigins` in `next.config.ts` is the deliberate statement of which **other** origins may post: today only the production alias, so a preview deployment can never drive a mutation against production. It grows when the real domain lands (#56).
+
 ## 5. Data flow (ingestion → decision)
 
 1. **Ingest** (daily cron + on-connect sync): each connector implements `UsageProvider`, returning canonical usage/cost payloads. Buckets are **daily, UTC**.
