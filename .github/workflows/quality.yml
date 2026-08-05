@@ -47,3 +47,12 @@ jobs:
       # that self-skip and moves the isolation test to its own workflow.
       - name: Test
         run: npm test
+
+      # Last, and load-bearing: lint, typecheck and vitest all pass on code
+      # `next build` rejects. A "use server" module exporting one constant
+      # broke production this way (PR #105) after a fully green gate — the
+      # compiler drops every export in such a file, which no other step sees.
+      # No env vars: every page here is dynamic, so the build needs no
+      # Supabase credentials and this step stays secret-free.
+      - name: Build
+        run: npm run build

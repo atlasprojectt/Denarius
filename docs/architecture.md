@@ -116,7 +116,9 @@ Every dependency is due-diligence surface. The policy is enforced in the pipelin
 
 **Install from the lockfile, everywhere.** CI installs with `npm ci`, and Vercel does too (`installCommand` in `vercel.json`). Both matter: `npm ci` in CI alone would still let Vercel resolve a fresh tree at build time, so what a reviewer approved and what production runs would be different trees.
 
-**One gate, two consumers.** `.github/workflows/quality.yml` (install → audit → lint → typecheck → test) is a `workflow_call` reused by `ci.yml` (pull requests) and `deploy-prod.yml` (push to `main`, which deploys). Deploy runs behind `needs: quality`. Duplicating the gate would let the PR side and the deploy side drift apart.
+**One gate, two consumers.** `.github/workflows/quality.yml` (install → audit → lint → typecheck → test → **build**) is a `workflow_call` reused by `ci.yml` (pull requests) and `deploy-prod.yml` (push to `main`, which deploys). Deploy runs behind `needs: quality`. Duplicating the gate would let the PR side and the deploy side drift apart.
+
+**Why `next build` is in the gate.** Lint, typecheck and vitest all pass on code the Next compiler rejects — a `"use server"` module may export nothing but async functions, and one exported constant makes the compiler drop *every* export in the file. That reached `main` green and failed at deploy (PR #105). Without the build step, the production deploy is the first place such a failure appears. The build needs no secrets: every page is dynamic, so it compiles with no env vars present.
 
 **Audit threshold: high.** `npm audit --audit-level=high` fails the build; moderate and low are reported without failing. **No exception is accepted today** — the tree audits clean (0 advisories as of 2026-08-05). An advisory published against a dependency will therefore block `main` with no code change; that is the intended behaviour. Clearing it means bumping the dependency, or — if no fix exists — an entry in this section stating the advisory, why the risk is accepted, and the date, added in the same PR as the workflow change that skips it.
 
