@@ -10,6 +10,7 @@ import {
   weakPasswordError,
   withConfirmation,
 } from "@/lib/auth/password";
+import { safeNextPath } from "@/lib/auth/origin";
 import { acceptInvitationSchema, signupSchema } from "@/lib/validation";
 
 // Issue #58 — the password rule of the whole product. What these tests defend
@@ -129,6 +130,33 @@ describe("weak-password mapping (Supabase leaked-password protection)", () => {
   it("never echoes the password back in the message", () => {
     const mapped = weakPasswordError({ code: "weak_password", reasons: ["pwned"] });
     expect(mapped?.error).not.toContain(ok);
+  });
+});
+
+describe("callback destination guard (#68)", () => {
+  it("keeps a plain path on this site", () => {
+    expect(safeNextPath("/auth/nova-senha")).toBe("/auth/nova-senha");
+    expect(safeNextPath("/times/abc?x=1")).toBe("/times/abc?x=1");
+  });
+
+  it("refuses anything that could start a new authority", () => {
+    // Each of these would turn the auth callback into an open redirect — a
+    // phishing hop wearing the product's own domain.
+    for (const hostile of [
+      "//evil.com",
+      "https://evil.com",
+      "http://evil.com",
+      "/\\evil.com",
+      "evil.com",
+    ]) {
+      expect(safeNextPath(hostile)).toBe("/");
+    }
+  });
+
+  it("defaults to the home route when absent", () => {
+    expect(safeNextPath(null)).toBe("/");
+    expect(safeNextPath(undefined)).toBe("/");
+    expect(safeNextPath("")).toBe("/");
   });
 });
 

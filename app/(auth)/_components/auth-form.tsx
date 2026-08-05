@@ -7,6 +7,7 @@ import {
   RiKey2Line,
   RiMailLine,
 } from "@remixicon/react";
+import Link from "next/link";
 import { useActionState, useId, useState, type ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -38,6 +39,7 @@ const copy = {
   password: "Senha",
   passwordPlaceholder: "••••••••",
   passwordHint: `Pelo menos ${PASSWORD_MIN} caracteres. Sem exigência de maiúscula, número ou símbolo — o que protege é o comprimento.`,
+  forgotPassword: "Esqueci minha senha",
   showPassword: "Mostrar senha",
   hidePassword: "Ocultar senha",
   submitLogin: "Entrar",
@@ -212,7 +214,18 @@ export function AuthForm({ oauthError }: { oauthError?: string }) {
           </Field>
 
           <Field className="denarius-auth-enter [animation-delay:120ms]">
-            <FieldLabel htmlFor="password">{copy.password}</FieldLabel>
+            <div className="flex items-center justify-between gap-2">
+              <FieldLabel htmlFor="password">{copy.password}</FieldLabel>
+              {/* Login only: in signup mode there is no password to recover. */}
+              {!isSignup && (
+                <Link
+                  href="/auth/recuperar"
+                  className="text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground"
+                >
+                  {copy.forgotPassword}
+                </Link>
+              )}
+            </div>
             <IconInput
               icon={<RiKey2Line className={iconClassName} />}
               trailing={
