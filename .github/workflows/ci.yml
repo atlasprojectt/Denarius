@@ -1,0 +1,30 @@
+# Continuous integration for pull requests.
+#
+# Until this existed the repo had no pull-request CI at all — the only workflow
+# ran on push to main, which is also the deploy. Proving a change green meant
+# deploying it to production first. This runs the same gate before the merge.
+#
+# Also covers Dependabot's pull requests, which is what makes an automated
+# dependency bump safe to accept.
+
+name: CI
+
+# pull_request only, deliberately. Adding `push: branches-ignore [main]` would
+# double every run: a branch in this repo with an open PR fires both events, and
+# their concurrency groups differ (refs/heads/x vs refs/pull/N/merge), so
+# neither cancels the other. Nothing is left uncovered — every change reaches
+# main through a PR (PARALLEL.md §5), and main itself is gated by
+# deploy-prod.yml. Running on the PR is also the stricter check: GitHub builds
+# the merge commit, so the gate proves the result of merging, not the branch
+# in isolation.
+on:
+  pull_request:
+
+# A newer push to the same pull request supersedes the older run.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    uses: ./.github/workflows/quality.yml
