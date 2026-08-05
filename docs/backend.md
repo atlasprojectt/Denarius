@@ -19,7 +19,7 @@ interface UsageProvider {
 - **Anthropic:** Admin API usage (`/v1/organizations/usage_report/messages`) groups by `workspace_id, api_key_id, model`; cost report (`/v1/organizations/cost_report`) groups by `workspace_id, description`. Needs an org **Admin key** (`sk-ant-admin…`, sent as `x-api-key` + `anthropic-version`). **No per-user grain** — attribution stops at workspace/key. Onboarding recommends *one workspace per team*. Live validation against a real key still pending (#11).
 - Key lifecycle: save (encrypt) → test → rotate → revoke. **Immediate sync on connect** (the "we found $X this month" moment), then daily cron.
 - Tests inject `FakeProvider` with canonical payload fixtures; no live calls in CI.
-- **OpenAI contract (implemented in #15):** `OpenAIProvider` in `lib/connectors/openai.ts` with an **injectable `fetchFn`** — the fake (`lib/connectors/fake.ts`) replaces `fetch` with canonical Usage/Costs pages (pagination included), so tests and the dev demo exercise the real parsing path. Factory `providerFor()` in `lib/connectors/index.ts` only routes `sk-fake*` keys to the fake when server env `ALLOW_FAKE_PROVIDER=1`. Keys AES-256-GCM-encrypted via `lib/crypto.ts` (`CREDENTIAL_ENCRYPTION_KEY`); the `provider_connection.encrypted_credential` column is excluded from the authenticated column grant, so no browser session can read it. Key lifecycle actions in `lib/providers/actions.ts` (save tests the key BEFORE storing; rotate = upsert; revoke discards the ciphertext). Per-tenant sync unit in `lib/sync/openai-sync.ts` (month-to-date, idempotent upserts by natural keys); derived cost is the pure `deriveCost()` in `lib/engine/derive.ts` (newest price ≤ usage date; no price → `uncosted`). API spend displays in **USD** as reported; frozen-FX conversion arrives with budgets (#18). Project→team attribution arrives with #17 — until then API spend sits in Unattributed, disclosed on screen.
+- **OpenAI contract (implemented in #15):** `OpenAIProvider` in `lib/connectors/openai.ts` with an **injectable `fetchFn`** — the fake (`lib/connectors/fake.ts`) replaces `fetch` with canonical Usage/Costs pages (pagination included), so tests and the dev demo exercise the real parsing path. Factory `providerFor()` in `lib/connectors/index.ts` only routes `sk-fake*` keys to the fake when server env `ALLOW_FAKE_PROVIDER=1`. Keys AES-256-GCM-encrypted via `lib/crypto.ts` (rotatable keyring and blob format in §14); the `provider_connection.encrypted_credential` column is excluded from the authenticated column grant, so no browser session can read it. Key lifecycle actions in `lib/providers/actions.ts` (save tests the key BEFORE storing; rotate = upsert; revoke discards the ciphertext). Per-tenant sync unit in `lib/sync/openai-sync.ts` (month-to-date, idempotent upserts by natural keys); derived cost is the pure `deriveCost()` in `lib/engine/derive.ts` (newest price ≤ usage date; no price → `uncosted`). API spend displays in **USD** as reported; frozen-FX conversion arrives with budgets (#18). Project→team attribution arrives with #17 — until then API spend sits in Unattributed, disclosed on screen.
 - **Anthropic contract (implemented in #16):** `AnthropicProvider` in `lib/connectors/anthropic.ts`, same injectable-`fetchFn` shape as OpenAI; the fake serves canonical Anthropic pages (RFC 3339 buckets, decimal-string amounts, cursor pagination) through the real parsing path. Seam mapping: `workspace_id → projectId`, `api_key_id → apiKeyId`, `userId = ""` (no user grain). Derived input cost bills **all** input tokens (uncached + cache writes + cache reads) at the base `model_price` rate — cost_report remains the headline truth; reconciliation (#17) discloses the drift. Key lifecycle shares one implementation for both providers (`lib/providers/actions.ts`, thin per-provider server-action wrappers); per-tenant sync generalized to `runProviderSync(tenantId, provider)` in `lib/sync/provider-sync.ts` (replaced `openai-sync.ts` — no provider-specific code in the shared path). Fake key prefix `sk-ant-fake*` behind the same `ALLOW_FAKE_PROVIDER=1` gate. Claude prices seeded in `model_price` with dated model IDs (the usage report returns versioned IDs). Workspace→team attribution arrives with #17 — until then Claude spend sits in Unattributed alongside OpenAI, disclosed on screen.
 
 ## 2. Sync & normalization — issue #17
@@ -122,7 +122,8 @@ interface NotificationChannel { send(msg: RenderedNotification): Promise<void>; 
 |---|---|
 | `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` | public (RLS protects data) |
 | `SUPABASE_SERVICE_ROLE_KEY` | server-only (cron crosses tenants) |
-| `CREDENTIAL_ENCRYPTION_KEY` | server-only (provider keys at rest) |
+| `CREDENTIAL_ENCRYPTION_KEYS` / `CREDENTIAL_ENCRYPTION_KEY_ID` | server-only (provider keys at rest; the keyring — §14) |
+| `CREDENTIAL_ENCRYPTION_KEY` | server-only; the single pre-rotation key, id `legacy` (§14) |
 | `ANTHROPIC_API_KEY` (narration) · `RESEND_API_KEY` | server-only |
 | `CRON_SECRET` | protects the cron routes (daily sync + weekly digest) |
 | `NARRATION_MODEL` | optional; narration model override (default `claude-haiku-4-5`) |
@@ -166,3 +167,52 @@ Never block on gaps — disclose them: uncosted models, stale syncs, reconciliat
 ## 13. Scenario engine — 2026-07-11 audit (QA-04/QA-10)
 
 `lib/engine/scenario.ts`: `ScenarioInput` carries `team.budget`; `simulatePace` returns **separate `ScopeOutcome`s** (`{close, margin, withinBudget}`) for the team (vs its own budget) and the org (vs the org budget) — a positive company outcome can never mask a breached team. `breakEvenDelta` targets the **team's** budget (`δ = (teamBudget − projection) / remaining`, clamped to [−1, 0]): 0 when already inside, `reachable: false` when already-spent cost alone exceeds the budget (disclosed in the drawer), null delta when there is no remaining spend to lever. The drawer applies the **exact** delta (never the rounded label) so the preset lands ON the budget. Day-5 guard unchanged: no projection → the drawer shows the collecting state and simulates nothing.
+
+## 14. Credential encryption at rest & key rotation — issue #75
+
+Provider Admin Keys are the only secret Denarius stores. They are encrypted with **AES-256-GCM**, and `provider_connection.encrypted_credential` is excluded from the authenticated column grant, so no browser session can read the ciphertext either.
+
+**Modules.** `lib/crypto.ts` is the seam the app imports — `server-only`, a pure re-export. The primitives live in `lib/credentials/` (`keyring.ts` resolves keys from env, `blob.ts` does the crypto) **without** the `server-only` marker, deliberately: `scripts/rotate-credentials.ts` runs under plain node, and re-implementing AES-GCM there so it could import something is the one thing a rotation path must never do.
+
+**Blob format.**
+
+```
+v2.<key id>.<iv b64>.<ciphertext b64>.<auth tag b64>    ← written today
+v1.<iv b64>.<ciphertext b64>.<auth tag b64>             ← still readable
+```
+
+- **The key id is on the row.** `v1` versioned the *algorithm*, not the key: nothing said which `CREDENTIAL_ENCRYPTION_KEY` produced a blob, so rotation had no way to read old rows while writing new ones. `v2` names its writer, and the reader resolves by id.
+- **`(tenant_id, provider)` is the AAD.** GCM authenticates it for free, so a blob copied from one `provider_connection` row into another fails to decrypt instead of succeeding silently. `v1` rows carry no AAD (they were written without one) and stay readable from any row — which is precisely the weakness re-encryption closes.
+- **Every failure is the same failure.** A malformed blob, an unknown key id, a wrong AAD and a tampered tag all throw `credential could not be decrypted` — no plaintext, no key material, no hint about which check failed.
+
+**Env contract.**
+
+| Var | Meaning |
+|---|---|
+| `CREDENTIAL_ENCRYPTION_KEYS` | the keyring: `<id>:<key>,<id>:<key>` — ids match `[a-z0-9_-]{1,16}`, keys are 32 bytes as base64 or hex |
+| `CREDENTIAL_ENCRYPTION_KEY_ID` | which id encrypts new credentials; **required** whenever more than one key is configured |
+| `CREDENTIAL_ENCRYPTION_KEY` | the single pre-rotation key, kept for compatibility; it takes the reserved id `legacy` and is the only key that opens `v1` blobs |
+
+Multiple keys may be configured at once — that is what makes a rotation windowless. Nothing guesses which key is current: with two keys configured and no `CREDENTIAL_ENCRYPTION_KEY_ID`, writes fail loudly rather than stranding rows under an unintended key.
+
+**Rotation procedure.**
+
+1. **Generate** a key: `openssl rand -base64 32`. Never commit it, never paste it into a log or a PR.
+2. **Add it while the old one stays readable.** Set `CREDENTIAL_ENCRYPTION_KEYS="old:<old key>,k2:<new key>"` and `CREDENTIAL_ENCRYPTION_KEY_ID=k2` in the Vercel environment (Sensitive). Old rows still decrypt under `old`; new saves are written under `k2`. Redeploy.
+3. **Rehearse:** `npm run rotate:credentials -- --dry-run` reports what would change and writes nothing. Add `--tenant <uuid>` to scope a first pass to one tenant.
+4. **Re-encrypt:** `npm run rotate:credentials`. It reads every `provider_connection` row on the service role, skips rows already under the current key, and updates each row matched on the exact blob it read — an Admin saving a key mid-run is never overwritten. It prints a tally (`scanned/alreadyCurrent/rotated/failed`) and exits non-zero if any row failed. It never prints a key, a key id's material or a plaintext credential.
+5. **Verify** the tally: `failed: 0` and `alreadyCurrent + rotated == scanned`.
+6. **Retire the old key** — drop the `old:` entry (and `CREDENTIAL_ENCRYPTION_KEY` once no `v1` row remains). Only after step 5.
+
+The script requires `NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`; `npm run rotate:credentials` loads `.env.local`.
+
+**If the key is believed compromised.** The ciphertext is worthless without the key, but a leaked key plus database access is a leaked Admin Key. Order matters, and the fastest safe path is not the rotation above:
+
+1. **Revoke at the provider first** — regenerate the Admin Key in the OpenAI / Anthropic console. That invalidates the leaked secret whatever happens next; nothing Denarius does can.
+2. Rotate the encryption key through steps 1–6 so no stored blob is readable with the compromised key.
+3. Ask the tenant's Admin to reconnect each provider with the new Admin Key (`/ajustes/conexoes`).
+4. Rows that cannot be re-encrypted stay untouched and surface on their own (below) — they are not silently dropped.
+
+**A key that cannot decrypt degrades, it does not cascade.** `runProviderSync` resolves the credential *outside* its sync `try`: an unreadable blob marks the connection `status: "error"` with `UNREADABLE_CREDENTIAL_MESSAGE` ("Não foi possível ler a credencial guardada. Reconecte o provedor."), which the connections card renders and the freshness banner turns into "Reconectar". The daily cron counts it as one failure and continues to the next tenant — the sync is the one cross-tenant path, and one bad row must not take the fleet down.
+
+Tests: `tests/crypto.test.ts` (round-trip per key, the rotation window, cross-row rejection, unknown key id, legacy `v1` read, keyring misconfiguration, tampering, secret-free errors) and `tests/sync-propagation.test.ts` (the reconnect degradation and the cron continuing).

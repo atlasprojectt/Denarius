@@ -38,6 +38,7 @@ const state = vi.hoisted(() => ({
     connectionUpdates: [],
   } as WriteLog,
   providerThrows: false,
+  decryptThrows: false,
 }));
 
 function resetState(): void {
@@ -54,6 +55,7 @@ function resetState(): void {
     connectionUpdates: [],
   };
   state.providerThrows = false;
+  state.decryptThrows = false;
 }
 
 // Minimal chainable query stub: records writes, answers the exact reads
@@ -117,7 +119,11 @@ vi.mock("@/lib/supabase/admin", () => ({
   createAdminClient: () => ({ from: (table: string) => makeQuery(table) }),
 }));
 vi.mock("@/lib/crypto", () => ({
-  decryptCredential: () => "sk-fake-demo",
+  decryptCredential: () => {
+    // What the keyring throws when no configured key can open the blob (#75).
+    if (state.decryptThrows) throw new Error("credential could not be decrypted");
+    return "sk-fake-demo";
+  },
 }));
 vi.mock("@/lib/connectors", () => ({
   providerFor: () => ({
@@ -147,7 +153,10 @@ vi.mock("@/lib/connectors", () => ({
   }),
 }));
 
-import { runProviderSync } from "@/lib/sync/provider-sync";
+import {
+  runProviderSync,
+  UNREADABLE_CREDENTIAL_MESSAGE,
+} from "@/lib/sync/provider-sync";
 
 beforeEach(resetState);
 
@@ -223,5 +232,36 @@ describe("runProviderSync — failure stays accurately represented", () => {
     state.connection = null;
     const result = await runProviderSync("tenant-1", "openai");
     expect(result.ok).toBe(false);
+  });
+});
+
+describe("runProviderSync — an unreadable credential degrades, never cascades (#75)", () => {
+  it("marks the connection for reconnection instead of throwing", async () => {
+    state.decryptThrows = true;
+
+    const result = await runProviderSync("tenant-1", "openai");
+
+    expect(result.ok).toBe(false);
+    const update = state.log.connectionUpdates.at(-1)!;
+    // "error" is the status the freshness banner turns into "Reconectar", and
+    // the message the card prints tells the Admin exactly that.
+    expect(update.status).toBe("error");
+    expect(update.last_sync_error).toBe(UNREADABLE_CREDENTIAL_MESSAGE);
+    expect(String(update.last_sync_error)).not.toContain("sk-");
+    expect(freshness([
+      { provider: "openai", status: update.status as string, lastSyncAt: null },
+    ]).needsAttention.map((c) => c.provider)).toEqual(["openai"]);
+  });
+
+  it("does not stop the cron for the next tenant in the loop", async () => {
+    state.decryptThrows = true;
+    const stranded = await runProviderSync("tenant-1", "openai");
+    expect(stranded.ok).toBe(false);
+
+    // The cron iterates tenants sequentially; the next one holds a readable key.
+    state.decryptThrows = false;
+    const healthy = await runProviderSync("tenant-2", "openai");
+    expect(healthy.ok).toBe(true);
+    expect(state.log.connectionUpdates.at(-1)!.status).toBe("active");
   });
 });

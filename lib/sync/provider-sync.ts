@@ -15,6 +15,16 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 export type ProviderName = "openai" | "anthropic";
 
+/**
+ * Stored in `last_sync_error` and rendered verbatim by the connection card, so
+ * it is user-visible copy and therefore pt-BR (F2). A credential no configured
+ * key can open (issue #75) is the one sync failure with no automatic recovery —
+ * a rotation that retired a key too early, or a row moved between tenants — and
+ * the only fix is the Admin pasting the key again.
+ */
+export const UNREADABLE_CREDENTIAL_MESSAGE =
+  "Não foi possível ler a credencial guardada. Reconecte o provedor.";
+
 export type SyncResult =
   | { ok: true; usageRows: number; costRows: number; monthUsd: number }
   | { ok: false; error: string };
@@ -68,11 +78,21 @@ export async function runProviderSync(
     return { ok: false, error: message };
   };
 
+  // Outside the sync try/catch on purpose: this failure is not a provider
+  // failure, it degrades to a reconnect prompt rather than a retryable error,
+  // and the cron must count it and move on to the next tenant (issue #75).
+  let credential: string;
   try {
-    const provider = providerFor(
-      providerName,
-      decryptCredential(connection.encrypted_credential),
-    );
+    credential = decryptCredential(connection.encrypted_credential, {
+      tenantId,
+      provider: providerName,
+    });
+  } catch {
+    return markError(UNREADABLE_CREDENTIAL_MESSAGE);
+  }
+
+  try {
+    const provider = providerFor(providerName, credential);
     const range = monthToDateRange();
     const monthStart = monthStartUtc();
     // One stamp per sync: every row written by this run carries the same time.

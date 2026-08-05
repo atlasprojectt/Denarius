@@ -10,6 +10,11 @@
     "module": "esnext",
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
+    // lib/credentials/* and scripts/rotate-credentials.ts import each other by
+    // explicit .ts path: node runs the rotation script directly (native type
+    // stripping), and node resolves TS files only by their real filename.
+    // Safe under noEmit — nothing here is compiled by tsc.
+    "allowImportingTsExtensions": true,
     "isolatedModules": true,
     "jsx": "react-jsx",
     "incremental": true,

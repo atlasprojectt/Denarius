@@ -76,7 +76,12 @@ async function saveKey(
     {
       tenant_id: tenantId,
       provider: providerName,
-      encrypted_credential: encryptCredential(adminKey),
+      // Bound to the row it is stored in (#75): a blob moved to another
+      // tenant's or another provider's row fails to decrypt.
+      encrypted_credential: encryptCredential(adminKey, {
+        tenantId,
+        provider: providerName,
+      }),
       status: "active",
       last_sync_error: null,
       updated_at: new Date().toISOString(),
