@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { PageContainer } from "@/components/domain/page-container";
 import { PageHeader } from "@/components/domain/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { currentRole } from "@/lib/auth/session";
 import { listPendingInvitations } from "@/lib/invitations/queries";
 import { canEditCompanySettings } from "@/lib/settings/account";
 import { createClient } from "@/lib/supabase/server";
@@ -25,12 +26,12 @@ export default async function UsersSettingsPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
-  const [{ data: appUserData }, { data: usersData }, invitations] = await Promise.all([
-    supabase.from("app_user").select("role").eq("id", user.id).maybeSingle(),
+  const [role, { data: usersData }, invitations] = await Promise.all([
+    currentRole(),
     supabase.from("app_user").select("id, email, role").order("email"),
     listPendingInvitations(),
   ]);
-  const isAdmin = canEditCompanySettings((appUserData as { role: string } | null)?.role ?? "viewer");
+  const isAdmin = canEditCompanySettings(role ?? "viewer");
 
   return (
     <PageContainer variant="settings" className="gap-6">

@@ -1,4 +1,4 @@
-import { RiCoinsLine } from "@remixicon/react";
+import { RiCoinsLine, RiLockLine } from "@remixicon/react";
 
 import { EmptyState } from "@/components/domain/empty-state";
 import { PageHeader } from "@/components/domain/page-header";
@@ -10,9 +10,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { currentRole } from "@/lib/auth/session";
 import { seatAccrual } from "@/lib/engine/accrual";
 import { currentPeriod } from "@/lib/engine/period";
 import { money } from "@/lib/money";
+import { canEditCompanySettings } from "@/lib/settings/account";
 import { listSubscriptions } from "@/lib/subscriptions/queries";
 import { listTeams } from "@/lib/teams/queries";
 
@@ -30,9 +32,31 @@ const copy = {
   listTitle: "Assinaturas",
   accruedNote: (label: string, day: number, days: number) =>
     `Acumulado até hoje — ${label}, dia ${day} de ${days}.`,
+  adminOnlyTitle: "Restrito a administradores",
+  adminOnlyBody: "Somente administradores podem gerenciar assinaturas.",
 };
 
 export default async function SubscriptionsPage() {
+  const role = await currentRole();
+  const isAdmin = canEditCompanySettings(role ?? "viewer");
+  if (!isAdmin) {
+    return (
+      <PageContainer variant="settings" className="gap-6">
+        <PageHeader
+          title={copy.title}
+          description={copy.subtitle}
+          backHref="/ajustes"
+          backLabel={copy.back}
+        />
+        <EmptyState
+          icon={<RiLockLine />}
+          title={copy.adminOnlyTitle}
+          description={copy.adminOnlyBody}
+        />
+      </PageContainer>
+    );
+  }
+
   const period = currentPeriod();
 
   const [{ subscriptions, currency }, teams] = await Promise.all([

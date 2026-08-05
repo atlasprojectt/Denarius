@@ -29,6 +29,7 @@ const copy = {
   previewErrors: (count: number) =>
     `${count} erro(s) — corrija o arquivo e valide de novo. Nada foi importado.`,
   errorLine: (line: number) => `Linha ${line}:`,
+  adminOnly: "Somente administradores podem importar o roster.",
 };
 
 const TEMPLATE_CSV =
@@ -36,11 +37,25 @@ const TEMPLATE_CSV =
 
 const initialState: RosterFormState = {};
 
-export function RosterUpload() {
+export function RosterUpload({ isAdmin = true }: { isAdmin?: boolean }) {
   const [state, formAction, pending] = useActionState(
     importRoster,
     initialState,
   );
+
+  if (!isAdmin) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm">{copy.title}</CardTitle>
+          <CardDescription>{copy.hint}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground">{copy.adminOnly}</p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   const preview = state.preview;
   const canCommit = Boolean(

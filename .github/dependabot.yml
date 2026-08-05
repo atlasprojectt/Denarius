@@ -1,0 +1,41 @@
+# Nothing else in this repo pushes dependency updates or notices a published
+# advisory. Weekly cadence, grouped so routine bumps arrive as a couple of
+# reviewable pull requests instead of a dozen. Every one of them goes through
+# ci.yml (install from lockfile, audit, lint, typecheck, test) before it can
+# be merged. Policy: docs/architecture.md §10.
+
+version: 2
+
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    labels: [dependencies]
+    groups:
+      # Dev tooling: low blast radius, worth batching into one PR.
+      dev-minor-patch:
+        dependency-type: development
+        update-types: [minor, patch]
+      # Runtime tree: still batched, but kept separate so a production bump is
+      # never reviewed as part of a tooling PR.
+      prod-minor-patch:
+        dependency-type: production
+        update-types: [minor, patch]
+    # Majors are deliberately left ungrouped: next, react and tailwind each
+    # deserve to be read and verified on their own.
+
+  # Without this the SHA pins in the workflows rot — a pin nobody updates is a
+  # permanently outdated action, which is its own supply-chain problem.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    labels: [dependencies, ci]
+    groups:
+      actions:
+        patterns: ["*"]
