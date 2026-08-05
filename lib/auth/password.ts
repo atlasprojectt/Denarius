@@ -67,6 +67,37 @@ export type PasswordFieldError = {
   fieldErrors: { password: string };
 };
 
+/** The shape of an auth user this module needs — narrowed so callers do not
+ *  depend on the SDK's `User` type just to ask this one question. */
+type IdentifiedUser = {
+  identities?: { provider: string }[] | null;
+  app_metadata?: { providers?: string[] | null } | null;
+} | null | undefined;
+
+/**
+ * Does this account have a password at all? (issue #69)
+ *
+ * Someone who signed up through Google has no password identity, so a
+ * change-password form would be asking for a secret that does not exist —
+ * `signInWithPassword` would fail with "invalid credentials" and read as "you
+ * typed it wrong". The screen explains instead, and the action refuses on the
+ * same answer rather than trusting the UI to have hidden the form.
+ *
+ * `identities` is the authoritative list; `app_metadata.providers` is the
+ * fallback for a session shape that omits it. Absent both, we assume a password
+ * exists — hiding the form from someone who has one would lock them out of
+ * changing it, which is the worse failure.
+ */
+export function hasPasswordIdentity(user: IdentifiedUser): boolean {
+  const identities = user?.identities;
+  if (identities && identities.length > 0) {
+    return identities.some((identity) => identity.provider === "email");
+  }
+  const providers = user?.app_metadata?.providers;
+  if (providers && providers.length > 0) return providers.includes("email");
+  return true;
+}
+
 /** Shape of the error Supabase returns when it refuses a password — narrowed
  *  here so callers do not depend on the SDK's error classes. */
 type WeakPasswordErrorish = {

@@ -8,21 +8,28 @@ import { ThemePicker } from "@/components/domain/theme-toggle";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { hasPasswordIdentity } from "@/lib/auth/password";
 import { profileInitials, profileLabel } from "@/lib/settings/account";
 import { createClient } from "@/lib/supabase/server";
 import { DigestForm } from "./_components/digest-form";
+import { PasswordForm } from "./_components/password-form";
 import { PreferenceSection } from "./_components/preference-section";
 import { ProfileForm } from "./_components/profile-form";
 
 const copy = {
   title: "Preferências",
-  subtitle: "Gerencie seu perfil, aparência e preferências de comunicação.",
+  subtitle:
+    "Gerencie seu perfil, sua senha, a aparência e as preferências de comunicação.",
   profileTitle: "Perfil",
   profileSub: "Informações usadas para identificar você dentro do Denarius.",
   roleLabel: {
     admin: "Administrador",
     viewer: "Visualizador",
   } as Record<string, string>,
+  passwordTitle: "Senha",
+  passwordSub: "Troque a senha que você usa para entrar no Denarius.",
+  passwordGoogle:
+    "Você entra pela sua conta Google, então não existe senha do Denarius para trocar — a senha e a verificação em duas etapas ficam com o Google.",
   appearanceTitle: "Aparência",
   appearanceSub:
     "O tema é salvo neste navegador e não altera as preferências da empresa.",
@@ -98,6 +105,24 @@ export default async function PersonalSettingsPage() {
 
               <ProfileForm displayName={displayName} />
             </div>
+          </PreferenceSection>
+
+          <Separator />
+
+          <PreferenceSection
+            id="password-preferences-title"
+            title={copy.passwordTitle}
+            description={copy.passwordSub}
+          >
+            {/* A Google account has no password here to change — say so
+                instead of offering a form that could only fail (#69). */}
+            {hasPasswordIdentity(user) ? (
+              <PasswordForm />
+            ) : (
+              <p className="text-xs/relaxed text-muted-foreground">
+                {copy.passwordGoogle}
+              </p>
+            )}
           </PreferenceSection>
 
           <Separator />

@@ -35,6 +35,31 @@ export default function PersonalSettingsLoading() {
         <div className="h-px bg-border" />
 
         <section className="px-5 py-6 sm:px-6">
+          <Skeleton className="h-4 w-12" />
+          <Skeleton className="mt-2 h-3 w-72 max-w-full" />
+          <div className="mt-5 space-y-2">
+            <Skeleton className="h-3 w-24" />
+            <Skeleton className="h-10 w-full" />
+          </div>
+          <div className="mt-5 grid gap-5 md:grid-cols-2">
+            <div className="space-y-2">
+              <Skeleton className="h-3 w-24" />
+              <Skeleton className="h-10 w-full" />
+            </div>
+            <div className="space-y-2">
+              <Skeleton className="h-3 w-36" />
+              <Skeleton className="h-10 w-full" />
+            </div>
+          </div>
+          <Skeleton className="mt-5 h-3 w-96 max-w-full" />
+          <div className="mt-5 flex justify-end">
+            <Skeleton className="h-8 w-full md:w-32" />
+          </div>
+        </section>
+
+        <div className="h-px bg-border" />
+
+        <section className="px-5 py-6 sm:px-6">
           <Skeleton className="h-4 w-20" />
           <Skeleton className="mt-2 h-3 w-96 max-w-full" />
           <div className="mt-5 grid gap-3 md:grid-cols-3">
