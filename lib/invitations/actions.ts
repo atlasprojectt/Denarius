@@ -1,9 +1,9 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
+import { requestOrigin } from "@/lib/auth/origin";
 import { passwordSchema, weakPasswordError } from "@/lib/auth/password";
 import { requireAdmin } from "@/lib/auth/session";
 import { emailChannel } from "@/lib/notify/channel";
@@ -39,15 +39,6 @@ export type InviteFormState = {
 
 function firstIssue(error: { issues: { message: string }[] }): string {
   return error.issues[0]?.message ?? "Dados inválidos.";
-}
-
-/** The public origin of this deployment, from the request itself — no env var
- *  to drift between preview and prod. */
-async function requestOrigin(): Promise<string> {
-  const h = await headers();
-  const host = h.get("x-forwarded-host") ?? h.get("host");
-  const proto = h.get("x-forwarded-proto") ?? "https";
-  return `${proto}://${host}`;
 }
 
 /**

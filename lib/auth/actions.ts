@@ -13,7 +13,13 @@ import {
   signupSchema,
 } from "@/lib/validation";
 
-import { passwordSchema, weakPasswordError } from "./password";
+import { requestOrigin } from "./origin";
+import { passwordSchema, weakPasswordError, withConfirmation } from "./password";
+import {
+  RECOVERY_PATH,
+  clearRecoveryGrant,
+  hasRecoveryGrant,
+} from "./recovery";
 
 /** Signup carries the product's password rule (#58) — the shared schema is the
  *  only place the minimum is written, so this overrides the placeholder in
@@ -139,6 +145,101 @@ export async function resendSignupCode(
   if (error) return { error: "Não foi possível reenviar o código." };
 
   return { notice: "Código reenviado. Confira seu e-mail." };
+}
+
+const recoveryRequestSchema = z.object({
+  email: z.email("Informe um e-mail válido."),
+});
+
+const recoveryResetSchema = withConfirmation({});
+
+/** One answer for every address (issue #68). Kept as a constant so no branch
+ *  can accidentally grow a second, more informative one. */
+const RECOVERY_REQUESTED_NOTICE =
+  "Se existir uma conta com este e-mail, o link de redefinição já está a caminho. Confira sua caixa de entrada e o spam.";
+
+const RECOVERY_LINK_DEAD =
+  "Este link de redefinição expirou ou já foi usado. Peça um novo para continuar.";
+
+/**
+ * Ask Supabase for a recovery link (issue #68).
+ *
+ * **Every submission returns the identical notice** — registered address,
+ * unknown address, or a failed send. This endpoint is public, so a response
+ * that differed would be an account-enumeration oracle: anyone could harvest
+ * which of a list of e-mails have accounts here. The provider's error is
+ * deliberately discarded rather than inspected.
+ *
+ * The link lands on `/auth/callback`, which exchanges the PKCE code and stamps
+ * the recovery grant before handing off to the reset page.
+ */
+export async function requestPasswordRecovery(
+  _prev: AuthFormState,
+  formData: FormData,
+): Promise<AuthFormState> {
+  const parsed = recoveryRequestSchema.safeParse({
+    email: formData.get("email"),
+  });
+  if (!parsed.success) {
+    return {
+      error: firstIssue(parsed.error),
+      fieldErrors: fieldErrorsOf(parsed.error),
+    };
+  }
+
+  const supabase = await createClient();
+  const redirectTo = `${await requestOrigin()}/auth/callback?next=${encodeURIComponent(RECOVERY_PATH)}`;
+  await supabase.auth.resetPasswordForEmail(parsed.data.email, { redirectTo });
+
+  return { notice: RECOVERY_REQUESTED_NOTICE };
+}
+
+/**
+ * Set the new password from the recovery link (issue #68). Requires both the
+ * recovery grant stamped by the callback and a live session — a plain session
+ * is not enough, or a stolen cookie would be a password change with no current
+ * password (see `lib/auth/recovery.ts`).
+ */
+export async function resetPassword(
+  _prev: AuthFormState,
+  formData: FormData,
+): Promise<AuthFormState> {
+  if (!(await hasRecoveryGrant())) return { error: RECOVERY_LINK_DEAD };
+
+  const parsed = recoveryResetSchema.safeParse({
+    password: formData.get("password"),
+    confirmation: formData.get("confirmation"),
+  });
+  if (!parsed.success) {
+    return {
+      error: firstIssue(parsed.error),
+      fieldErrors: fieldErrorsOf(parsed.error),
+    };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: RECOVERY_LINK_DEAD };
+
+  const { error } = await supabase.auth.updateUser({
+    password: parsed.data.password,
+  });
+  if (error) {
+    return (
+      weakPasswordError(error) ?? {
+        error: "Não foi possível alterar a senha. Tente novamente.",
+      }
+    );
+  }
+
+  // Whoever started this recovery — the owner or an attacker — the other side's
+  // sessions must not survive it. The current session stays signed in.
+  await supabase.auth.signOut({ scope: "others" });
+  await clearRecoveryGrant();
+
+  redirect("/");
 }
 
 export async function logout(): Promise<void> {

@@ -1,5 +1,11 @@
 import { NextResponse, type NextRequest } from "next/server";
 
+import { safeNextPath } from "@/lib/auth/origin";
+import {
+  RECOVERY_COOKIE,
+  RECOVERY_PATH,
+  recoveryCookieOptions,
+} from "@/lib/auth/recovery";
 import { createClient } from "@/lib/supabase/server";
 
 /**
@@ -10,12 +16,17 @@ import { createClient } from "@/lib/supabase/server";
  * Behind Vercel's proxy `request.url`'s host is the internal one, so the redirect
  * base is rebuilt from the forwarded host in production; failures (provider error
  * or a failed exchange) bounce back to /login with a flag the form surfaces.
+ *
+ * Password recovery (#68) comes through here too, with `next` pointing at the
+ * reset page: on success the response also stamps the short-lived recovery
+ * grant that page requires.
  */
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
   const providerError = searchParams.get("error");
-  const next = searchParams.get("next") ?? "/";
+  // `next` is attacker-supplied — keep it a path on this site (open redirect).
+  const next = safeNextPath(searchParams.get("next"));
 
   const forwardedHost = request.headers.get("x-forwarded-host");
   const base =
@@ -35,5 +46,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${base}/login?error=oauth`);
   }
 
-  return NextResponse.redirect(`${base}${next}`);
+  const response = NextResponse.redirect(`${base}${next}`);
+  if (next === RECOVERY_PATH) {
+    response.cookies.set(RECOVERY_COOKIE, "1", recoveryCookieOptions);
+  }
+  return response;
 }
