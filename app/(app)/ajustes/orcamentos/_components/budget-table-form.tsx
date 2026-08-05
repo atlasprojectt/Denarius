@@ -28,6 +28,7 @@ const copy = {
   removing: "Removendo…",
   removeTitle: (label: string) => `Remover orçamento de ${label}?`,
   removeDescription: "O veredito e os avisos deste escopo deixam de ser calculados até que um novo orçamento seja definido.",
+  adminOnly: "Somente administradores podem alterar orçamentos.",
 };
 
 const batchInitial: BudgetBatchState = {};
@@ -65,9 +66,11 @@ function DeleteBudgetButton({ row }: { row: BudgetTableRow }) {
 export function BudgetTableForm({
   rows,
   currency,
+  isAdmin = true,
 }: {
   rows: BudgetTableRow[];
   currency: string;
+  isAdmin?: boolean;
 }) {
   const [state, action, pending] = useActionState(saveBudgetsBatch, batchInitial);
 
@@ -110,6 +113,7 @@ export function BudgetTableForm({
                   currency={currency}
                   defaultValue={row.existing?.amount ?? ""}
                   form={FORM_ID}
+                  disabled={!isAdmin}
                 />
                 {state.fieldErrors?.[amountName] && (
                   <p className="text-xs text-destructive">{state.fieldErrors[amountName]}</p>
@@ -127,6 +131,7 @@ export function BudgetTableForm({
                   defaultValue={row.existing?.warnPct ?? 80}
                   form={FORM_ID}
                   aria-invalid={state.fieldErrors?.[warnName] !== undefined}
+                  disabled={!isAdmin}
                   className="tabular-nums"
                 />
                 {state.fieldErrors?.[warnName] && (
@@ -134,7 +139,7 @@ export function BudgetTableForm({
                 )}
               </div>
               <div className="flex min-h-8 items-center md:justify-end">
-                <DeleteBudgetButton row={row} />
+                {isAdmin && <DeleteBudgetButton row={row} />}
               </div>
             </div>
           );
@@ -143,11 +148,15 @@ export function BudgetTableForm({
 
       <p className="text-xs/relaxed text-muted-foreground">{copy.warnHelp}</p>
       {state.fieldErrors && <ActionStatus error={state.error} />}
-      <div>
-        <Button type="submit" form={FORM_ID} loading={pending} loadingText={copy.saving}>
-          {copy.save}
-        </Button>
-      </div>
+      {isAdmin ? (
+        <div>
+          <Button type="submit" form={FORM_ID} loading={pending} loadingText={copy.saving}>
+            {copy.save}
+          </Button>
+        </div>
+      ) : (
+        <p className="text-sm text-muted-foreground">{copy.adminOnly}</p>
+      )}
     </div>
   );
 }

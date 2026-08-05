@@ -12,8 +12,10 @@ import {
 
 import { PageContainer } from "@/components/domain/page-container";
 import { PageHeader } from "@/components/domain/page-header";
+import { currentRole } from "@/lib/auth/session";
 import { monthStartUtc } from "@/lib/engine/period";
 import { counted } from "@/lib/plural";
+import { canEditCompanySettings } from "@/lib/settings/account";
 import { createClient } from "@/lib/supabase/server";
 import {
   SettingsItemStatus,
@@ -57,6 +59,7 @@ const copy = {
   usersTitle: "Usuários",
   usersDescription: "Gerencie quem pode acessar este espaço.",
   users: (count: number) => counted(count, "usuário", "usuários"),
+  adminOnlyMeta: "Restrito a administradores",
 };
 
 type TenantRow = { display_currency: string };
@@ -84,6 +87,7 @@ export default async function SettingsPage() {
     { count: userCount },
     { data: connectionData },
     { data: budgetData },
+    role,
   ] = await Promise.all([
     supabase.from("tenant").select("display_currency").maybeSingle(),
     supabase.from("employee").select("id", { count: "exact", head: true }),
@@ -97,9 +101,11 @@ export default async function SettingsPage() {
     supabase.from("app_user").select("id", { count: "exact", head: true }),
     supabase.from("provider_connection").select("status"),
     supabase.from("budget").select("scope").eq("period_month", period),
+    currentRole(),
   ]);
   const tenant = tenantData as TenantRow | null;
   if (!tenant) redirect("/onboarding");
+  const isAdmin = canEditCompanySettings(role ?? "viewer");
 
   const budgets = (budgetData ?? []) as { scope: string }[];
   const hasOrgBudget = budgets.some((budget) => budget.scope === "org");
@@ -142,8 +148,8 @@ export default async function SettingsPage() {
             title={copy.connectionsTitle}
             description={copy.connectionsDescription}
             meta={
-              <SettingsItemStatus indicator={connections.length > 0}>
-                {connectionMeta}
+              <SettingsItemStatus indicator={isAdmin && connections.length > 0}>
+                {isAdmin ? connectionMeta : copy.adminOnlyMeta}
               </SettingsItemStatus>
             }
           />
@@ -171,7 +177,9 @@ export default async function SettingsPage() {
             description={copy.seatsDescription}
             meta={
               <SettingsItemStatus>
-                {copy.subscriptions(subscriptionCount ?? 0)}
+                {isAdmin
+                  ? copy.subscriptions(subscriptionCount ?? 0)
+                  : copy.adminOnlyMeta}
               </SettingsItemStatus>
             }
           />
