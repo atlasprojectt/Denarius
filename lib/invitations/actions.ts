@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
+import { passwordSchema, weakPasswordError } from "@/lib/auth/password";
 import { requireAdmin } from "@/lib/auth/session";
 import { emailChannel } from "@/lib/notify/channel";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -18,6 +19,12 @@ import {
 import { renderInvite } from "./email";
 import { expiryFrom, isUsable } from "./policy";
 import { generateToken, hashToken } from "./token";
+
+/** Accepting an invite IS a signup, so it carries the product's password rule
+ *  (#58) from the one place that owns it. */
+const acceptWithPasswordRule = acceptInvitationSchema.extend({
+  password: passwordSchema,
+});
 
 export type InviteFormState = {
   error?: string;
@@ -180,7 +187,7 @@ export async function acceptInvitation(
   _prev: InviteFormState,
   formData: FormData,
 ): Promise<InviteFormState> {
-  const parsed = acceptInvitationSchema.safeParse({
+  const parsed = acceptWithPasswordRule.safeParse({
     token: formData.get("token"),
     password: formData.get("password"),
   });
@@ -230,6 +237,10 @@ export async function acceptInvitation(
     });
 
   if (createError || !created.user) {
+    // The password rule also holds on this path (the admin API applies the
+    // project's leaked-password protection) — report it on the field.
+    const weak = weakPasswordError(createError);
+    if (weak) return weak;
     if (createError?.code === "email_exists") {
       return {
         error:

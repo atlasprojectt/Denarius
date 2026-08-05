@@ -8,10 +8,12 @@ import { Button } from "@/components/ui/button";
 import {
   Field,
   FieldDescription,
+  FieldError,
   FieldGroup,
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { PASSWORD_MIN } from "@/lib/auth/password";
 import { acceptInvitation, type InviteFormState } from "@/lib/invitations/actions";
 
 const copy = {
@@ -20,7 +22,7 @@ const copy = {
   email: "E-mail",
   emailNote: "O convite é para este endereço.",
   password: "Senha",
-  passwordHint: "Pelo menos 8 caracteres.",
+  passwordHint: `Pelo menos ${PASSWORD_MIN} caracteres. Sem exigência de maiúscula, número ou símbolo — o que protege é o comprimento.`,
   submit: "Aceitar convite",
   submitting: "Criando acesso…",
   hasAccount: "Já tem conta?",
@@ -68,9 +70,14 @@ export function AcceptForm({
             name="password"
             type="password"
             autoComplete="new-password"
+            minLength={PASSWORD_MIN}
             aria-invalid={state.fieldErrors?.password !== undefined}
           />
-          <FieldDescription>{copy.passwordHint}</FieldDescription>
+          {state.fieldErrors?.password ? (
+            <FieldError>{state.fieldErrors.password}</FieldError>
+          ) : (
+            <FieldDescription>{copy.passwordHint}</FieldDescription>
+          )}
         </Field>
 
         <ActionStatus error={state.error} />
