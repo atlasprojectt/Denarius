@@ -79,7 +79,8 @@ vi.mock("@/lib/supabase/server", () => ({
   }),
 }));
 
-const { requestPasswordRecovery, resetPassword } = await import("@/lib/auth/actions");
+const { RECOVERY_RESPONSE_FLOOR_MS, requestPasswordRecovery, resetPassword } =
+  await import("@/lib/auth/actions");
 
 function form(entries: Record<string, string>): FormData {
   const data = new FormData();
@@ -115,6 +116,28 @@ describe("requesting a recovery link", () => {
   it("never names the address back in the notice", async () => {
     const result = await requestPasswordRecovery({}, form({ email: "ceo@empresa.com" }));
     expect(result.notice).not.toContain("ceo@empresa.com");
+  });
+
+  it("takes the same time whether or not the address exists", async () => {
+    // Byte-identical copy in front of a timing gap is still an enumeration
+    // oracle: Supabase does strictly more work for an address that exists (it
+    // renders and sends an e-mail), and measuring the real provider showed
+    // ~250ms against ~80ms. Both paths are held to the same floor.
+    const startedUnknown = Date.now();
+    state.resetError = { message: "User not found" };
+    await requestPasswordRecovery({}, form({ email: "ninguem@empresa.com" }));
+    const unknownMs = Date.now() - startedUnknown;
+
+    const startedKnown = Date.now();
+    state.resetError = null;
+    await requestPasswordRecovery({}, form({ email: "ceo@empresa.com" }));
+    const knownMs = Date.now() - startedKnown;
+
+    // The stub answers instantly, so without the floor both would be ~0ms and
+    // a regression would be invisible — assert the floor itself is enforced.
+    const tolerance = 50;
+    expect(unknownMs).toBeGreaterThanOrEqual(RECOVERY_RESPONSE_FLOOR_MS - tolerance);
+    expect(knownMs).toBeGreaterThanOrEqual(RECOVERY_RESPONSE_FLOOR_MS - tolerance);
   });
 
   it("points the link at the callback, which hands off to the reset page", async () => {

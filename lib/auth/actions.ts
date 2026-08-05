@@ -162,6 +162,30 @@ const RECOVERY_LINK_DEAD =
   "Este link de redefinição expirou ou já foi usado. Peça um novo para continuar.";
 
 /**
+ * Minimum wall time for a recovery request, so the answer is identical in
+ * DURATION as well as in content (issue #68 asks for both).
+ *
+ * Supabase does strictly more work for an address that exists — it renders and
+ * sends an e-mail — and measuring it here showed the difference reaching the
+ * caller: a registered address took ~250ms against ~80ms for an unknown one.
+ * Byte-identical copy in front of a timing gap is still an enumeration oracle,
+ * just a slower one to exploit.
+ *
+ * A floor rather than fire-and-forget: on a serverless runtime a promise left
+ * unawaited can be killed when the response is sent, which would silently stop
+ * sending the very e-mail this action exists to send. The floor sits above the
+ * slow case so both paths land on it.
+ */
+export const RECOVERY_RESPONSE_FLOOR_MS = 900;
+
+async function holdUntilFloor(startedAt: number): Promise<void> {
+  const remaining = RECOVERY_RESPONSE_FLOOR_MS - (Date.now() - startedAt);
+  if (remaining > 0) {
+    await new Promise((resolve) => setTimeout(resolve, remaining));
+  }
+}
+
+/**
  * Ask Supabase for a recovery link (issue #68).
  *
  * **Every submission returns the identical notice** — registered address,
@@ -172,6 +196,9 @@ const RECOVERY_LINK_DEAD =
  *
  * The link lands on `/auth/callback`, which exchanges the PKCE code and stamps
  * the recovery grant before handing off to the reset page.
+ *
+ * The reply is also held to a fixed floor, so the two answers match in duration
+ * and not only in wording — see `RECOVERY_RESPONSE_FLOOR_MS`.
  */
 export async function requestPasswordRecovery(
   _prev: AuthFormState,
@@ -180,6 +207,9 @@ export async function requestPasswordRecovery(
   const parsed = recoveryRequestSchema.safeParse({
     email: formData.get("email"),
   });
+  // A malformed address is refused before the clock starts: that answer is
+  // about the shape of what was typed, not about whether an account exists, so
+  // it discloses nothing and does not need the floor.
   if (!parsed.success) {
     return {
       error: firstIssue(parsed.error),
@@ -187,9 +217,11 @@ export async function requestPasswordRecovery(
     };
   }
 
+  const startedAt = Date.now();
   const supabase = await createClient();
   const redirectTo = `${await requestOrigin()}/auth/callback?next=${encodeURIComponent(RECOVERY_PATH)}`;
   await supabase.auth.resetPasswordForEmail(parsed.data.email, { redirectTo });
+  await holdUntilFloor(startedAt);
 
   return { notice: RECOVERY_REQUESTED_NOTICE };
 }
