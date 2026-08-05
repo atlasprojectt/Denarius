@@ -24,6 +24,28 @@ export const RECOVERY_TTL_SECONDS = 15 * 60;
 
 export const RECOVERY_PATH = "/auth/nova-senha";
 
+/**
+ * Minimum wall time for a recovery request, so the answer is identical in
+ * DURATION as well as in content (issue #68 asks for both).
+ *
+ * Supabase does strictly more work for an address that exists — it renders and
+ * sends an e-mail — and measuring it here showed the difference reaching the
+ * caller: a registered address took ~250ms against ~80ms for an unknown one.
+ * Byte-identical copy in front of a timing gap is still an enumeration oracle,
+ * just a slower one to exploit.
+ *
+ * A floor rather than fire-and-forget: on a serverless runtime a promise left
+ * unawaited can be killed when the response is sent, which would silently stop
+ * sending the very e-mail this action exists to send. The floor sits above the
+ * slow case so both paths land on it.
+ *
+ * It lives here rather than beside the action because `lib/auth/actions.ts` is
+ * a `"use server"` module, and such a module may export nothing but async
+ * functions — a constant export there makes Next drop every export in the file
+ * at build time.
+ */
+export const RECOVERY_RESPONSE_FLOOR_MS = 900;
+
 export const recoveryCookieOptions = {
   httpOnly: true,
   sameSite: "lax",
