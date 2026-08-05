@@ -4,9 +4,9 @@
 # private org-owned repo, which Vercel's Hobby (free) plan can't connect. This
 # CLI-token flow achieves the same push-to-deploy on the free tier, repo private.
 #
-# Quality gate first: lint + typecheck + unit tests must pass before deploy.
-# The Supabase-backed tests (RLS, roster RPC) self-skip without DB env, so CI
-# runs the pure engine/connector/crypto suites and never deploys broken code.
+# The quality gate (install from lockfile, audit, lint, typecheck, test) lives
+# in quality.yml and is shared with pull-request CI — deploy only starts once
+# that job passes. Dependency policy: docs/architecture.md §10.
 #
 # Required repo secret: VERCEL_TOKEN. The org/project IDs are not secret.
 
@@ -31,31 +31,18 @@ env:
   VERCEL_PROJECT_ID: prj_VNbFyjpdIwOheYCoOiij3L8qLy7E
 
 jobs:
+  quality:
+    uses: ./.github/workflows/quality.yml
+
   deploy:
+    needs: quality
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
-          cache: npm
-
-      # npm install, not npm ci: the lockfile is generated on Windows, and
-      # Tailwind v4's native oxide/lightningcss packages resolve different
-      # @emnapi optional-dep versions on Linux — a cross-platform lockfile npm
-      # ci won't accept. npm install reconciles the platform deps on the runner.
-      - name: Install dependencies
-        run: npm install --no-audit --no-fund
-
-      - name: Lint
-        run: npm run lint
-
-      - name: Typecheck
-        run: npm run typecheck
-
-      - name: Test
-        run: npm test
 
       - name: Install Vercel CLI
         run: npm install --global vercel@latest
@@ -64,7 +51,9 @@ jobs:
       # Supabase env vars are marked Sensitive in Vercel, which `vercel pull`
       # can't read back — a local prebuilt build would inline the
       # NEXT_PUBLIC_SUPABASE_* values as undefined and 500 at runtime. Building
-      # on Vercel gives the build full access to those vars.
+      # on Vercel gives the build full access to those vars. Vercel installs
+      # with `npm ci` as well (vercel.json installCommand), so what gets built
+      # there is the same locked tree the gate above just verified.
       - name: Deploy to production
         run: vercel deploy --prod --yes --token="$VERCEL_TOKEN"
         env:

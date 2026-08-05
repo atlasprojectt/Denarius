@@ -10,6 +10,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { currentRole } from "@/lib/auth/session";
+import { canEditCompanySettings } from "@/lib/settings/account";
 import { createClient } from "@/lib/supabase/server";
 import { listTeams } from "@/lib/teams/queries";
 
@@ -38,14 +40,16 @@ type EmployeeRow = {
 export default async function RosterPage() {
   const supabase = await createClient();
 
-  const [{ data: employeesData }, teams] = await Promise.all([
+  const [{ data: employeesData }, teams, role] = await Promise.all([
     supabase
       .from("employee")
       .select("id, name, email, team:team_id(name)")
       .order("name"),
     listTeams(),
+    currentRole(),
   ]);
   const employees = (employeesData ?? []) as unknown as EmployeeRow[];
+  const isAdmin = canEditCompanySettings(role ?? "viewer");
 
   return (
     <PageContainer variant="settings" className="gap-6">
@@ -56,7 +60,7 @@ export default async function RosterPage() {
         backLabel={copy.back}
       />
 
-      <RosterUpload />
+      <RosterUpload isAdmin={isAdmin} />
 
       {employees.length === 0 ? (
         <EmptyState
@@ -79,6 +83,7 @@ export default async function RosterPage() {
                 teamName: employee.team?.name ?? "—",
               }))}
               teams={teams}
+              isAdmin={isAdmin}
             />
           </CardContent>
         </Card>

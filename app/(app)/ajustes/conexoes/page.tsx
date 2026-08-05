@@ -1,5 +1,6 @@
-import { RiTimeLine } from "@remixicon/react";
+import { RiLockLine, RiTimeLine } from "@remixicon/react";
 
+import { EmptyState } from "@/components/domain/empty-state";
 import { PageHeader } from "@/components/domain/page-header";
 import { PageContainer } from "@/components/domain/page-container";
 import { StateBadge } from "@/components/domain/state-badge";
@@ -10,6 +11,8 @@ import {
   ItemTitle,
   ItemActions,
 } from "@/components/ui/item";
+import { currentRole } from "@/lib/auth/session";
+import { canEditCompanySettings } from "@/lib/settings/account";
 import { createClient } from "@/lib/supabase/server";
 
 import { ProviderConnectionCard } from "./_components/provider-connection-card";
@@ -27,6 +30,8 @@ const copy = {
       status: "Planejado para a v1.5",
     },
   ],
+  adminOnlyTitle: "Restrito a administradores",
+  adminOnlyBody: "Somente administradores podem gerenciar conexões.",
 };
 
 const PROVIDERS = ["openai", "anthropic"] as const;
@@ -39,6 +44,26 @@ type ConnectionRow = {
 };
 
 export default async function ConnectionsPage() {
+  const role = await currentRole();
+  const isAdmin = canEditCompanySettings(role ?? "viewer");
+  if (!isAdmin) {
+    return (
+      <PageContainer variant="settings" className="gap-6">
+        <PageHeader
+          title={copy.title}
+          description={copy.subtitle}
+          backHref="/ajustes"
+          backLabel={copy.back}
+        />
+        <EmptyState
+          icon={<RiLockLine />}
+          title={copy.adminOnlyTitle}
+          description={copy.adminOnlyBody}
+        />
+      </PageContainer>
+    );
+  }
+
   const supabase = await createClient();
   const { data } = await supabase
     .from("provider_connection")

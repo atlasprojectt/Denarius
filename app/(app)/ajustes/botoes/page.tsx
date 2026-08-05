@@ -5,6 +5,7 @@ import {
   RiMenuLine,
   RiSettings3Line,
 } from "@remixicon/react";
+import { notFound } from "next/navigation";
 
 import { PageContainer } from "@/components/domain/page-container";
 import { PageHeader } from "@/components/domain/page-header";
@@ -23,6 +24,9 @@ const variants = [
 const sizes = ["sm", "default", "lg"] as const;
 
 export default function ButtonShowcasePage() {
+  // Internal design reference — never shipped to the customer's product.
+  if (process.env.NODE_ENV === "production") notFound();
+
   return (
     <PageContainer variant="settings" className="gap-6">
       <PageHeader

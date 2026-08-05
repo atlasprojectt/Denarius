@@ -60,9 +60,11 @@ const initialState: RosterFormState = {};
 function EmployeeRow({
   employee,
   teams,
+  isAdmin,
 }: {
   employee: Employee;
   teams: Team[];
+  isAdmin: boolean;
 }) {
   const [editing, setEditing] = useState(false);
   const [state, formAction, pending] = useActionState(
@@ -89,36 +91,40 @@ function EmployeeRow({
         <TableCell className="text-muted-foreground">{employee.email}</TableCell>
         <TableCell>{employee.teamName}</TableCell>
         <TableCell className="text-right">
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => setEditing(true)}
-          >
-            {copy.edit}
-          </Button>
-          <ConfirmationDialog
-            trigger={
+          {isAdmin && (
+            <>
               <Button
                 type="button"
                 variant="ghost"
                 size="sm"
-                className="text-destructive hover:text-destructive"
+                onClick={() => setEditing(true)}
               >
-                {copy.remove}
+                {copy.edit}
               </Button>
-            }
-            title={copy.removeTitle(employee.name)}
-            description={copy.removeBody}
-            confirmLabel={copy.remove}
-            pendingLabel={copy.removing}
-            action={removeAction}
-            pending={removing}
-            success={removeState.success}
-          >
-            <input type="hidden" name="employeeId" value={employee.id} />
-            <ActionStatus error={removeState.error} />
-          </ConfirmationDialog>
+              <ConfirmationDialog
+                trigger={
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="text-destructive hover:text-destructive"
+                  >
+                    {copy.remove}
+                  </Button>
+                }
+                title={copy.removeTitle(employee.name)}
+                description={copy.removeBody}
+                confirmLabel={copy.remove}
+                pendingLabel={copy.removing}
+                action={removeAction}
+                pending={removing}
+                success={removeState.success}
+              >
+                <input type="hidden" name="employeeId" value={employee.id} />
+                <ActionStatus error={removeState.error} />
+              </ConfirmationDialog>
+            </>
+          )}
         </TableCell>
       </TableRow>
     );
@@ -187,7 +193,15 @@ function EmployeeRow({
   );
 }
 
-function MobileEmployeeCard({ employee, teams }: { employee: Employee; teams: Team[] }) {
+function MobileEmployeeCard({
+  employee,
+  teams,
+  isAdmin,
+}: {
+  employee: Employee;
+  teams: Team[];
+  isAdmin: boolean;
+}) {
   const [editing, setEditing] = useState(false);
   const [state, action, pending] = useActionState(updateEmployee, initialState);
   const [removeState, removeAction, removing] = useActionState(removeEmployee, initialState);
@@ -201,24 +215,26 @@ function MobileEmployeeCard({ employee, teams }: { employee: Employee; teams: Te
             <p className="mt-0.5 break-all text-xs text-muted-foreground">{employee.email}</p>
             <p className="mt-1 text-xs text-muted-foreground">{employee.teamName}</p>
           </div>
-          <div className="flex flex-col gap-1">
-            <Button type="button" variant="outline" size="sm" onClick={() => setEditing(true)}>
-              {copy.edit}
-            </Button>
-            <ConfirmationDialog
-              trigger={<Button type="button" variant="destructive" size="sm">{copy.remove}</Button>}
-              title={copy.removeTitle(employee.name)}
-              description={copy.removeBody}
-              confirmLabel={copy.remove}
-              pendingLabel={copy.removing}
-              action={removeAction}
-              pending={removing}
-              success={removeState.success}
-            >
-              <input type="hidden" name="employeeId" value={employee.id} />
-              <ActionStatus error={removeState.error} />
-            </ConfirmationDialog>
-          </div>
+          {isAdmin && (
+            <div className="flex flex-col gap-1">
+              <Button type="button" variant="outline" size="sm" onClick={() => setEditing(true)}>
+                {copy.edit}
+              </Button>
+              <ConfirmationDialog
+                trigger={<Button type="button" variant="destructive" size="sm">{copy.remove}</Button>}
+                title={copy.removeTitle(employee.name)}
+                description={copy.removeBody}
+                confirmLabel={copy.remove}
+                pendingLabel={copy.removing}
+                action={removeAction}
+                pending={removing}
+                success={removeState.success}
+              >
+                <input type="hidden" name="employeeId" value={employee.id} />
+                <ActionStatus error={removeState.error} />
+              </ConfirmationDialog>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -254,9 +270,11 @@ function MobileEmployeeCard({ employee, teams }: { employee: Employee; teams: Te
 export function EmployeeTable({
   employees,
   teams,
+  isAdmin = true,
 }: {
   employees: Employee[];
   teams: Team[];
+  isAdmin?: boolean;
 }) {
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
@@ -300,7 +318,7 @@ export function EmployeeTable({
         <>
           <div className="grid gap-3 md:hidden">
             {visible.map((employee) => (
-              <MobileEmployeeCard key={employee.id} employee={employee} teams={teams} />
+              <MobileEmployeeCard key={employee.id} employee={employee} teams={teams} isAdmin={isAdmin} />
             ))}
           </div>
 
@@ -316,7 +334,7 @@ export function EmployeeTable({
       </TableHeader>
       <TableBody>
         {visible.map((employee) => (
-          <EmployeeRow key={employee.id} employee={employee} teams={teams} />
+          <EmployeeRow key={employee.id} employee={employee} teams={teams} isAdmin={isAdmin} />
         ))}
       </TableBody>
     </Table>
