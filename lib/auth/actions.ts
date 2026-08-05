@@ -299,9 +299,17 @@ const CHANGE_DONE =
  *
  * `signInWithPassword` on the request-scoped client would rewrite the session
  * cookies as a side effect of a *verification*, so this uses a throwaway
- * non-persisting client instead: nothing is stored, and the short-lived session
- * it mints server-side is revoked moments later by the `scope: "others"` sign
- * out that follows a successful change.
+ * non-persisting client instead: nothing is stored in the browser.
+ *
+ * **The probe cleans up after itself.** Checking a password mints a real
+ * session server-side — an access token and a refresh token that outlive this
+ * request. Relying on the later `scope: "others"` sign out to sweep it only
+ * works when the change actually succeeds; when the new password is then
+ * refused (leaked, same as the old one, a transient failure) the action returns
+ * early and that token would stay valid until it expired. Repeat that and the
+ * account accumulates live sessions its owner never created and cannot see. So
+ * the probe revokes its own session — `scope: "local"`, which touches nothing
+ * else the person has open.
  */
 async function passwordIsCorrect(
   email: string,
@@ -313,7 +321,10 @@ async function passwordIsCorrect(
     { auth: { persistSession: false, autoRefreshToken: false } },
   );
   const { error } = await probe.auth.signInWithPassword({ email, password });
-  return !error;
+  if (error) return false;
+
+  await probe.auth.signOut({ scope: "local" });
+  return true;
 }
 
 /**

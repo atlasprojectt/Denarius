@@ -14,6 +14,8 @@ const state = vi.hoisted(() => ({
   /** Recorded so a test can prove the probe never became the real session. */
   probeSignIns: [] as { email: string; password: string }[],
   sessionSignIns: [] as { email: string; password: string }[],
+  /** Scopes the PROBE signed out with — its own session must not outlive the check. */
+  probeSignOutScopes: [] as (string | undefined)[],
   updateError: null as { code?: string; reasons?: string[] } | null,
   updatedPassword: null as string | null,
   signOutScopes: [] as (string | undefined)[],
@@ -41,6 +43,7 @@ function reset(): void {
   state.correctPassword = CURRENT;
   state.probeSignIns = [];
   state.sessionSignIns = [];
+  state.probeSignOutScopes = [];
   state.updateError = null;
   state.updatedPassword = null;
   state.signOutScopes = [];
@@ -76,6 +79,10 @@ vi.mock("@supabase/supabase-js", () => ({
         return creds.password === state.correctPassword
           ? { data: {}, error: null }
           : { data: {}, error: { code: "invalid_credentials" } };
+      },
+      signOut: async (options?: { scope?: string }) => {
+        state.probeSignOutScopes.push(options?.scope);
+        return { error: null };
       },
     },
   }),
@@ -146,6 +153,33 @@ describe("changing your own password", () => {
 
     expect(state.probeSignIns).toEqual([{ email: EMAIL, password: CURRENT }]);
     expect(state.sessionSignIns).toEqual([]);
+  });
+
+  it("does not leave the verification session alive when the change then fails", async () => {
+    // Checking a password mints a REAL session server-side. Leaning on the
+    // later `scope: "others"` sweep only works when the change succeeds; on
+    // this path the action returns early, and without the probe's own sign out
+    // that token would stay valid — one live session per failed attempt, none
+    // of which the owner created or can see.
+    state.updateError = { code: "weak_password", reasons: ["pwned"] };
+    await changePassword({}, form(good));
+
+    expect(state.probeSignIns).toHaveLength(1);
+    expect(state.probeSignOutScopes).toEqual(["local"]);
+    // "local" and nothing else: a broader scope here would sign the person out
+    // of the very tab they are standing in.
+    expect(state.signOutScopes).toEqual([]);
+  });
+
+  it("cleans up the verification session on the success path too", async () => {
+    await changePassword({}, form(good));
+    expect(state.probeSignOutScopes).toEqual(["local"]);
+    expect(state.signOutScopes).toEqual(["others"]);
+  });
+
+  it("has nothing to clean up when the current password was wrong", async () => {
+    await changePassword({}, form({ ...good, currentPassword: "errada" }));
+    expect(state.probeSignOutScopes).toEqual([]);
   });
 
   it("verifies BEFORE it changes anything", async () => {
