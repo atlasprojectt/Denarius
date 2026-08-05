@@ -7,6 +7,7 @@ import { PageContainer } from "@/components/domain/page-container";
 import { PageHeader } from "@/components/domain/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { currentRole } from "@/lib/auth/session";
 import { canEditCompanySettings } from "@/lib/settings/account";
 import { createClient } from "@/lib/supabase/server";
 import { CompanyForm } from "../_components/company-form";
@@ -28,17 +29,15 @@ type TenantRow = { name: string; display_currency: string };
 
 export default async function CompanySettingsPage() {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  const [{ data: tenantData }, { data: userData }, { count: budgetCount }, { count: subscriptionCount }] = await Promise.all([
+  const [{ data: tenantData }, role, { count: budgetCount }, { count: subscriptionCount }] = await Promise.all([
     supabase.from("tenant").select("name, display_currency").maybeSingle(),
-    user ? supabase.from("app_user").select("role").eq("id", user.id).maybeSingle() : Promise.resolve({ data: null }),
+    currentRole(),
     supabase.from("budget").select("id", { count: "exact", head: true }),
     supabase.from("subscription").select("id", { count: "exact", head: true }),
   ]);
   const tenant = tenantData as TenantRow | null;
   if (!tenant) redirect("/onboarding");
-  const role = (userData as { role: string } | null)?.role ?? "viewer";
-  const isAdmin = canEditCompanySettings(role);
+  const isAdmin = canEditCompanySettings(role ?? "viewer");
   const currencyEditable = isAdmin && (budgetCount ?? 0) === 0 && (subscriptionCount ?? 0) === 0;
 
   return (

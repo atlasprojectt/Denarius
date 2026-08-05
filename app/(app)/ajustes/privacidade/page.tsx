@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { PageContainer } from "@/components/domain/page-container";
 import { PageHeader } from "@/components/domain/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { currentRole } from "@/lib/auth/session";
 import { canEditCompanySettings } from "@/lib/settings/account";
 import { createClient } from "@/lib/supabase/server";
 import { PrivacyForm } from "../_components/privacy-form";
@@ -17,14 +18,13 @@ const copy = {
 
 export default async function PrivacySettingsPage() {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  const [{ data: tenantData }, { data: userData }] = await Promise.all([
+  const [{ data: tenantData }, role] = await Promise.all([
     supabase.from("tenant").select("show_names, store_per_person").maybeSingle(),
-    user ? supabase.from("app_user").select("role").eq("id", user.id).maybeSingle() : Promise.resolve({ data: null }),
+    currentRole(),
   ]);
   const tenant = tenantData as { show_names: boolean; store_per_person: boolean } | null;
   if (!tenant) redirect("/onboarding");
-  const isAdmin = canEditCompanySettings((userData as { role: string } | null)?.role ?? "viewer");
+  const isAdmin = canEditCompanySettings(role ?? "viewer");
 
   return (
     <PageContainer variant="settings" className="gap-6">

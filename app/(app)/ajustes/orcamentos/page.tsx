@@ -13,9 +13,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { currentRole } from "@/lib/auth/session";
 import { currentPeriod } from "@/lib/engine/period";
 import { money } from "@/lib/money";
 import { listBudgets, type Budget } from "@/lib/budgets/queries";
+import { canEditCompanySettings } from "@/lib/settings/account";
 import { listTeams } from "@/lib/teams/queries";
 
 import { BudgetTableForm, type BudgetTableRow } from "./_components/budget-table-form";
@@ -55,10 +57,12 @@ function toExisting(budget: Budget | undefined): BudgetTableRow["existing"] {
 
 export default async function BudgetsPage() {
   const period = currentPeriod();
-  const [{ org, teams: teamBudgets, currency }, teams] = await Promise.all([
+  const [{ org, teams: teamBudgets, currency }, teams, role] = await Promise.all([
     listBudgets(),
     listTeams(),
+    currentRole(),
   ]);
+  const isAdmin = canEditCompanySettings(role ?? "viewer");
 
   const budgetByTeam = new Map(teamBudgets.map((b) => [b.teamId, b]));
   const teamSum = teamBudgets.reduce((sum, b) => sum + b.amount, 0);
@@ -101,7 +105,7 @@ export default async function BudgetsPage() {
             </Notice>
           )}
 
-          <BudgetTableForm rows={rows} currency={currency} />
+          <BudgetTableForm rows={rows} currency={currency} isAdmin={isAdmin} />
           {teams.length === 0 && (
             <EmptyState
               icon={<RiTeamLine />}
