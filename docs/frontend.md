@@ -70,7 +70,7 @@ Budget editing has two homes: the **per-team inline dialog** on `/times/[teamId]
 
 ### Button system (2026-07-17)
 
-All product actions use `components/ui/button.tsx`, backed by Base UI + CVA. Do not recreate button chrome at call sites: `className` is for positioning or a narrowly scoped composition adjustment only. The internal reference page is `/ajustes/botoes`.
+All product actions use `components/ui/button.tsx`, backed by Base UI + CVA. Do not recreate button chrome at call sites: `className` is for positioning or a narrowly scoped composition adjustment only. The internal reference page is `/ajustes/botoes`, reachable only outside production (`notFound()` in prod — it is a team reference, not a customer-facing screen).
 
 | Variant | Use | Resting treatment |
 |---|---|---|
@@ -99,7 +99,7 @@ Button motion is centralized in `Button` and is driven by action intent, never b
 
 Directional controls opt into `motion="forward"` or `motion="backward"`, and mark only the semantic arrow with `data-icon="inline-end"` or `data-icon="inline-start"`. Disclosure controls use `motion="disclosure"` plus `data-icon="disclosure"`, rotating only that chevron while `aria-expanded=true`. This keeps labels and unrelated icons still. Hover displacement runs only on devices that actually support hover; touch receives the short active response. Loading keeps the original content in layout at zero opacity, centers an overlaid spinner, sets `disabled` + `aria-busy` and suppresses hover/active transforms. Disabled controls likewise have no movement or hover interaction. Under `prefers-reduced-motion`, elevation, directional displacement, disclosure rotation and spinner rotation are removed; only the short color/background/opacity transitions remain.
 
-The internal `/ajustes/botoes` reference renders hover, active, keyboard focus, loading and disabled examples for direct inspection. This intent-based policy supersedes any earlier generic press-motion wording.
+The internal `/ajustes/botoes` reference (dev-only, see §4) renders hover, active, keyboard focus, loading and disabled examples for direct inspection. This intent-based policy supersedes any earlier generic press-motion wording.
 
 - **Drawer** (right, 420px): simulator — pre-loaded team, presets (ritmo atual / fechar no orçamento / −30%), slider, instant recompute. Scrim click closes.
 - **Confirmation dialog**: required before every Revogar/Remover action; consequence copy, safe initial focus, disabled while pending.
