@@ -45,8 +45,11 @@ vi.mock("@/lib/auth/origin", () => ({
   safeNextPath: (value: string | null) => value ?? "/",
 }));
 
-vi.mock("@/lib/auth/recovery", () => ({
-  RECOVERY_PATH: "/auth/nova-senha",
+// Partial: the constants stay real (the floor assertion below must measure the
+// value the action actually runs on), only the two cookie-touching functions
+// are stubbed.
+vi.mock("@/lib/auth/recovery", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/auth/recovery")>()),
   hasRecoveryGrant: async () => state.recoveryGrant,
   clearRecoveryGrant: async () => {
     state.grantCleared = true;
@@ -79,8 +82,10 @@ vi.mock("@/lib/supabase/server", () => ({
   }),
 }));
 
-const { RECOVERY_RESPONSE_FLOOR_MS, requestPasswordRecovery, resetPassword } =
-  await import("@/lib/auth/actions");
+const { requestPasswordRecovery, resetPassword } = await import(
+  "@/lib/auth/actions"
+);
+const { RECOVERY_RESPONSE_FLOOR_MS } = await import("@/lib/auth/recovery");
 
 function form(entries: Record<string, string>): FormData {
   const data = new FormData();
