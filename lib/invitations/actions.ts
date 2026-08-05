@@ -5,6 +5,14 @@ import { redirect } from "next/navigation";
 
 import { requestOrigin } from "@/lib/auth/origin";
 import { passwordSchema, weakPasswordError } from "@/lib/auth/password";
+import {
+  INVITE_ACCEPT,
+  INVITE_CREATE,
+  RATE_LIMITED_MESSAGE,
+  clientFingerprint,
+  hashSubject,
+  takeRateLimitSlot,
+} from "@/lib/auth/rate-limit";
 import { requireAdmin } from "@/lib/auth/session";
 import { emailChannel } from "@/lib/notify/channel";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -54,6 +62,16 @@ export async function inviteUser(
 ): Promise<InviteFormState> {
   const auth = await requireAdmin();
   if (auth.error !== undefined) return { error: auth.error };
+
+  // Keyed by tenant, not by Admin: the sending reputation being spent belongs
+  // to the space, and a second Admin account is a trivial way around a per-user
+  // key (#61). Hashed like every other subject — the limiter's table is not a
+  // place to learn which tenants exist and how busy each one is.
+  if (
+    !(await takeRateLimitSlot(INVITE_CREATE, hashSubject(auth.session.tenantId)))
+  ) {
+    return { error: RATE_LIMITED_MESSAGE };
+  }
 
   const parsed = inviteUserSchema.safeParse({
     email: formData.get("email"),
@@ -178,6 +196,15 @@ export async function acceptInvitation(
   _prev: InviteFormState,
   formData: FormData,
 ): Promise<InviteFormState> {
+  // Before the token is even read: this route is public and takes a credential
+  // in the path, so an unthrottled attempt is both a brute-force surface and a
+  // cheap way to make every request hit the database. Keyed by caller, never by
+  // token — a limit that keyed on the token would be a probe telling the prober
+  // it had found a real one (#61).
+  if (!(await takeRateLimitSlot(INVITE_ACCEPT, await clientFingerprint()))) {
+    return { error: RATE_LIMITED_MESSAGE };
+  }
+
   const parsed = acceptWithPasswordRule.safeParse({
     token: formData.get("token"),
     password: formData.get("password"),

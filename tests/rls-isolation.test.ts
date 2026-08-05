@@ -486,3 +486,94 @@ describe.skipIf(!ready)("RLS tenant isolation", () => {
     },
   );
 });
+
+// ---------------------------------------------------------------------------
+// Appended for issue #61 — rate_limit_hit. New table, new block, at the end.
+// ---------------------------------------------------------------------------
+
+const rateLimitReady = ready && (await tableApplied("rate_limit_hit"));
+if (ready && !rateLimitReady) {
+  console.warn(
+    "\n[rls-isolation] rate_limit_hit table not found — apply " +
+      "supabase/migrations/*_rate_limit.sql to cover it here too.\n",
+  );
+}
+
+describe.skipIf(!rateLimitReady)("rate_limit_hit isolation (issue #61)", () => {
+  // Self-contained on purpose: this file is append-only from #78 on, so the
+  // block brings its own fixture instead of reaching into the scope above.
+  // A session with no tenant at all is the right subject anyway — the claim is
+  // "no policy serves anyone", not "the wrong tenant is filtered out".
+  const serviceClient = createClient(url ?? "http://skip", serviceKey ?? "skip", {
+    auth: { persistSession: false },
+  });
+  const stamp = Date.now();
+  const email = `rate-limit-${stamp}@denarius-test.dev`;
+  const password = `Rate-limit-${stamp}!`;
+  let session: SupabaseClient;
+  let userId: string;
+
+  beforeAll(async () => {
+    const { data, error } = await serviceClient.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+    });
+    if (error) throw error;
+    userId = data.user.id;
+
+    session = createClient(url!, anonKey!, { auth: { persistSession: false } });
+    const { error: signInError } = await session.auth.signInWithPassword({
+      email,
+      password,
+    });
+    if (signInError) throw signInError;
+  });
+
+  afterAll(async () => {
+    if (userId) await serviceClient.auth.admin.deleteUser(userId);
+  });
+
+  it("is system state: unreadable and unwritable from any session", async () => {
+    // RLS on with NO policies, same posture as notification_log. A browser
+    // session sees nothing — not another tenant's rows, not its own.
+    const { data } = await session.from("rate_limit_hit").select("*");
+    expect(data ?? []).toEqual([]);
+
+    const { error: writeDenied } = await session
+      .from("rate_limit_hit")
+      .insert({ bucket: `forged-${stamp}` });
+    expect(writeDenied).not.toBeNull();
+  });
+
+  it("does not expose the limiter function to a session either", async () => {
+    // Reachable from the service role only: a session that could spend slots
+    // could lock a tenant's own Admins out of inviting anyone.
+    const { error } = await session.rpc("rate_limit_take", {
+      p_bucket: `forged-${stamp}`,
+      p_limit: 1,
+      p_window_seconds: 60,
+    });
+    expect(error).not.toBeNull();
+  });
+
+  it("still limits when it is the service role asking", async () => {
+    // The counterpart of the two refusals above: the path the server actions
+    // actually use must work, or the feature is a silent no-op (the app fails
+    // open when this call errors).
+    const bucket = `test:isolation:${stamp}`;
+    const first = await serviceClient.rpc("rate_limit_take", {
+      p_bucket: bucket,
+      p_limit: 1,
+      p_window_seconds: 60,
+    });
+    const second = await serviceClient.rpc("rate_limit_take", {
+      p_bucket: bucket,
+      p_limit: 1,
+      p_window_seconds: 60,
+    });
+    expect(first.error).toBeNull();
+    expect(first.data).toBe(true);
+    expect(second.data).toBe(false);
+  });
+});
