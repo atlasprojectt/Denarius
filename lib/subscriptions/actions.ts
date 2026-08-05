@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
+import { recordAudit } from "@/lib/audit/log";
 import { requireAdmin } from "@/lib/auth/session";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isOwnedTeam } from "@/lib/teams/queries";
@@ -73,6 +74,16 @@ export async function createSubscription(
   });
   if (error) return { error: "Não foi possível salvar. Tente novamente." };
 
+  await recordAudit(auth.session, "subscription.created", {
+    target: parsed.data.tool,
+    detail: {
+      seatCount: parsed.data.seatCount,
+      unitPrice: parsed.data.unitPrice,
+      currency,
+      teamId: parsed.data.teamId,
+    },
+  });
+
   // Seats feed the Home cockpit, Explore and team detail — whole-tree
   // invalidation (QA-02 rule, see lib/providers/actions.ts). The old list
   // missed "/" entirely, so a new subscription never updated the verdict.
@@ -126,6 +137,15 @@ export async function updateSubscription(
     return { error: "Não foi possível salvar. Tente novamente." };
   }
 
+  await recordAudit(auth.session, "subscription.updated", {
+    target: parsed.data.tool,
+    detail: {
+      seatCount: parsed.data.seatCount,
+      unitPrice: parsed.data.unitPrice,
+      teamId: parsed.data.teamId,
+    },
+  });
+
   revalidatePath("/", "layout");
   return { success: "Assinatura atualizada." };
 }
@@ -145,16 +165,31 @@ export async function deleteSubscription(
   const { tenantId } = auth.session;
   const admin = createAdminClient();
 
-  const { error, count } = await admin
+  // The deleted row comes back with the delete — the audit entry needs to name
+  // the tool, and a pre-read would cost a round trip for it (#73).
+  const { data: removed, error, count } = await admin
     .from("subscription")
     .delete({ count: "exact" })
     .eq("id", parsed.data.subscriptionId)
-    .eq("tenant_id", tenantId);
+    .eq("tenant_id", tenantId)
+    .select("tool, seat_count, unit_price");
   if (error) return { error: "Não foi possível remover. Tente novamente." };
   // Idempotent: a repeated submit (or a cross-tenant id, filtered out by the
   // tenant scope above) matches nothing — the desired end state already holds,
   // so this is not an error (QA-05 destructive-action contract).
   if (count === 0) return { success: "Assinatura já havia sido removida." };
+
+  const deleted = ((removed ?? []) as {
+    tool: string;
+    seat_count: number;
+    unit_price: number;
+  }[])[0];
+  if (deleted) {
+    await recordAudit(auth.session, "subscription.deleted", {
+      target: deleted.tool,
+      detail: { seatCount: deleted.seat_count, unitPrice: deleted.unit_price },
+    });
+  }
 
   revalidatePath("/", "layout");
   return { success: "Assinatura removida." };

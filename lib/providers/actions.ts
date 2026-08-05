@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import type { ZodType } from "zod";
 
+import { recordAudit } from "@/lib/audit/log";
 import { requireAdmin } from "@/lib/auth/session";
 import { providerFor } from "@/lib/connectors";
 import { encryptCredential } from "@/lib/crypto";
@@ -72,6 +73,18 @@ async function saveKey(
 
   const { tenantId } = auth.session;
   const admin = createAdminClient();
+
+  // Save or rotate? The row's existence answers it — never the ciphertext,
+  // which is not read here and is not needed to tell the two apart (#73).
+  const { data: before } = await admin
+    .from("provider_connection")
+    .select("status")
+    .eq("tenant_id", tenantId)
+    .eq("provider", providerName)
+    .maybeSingle();
+  const isRotation =
+    (before as { status: string } | null)?.status === "active";
+
   const { error } = await admin.from("provider_connection").upsert(
     {
       tenant_id: tenantId,
@@ -84,6 +97,12 @@ async function saveKey(
     { onConflict: "tenant_id,provider" },
   );
   if (error) return { error: copy.saveFailed };
+
+  await recordAudit(
+    auth.session,
+    isRotation ? "provider.key_rotated" : "provider.key_saved",
+    { target: label, detail: { provider: providerName } },
+  );
 
   // The first "we found $X this month" moment — sync immediately, not in 24h.
   const sync = await runProviderSync(tenantId, providerName);
@@ -127,6 +146,11 @@ async function revokeKey(
     .eq("provider", providerName);
   if (error) return { error: copy.revokeFailed };
   if (count === 0) return { error: copy.noConnection };
+
+  await recordAudit(auth.session, "provider.key_revoked", {
+    target: providers[providerName].label,
+    detail: { provider: providerName },
+  });
 
   revalidateConsumers();
   return { success: copy.revoked };

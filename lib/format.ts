@@ -35,6 +35,13 @@ export function syncStamp(iso: string, now = new Date()): string {
   return `em ${DATE_FORMAT.format(syncedAt)}, às ${time}`;
 }
 
+/** Absolute stamp for evidence surfaces: "05/08/2026, às 17:41". The audit
+ *  trail never says "há 2 dias" — a relative date is not evidence. */
+export function absoluteStamp(iso: string): string {
+  const at = new Date(iso);
+  return `${DATE_FORMAT.format(at)}, às ${TIME_FORMAT.format(at)}`;
+}
+
 /** A fraction (0.9) as a whole-number percent ("90%"). Pair with tabular-nums. */
 export function percent(fraction: number, fractionDigits = 0): string {
   let formatter = percentFormatters.get(fractionDigits);

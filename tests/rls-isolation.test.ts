@@ -577,3 +577,156 @@ describe.skipIf(!rateLimitReady)("rate_limit_hit isolation (issue #61)", () => {
     expect(second.data).toBe(false);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Appended for issue #73 — audit_log. New table, new block, at the end.
+// ---------------------------------------------------------------------------
+
+const auditReady = ready && (await tableApplied("audit_log"));
+if (ready && !auditReady) {
+  console.warn(
+    "\n[rls-isolation] audit_log table not found — apply " +
+      "supabase/migrations/*_audit_log.sql to cover it here too.\n",
+  );
+}
+
+describe.skipIf(!auditReady)("audit_log isolation (issue #73)", () => {
+  // Self-contained: this block needs a VIEWER as well as an Admin, which the
+  // shared fixture above does not seed. The claim is two-sided — Admins of the
+  // tenant read their own trail, and nobody else reads it at all.
+  const serviceClient = createClient(url ?? "http://skip", serviceKey ?? "skip", {
+    auth: { persistSession: false },
+  });
+  const stamp = Date.now();
+
+  type Member = { email: string; password: string; userId: string };
+  const tenants: { id: string; admin: Member; viewer: Member }[] = [];
+
+  async function member(
+    tenantId: string,
+    label: string,
+    role: "admin" | "viewer",
+  ): Promise<Member> {
+    const email = `audit-${label}-${role}-${stamp}@denarius-test.dev`;
+    const password = `Audit-${stamp}-${label}-${role}!`;
+    const { data, error } = await serviceClient.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+    });
+    if (error) throw error;
+    const { error: appUserError } = await serviceClient.from("app_user").insert({
+      id: data.user.id,
+      tenant_id: tenantId,
+      email,
+      role,
+    });
+    if (appUserError) throw appUserError;
+    return { email, password, userId: data.user.id };
+  }
+
+  async function signIn(who: Member): Promise<SupabaseClient> {
+    const client = createClient(url!, anonKey!, {
+      auth: { persistSession: false },
+    });
+    const { error } = await client.auth.signInWithPassword({
+      email: who.email,
+      password: who.password,
+    });
+    if (error) throw error;
+    return client;
+  }
+
+  beforeAll(async () => {
+    for (const label of ["a", "b"]) {
+      const { data: tenant, error } = await serviceClient
+        .from("tenant")
+        .insert({ name: `Audit RLS ${label} ${stamp}` })
+        .select("id")
+        .single();
+      if (error) throw error;
+      const admin = await member(tenant.id, label, "admin");
+      const viewer = await member(tenant.id, label, "viewer");
+      const { error: entryError } = await serviceClient.from("audit_log").insert({
+        tenant_id: tenant.id,
+        actor_id: admin.userId,
+        actor_email: admin.email,
+        action: "budget.updated",
+        target: "Empresa",
+        detail: { from: 1000, to: 1500 },
+      });
+      if (entryError) throw entryError;
+      tenants.push({ id: tenant.id, admin, viewer });
+    }
+  });
+
+  afterAll(async () => {
+    for (const tenant of tenants) {
+      await serviceClient.from("tenant").delete().eq("id", tenant.id);
+      for (const who of [tenant.admin, tenant.viewer]) {
+        await serviceClient.auth.admin.deleteUser(who.userId);
+      }
+    }
+  });
+
+  it("an Admin reads their own tenant's trail and never another's", async () => {
+    const [a, b] = tenants;
+    const client = await signIn(a.admin);
+
+    const { data } = await client.from("audit_log").select("tenant_id, action");
+    expect(data?.length).toBe(1);
+    expect(data?.every((row) => row.tenant_id === a.id)).toBe(true);
+
+    const { data: cross } = await client
+      .from("audit_log")
+      .select("id")
+      .eq("tenant_id", b.id);
+    expect(cross ?? []).toEqual([]);
+  });
+
+  it("a Viewer of the same tenant reads nothing", async () => {
+    // Not a UI gate: the log names people and what they did, so the policy —
+    // not the page — is what refuses (principle #1).
+    const client = await signIn(tenants[0].viewer);
+    const { data } = await client.from("audit_log").select("*");
+    expect(data ?? []).toEqual([]);
+  });
+
+  it("is append-only: no session can insert, update or delete an entry", async () => {
+    const [a] = tenants;
+    const client = await signIn(a.admin);
+
+    const { error: insertDenied } = await client.from("audit_log").insert({
+      tenant_id: a.id,
+      actor_id: a.admin.userId,
+      actor_email: a.admin.email,
+      action: "budget.deleted",
+    });
+    expect(insertDenied).not.toBeNull();
+
+    // Rewriting history is the failure mode a log exists to prevent.
+    const { error: updateDenied, count: updated } = await client
+      .from("audit_log")
+      .update({ action: "company.renamed" }, { count: "exact" })
+      .eq("tenant_id", a.id);
+    expect(updateDenied !== null || updated === 0).toBe(true);
+
+    const { error: deleteDenied, count: deleted } = await client
+      .from("audit_log")
+      .delete({ count: "exact" })
+      .eq("tenant_id", a.id);
+    expect(deleteDenied !== null || deleted === 0).toBe(true);
+
+    // And the row is still there, unchanged.
+    const { data } = await client.from("audit_log").select("action");
+    expect(data).toEqual([{ action: "budget.updated" }]);
+  });
+
+  it("an anonymous client reads nothing", async () => {
+    const anonClient = createClient(url!, anonKey!, {
+      auth: { persistSession: false },
+    });
+    const { data } = await anonClient.from("audit_log").select("*");
+    expect(data ?? []).toEqual([]);
+  });
+});

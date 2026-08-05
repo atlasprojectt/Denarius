@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+import { recordAudit } from "@/lib/audit/log";
 import { requestOrigin } from "@/lib/auth/origin";
 import { passwordSchema, weakPasswordError } from "@/lib/auth/password";
 import {
@@ -124,6 +125,13 @@ export async function inviteUser(
     return { error: "Não foi possível criar o convite. Tente novamente." };
   }
 
+  // The address and the role, never the token — the link is the credential
+  // and the audit trail is not where a credential gets a second life (#73).
+  await recordAudit(auth.session, "invitation.created", {
+    target: email,
+    detail: { role },
+  });
+
   const inviteUrl = `${await requestOrigin()}/convite/${token}`;
 
   // Best-effort delivery. A send failure must not lose the invite: the row is
@@ -171,15 +179,25 @@ export async function revokeInvitation(
   const admin = createAdminClient();
   // Tenant-scoped: an id from another tenant matches nothing. Idempotent — a
   // repeated submit reports the end state instead of an error.
-  const { error, count } = await admin
+  const { data: revoked, error, count } = await admin
     .from("invitation")
     .update({ revoked_at: new Date().toISOString() }, { count: "exact" })
     .eq("id", parsed.data.invitationId)
     .eq("tenant_id", auth.session.tenantId)
     .is("accepted_at", null)
-    .is("revoked_at", null);
+    .is("revoked_at", null)
+    // The updated row names the invitee for the audit entry — never the hash.
+    .select("email, role");
 
   if (error) return { error: "Não foi possível revogar o convite. Tente novamente." };
+
+  const invitation = ((revoked ?? []) as { email: string; role: string }[])[0];
+  if (invitation) {
+    await recordAudit(auth.session, "invitation.revoked", {
+      target: invitation.email,
+      detail: { role: invitation.role },
+    });
+  }
 
   revalidatePath("/ajustes/usuarios");
   return {
@@ -286,6 +304,19 @@ export async function acceptInvitation(
     .from("invitation")
     .update({ accepted_at: new Date().toISOString() })
     .eq("id", invitation.id);
+
+  // This path runs unauthenticated by design, so the actor is the invitee —
+  // recorded as themselves rather than skipped, which would leave the one
+  // entry that explains how someone got into the space missing (#73).
+  await recordAudit(
+    {
+      userId: created.user.id,
+      tenantId: invitation.tenant_id,
+      email: invitation.email,
+    },
+    "invitation.accepted",
+    { target: invitation.email, detail: { role: invitation.role } },
+  );
 
   const supabase = await createClient();
   const { error: signInError } = await supabase.auth.signInWithPassword({

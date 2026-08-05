@@ -36,8 +36,21 @@ vi.mock("next/cache", () => ({
 
 vi.mock("@/lib/auth/session", () => ({
   requireAdmin: async () => ({
-    session: { userId: "admin-1", tenantId: "tenant-A", role: "admin" },
+    session: {
+      userId: "admin-1",
+      tenantId: "tenant-A",
+      role: "admin",
+      email: "admin@tenant-a.test",
+    },
   }),
+}));
+
+// The audit trail (#73) rides along on every one of these writes; it has its
+// own tests, and letting it reach this file's query stub would mix its inserts
+// into the batch assertions.
+vi.mock("@/lib/audit/log", () => ({
+  recordAudit: async () => {},
+  recordAuditBatch: async () => {},
 }));
 
 vi.mock("@/lib/fx/rate", () => ({
