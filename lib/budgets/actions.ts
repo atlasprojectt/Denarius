@@ -235,7 +235,7 @@ export async function saveBudgetsBatch(
     admin.from("tenant").select("display_currency").eq("id", tenantId).maybeSingle(),
     admin
       .from("budget")
-      .select("id, scope, team_id, amount")
+      .select("id, scope, team_id, amount, thresholds")
       .eq("tenant_id", tenantId)
       .eq("period_month", period),
   ]);
@@ -246,9 +246,19 @@ export async function saveBudgetsBatch(
     scope: string;
     team_id: string | null;
     amount: number;
+    thresholds: (number | string)[];
   }[];
   const existingRow = (scope: string, teamId: string | null) =>
     existing.find((b) => b.scope === scope && b.team_id === teamId) ?? null;
+
+  // The warn threshold as the whole percent the form edits. Compared in that
+  // unit rather than as a fraction: `numeric(4,3)[]` can come back as strings,
+  // and float equality on 0.8 is not a comparison worth trusting.
+  // A row whose thresholds cannot be read yields NaN, which compares unequal
+  // to everything — an unknown previous state records the entry rather than
+  // swallowing it. That is the right direction to fail for a trail.
+  const warnPctOf = (thresholds: (number | string)[] | null | undefined) =>
+    Math.round(Number(thresholds?.[0]) * 100);
 
   // One FX capture shared by every NEW row — the same single-rate-per-period
   // contract the screens resolve with (lib/engine/money-model.ts).
@@ -277,16 +287,27 @@ export async function saveBudgetsBatch(
         )
         .eq("id", previous.id)
         .eq("tenant_id", tenantId);
+      const warnPct = warnPctOf(row.thresholds);
+      const previousWarnPct = warnPctOf(previous.thresholds);
       if (error || count === 0) {
         failed.push(label);
-      } else if (previous.amount !== row.amount) {
+      } else if (previous.amount !== row.amount || previousWarnPct !== warnPct) {
         // An untouched row is re-submitted by the batch form on every save;
-        // recording it would bury the real changes in noise.
+        // recording it would bury the real changes in noise. But the UPDATE
+        // above writes the thresholds too, and moving the warn threshold
+        // changes when this tenant gets alerted — a governance edit with no
+        // trail is the thing #73 exists to prevent.
         audited.push({
           action: "budget.updated",
           context: {
             target,
-            detail: { scope: row.scope, from: previous.amount, to: row.amount },
+            detail: {
+              scope: row.scope,
+              from: previous.amount,
+              to: row.amount,
+              warnPct,
+              fromWarnPct: previousWarnPct,
+            },
           },
         });
       }
