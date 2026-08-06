@@ -11,8 +11,17 @@ import {
 
 /** Routes reachable without a session. Everything else redirects to /login.
  *  /convite carries its own credential — the invite token in the path — and an
- *  invitee has no session yet by definition. */
-const PUBLIC_PREFIXES = ["/login", "/auth", "/convite"];
+ *  invitee has no session yet by definition. /privacidade and /termos are
+ *  public by purpose (issue #57): a policy behind a login is not a policy, and
+ *  Google's consent screen has to reach both URLs unauthenticated (#65).
+ *  Exported so a test can assert the legal pages never fall back behind auth. */
+export const PUBLIC_PREFIXES = [
+  "/login",
+  "/auth",
+  "/convite",
+  "/privacidade",
+  "/termos",
+];
 
 /**
  * Routes with their own non-session authorization (e.g. CRON_SECRET) — bypass
