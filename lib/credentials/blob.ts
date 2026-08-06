@@ -26,6 +26,7 @@ import { LEGACY_KEY_ID, currentKey, keyById } from "./keyring.ts";
 const LEGACY_VERSION = "v1";
 const VERSION = "v2";
 const IV_BYTES = 12;
+const TAG_BYTES = 16;
 
 /** The row a credential belongs to. Authenticated, not encrypted — it is not
  *  a secret, it is what the ciphertext is bound to. */
@@ -74,7 +75,13 @@ function open(
     Buffer.from(ivB64, "base64"),
   );
   if (context) decipher.setAAD(additionalData(context));
-  decipher.setAuthTag(Buffer.from(tagB64, "base64"));
+  // Node accepts a TRUNCATED GCM tag — a 4-byte tag decrypts happily — which
+  // would drop the cost of forging a blob from 2^128 to 2^32 for exactly the
+  // attacker the AAD binding targets: one who can write the row. The full tag
+  // is the only length this format ever wrote, so demand it.
+  const tag = Buffer.from(tagB64, "base64");
+  if (tag.length !== TAG_BYTES) throw new Error(UNREADABLE);
+  decipher.setAuthTag(tag);
   return Buffer.concat([
     decipher.update(Buffer.from(ciphertextB64, "base64")),
     decipher.final(),

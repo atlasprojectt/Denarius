@@ -226,6 +226,39 @@ describe("failing closed", () => {
     ).toThrow();
   });
 
+  it("rejects a truncated tag instead of letting Node accept it", () => {
+    // Node's setAuthTag takes a 4-byte GCM tag without complaint, which would
+    // leave an attacker who can write the row forging at 2^32 instead of
+    // 2^128 — the one the AAD binding exists to stop.
+    const [version, keyId, iv, ciphertext, tag] = encryptCredential(
+      SECRET,
+      ROW,
+    ).split(".");
+
+    for (const bytes of [4, 8, 12, 15]) {
+      const truncated = Buffer.from(tag, "base64").subarray(0, bytes);
+      expect(() =>
+        decryptCredential(
+          [version, keyId, iv, ciphertext, truncated.toString("base64")].join("."),
+          ROW,
+        ),
+        `${bytes}-byte tag`,
+      ).toThrow();
+    }
+
+    // A legacy v1 blob is held to the same length — it was written with a full
+    // tag too, and being unbound already makes it the weaker of the two.
+    process.env.CREDENTIAL_ENCRYPTION_KEY = KEY_A;
+    const [, legacyIv, legacyCt, legacyTag] = legacyBlob(SECRET, KEY_A).split(".");
+    const truncatedLegacy = Buffer.from(legacyTag, "base64").subarray(0, 4);
+    expect(() =>
+      decryptCredential(
+        ["v1", legacyIv, legacyCt, truncatedLegacy.toString("base64")].join("."),
+        ROW,
+      ),
+    ).toThrow();
+  });
+
   it("rejects malformed blobs and unknown formats", () => {
     for (const blob of ["", "not-a-blob", "v2.k1.only-two", "v9.k1.a.b.c"]) {
       expect(() => decryptCredential(blob, ROW)).toThrow();
