@@ -70,18 +70,25 @@ export async function proxy(request: NextRequest) {
   // the incoming Content-Security-Policy and stamps its own bootstrap and
   // flight scripts with the nonce it finds there. Without this, a script-src
   // without 'unsafe-inline' would break the app rather than protect it.
-  const requestHeaders = new Headers(request.headers);
-  requestHeaders.set("Content-Security-Policy", csp);
-  const forwarded = { headers: requestHeaders };
+  //
+  // Read fresh on every call, never captured once: `setAll` below refreshes the
+  // session by writing through to request.cookies, which IS request.headers.
+  // A snapshot taken before that would forward the expired cookie to the
+  // render — silently undoing the refresh the callback exists to perform.
+  const forwarded = () => {
+    const headers = new Headers(request.headers);
+    headers.set("Content-Security-Policy", csp);
+    return { headers };
+  };
 
   if (SESSION_BYPASS_PREFIXES.some((p) => path.startsWith(p))) {
-    return secured(NextResponse.next({ request: forwarded }), {
+    return secured(NextResponse.next({ request: forwarded() }), {
       csp,
       pathname: path,
     });
   }
 
-  let response = NextResponse.next({ request: forwarded });
+  let response = NextResponse.next({ request: forwarded() });
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -95,7 +102,7 @@ export async function proxy(request: NextRequest) {
           cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value),
           );
-          response = NextResponse.next({ request: forwarded });
+          response = NextResponse.next({ request: forwarded() });
           cookiesToSet.forEach(({ name, value, options }) =>
             response.cookies.set(name, value, options),
           );
