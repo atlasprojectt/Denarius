@@ -117,6 +117,7 @@ Forms whose selections must survive a racing revalidation (attribution mapping) 
 | Env | What |
 |---|---|
 | Local | Next dev + Supabase project (or local CLI); `.env.local` (gitignored) |
+| CI | An **ephemeral** Supabase stack raised by `supabase start` inside the job (`supabase/config.toml`, issue #78), with every migration applied from scratch. Lives for one run; keys are read back from the stack, never written down |
 | Production | Vercel project linked to repo; Supabase project; secrets as Vercel env vars |
 
 MVP runs on free tiers; DB/secret rigor from day one. Move off free tier at first paying customer.
@@ -125,13 +126,17 @@ MVP runs on free tiers; DB/secret rigor from day one. Move off free tier at firs
 
 Nine seams, detailed in [prd.md → Testing Decisions](prd.md). The pattern: **fake provider injection** for ingestion; **pure-function tests** for engine/findings/planning; **RLS isolation** integration test (tenant A cannot read tenant B — the most critical due-diligence test); RBAC/privacy; HTTP seam with transactional rollback.
 
+**Where the database-backed suites run (issue #78).** `rls-isolation`, `roster-import`, `rbac-privacy` and `rate-limit` need a real Postgres + Auth + PostgREST, so the quality gate raises one: `supabase start` applies `supabase/migrations` from zero, in order — which is also the only check that the migrations still apply cleanly from scratch. `supabase/config.toml` turns off every service the product does not use (Realtime, Storage, Studio, edge functions, log ingestion, the local SMTP catcher) and raises the auth sign-in rate limit, because the isolation fixtures sign in repeatedly from one IP.
+
+**A skipped database suite is a failure in CI.** These suites were written to self-skip when the env is absent, and CI gave them no env — so the single most important test in the repo never ran, and the green check said otherwise. `tests/support/db.ts` now gates them: quiet skip locally (the pure suites must stay runnable with no infrastructure), and with `DENARIUS_REQUIRE_DB_TESTS=1` a skip registers a **failing** test instead. Same for an individual table whose migration is missing — an unverified table is an unverified isolation claim.
+
 ## 10. Dependency & supply-chain policy (2026-08-05, issue #76)
 
 Every dependency is due-diligence surface. The policy is enforced in the pipeline, not by convention.
 
 **Install from the lockfile, everywhere.** CI installs with `npm ci`, and Vercel does too (`installCommand` in `vercel.json`). Both matter: `npm ci` in CI alone would still let Vercel resolve a fresh tree at build time, so what a reviewer approved and what production runs would be different trees.
 
-**One gate, two consumers.** `.github/workflows/quality.yml` (install → audit → lint → typecheck → test → **build**) is a `workflow_call` reused by `ci.yml` (pull requests) and `deploy-prod.yml` (push to `main`, which deploys). Deploy runs behind `needs: quality`. Duplicating the gate would let the PR side and the deploy side drift apart.
+**One gate, two consumers.** `.github/workflows/quality.yml` (install → audit → lint → typecheck → **database** → test → **build**) is a `workflow_call` reused by `ci.yml` (pull requests) and `deploy-prod.yml` (push to `main`, which deploys). Deploy runs behind `needs: quality`. Duplicating the gate would let the PR side and the deploy side drift apart — and it is why giving CI a database (#78) also gave the deploy one, with no second place to keep in sync.
 
 **Why `next build` is in the gate.** Lint, typecheck and vitest all pass on code the Next compiler rejects — a `"use server"` module may export nothing but async functions, and one exported constant makes the compiler drop *every* export in the file. That reached `main` green and failed at deploy (PR #105). Without the build step, the production deploy is the first place such a failure appears. The build needs no secrets: every page is dynamic, so it compiles with no env vars present.
 
