@@ -1,6 +1,7 @@
 import "server-only";
 
 import { createAdminClient } from "@/lib/supabase/admin";
+import { dbFailure, logFailure, logThrown } from "@/lib/logging/server-log";
 
 import { redactDetail, redactTarget, type AuditDetail } from "./redact";
 
@@ -32,6 +33,8 @@ export type AuditAction =
   | "invitation.accepted"
   | "user.removed"
   | "privacy.updated"
+  | "tenant.exported"
+  | "tenant.deleted"
   | "company.renamed"
   | "company.currency_changed";
 
@@ -80,14 +83,13 @@ async function insert(rows: Row[]): Promise<void> {
   try {
     const { error } = await createAdminClient().from("audit_log").insert(rows);
     if (error) {
-      console.error(
-        `[audit] insert failed (${error.code ?? "unknown"}) for ${rows
-          .map((r) => r.action)
-          .join(", ")}`,
-      );
+      logFailure("audit.insert", rows[0]?.tenant_id ?? null, {
+        actions: rows.map((r) => r.action),
+        ...dbFailure(error),
+      });
     }
-  } catch {
-    console.error(`[audit] insert threw for ${rows.map((r) => r.action).join(", ")}`);
+  } catch (cause) {
+    logThrown("audit.insert", rows[0]?.tenant_id ?? null, cause);
   }
 }
 

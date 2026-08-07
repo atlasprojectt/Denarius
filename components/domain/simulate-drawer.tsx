@@ -87,19 +87,19 @@ export function SimulateDrawer(props: SimulateDrawerProps) {
     // session could read as the current state.
     <Sheet onOpenChange={(open) => open && setDeltaPct(0)}>
       <SheetTrigger asChild>
-        <Button variant="outline" size="sm">
+        <Button variant="outline" size="sm" className="h-11 sm:h-7">
           <RiEqualizer2Line className="size-4" />
           {triggerLabel}
         </Button>
       </SheetTrigger>
-      <SheetContent className="w-full sm:max-w-md">
+      <SheetContent className="max-h-dvh w-full overflow-hidden sm:max-w-md">
         <SheetHeader>
           <SheetTitle>{copy.title}</SheetTitle>
           <SheetDescription>{copy.subtitle(teamName)}</SheetDescription>
         </SheetHeader>
 
         {collecting ? (
-          <div className="flex flex-col gap-4 overflow-y-auto p-4">
+          <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-contain p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
             <Facts
               rows={[
                 [copy.spent, money(team.spent, currency)],
@@ -151,7 +151,7 @@ function Simulation({
       : null;
 
   return (
-    <div className="flex flex-col gap-6 overflow-y-auto p-4">
+    <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto overscroll-contain p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
       <Facts
         rows={[
           [copy.spent, money(input.team.spent, currency)],
@@ -177,15 +177,21 @@ function Simulation({
           step={5}
           value={deltaPct}
           onChange={(e) => onDeltaChange(Number(e.target.value))}
-          className="w-full accent-primary"
+          className="h-11 w-full accent-primary"
         />
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" size="sm" onClick={() => onDeltaChange(0)}>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-11 sm:h-7"
+            onClick={() => onDeltaChange(0)}
+          >
             {copy.presetCurrent}
           </Button>
           <Button
             variant="outline"
             size="sm"
+            className="h-11 sm:h-7"
             disabled={breakEvenPct === null}
             onClick={() => breakEvenPct !== null && onDeltaChange(breakEvenPct)}
           >
@@ -194,6 +200,7 @@ function Simulation({
           <Button
             variant="outline"
             size="sm"
+            className="h-11 sm:h-7"
             onClick={() => onDeltaChange(FIXED_CUT)}
           >
             {copy.presetCut}

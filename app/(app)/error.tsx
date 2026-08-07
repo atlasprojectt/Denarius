@@ -4,12 +4,17 @@ import Link from "next/link";
 import { RiErrorWarningLine } from "@remixicon/react";
 
 import { EmptyState } from "@/components/domain/empty-state";
+import { ErrorReference } from "@/components/domain/error-reference";
 import { PageContainer } from "@/components/domain/page-container";
 import { Button } from "@/components/ui/button";
 
 // App-group error boundary: the sidebar and navigation stay mounted (this
 // file lives inside the (app) layout), so a failure in one route still lets
 // the user move elsewhere. Offers a retry through the boundary's `reset`.
+//
+// The reference line (#79) is the ONLY thing about the failure that reaches the
+// screen: no message, no stack, no digest detail. It exists so a support
+// conversation can start from a string that appears in the server log.
 
 const copy = {
   title: "Algo deu errado",
@@ -20,6 +25,7 @@ const copy = {
 };
 
 export default function AppError({
+  error,
   reset,
 }: {
   error: Error & { digest?: string };
@@ -38,6 +44,7 @@ export default function AppError({
           <Link href="/">{copy.home}</Link>
         </Button>
       </div>
+      <ErrorReference digest={error.digest} />
     </PageContainer>
   );
 }

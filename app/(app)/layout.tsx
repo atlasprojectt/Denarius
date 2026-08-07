@@ -98,7 +98,7 @@ export default async function AppLayout({
         />
         <SidebarInset className="md:border md:border-border/60">
           <header data-app-header className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2.5 border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/80 md:rounded-t-xl">
-            <SidebarTrigger className="-ml-1.5 size-10" />
+            <SidebarTrigger className="-ml-1.5 size-11 md:size-10" />
             <Separator
               orientation="vertical"
               className="mr-2 self-center! data-[orientation=vertical]:h-4"

@@ -76,7 +76,7 @@ export default async function InvitePage({
         <div className="flex flex-col items-center gap-3 text-center">
           <h1 className="text-2xl font-bold text-balance">{copy.deadTitle}</h1>
           <p className="text-sm/relaxed text-muted-foreground">{copy.deadBody}</p>
-          <Button asChild variant="outline" className="mt-2">
+          <Button asChild variant="outline" className="mt-2 h-11">
             <Link href="/login">{copy.login}</Link>
           </Button>
         </div>

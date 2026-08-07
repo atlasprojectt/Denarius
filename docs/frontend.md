@@ -67,6 +67,8 @@ Budget editing has two homes: the **per-team inline dialog** on `/times/[teamId]
 
 **Brand logo** (`components/domain/logo.tsx`): the wordmark is used **extensively** (auth, onboarding, brand panel, sidebar) and is two-tone — the coin is permanently bound to the same medium accent as the Home pacing bar (`var(--brand-accent)`), while the letters inherit `currentColor` so they theme with the container. In the sidebar it **collapses to the coin mark alone** when the rail is in icon mode.
 
+**Responsive contract (issue #80):** 375px is the supported phone floor and 768px is the compact checkpoint, in both themes. The document and app shell never scroll horizontally; a genuinely wide data surface owns its own `overflow-x-auto`, while executive summaries switch to an existing compact/card presentation. `PageContainer`, Tailwind breakpoints and the existing container queries are the only layout mechanisms. Home keeps verdict, money, budget and pace legible; its teams surface uses the same container-responsive card/table contract as `/times`. `PageHeader` actions wrap below the title on phones. Mobile navigation opens as a drawer with an explicit 44px close control and closes after destination selection. Drawers are capped to the dynamic viewport, keep their header visible and scroll their content internally. Primary mobile navigation/form actions use a 44px minimum touch height; dense desktop tables may retain compact controls because their rows already fall back to mobile cards. Public login and invitation routes run overflow checks at 375/768 in `e2e/responsive-public.spec.ts` without tenant credentials; authenticated viewport checks remain in `e2e/ui-ux-audit.spec.ts` and require the documented seed credentials.
+
 ## 5. Interaction patterns
 
 ### Button system (2026-07-17)
@@ -220,6 +222,7 @@ Screen-local compositions stay colocated (F5): the cockpit pieces (`Hero`, `Mont
 - **Error boundaries & not-found**: four routes complete the layer — `app/global-error.tsx` (root layout itself failed; renders its own `<html>`/`<body>` and theme script, no sidebar), `app/(app)/error.tsx` (a route failed inside the shell; sidebar and nav survive, retry via `reset`), `app/not-found.tsx` (unmatched URL outside the shell; own wordmark + link home) and `app/(app)/not-found.tsx` (`notFound()` from inside the shell, e.g. an unknown team id; points back to Times). All four reuse `EmptyState`, pt-BR copy in local constants, neutral tone (no semaphore color), and never render a stack trace, exception message or digest.
 - **All-clear**: affirmative soft-green notice (`AllClear`) in the sidebar footer, never a blank section — the screen's own affirmative answer is the green verdict line.
 - **Settings hub**: `/ajustes` contains navigation Items only. Inline Company, Privacy, and Users sections move to `/ajustes/empresa`, `/ajustes/privacidade`, and `/ajustes/usuarios`.
+- **Tenant data rights:** `/ajustes/privacidade` gives Admins a neutral JSON export and a separate destructive deletion dialog. Deletion stays disabled until the exact company name is typed, repeats the export affordance inside the confirmation, and states that deleting Denarius does not affect OpenAI or Anthropic. Viewers see neither affordance; the route/action enforce the same boundary server-side.
 
 ### 9.4 Pendências (deliberately deferred)
 

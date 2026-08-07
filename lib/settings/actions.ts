@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { recordAudit } from "@/lib/audit/log";
 import { requireAdmin } from "@/lib/auth/session";
 import { canRemoveUser } from "@/lib/privacy/policy";
+import { dbFailure, logFailure } from "@/lib/logging/server-log";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -56,6 +57,10 @@ export async function updatePrivacySettings(
     .eq("id", auth.session.tenantId);
 
   if (error || count !== 1) {
+    logFailure("settings.privacy", auth.session.tenantId, {
+      matched: count ?? 0,
+      ...dbFailure(error),
+    });
     return { error: "Não foi possível salvar as preferências de privacidade." };
   }
 
@@ -96,7 +101,7 @@ export async function removeUser(
 
   const admin = createAdminClient();
   // Scope to this tenant BEFORE touching auth — never delete across tenants.
-  const { data: target } = await admin
+  const { data: target, error: targetError } = await admin
     .from("app_user")
     // The email comes along for the audit entry: the row is about to be
     // cascaded away, and "removed a uuid" is not a trail (#73).
@@ -104,6 +109,13 @@ export async function removeUser(
     .eq("id", userId)
     .eq("tenant_id", auth.session.tenantId)
     .maybeSingle();
+  if (targetError) {
+    logFailure("settings.user_remove", auth.session.tenantId, {
+      step: "lookup",
+      ...dbFailure(targetError),
+    });
+    return { error: "Não foi possível remover o usuário. Tente novamente." };
+  }
   // Idempotent: a repeated submit (or an id outside this tenant) matches
   // nothing — the desired end state already holds and nothing is mutated
   // (QA-05 destructive-action contract; same response either way, no leak).
@@ -111,7 +123,13 @@ export async function removeUser(
 
   // Deleting the auth user cascades app_user (id → auth.users on delete cascade).
   const { error } = await admin.auth.admin.deleteUser(userId);
-  if (error) return { error: "Não foi possível remover o usuário. Tente novamente." };
+  if (error) {
+    logFailure("settings.user_remove", auth.session.tenantId, {
+      step: "delete_auth_user",
+      ...dbFailure(error),
+    });
+    return { error: "Não foi possível remover o usuário. Tente novamente." };
+  }
 
   await recordAudit(auth.session, "user.removed", {
     target: (target as { id: string; email: string }).email,
@@ -137,7 +155,7 @@ export async function updateDisplayCurrency(
   if (!parsed.success) return { error: firstIssue(parsed.error) };
 
   const admin = createAdminClient();
-  const [{ count: budgetCount }, { count: subscriptionCount }] = await Promise.all([
+  const [budgetResult, subscriptionResult] = await Promise.all([
     admin
       .from("budget")
       .select("id", { count: "exact", head: true })
@@ -147,6 +165,16 @@ export async function updateDisplayCurrency(
       .select("id", { count: "exact", head: true })
       .eq("tenant_id", auth.session.tenantId),
   ]);
+  if (budgetResult.error || subscriptionResult.error) {
+    logFailure("settings.currency", auth.session.tenantId, {
+      step: "eligibility",
+      budgetCode: budgetResult.error?.code ?? null,
+      subscriptionCode: subscriptionResult.error?.code ?? null,
+    });
+    return { error: "Não foi possível verificar se a moeda pode mudar. Tente novamente." };
+  }
+  const budgetCount = budgetResult.count;
+  const subscriptionCount = subscriptionResult.count;
   if ((budgetCount ?? 0) > 0 || (subscriptionCount ?? 0) > 0) {
     return {
       error:
@@ -160,6 +188,10 @@ export async function updateDisplayCurrency(
     .eq("id", auth.session.tenantId);
 
   if (error || count !== 1) {
+    logFailure("settings.currency", auth.session.tenantId, {
+      matched: count ?? 0,
+      ...dbFailure(error),
+    });
     return { error: "Não foi possível salvar a moeda. Tente novamente." };
   }
 
@@ -183,7 +215,9 @@ export async function updateProfileName(
   const supabase = await createClient();
   const {
     data: { user },
+    error: userError,
   } = await supabase.auth.getUser();
+  if (userError) logFailure("settings.profile", null, dbFailure(userError));
   if (!user) return { error: "Sessão expirada — faça login novamente." };
 
   const admin = createAdminClient();
@@ -193,6 +227,10 @@ export async function updateProfileName(
     .eq("id", user.id);
 
   if (error || count !== 1) {
+    logFailure("settings.profile", null, {
+      matched: count ?? 0,
+      ...dbFailure(error),
+    });
     return { error: "Não foi possível salvar seu perfil. Tente novamente." };
   }
 
@@ -213,7 +251,9 @@ export async function updateDigestPreference(
   const supabase = await createClient();
   const {
     data: { user },
+    error: userError,
   } = await supabase.auth.getUser();
+  if (userError) logFailure("settings.digest_preference", null, dbFailure(userError));
   if (!user) return { error: "Sessão expirada — faça login novamente." };
 
   const admin = createAdminClient();
@@ -223,6 +263,10 @@ export async function updateDigestPreference(
     .eq("id", user.id);
 
   if (error || count !== 1) {
+    logFailure("settings.digest_preference", null, {
+      matched: count ?? 0,
+      ...dbFailure(error),
+    });
     return { error: "Não foi possível salvar a preferência. Tente novamente." };
   }
 
@@ -249,6 +293,10 @@ export async function updateCompanyName(
     .eq("id", auth.session.tenantId);
 
   if (error || count !== 1) {
+    logFailure("settings.company", auth.session.tenantId, {
+      matched: count ?? 0,
+      ...dbFailure(error),
+    });
     return { error: "Não foi possível salvar a empresa. Tente novamente." };
   }
 

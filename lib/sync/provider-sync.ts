@@ -4,6 +4,14 @@ import { providerFor } from "@/lib/connectors";
 import { CredentialKeyringError, decryptCredential } from "@/lib/crypto";
 import { deriveCost, type ModelPrice } from "@/lib/engine/derive";
 import { monthStartUtc, monthToDateRange } from "@/lib/engine/period";
+import {
+  dbFailure,
+  describeError,
+  type LogDetail,
+  logFailure,
+  logOk,
+  logSkipped,
+} from "@/lib/logging/server-log";
 import { collapsePersonGrain } from "@/lib/privacy/minimize";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -34,6 +42,9 @@ export const UNREADABLE_CREDENTIAL_MESSAGE =
 export const CREDENTIAL_CONFIG_MESSAGE =
   "Erro de configuração no serviço impediu a leitura da credencial. Não é necessário reconectar; já estamos verificando.";
 
+const SYNC_FAILED_MESSAGE =
+  "A sincronização falhou. Tente novamente mais tarde.";
+
 export type SyncResult =
   | { ok: true; usageRows: number; costRows: number; monthUsd: number }
   | { ok: false; error: string };
@@ -58,7 +69,7 @@ export async function runProviderSync(
 ): Promise<SyncResult> {
   const admin = createAdminClient();
 
-  const [{ data: connectionData }, { data: tenantData }] = await Promise.all([
+  const [connectionResult, tenantResult] = await Promise.all([
     admin
       .from("provider_connection")
       .select("id, encrypted_credential, status")
@@ -67,16 +78,41 @@ export async function runProviderSync(
       .maybeSingle(),
     admin.from("tenant").select("store_per_person").eq("id", tenantId).maybeSingle(),
   ]);
+  if (connectionResult.error || tenantResult.error) {
+    logFailure("provider.sync", tenantId, {
+      provider: providerName,
+      step: "load_context",
+      connectionCode: connectionResult.error?.code ?? null,
+      tenantCode: tenantResult.error?.code ?? null,
+    });
+    return { ok: false, error: "sync context could not be loaded" };
+  }
+  const connectionData = connectionResult.data;
+  const tenantData = tenantResult.data;
   const connection = connectionData as ConnectionRow | null;
   // Data minimization (#23): default on if the tenant row is somehow missing.
   const storePerPerson =
     (tenantData as { store_per_person: boolean } | null)?.store_per_person ?? true;
   if (!connection || connection.status === "revoked" || !connection.encrypted_credential) {
+    logSkipped("provider.sync", tenantId, { provider: providerName, reason: "no active connection" });
     return { ok: false, error: `no active ${providerName} connection` };
   }
 
-  const markError = async (message: string): Promise<SyncResult> => {
-    await admin
+  // Every sync failure already lands on the connection row, where the customer
+  // reads it. It lands in the server log too (#79) — `last_sync_error` is
+  // overwritten by the next run, so on its own it records the latest failure
+  // and no history of them. This EXTENDS that recording rather than replacing
+  // it: the row still drives the UI.
+  const markError = async (
+    message: string,
+    detail: LogDetail = {},
+  ): Promise<SyncResult> => {
+    logFailure("provider.sync", tenantId, {
+      provider: providerName,
+      reason: message,
+      ...detail,
+    });
+    const { error } = await admin
       .from("provider_connection")
       .update({
         status: "error",
@@ -84,6 +120,12 @@ export async function runProviderSync(
         updated_at: new Date().toISOString(),
       })
       .eq("id", connection.id);
+    if (error) {
+      logFailure("provider.sync_state", tenantId, {
+        provider: providerName,
+        ...dbFailure(error),
+      });
+    }
     return { ok: false, error: message };
   };
 
@@ -101,9 +143,10 @@ export async function runProviderSync(
       // The message a customer sees must not be the key material, nor the
       // variable name — neither is theirs to act on. The cause goes to the
       // server log, where the operator is.
-      console.error(
-        `[sync] credential keyring is misconfigured: ${cause.message}`,
-      );
+      logFailure("provider.credential", tenantId, {
+        provider: providerName,
+        ...describeError(cause),
+      });
       return markError(CREDENTIAL_CONFIG_MESSAGE);
     }
     return markError(UNREADABLE_CREDENTIAL_MESSAGE);
@@ -116,13 +159,20 @@ export async function runProviderSync(
     // One stamp per sync: every row written by this run carries the same time.
     const syncedAt = new Date().toISOString();
 
-    const [rawUsage, costs, { data: priceData }] = await Promise.all([
+    const [rawUsage, costs, priceResult] = await Promise.all([
       provider.fetchUsage(range),
       provider.fetchCosts(range),
       admin
         .from("model_price")
         .select("provider, model, input_price_per_1m, output_price_per_1m, effective_date"),
     ]);
+    if (priceResult.error) {
+      return markError(SYNC_FAILED_MESSAGE, {
+        step: "price_lookup",
+        ...dbFailure(priceResult.error),
+      });
+    }
+    const priceData = priceResult.data;
 
     // "Store per-person data" off → collapse to team/project grain before any
     // person-grain row is derived or persisted (aggregates stay exact).
@@ -179,7 +229,10 @@ export async function runProviderSync(
       .eq("provider", providerName)
       .gte("date", monthStart);
     if (usageDeleteError) {
-      return markError(`usage cleanup failed: ${usageDeleteError.code}`);
+      return markError(SYNC_FAILED_MESSAGE, {
+        step: "usage_cleanup",
+        ...dbFailure(usageDeleteError),
+      });
     }
 
     // Independent tables — after usage cleanup, the two upserts run in parallel.
@@ -198,13 +251,19 @@ export async function runProviderSync(
         : Promise.resolve(noError),
     ]);
     if (usageResult.error) {
-      return markError(`usage upsert failed: ${usageResult.error.code}`);
+      return markError(SYNC_FAILED_MESSAGE, {
+        step: "usage_upsert",
+        ...dbFailure(usageResult.error),
+      });
     }
     if (costResult.error) {
-      return markError(`cost upsert failed: ${costResult.error.code}`);
+      return markError(SYNC_FAILED_MESSAGE, {
+        step: "cost_upsert",
+        ...dbFailure(costResult.error),
+      });
     }
 
-    await admin
+    const { error: stateError } = await admin
       .from("provider_connection")
       .update({
         status: "active",
@@ -213,12 +272,25 @@ export async function runProviderSync(
         updated_at: syncedAt,
       })
       .eq("id", connection.id);
+    if (stateError) {
+      return markError(SYNC_FAILED_MESSAGE, {
+        step: "connection_state",
+        ...dbFailure(stateError),
+      });
+    }
 
     const monthUsd = costs.reduce((sum, c) => sum + c.amount, 0);
+    logOk("provider.sync", tenantId, {
+      provider: providerName,
+      usageRows: usageRows.length,
+      costRows: costRows.length,
+    });
     return { ok: true, usageRows: usageRows.length, costRows: costRows.length, monthUsd };
   } catch (cause) {
     // Never leak the key or raw payloads into errors shown/logged.
-    const message = cause instanceof Error ? cause.message : "sync failed";
-    return markError(message);
+    return markError(SYNC_FAILED_MESSAGE, {
+      step: "provider_request",
+      ...describeError(cause),
+    });
   }
 }

@@ -83,7 +83,7 @@ export function OtpDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="sm:max-w-sm">
+      <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto overscroll-contain max-sm:[&_[data-slot=dialog-close]]:size-11 sm:max-w-sm">
         <DialogHeader>
           <span
             aria-hidden
@@ -139,7 +139,7 @@ export function OtpDialog({
               type="submit"
               variant="ghost"
               disabled={resending || cooldown > 0}
-              className="text-sm"
+              className="h-11 text-sm"
             >
               {cooldown > 0 ? copy.resendIn(cooldown) : copy.resend}
             </Button>

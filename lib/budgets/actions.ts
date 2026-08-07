@@ -6,6 +6,7 @@ import { recordAudit, recordAuditBatch } from "@/lib/audit/log";
 import { requireAdmin } from "@/lib/auth/session";
 import { monthStartUtc } from "@/lib/engine/period";
 import { fetchUsdRate } from "@/lib/fx/rate";
+import { dbFailure, logFailure } from "@/lib/logging/server-log";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isOwnedTeam } from "@/lib/teams/queries";
 import { budgetDeleteSchema, budgetSchema, fieldErrorsOf } from "@/lib/validation";
@@ -59,13 +60,21 @@ export async function upsertBudget(
 
   // Resolve the tenant currency (budget amount is in the display currency) and,
   // for team scope, verify the team belongs to this tenant.
-  const [{ data: tenant }, ownedTeam] = await Promise.all([
+  const [tenantResult, ownedTeam] = await Promise.all([
     admin.from("tenant").select("display_currency").eq("id", tenantId).maybeSingle(),
     scope === "team"
       ? isOwnedTeam(admin, tenantId, teamId)
       : Promise.resolve(true),
   ]);
+  if (tenantResult.error) {
+    logFailure("budget.save", tenantId, {
+      step: "currency",
+      ...dbFailure(tenantResult.error),
+    });
+    return { error: "Não foi possível salvar. Tente novamente." };
+  }
   if (scope === "team" && !ownedTeam) return { error: "Escolha um time válido." };
+  const tenant = tenantResult.data;
   const currency =
     (tenant as { display_currency: string } | null)?.display_currency ?? "BRL";
 
@@ -79,10 +88,17 @@ export async function upsertBudget(
     .eq("tenant_id", tenantId)
     .eq("scope", scope)
     .eq("period_month", period);
-  const { data: existingData } = await (teamId === null
+  const { data: existingData, error: existingError } = await (teamId === null
     ? existingQuery.is("team_id", null)
     : existingQuery.eq("team_id", teamId)
   ).maybeSingle();
+  if (existingError) {
+    logFailure("budget.save", tenantId, {
+      step: "existing_budget",
+      ...dbFailure(existingError),
+    });
+    return { error: "Não foi possível salvar. Tente novamente." };
+  }
   const existing = existingData as { id: string; amount: number } | null;
   const auditTarget = scope === "org" ? "Empresa" : teamId;
 
@@ -96,6 +112,7 @@ export async function upsertBudget(
       .eq("id", existing.id)
       .eq("tenant_id", tenantId);
     if (error || count === 0) {
+      logFailure("budget.update", tenantId, { scope, matched: count ?? 0, ...dbFailure(error) });
       return { error: "Não foi possível salvar. Tente novamente." };
     }
     await recordAudit(auth.session, "budget.updated", {
@@ -116,7 +133,10 @@ export async function upsertBudget(
       fx_rate_source: frozen?.source ?? null,
       fx_rate_date: frozen?.date ?? null,
     });
-    if (error) return { error: "Não foi possível salvar. Tente novamente." };
+    if (error) {
+      logFailure("budget.create", tenantId, { scope, ...dbFailure(error) });
+      return { error: "Não foi possível salvar. Tente novamente." };
+    }
     await recordAudit(auth.session, "budget.created", {
       target: auditTarget,
       detail: { scope, amount, currency, warnPct },
@@ -216,12 +236,19 @@ export async function saveBudgetsBatch(
   // 2. Tenant ownership for every team row (one query, not N).
   const teamIds = rows.filter((r) => r.teamId !== null).map((r) => r.teamId as string);
   if (teamIds.length > 0) {
-    const { data: ownedData } = await admin
+    const { data: ownedData, error: ownedError } = await admin
       .from("team")
       .select("id")
       .eq("tenant_id", tenantId)
       .eq("is_unattributed", false)
       .in("id", teamIds);
+    if (ownedError) {
+      logFailure("budget.batch", tenantId, {
+        step: "team_ownership",
+        ...dbFailure(ownedError),
+      });
+      return { error: "Não foi possível salvar os orçamentos. Tente novamente." };
+    }
     const owned = new Set(((ownedData ?? []) as { id: string }[]).map((t) => t.id));
     for (const row of rows) {
       if (row.teamId !== null && !owned.has(row.teamId)) {
@@ -231,7 +258,7 @@ export async function saveBudgetsBatch(
   }
 
   // 3. Split update vs insert against the budgets governing this period.
-  const [{ data: tenant }, { data: existingData }] = await Promise.all([
+  const [tenantResult, existingResult] = await Promise.all([
     admin.from("tenant").select("display_currency").eq("id", tenantId).maybeSingle(),
     admin
       .from("budget")
@@ -239,6 +266,16 @@ export async function saveBudgetsBatch(
       .eq("tenant_id", tenantId)
       .eq("period_month", period),
   ]);
+  if (tenantResult.error || existingResult.error) {
+    logFailure("budget.batch", tenantId, {
+      step: "load_context",
+      tenantCode: tenantResult.error?.code ?? null,
+      budgetCode: existingResult.error?.code ?? null,
+    });
+    return { error: "Não foi possível salvar os orçamentos. Tente novamente." };
+  }
+  const tenant = tenantResult.data;
+  const existingData = existingResult.data;
   const currency =
     (tenant as { display_currency: string } | null)?.display_currency ?? "BRL";
   const existing = (existingData ?? []) as {
@@ -290,6 +327,11 @@ export async function saveBudgetsBatch(
       const warnPct = warnPctOf(row.thresholds);
       const previousWarnPct = warnPctOf(previous.thresholds);
       if (error || count === 0) {
+        logFailure("budget.batch_update", tenantId, {
+          scope: row.scope,
+          matched: count ?? 0,
+          ...dbFailure(error),
+        });
         failed.push(label);
       } else if (previous.amount !== row.amount || previousWarnPct !== warnPct) {
         // An untouched row is re-submitted by the batch form on every save;
@@ -325,6 +367,7 @@ export async function saveBudgetsBatch(
         fx_rate_date: frozen?.date ?? null,
       });
       if (error) {
+        logFailure("budget.batch_create", tenantId, { scope: row.scope, ...dbFailure(error) });
         failed.push(label);
       } else {
         audited.push({
@@ -369,7 +412,10 @@ export async function deleteBudget(
     .eq("id", parsed.data.budgetId)
     .eq("tenant_id", tenantId)
     .select("scope, team_id, amount");
-  if (error) return { error: "Não foi possível remover. Tente novamente." };
+  if (error) {
+    logFailure("budget.delete", tenantId, dbFailure(error));
+    return { error: "Não foi possível remover. Tente novamente." };
+  }
   // Idempotent: repeated submit / cross-tenant id match nothing — the desired
   // end state already holds (QA-05 destructive-action contract).
   if (count === 0) return { success: "Orçamento já havia sido removido." };

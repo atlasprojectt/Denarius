@@ -12,12 +12,13 @@
 //   - keys encrypted at rest: lib/crypto.ts (AES-256-GCM), never rendered back.
 //   - the Anthropic hop: lib/narrate/ sends the weekly digest draft — team
 //     names and already-computed figures — to the Claude API for rephrasing.
-//   - export/full deletion are handled by request today (self-service is #74).
+//   - export/full deletion: Admin-only self-service in Ajustes, backed by
+//     lib/privacy/export.ts and lib/privacy/delete.ts.
 
 export const LEGAL_CONTACT_EMAIL = "privacidade@denarius.app";
 
 /** Shown on both documents. Bump it whenever the text below changes. */
-export const LEGAL_UPDATED_AT = "5 de agosto de 2026";
+export const LEGAL_UPDATED_AT = "7 de agosto de 2026";
 
 export const legalChrome = {
   backToLogin: "Voltar para o login",
@@ -222,7 +223,7 @@ export const privacyCopy: LegalDocument = {
           kind: "list",
           items: [
             "O histórico de uso, custo e orçamento é mantido enquanto a empresa tiver conta ativa — comparar meses é a função do produto.",
-            "Quando a empresa encerra o uso, apagamos os dados da empresa em até 30 dias a partir do pedido. Cópias de segurança da infraestrutura expiram nos ciclos dos fornecedores acima.",
+            "Quando um administrador exclui o espaço em Ajustes, apagamos imediatamente os dados ativos da empresa e os acessos vinculados. Cópias de segurança da infraestrutura expiram nos ciclos dos fornecedores acima.",
             "Remover uma pessoa apaga imediatamente o acesso dela; o gasto histórico do time permanece, já sem vínculo com a conta removida.",
             "Prompts e respostas não têm prazo de retenção porque nunca são armazenados.",
           ],
@@ -244,7 +245,8 @@ export const privacyCopy: LegalDocument = {
           items: [
             "Acesso e correção: um administrador vê e edita, na própria interface, os dados de conta, o quadro de pessoas, as assinaturas e os orçamentos.",
             "Eliminação de acesso: um administrador remove uma pessoa em Ajustes, sem precisar falar conosco.",
-            "Exportação dos dados da empresa e exclusão total da conta: peça pelo canal abaixo. Hoje esses dois pedidos são atendidos manualmente, em até 30 dias — ainda não há um botão de autoatendimento no produto.",
+            "Exportação dos dados da empresa: um administrador baixa um arquivo JSON completo em Ajustes. A exportação respeita as escolhas de nomes e armazenamento por pessoa e nunca inclui credenciais ou tokens de convite.",
+            "Exclusão total da conta: um administrador confirma digitando o nome exato da empresa em Ajustes. Isso apaga o espaço e os acessos no Denarius, mas não altera nem exclui nada na OpenAI ou na Anthropic.",
             "Informação sobre compartilhamento: é a lista de fornecedores desta página.",
           ],
         },
@@ -388,7 +390,7 @@ export const termsCopy: LegalDocument = {
         {
           kind: "text",
           paragraphs: [
-            "A empresa pode encerrar o uso a qualquer momento pedindo pelo canal de contato. Podemos encerrar uma conta em caso de uso em desacordo com estes termos. Em qualquer dos casos, os dados são apagados conforme a seção de retenção da política de privacidade.",
+            "A empresa pode encerrar o uso a qualquer momento pela área de Ajustes ou pelo canal de contato. Podemos encerrar uma conta em caso de uso em desacordo com estes termos. Em qualquer dos casos, os dados são apagados conforme a seção de retenção da política de privacidade.",
           ],
         },
       ],
