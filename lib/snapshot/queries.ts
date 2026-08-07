@@ -47,6 +47,19 @@ type UsageRow = {
 type MapRow = { provider: string; project_id: string; team_id: string };
 type CostRow = { provider: string; amount: number };
 type ConnectionRow = { status: string; last_sync_at: string | null };
+type ReadError = { code?: string | null } | null;
+
+function assertReads(reads: { name: string; error: ReadError }[]): void {
+  const failed = reads.filter((read) => read.error !== null);
+  if (failed.length === 0) return;
+  // Codes identify the failing contract without copying a row value or
+  // provider payload into the thrown error/platform log.
+  throw new Error(
+    `snapshot reads failed: ${failed
+      .map((read) => `${read.name}:${read.error?.code ?? "unknown"}`)
+      .join(",")}`,
+  );
+}
 
 /**
  * Everything the builder needs for one tenant's closed month. `source` decides
@@ -66,14 +79,14 @@ export async function closedMonthInput(
   const { start, nextStart } = monthRange(year, month);
 
   const [
-    { data: tenantData },
-    { data: budgetData },
-    { data: teamData },
-    { data: subData },
-    { data: usageData },
-    { data: mapData },
-    { data: costData },
-    { data: connectionData },
+    tenantResult,
+    budgetResult,
+    teamResult,
+    subscriptionResult,
+    usageResult,
+    mapResult,
+    costResult,
+    connectionResult,
   ] = await Promise.all([
     admin.from("tenant").select("display_currency").eq("id", tenantId).maybeSingle(),
     admin
@@ -94,7 +107,7 @@ export async function closedMonthInput(
           .from("subscription")
           .select("id, tool, seat_count, unit_price, team_id")
           .eq("tenant_id", tenantId)
-      : Promise.resolve({ data: [] as SubscriptionRow[] }),
+      : Promise.resolve({ data: [] as SubscriptionRow[], error: null }),
     admin
       .from("usage_daily")
       .select("provider, project_id, derived_cost, uncosted")
@@ -116,6 +129,26 @@ export async function closedMonthInput(
       .select("status, last_sync_at")
       .eq("tenant_id", tenantId),
   ]);
+
+  assertReads([
+    { name: "tenant", error: tenantResult.error },
+    { name: "budget", error: budgetResult.error },
+    { name: "team", error: teamResult.error },
+    { name: "subscription", error: subscriptionResult.error },
+    { name: "usage_daily", error: usageResult.error },
+    { name: "project_map", error: mapResult.error },
+    { name: "cost_daily", error: costResult.error },
+    { name: "provider_connection", error: connectionResult.error },
+  ]);
+
+  const tenantData = tenantResult.data;
+  const budgetData = budgetResult.data;
+  const teamData = teamResult.data;
+  const subData = subscriptionResult.data;
+  const usageData = usageResult.data;
+  const mapData = mapResult.data;
+  const costData = costResult.data;
+  const connectionData = connectionResult.data;
 
   const currency =
     (tenantData as { display_currency: string } | null)?.display_currency ?? "BRL";
@@ -222,20 +255,22 @@ export async function closedMonthInput(
  *  not there for is not a month to report on. */
 export async function tenantsExistingBefore(nextStart: string): Promise<string[]> {
   const admin = createAdminClient();
-  const { data } = await admin
+  const { data, error } = await admin
     .from("tenant")
     .select("id")
     .lt("created_at", `${nextStart}T00:00:00.000Z`);
+  assertReads([{ name: "tenant", error }]);
   return ((data ?? []) as { id: string }[]).map((t) => t.id);
 }
 
 /** period_month values already frozen for a tenant (yyyy-mm-dd). */
 export async function closedMonths(tenantId: string): Promise<Set<string>> {
   const admin = createAdminClient();
-  const { data } = await admin
+  const { data, error } = await admin
     .from("period_snapshot")
     .select("period_month")
     .eq("tenant_id", tenantId);
+  assertReads([{ name: "period_snapshot", error }]);
   return new Set(((data ?? []) as { period_month: string }[]).map((r) => r.period_month));
 }
 
@@ -247,14 +282,17 @@ export async function monthsWithCost(
   before: string,
 ): Promise<string[]> {
   const admin = createAdminClient();
-  const { data } = await admin
+  const { data, error } = await admin
     .from("cost_daily")
     .select("date")
     .eq("tenant_id", tenantId)
     .gte("date", since)
     .lt("date", before);
+  assertReads([{ name: "cost_daily", error }]);
   const months = new Set(
     ((data ?? []) as { date: string }[]).map((r) => `${r.date.slice(0, 7)}-01`),
   );
-  return [...months].sort();
+  // Most recent history becomes available first while the daily cron advances
+  // the bounded backfill one month at a time.
+  return [...months].sort().reverse();
 }

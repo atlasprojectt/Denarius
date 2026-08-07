@@ -6,7 +6,7 @@ import {
   buildPeriodSnapshot,
   type PeriodSnapshotInput,
 } from "@/lib/snapshot/build";
-import { closeMonth } from "@/lib/snapshot/close";
+import { closeMonth, closePeriods } from "@/lib/snapshot/close";
 import * as queries from "@/lib/snapshot/queries";
 
 // The closing job's I/O edges are stubbed: the reads and the write. What is
@@ -236,36 +236,40 @@ describe("buildPeriodSnapshot — the honesty flags travel with the numbers", ()
 });
 
 describe("buildPeriodSnapshot — a backfilled month", () => {
-  const backfilled = buildPeriodSnapshot(
-    input({ source: "backfill", seats: { available: false } }),
-  );
+  function backfilled() {
+    return buildPeriodSnapshot(
+      input({ source: "backfill", seats: { available: false } }),
+    );
+  }
 
   it("records what survived: the API side", () => {
-    expect(backfilled.source).toBe("backfill");
-    expect(backfilled.apiUsd).toBe(150);
-    expect(backfilled.breakdown.providers).toHaveLength(2);
+    const snapshot = backfilled();
+    expect(snapshot.source).toBe("backfill");
+    expect(snapshot.apiUsd).toBe(150);
+    expect(snapshot.breakdown.providers).toHaveLength(2);
   });
 
   it("discloses seats as unavailable rather than as zero", () => {
-    expect(backfilled.breakdown.seats.available).toBe(false);
-    expect(backfilled.seatsAmount).toBeNull();
-    expect(backfilled.breakdown.seats.total).toBeNull();
-    expect(backfilled.breakdown.seats.subscriptions).toEqual([]);
+    const snapshot = backfilled();
+    expect(snapshot.breakdown.seats.available).toBe(false);
+    expect(snapshot.seatsAmount).toBeNull();
+    expect(snapshot.breakdown.seats.total).toBeNull();
+    expect(snapshot.breakdown.seats.subscriptions).toEqual([]);
   });
 
   it("gives no verdict it cannot stand behind", () => {
+    const snapshot = backfilled();
     // Half the spend is unknown, so there is no honest total to judge.
-    expect(backfilled.combinedAmount).toBeNull();
-    expect(backfilled.verdictStatus).toBeNull();
-    expect(backfilled.verdictSentence).toBeNull();
-    expect(backfilled.breakdown.teams.every((t) => t.spend === null)).toBe(true);
+    expect(snapshot.combinedAmount).toBeNull();
+    expect(snapshot.verdictStatus).toBeNull();
+    expect(snapshot.verdictSentence).toBeNull();
+    expect(snapshot.breakdown.teams.every((t) => t.spend === null)).toBe(true);
   });
 });
 
 describe("buildPeriodSnapshot — a month with no budget", () => {
-  const unbudgeted = buildPeriodSnapshot(input({ orgBudget: null, teamBudgets: [] }));
-
   it("has no verdict and no percentage, but still reports the spend", () => {
+    const unbudgeted = buildPeriodSnapshot(input({ orgBudget: null, teamBudgets: [] }));
     expect(unbudgeted.verdictStatus).toBeNull();
     expect(unbudgeted.budgetAmount).toBeNull();
     expect(unbudgeted.pctSpent).toBeNull();
@@ -278,10 +282,20 @@ describe("closeMonth — closing is idempotent", () => {
   const mocked = vi.mocked(queries);
 
   beforeEach(() => {
-    upsert.mockClear();
+    upsert.mockReset();
+    upsert.mockResolvedValue({ error: null });
     mocked.closedMonthInput.mockReset();
     mocked.closedMonths.mockReset();
-    mocked.closedMonthInput.mockResolvedValue(input());
+    mocked.tenantsExistingBefore.mockReset();
+    mocked.monthsWithCost.mockReset();
+    mocked.closedMonthInput.mockImplementation(
+      async (_tenantId, year, month, options) =>
+        input({
+          period: closedPeriod(year, month),
+          source: options.source,
+          closedAt: options.closedAt,
+        }),
+    );
   });
 
   it("freezes a month that has not been frozen yet", async () => {
@@ -322,5 +336,75 @@ describe("closeMonth — closing is idempotent", () => {
     upsert.mockResolvedValueOnce({ error: { message: "boom" } } as never);
 
     expect(await closeMonth("tenant-1", 2026, 6, "auto")).toBe("failed");
+  });
+
+  it("reports a failed read instead of freezing zero-filled defaults", async () => {
+    mocked.closedMonths.mockResolvedValue(new Set<string>());
+    mocked.closedMonthInput.mockRejectedValueOnce(new Error("database unavailable"));
+
+    expect(await closeMonth("tenant-1", 2026, 6, "auto")).toBe("failed");
+    expect(upsert).not.toHaveBeenCalled();
+  });
+
+  it("closes each tenant and advances only one backfill month per run", async () => {
+    const now = new Date("2026-07-07T11:00:00.000Z");
+    mocked.tenantsExistingBefore.mockResolvedValue(["tenant-a", "tenant-b"]);
+    mocked.closedMonths
+      .mockResolvedValueOnce(new Set(["2026-06-01", "2026-05-01"]))
+      .mockResolvedValueOnce(new Set<string>());
+    mocked.monthsWithCost
+      .mockResolvedValueOnce(["2026-05-01"])
+      .mockResolvedValueOnce(["2026-05-01", "2026-04-01"]);
+
+    await expect(closePeriods(now)).resolves.toEqual({
+      tenants: 2,
+      created: 1,
+      backfilled: 1,
+      failed: 0,
+    });
+
+    expect(mocked.closedMonthInput).toHaveBeenNthCalledWith(
+      1,
+      "tenant-b",
+      2026,
+      6,
+      { source: "auto", closedAt: now.toISOString() },
+    );
+    expect(mocked.closedMonthInput).toHaveBeenNthCalledWith(
+      2,
+      "tenant-b",
+      2026,
+      5,
+      { source: "backfill", closedAt: now.toISOString() },
+    );
+    expect(mocked.closedMonthInput).toHaveBeenCalledTimes(2);
+    expect(mocked.monthsWithCost).toHaveBeenCalledWith(
+      "tenant-b",
+      "2025-06-01",
+      "2026-06-01",
+    );
+  });
+
+  it("contains one tenant's failure and still closes the next tenant", async () => {
+    mocked.tenantsExistingBefore.mockResolvedValue(["tenant-a", "tenant-b"]);
+    mocked.closedMonths
+      .mockRejectedValueOnce(new Error("tenant-a read failed"))
+      .mockResolvedValueOnce(new Set<string>());
+    mocked.monthsWithCost.mockResolvedValue([]);
+
+    await expect(
+      closePeriods(new Date("2026-07-07T11:00:00.000Z")),
+    ).resolves.toEqual({
+      tenants: 2,
+      created: 1,
+      backfilled: 0,
+      failed: 1,
+    });
+    expect(mocked.closedMonthInput).toHaveBeenCalledWith(
+      "tenant-b",
+      2026,
+      6,
+      expect.objectContaining({ source: "auto" }),
+    );
   });
 });

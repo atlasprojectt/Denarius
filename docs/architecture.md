@@ -53,7 +53,8 @@
 │   ├── engine/       pure functions: projection, margin, thresholds, verdict
 │   ├── findings/     rules: budget_threshold, apontamentos, seats_vs_roster
 │   ├── narrate/      prompt assembly (numbers injected), LLM client
-│   └── notify/       channel interface, resend impl, dedup (notification_log)
+│   ├── notify/       channel interface, resend impl, dedup (notification_log)
+│   └── snapshot/     pure freeze builder, closed-window reads, closing job
 ├── supabase/
 │   └── migrations/   schema + RLS policies (versioned, auto-deployed)
 └── docs/             this folder

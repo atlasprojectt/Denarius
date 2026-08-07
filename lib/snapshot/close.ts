@@ -21,6 +21,8 @@ import {
 
 /** How far back a backfill will look for months worth reconstructing. */
 const BACKFILL_MONTHS = 12;
+/** Keep the daily cron inside its 60-second budget. Later runs continue. */
+const MAX_BACKFILLS_PER_TENANT_PER_RUN = 1;
 
 function toRow(tenantId: string, snapshot: PeriodSnapshot) {
   return {
@@ -56,25 +58,31 @@ export async function closeMonth(
   month: number,
   source: SnapshotSource,
   now: Date = new Date(),
+  knownClosedMonths?: ReadonlySet<string>,
 ): Promise<CloseOutcome> {
-  const already = await closedMonths(tenantId);
-  const { start } = monthRange(year, month);
-  if (already.has(start)) return "exists";
+  try {
+    const already = knownClosedMonths ?? (await closedMonths(tenantId));
+    const { start } = monthRange(year, month);
+    if (already.has(start)) return "exists";
 
-  const input = await closedMonthInput(tenantId, year, month, {
-    source,
-    closedAt: now.toISOString(),
-  });
-  const snapshot = buildPeriodSnapshot(input);
-
-  const admin = createAdminClient();
-  const { error } = await admin
-    .from("period_snapshot")
-    .upsert(toRow(tenantId, snapshot), {
-      onConflict: "tenant_id,period_month",
-      ignoreDuplicates: true,
+    const input = await closedMonthInput(tenantId, year, month, {
+      source,
+      closedAt: now.toISOString(),
     });
-  return error ? "failed" : "created";
+    const snapshot = buildPeriodSnapshot(input);
+
+    const admin = createAdminClient();
+    const { error } = await admin
+      .from("period_snapshot")
+      .upsert(toRow(tenantId, snapshot), {
+        onConflict: "tenant_id,period_month",
+        ignoreDuplicates: true,
+      });
+    return error ? "failed" : "created";
+  } catch {
+    // One unreadable tenant/month must not stop the cross-tenant cron.
+    return "failed";
+  }
 }
 
 export type CloseSummary = {
@@ -94,7 +102,12 @@ export type CloseSummary = {
 export async function closePeriods(now: Date = new Date()): Promise<CloseSummary> {
   const previous = previousMonthOf(now);
   const { start: previousStart, nextStart } = monthRange(previous.year, previous.month);
-  const tenants = await tenantsExistingBefore(nextStart);
+  let tenants: string[];
+  try {
+    tenants = await tenantsExistingBefore(nextStart);
+  } catch {
+    return { tenants: 0, created: 0, backfilled: 0, failed: 1 };
+  }
 
   const summary: CloseSummary = {
     tenants: tenants.length,
@@ -110,18 +123,51 @@ export async function closePeriods(now: Date = new Date()): Promise<CloseSummary
     .slice(0, 10);
 
   for (const tenantId of tenants) {
-    const outcome = await closeMonth(tenantId, previous.year, previous.month, "auto", now);
-    if (outcome === "created") summary.created += 1;
-    if (outcome === "failed") summary.failed += 1;
+    try {
+      // One read per tenant, reused by the auto close and every backfill.
+      const frozen = await closedMonths(tenantId);
+      const outcome = await closeMonth(
+        tenantId,
+        previous.year,
+        previous.month,
+        "auto",
+        now,
+        frozen,
+      );
+      if (outcome === "created") {
+        summary.created += 1;
+        frozen.add(previousStart);
+      }
+      if (outcome === "failed") {
+        summary.failed += 1;
+        continue;
+      }
 
-    const frozen = await closedMonths(tenantId);
-    const candidates = await monthsWithCost(tenantId, backfillFloor, previousStart);
-    for (const monthStart of candidates) {
-      if (frozen.has(monthStart)) continue;
-      const [year, month] = monthStart.split("-").map(Number);
-      const result = await closeMonth(tenantId, year, month, "backfill", now);
-      if (result === "created") summary.backfilled += 1;
-      if (result === "failed") summary.failed += 1;
+      const candidates = await monthsWithCost(tenantId, backfillFloor, previousStart);
+      let attempted = 0;
+      for (const monthStart of candidates) {
+        if (frozen.has(monthStart)) continue;
+        if (attempted >= MAX_BACKFILLS_PER_TENANT_PER_RUN) break;
+        attempted += 1;
+
+        const [year, month] = monthStart.split("-").map(Number);
+        const result = await closeMonth(
+          tenantId,
+          year,
+          month,
+          "backfill",
+          now,
+          frozen,
+        );
+        if (result === "created") {
+          summary.backfilled += 1;
+          frozen.add(monthStart);
+        }
+        if (result === "failed") summary.failed += 1;
+      }
+    } catch {
+      summary.failed += 1;
+      continue;
     }
   }
 

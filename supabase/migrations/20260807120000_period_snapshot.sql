@@ -16,7 +16,7 @@ create table public.period_snapshot (
   id uuid primary key default gen_random_uuid(),
   tenant_id uuid not null references public.tenant (id) on delete cascade,
   -- First day of the closed month, UTC.
-  period_month date not null,
+  period_month date not null check (extract(day from period_month) = 1),
   closed_at timestamptz not null default now(),
   -- 'auto': closed by the daily cron the month after. 'backfill': reconstructed
   -- later from what survived, with the seat half disclosed as unavailable.
@@ -62,6 +62,14 @@ create index period_snapshot_tenant_period_idx
   on public.period_snapshot (tenant_id, period_month desc);
 
 alter table public.period_snapshot enable row level security;
+
+-- SQL privileges and RLS are independent. Keep writes on the service role and
+-- opt authenticated sessions into the one read surface this table exposes.
+-- The revokes make this migration safe even on older Supabase projects whose
+-- default privileges auto-expose a newly-created public table.
+revoke all privileges on public.period_snapshot from anon, authenticated;
+grant select on public.period_snapshot to authenticated;
+grant all privileges on public.period_snapshot to service_role;
 
 -- Reads: same tenant, Admins and Viewers alike — a closed month carries no
 -- per-person data by construction. Writes have NO policy at all: the snapshot

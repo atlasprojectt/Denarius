@@ -712,7 +712,14 @@ describe.skipIf(!auditReady)("audit_log isolation (issue #73)", () => {
 // Appended for issue #94 â€” period_snapshot. New table, new block, at the end.
 // ---------------------------------------------------------------------------
 
-const periodSnapshotReady = ready && (await tableApplied("period_snapshot"));
+const periodSnapshotReady =
+  ready &&
+  requireTable(
+    SUITE,
+    "period_snapshot",
+    await tableApplied("period_snapshot"),
+    "*_period_snapshot.sql",
+  );
 if (ready && !periodSnapshotReady) {
   console.warn(
     "\n[rls-isolation] period_snapshot table not found â€” apply " +
@@ -800,17 +807,19 @@ describe.skipIf(!periodSnapshotReady)("period_snapshot isolation (issue #94)", (
   });
 
   it("a tenant reads its own frozen months and never another tenant's", async () => {
-    const { data } = await snapshotSession
+    const { data, error } = await snapshotSession
       .from("period_snapshot")
       .select("tenant_id, verdict_sentence");
+    expect(error).toBeNull();
     expect(data?.length).toBe(1);
     expect(data?.[0].tenant_id).toBe(snapshotSeeded[0].tenantId);
     expect(data?.[0].verdict_sentence).toBe(`frozen-a-${snapshotStamp}`);
 
-    const { data: cross } = await snapshotSession
+    const { data: cross, error: crossError } = await snapshotSession
       .from("period_snapshot")
       .select("id")
       .eq("tenant_id", snapshotSeeded[1].tenantId);
+    expect(crossError).toBeNull();
     expect(cross ?? []).toEqual([]);
   });
 
@@ -826,11 +835,12 @@ describe.skipIf(!periodSnapshotReady)("period_snapshot isolation (issue #94)", (
       });
     expect(insertDenied).not.toBeNull();
 
-    const { data: updated } = await snapshotSession
+    const { data: updated, error: updateDenied } = await snapshotSession
       .from("period_snapshot")
       .update({ verdict_sentence: "forged" })
       .eq("tenant_id", snapshotSeeded[0].tenantId)
       .select("id");
+    expect(updateDenied).not.toBeNull();
     expect(updated ?? []).toEqual([]);
   });
 
@@ -844,25 +854,44 @@ describe.skipIf(!periodSnapshotReady)("period_snapshot isolation (issue #94)", (
     expect(error).not.toBeNull();
   });
 
+  it("rejects a period key that is not the first day of its month", async () => {
+    const { error } = await snapshotService.from("period_snapshot").insert({
+      tenant_id: snapshotSeeded[0].tenantId,
+      period_month: "2026-05-17",
+      source: "auto",
+      currency: "BRL",
+    });
+    expect(error).not.toBeNull();
+  });
+
   it("deleting the tenant takes its frozen months with it", async () => {
-    const { data: tenant } = await snapshotService
+    const { data: tenant, error: tenantError } = await snapshotService
       .from("tenant")
       .insert({ name: `Snapshot cascade ${snapshotStamp}` })
       .select("id")
       .single();
-    await snapshotService.from("period_snapshot").insert({
+    expect(tenantError).toBeNull();
+    expect(tenant).not.toBeNull();
+
+    const { error: snapshotError } = await snapshotService.from("period_snapshot").insert({
       tenant_id: tenant!.id,
       period_month: "2026-04-01",
       source: "backfill",
       currency: "BRL",
     });
+    expect(snapshotError).toBeNull();
 
-    await snapshotService.from("tenant").delete().eq("id", tenant!.id);
+    const { error: deleteError } = await snapshotService
+      .from("tenant")
+      .delete()
+      .eq("id", tenant!.id);
+    expect(deleteError).toBeNull();
 
-    const { data } = await snapshotService
+    const { data, error: readError } = await snapshotService
       .from("period_snapshot")
       .select("id")
       .eq("tenant_id", tenant!.id);
+    expect(readError).toBeNull();
     expect(data ?? []).toEqual([]);
   });
 });
