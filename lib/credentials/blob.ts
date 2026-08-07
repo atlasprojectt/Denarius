@@ -1,6 +1,11 @@
 import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
 
-import { LEGACY_KEY_ID, currentKey, keyById } from "./keyring.ts";
+import {
+  CredentialKeyringError,
+  LEGACY_KEY_ID,
+  currentKey,
+  keyById,
+} from "./keyring.ts";
 
 // AES-256-GCM for provider Admin keys at rest (security rule: never plaintext).
 //
@@ -113,9 +118,15 @@ export function decryptCredential(
     }
 
     throw new Error(UNREADABLE);
-  } catch {
-    // Fail closed, and say nothing: which key, which field and whether the tag
-    // or the AAD failed are all information an attacker would use.
+  } catch (cause) {
+    // A keyring that cannot be parsed is an operator configuration error, not
+    // a credential that cannot be read. Collapsing the two would answer a bad
+    // env var with "reconnect your provider" — advice that cannot work, aimed
+    // at every tenant at once.
+    if (cause instanceof CredentialKeyringError) throw cause;
+    // Otherwise fail closed, and say nothing: which key, which field and
+    // whether the tag or the AAD failed are all information an attacker would
+    // use.
     throw new Error(UNREADABLE);
   }
 }

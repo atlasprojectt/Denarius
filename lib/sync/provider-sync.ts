@@ -1,7 +1,7 @@
 import "server-only";
 
 import { providerFor } from "@/lib/connectors";
-import { decryptCredential } from "@/lib/crypto";
+import { CredentialKeyringError, decryptCredential } from "@/lib/crypto";
 import { deriveCost, type ModelPrice } from "@/lib/engine/derive";
 import { monthStartUtc, monthToDateRange } from "@/lib/engine/period";
 import { collapsePersonGrain } from "@/lib/privacy/minimize";
@@ -24,6 +24,15 @@ export type ProviderName = "openai" | "anthropic";
  */
 export const UNREADABLE_CREDENTIAL_MESSAGE =
   "Não foi possível ler a credencial guardada. Reconecte o provedor.";
+
+/**
+ * Also rendered verbatim by the connection card, so pt-BR (F2). A malformed
+ * keyring is OUR misconfiguration and it hits every tenant at once — telling
+ * them all to reconnect would send the whole fleet to re-paste Admin Keys that
+ * were never the problem. It says the opposite, on purpose.
+ */
+export const CREDENTIAL_CONFIG_MESSAGE =
+  "Erro de configuração no serviço impediu a leitura da credencial. Não é necessário reconectar; já estamos verificando.";
 
 export type SyncResult =
   | { ok: true; usageRows: number; costRows: number; monthUsd: number }
@@ -87,7 +96,16 @@ export async function runProviderSync(
       tenantId,
       provider: providerName,
     });
-  } catch {
+  } catch (cause) {
+    if (cause instanceof CredentialKeyringError) {
+      // The message a customer sees must not be the key material, nor the
+      // variable name — neither is theirs to act on. The cause goes to the
+      // server log, where the operator is.
+      console.error(
+        `[sync] credential keyring is misconfigured: ${cause.message}`,
+      );
+      return markError(CREDENTIAL_CONFIG_MESSAGE);
+    }
     return markError(UNREADABLE_CREDENTIAL_MESSAGE);
   }
 

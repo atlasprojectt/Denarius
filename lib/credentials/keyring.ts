@@ -24,6 +24,16 @@ const KEY_ID_PATTERN = /^[a-z0-9_-]{1,16}$/;
 
 export type CredentialKey = { id: string; material: Buffer };
 
+/**
+ * A keyring that cannot be parsed at all — a malformed entry, a bad key id, a
+ * key that is not 32 bytes. Distinct from "this blob cannot be decrypted"
+ * because the blame is entirely different: this is the operator's env, not a
+ * customer's stored credential, and telling a whole fleet to re-paste working
+ * Admin Keys over one bad variable is the wrong instruction to every one of
+ * them.
+ */
+export class CredentialKeyringError extends Error {}
+
 /** Key material, base64 or hex, refused unless it is exactly 32 bytes. */
 function decodeKey(raw: string, label: string): Buffer {
   const trimmed = raw.trim();
@@ -33,7 +43,9 @@ function decodeKey(raw: string, label: string): Buffer {
     const key = Buffer.from(trimmed, encoding);
     if (key.length === 32) return key;
   }
-  throw new Error(`${label} must decode to 32 bytes (base64 or hex)`);
+  throw new CredentialKeyringError(
+    `${label} must decode to 32 bytes (base64 or hex)`,
+  );
 }
 
 /**
@@ -58,11 +70,13 @@ export function readKeyring(): Map<string, CredentialKey> {
       if (trimmed === "") continue;
       const separator = trimmed.indexOf(":");
       if (separator < 1) {
-        throw new Error(`${KEYS_VAR} entries must be written as <id>:<key>`);
+        throw new CredentialKeyringError(
+          `${KEYS_VAR} entries must be written as <id>:<key>`,
+        );
       }
       const id = trimmed.slice(0, separator).trim();
       if (!KEY_ID_PATTERN.test(id)) {
-        throw new Error(
+        throw new CredentialKeyringError(
           `${KEYS_VAR} key ids must match ${KEY_ID_PATTERN.source}`,
         );
       }
@@ -70,7 +84,9 @@ export function readKeyring(): Map<string, CredentialKey> {
         // Reserved: it names the pre-rotation key, whose material comes from
         // its own variable. Letting it be redefined here would silently give
         // two meanings to the id stamped on every v1 row.
-        throw new Error(`${KEYS_VAR} cannot redefine the reserved id "${LEGACY_KEY_ID}"`);
+        throw new CredentialKeyringError(
+          `${KEYS_VAR} cannot redefine the reserved id "${LEGACY_KEY_ID}"`,
+        );
       }
       keyring.set(id, {
         id,

@@ -61,16 +61,48 @@ async function main(): Promise<void> {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
-  let query = admin
-    .from("provider_connection")
-    .select("id, tenant_id, provider, encrypted_credential")
-    .not("encrypted_credential", "is", null);
-  if (tenantId) query = query.eq("tenant_id", tenantId);
+  /**
+   * Every connection with a stored credential, read in pages.
+   *
+   * A single unpaginated select is silently truncated by PostgREST's
+   * `max-rows`, and this script would still tally clean and exit 0 — after
+   * which step 6 of the procedure retires the old key and every unscanned row
+   * becomes permanently unreadable. That is the exact outcome the format
+   * exists to prevent, so the read is exhaustive or it fails loudly.
+   *
+   * It advances by the number of rows actually returned and stops only on an
+   * EMPTY page, never on a short one: `max-rows` may be smaller than the page
+   * asked for, and treating a short page as the last would reintroduce the
+   * truncation this fixes. `order("id")` keeps the window stable, or a row
+   * could come back twice while another is skipped.
+   *
+   * A closure rather than a top-level function so the client's type is
+   * inferred — naming it would mean writing out Supabase's generic parameters.
+   */
+  const listConnections = async (): Promise<ConnectionRow[]> => {
+    const PAGE = 500;
+    const collected: ConnectionRow[] = [];
 
-  const { data, error } = await query;
-  if (error) throw new Error(`could not list connections: ${error.code}`);
+    for (let from = 0; ; ) {
+      let query = admin
+        .from("provider_connection")
+        .select("id, tenant_id, provider, encrypted_credential")
+        .not("encrypted_credential", "is", null)
+        .order("id")
+        .range(from, from + PAGE - 1);
+      if (tenantId) query = query.eq("tenant_id", tenantId);
 
-  const rows = (data ?? []) as ConnectionRow[];
+      const { data, error } = await query;
+      if (error) throw new Error(`could not list connections: ${error.code}`);
+
+      const page = (data ?? []) as ConnectionRow[];
+      if (page.length === 0) return collected;
+      collected.push(...page);
+      from += page.length;
+    }
+  };
+
+  const rows = await listConnections();
   const tally = { scanned: rows.length, alreadyCurrent: 0, rotated: 0, failed: 0 };
 
   for (const row of rows) {

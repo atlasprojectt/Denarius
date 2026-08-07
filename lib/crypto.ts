@@ -14,3 +14,4 @@ export {
   isCurrentKeyBlob,
   type CredentialContext,
 } from "./credentials/blob.ts";
+export { CredentialKeyringError } from "./credentials/keyring.ts";

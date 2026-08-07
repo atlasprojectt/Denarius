@@ -200,7 +200,7 @@ Multiple keys may be configured at once — that is what makes a rotation window
 1. **Generate** a key: `openssl rand -base64 32`. Never commit it, never paste it into a log or a PR.
 2. **Add it while the old one stays readable.** Set `CREDENTIAL_ENCRYPTION_KEYS="old:<old key>,k2:<new key>"` and `CREDENTIAL_ENCRYPTION_KEY_ID=k2` in the Vercel environment (Sensitive). Old rows still decrypt under `old`; new saves are written under `k2`. Redeploy.
 3. **Rehearse:** `npm run rotate:credentials -- --dry-run` reports what would change and writes nothing. Add `--tenant <uuid>` to scope a first pass to one tenant.
-4. **Re-encrypt:** `npm run rotate:credentials`. It reads every `provider_connection` row on the service role, skips rows already under the current key, and updates each row matched on the exact blob it read — an Admin saving a key mid-run is never overwritten. It prints a tally (`scanned/alreadyCurrent/rotated/failed`) and exits non-zero if any row failed. It never prints a key, a key id's material or a plaintext credential.
+4. **Re-encrypt:** `npm run rotate:credentials`. It reads every `provider_connection` row on the service role **in pages** (advancing by the rows actually returned and stopping only on an empty page — PostgREST's `max-rows` silently truncates a single select, and a truncated scan that still tallies clean is how rows get stranded under a key step 6 retires), skips rows already under the current key, and updates each row matched on the exact blob it read — an Admin saving a key mid-run is never overwritten. It prints a tally (`scanned/alreadyCurrent/rotated/failed`) and exits non-zero if any row failed. It never prints a key, a key id's material or a plaintext credential.
 5. **Verify** the tally: `failed: 0` and `alreadyCurrent + rotated == scanned`.
 6. **Retire the old key** — drop the `old:` entry (and `CREDENTIAL_ENCRYPTION_KEY` once no `v1` row remains). Only after step 5.
 
@@ -212,6 +212,8 @@ The script requires `NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`; 
 2. Rotate the encryption key through steps 1–6 so no stored blob is readable with the compromised key.
 3. Ask the tenant's Admin to reconnect each provider with the new Admin Key (`/ajustes/conexoes`).
 4. Rows that cannot be re-encrypted stay untouched and surface on their own (below) — they are not silently dropped.
+
+**A malformed keyring is not an unreadable credential.** `CredentialKeyringError` (thrown by `lib/credentials/keyring.ts` for an entry that cannot be parsed, a bad key id or material that is not 32 bytes) propagates instead of collapsing into the generic failure: it is the operator's env, not a customer's stored key, and it hits every tenant at once. `runProviderSync` reports it as `CREDENTIAL_CONFIG_MESSAGE`, which tells the tenant explicitly **not** to reconnect, and logs the real cause server-side. A key id that is merely absent stays indistinguishable from tampering — that one must still fail closed.
 
 **A key that cannot decrypt degrades, it does not cascade.** `runProviderSync` resolves the credential *outside* its sync `try`: an unreadable blob marks the connection `status: "error"` with `UNREADABLE_CREDENTIAL_MESSAGE` ("Não foi possível ler a credencial guardada. Reconecte o provedor."), which the connections card renders and the freshness banner turns into "Reconectar". The daily cron counts it as one failure and continues to the next tenant — the sync is the one cross-tenant path, and one bad row must not take the fleet down.
 

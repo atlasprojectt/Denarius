@@ -3,6 +3,7 @@ import { createCipheriv, randomBytes } from "node:crypto";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import {
+  CredentialKeyringError,
   decryptCredential,
   encryptCredential,
   isCurrentKeyBlob,
@@ -279,5 +280,42 @@ describe("failing closed", () => {
     expect(message).not.toContain(SECRET);
     expect(message).not.toContain(KEY_A);
     expect(message).not.toContain("k1");
+  });
+});
+
+describe("a misconfigured keyring is not an unreadable credential", () => {
+  // The two failures have different blame and different remedies. Collapsing
+  // them answers a bad env var with "reconnect your provider" — advice that
+  // cannot work, delivered to every tenant at once (#75).
+  it("throws CredentialKeyringError, not the generic unreadable error", () => {
+    process.env.CREDENTIAL_ENCRYPTION_KEYS = `k1:${KEY_A}`;
+    const blob = encryptCredential(SECRET, ROW);
+
+    for (const malformed of [
+      KEY_A, // no "<id>:" prefix
+      `WRONG CASE:${KEY_A}`,
+      `legacy:${KEY_A}`, // the reserved id
+      "k1:too-short",
+    ]) {
+      process.env.CREDENTIAL_ENCRYPTION_KEYS = malformed;
+      expect(() => decryptCredential(blob, ROW), malformed).toThrow(
+        CredentialKeyringError,
+      );
+    }
+  });
+
+  it("still fails closed for a key id that is merely absent", () => {
+    // Not a config error: the keyring parsed fine, it just does not hold the
+    // key that wrote this blob. That must stay indistinguishable from tampering.
+    process.env.CREDENTIAL_ENCRYPTION_KEYS = `k1:${KEY_A}`;
+    const blob = encryptCredential(SECRET, ROW);
+
+    process.env.CREDENTIAL_ENCRYPTION_KEYS = `k2:${KEY_B}`;
+    expect(() => decryptCredential(blob, ROW)).toThrow(
+      "credential could not be decrypted",
+    );
+    expect(() => decryptCredential(blob, ROW)).not.toThrow(
+      CredentialKeyringError,
+    );
   });
 });
