@@ -5,6 +5,7 @@ import { NextResponse } from "next/server";
 import { monthStartUtc } from "@/lib/engine/period";
 import { sendBudgetAlerts } from "@/lib/notify/alerts";
 import { emailChannel } from "@/lib/notify/channel";
+import { closePeriods } from "@/lib/snapshot/close";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { runProviderSync, type ProviderName } from "@/lib/sync/provider-sync";
 
@@ -74,11 +75,17 @@ export async function GET(request: Request) {
     alerts.undeliverable += result.undeliverable;
   }
 
+  // Freeze the previous month once it has ended (#94) — last, so the month
+  // being closed is as complete as this run's sync could make it. Idempotent:
+  // the (tenant, period_month) unique key absorbs every repeat run.
+  const closed = await closePeriods();
+
   return NextResponse.json({
     ran: connections.length,
     synced,
     failed,
     alerts,
+    closed,
     at: new Date().toISOString(),
   });
 }

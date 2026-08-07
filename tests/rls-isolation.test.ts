@@ -730,3 +730,162 @@ describe.skipIf(!auditReady)("audit_log isolation (issue #73)", () => {
     expect(data ?? []).toEqual([]);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Appended for issue #94 â€” period_snapshot. New table, new block, at the end.
+// ---------------------------------------------------------------------------
+
+const periodSnapshotReady = ready && (await tableApplied("period_snapshot"));
+if (ready && !periodSnapshotReady) {
+  console.warn(
+    "\n[rls-isolation] period_snapshot table not found â€” apply " +
+      "supabase/migrations/*_period_snapshot.sql to cover it here too.\n",
+  );
+}
+
+describe.skipIf(!periodSnapshotReady)("period_snapshot isolation (issue #94)", () => {
+  // Self-contained, like every appended block: it brings its own fixture rather
+  // than reaching into the shared one above.
+  const snapshotService = createClient(url ?? "http://skip", serviceKey ?? "skip", {
+    auth: { persistSession: false },
+  });
+  const snapshotStamp = Date.now();
+  const snapshotSeeded: { tenantId: string; userId: string }[] = [];
+  let snapshotSession: SupabaseClient;
+
+  async function seedSnapshotTenant(
+    label: string,
+  ): Promise<{ tenantId: string; userId: string }> {
+    const email = `snapshot-${label}-${snapshotStamp}@denarius-test.dev`;
+    const password = `Snapshot-${label}-${snapshotStamp}!`;
+
+    const { data: tenant, error: tenantError } = await snapshotService
+      .from("tenant")
+      .insert({ name: `Snapshot ${label} ${snapshotStamp}` })
+      .select("id")
+      .single();
+    if (tenantError) throw tenantError;
+
+    const { data: authUser, error: authError } =
+      await snapshotService.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+      });
+    if (authError) throw authError;
+
+    const { error: appUserError } = await snapshotService.from("app_user").insert({
+      id: authUser.user.id,
+      tenant_id: tenant.id,
+      email,
+      role: "admin",
+    });
+    if (appUserError) throw appUserError;
+
+    const { error: snapshotError } = await snapshotService
+      .from("period_snapshot")
+      .insert({
+        tenant_id: tenant.id,
+        period_month: "2026-06-01",
+        source: "auto",
+        currency: "BRL",
+        api_usd: 150,
+        combined_amount: 1950,
+        verdict_status: "green",
+        verdict_sentence: `frozen-${label}-${snapshotStamp}`,
+        breakdown: { teams: [] },
+      });
+    if (snapshotError) throw snapshotError;
+
+    return { tenantId: tenant.id, userId: authUser.user.id };
+  }
+
+  beforeAll(async () => {
+    snapshotSeeded.push(
+      await seedSnapshotTenant("a"),
+      await seedSnapshotTenant("b"),
+    );
+    snapshotSession = createClient(url!, anonKey!, {
+      auth: { persistSession: false },
+    });
+    const { error } = await snapshotSession.auth.signInWithPassword({
+      email: `snapshot-a-${snapshotStamp}@denarius-test.dev`,
+      password: `Snapshot-a-${snapshotStamp}!`,
+    });
+    if (error) throw error;
+  });
+
+  afterAll(async () => {
+    for (const seed of snapshotSeeded) {
+      await snapshotService.from("tenant").delete().eq("id", seed.tenantId);
+      await snapshotService.auth.admin.deleteUser(seed.userId);
+    }
+  });
+
+  it("a tenant reads its own frozen months and never another tenant's", async () => {
+    const { data } = await snapshotSession
+      .from("period_snapshot")
+      .select("tenant_id, verdict_sentence");
+    expect(data?.length).toBe(1);
+    expect(data?.[0].tenant_id).toBe(snapshotSeeded[0].tenantId);
+    expect(data?.[0].verdict_sentence).toBe(`frozen-a-${snapshotStamp}`);
+
+    const { data: cross } = await snapshotSession
+      .from("period_snapshot")
+      .select("id")
+      .eq("tenant_id", snapshotSeeded[1].tenantId);
+    expect(cross ?? []).toEqual([]);
+  });
+
+  it("a session cannot write or rewrite a frozen month", async () => {
+    // No write policy at all: documentation a user could edit is worthless.
+    const { error: insertDenied } = await snapshotSession
+      .from("period_snapshot")
+      .insert({
+        tenant_id: snapshotSeeded[0].tenantId,
+        period_month: "2026-05-01",
+        source: "auto",
+        currency: "BRL",
+      });
+    expect(insertDenied).not.toBeNull();
+
+    const { data: updated } = await snapshotSession
+      .from("period_snapshot")
+      .update({ verdict_sentence: "forged" })
+      .eq("tenant_id", snapshotSeeded[0].tenantId)
+      .select("id");
+    expect(updated ?? []).toEqual([]);
+  });
+
+  it("the unique key makes closing idempotent at the database level", async () => {
+    const { error } = await snapshotService.from("period_snapshot").insert({
+      tenant_id: snapshotSeeded[0].tenantId,
+      period_month: "2026-06-01",
+      source: "auto",
+      currency: "BRL",
+    });
+    expect(error).not.toBeNull();
+  });
+
+  it("deleting the tenant takes its frozen months with it", async () => {
+    const { data: tenant } = await snapshotService
+      .from("tenant")
+      .insert({ name: `Snapshot cascade ${snapshotStamp}` })
+      .select("id")
+      .single();
+    await snapshotService.from("period_snapshot").insert({
+      tenant_id: tenant!.id,
+      period_month: "2026-04-01",
+      source: "backfill",
+      currency: "BRL",
+    });
+
+    await snapshotService.from("tenant").delete().eq("id", tenant!.id);
+
+    const { data } = await snapshotService
+      .from("period_snapshot")
+      .select("id")
+      .eq("tenant_id", tenant!.id);
+    expect(data ?? []).toEqual([]);
+  });
+});

@@ -91,10 +91,11 @@ The forwarded request headers are built **fresh at each use, never captured once
 5. **Engine** (pure functions): spend vs budget, **projected margin**, linear run-rate projection with **day-5 guard**, threshold crossings, top drivers, **verdict** (green/amber/red + one deterministic sentence).
 6. **Findings**: `budget_threshold` (warnings), `apontamento` (calm observations), `seats_vs_roster` (secondary waste). Stateless — no user-facing status.
 7. **Notify**: event alert once per (team, threshold-level, period), escalation-only re-fire, via `notification_log`; weekly digest to Admins (opt-out). Numbers injected into narration; the LLM never computes.
+8. **Close** (#94, same daily cron, after the sync and the alerts): once a month has ended, freeze it into `period_snapshot` — one row per `(tenant, period_month)`, so a repeat run creates nothing. **Freezing, not recomputing**: `subscription` has no period column (seat count and unit price are current state, mutated in place), so a past month recomputed later would be priced with today's seat configuration. The report layer reads the frozen row and never live spend.
 
 ## 6. Conceptual data model
 
-See the full table in [prd.md → Data & security](prd.md). Entities: `tenant`, `user`, `employee`, `team` (+ implicit Unattributed), `provider_connection`, `subscription` (daily accrual), `usage_daily`, `cost_daily`, `budget` (thresholds + frozen FX), `model_price` (append-only), `finding`, `notification_log`, `invitation`, `audit_log` (append-only, Admin-read).
+See the full table in [prd.md → Data & security](prd.md). Entities: `tenant`, `user`, `employee`, `team` (+ implicit Unattributed), `provider_connection`, `subscription` (daily accrual), `usage_daily`, `cost_daily`, `budget` (thresholds + frozen FX), `model_price` (append-only), `finding`, `notification_log`, `invitation`, `audit_log` (append-only, Admin-read), `period_snapshot` (the frozen closed month — team aggregates only, never a person, so it cannot become the back door around the privacy switches).
 
 Implementation note: the conceptual `user` entity is the **`app_user`** table (`user` is reserved in Postgres; `auth.users` belongs to Supabase Auth). `app_user.display_name` is presentation-only profile metadata for the Denarius UI; authentication email remains owned by Supabase Auth. The Unattributed bucket is a `team` row flagged `is_unattributed` (internal name, UI renders its label from the flag).
 

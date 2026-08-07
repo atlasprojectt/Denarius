@@ -40,6 +40,9 @@ export type CockpitInput = {
   teams: CockpitTeamInput[];
   /** Provider-reported cost (USD) for the "where the money goes" list. */
   composition: { provider: string; usd: number }[];
+  /** The period has ENDED — a frozen month (#94). Only changes the verdict's
+   *  tense; every number is the same. */
+  closed?: boolean;
 };
 
 /** The configured sub-100% warn threshold as a whole percent (default 80). */
@@ -212,6 +215,7 @@ export function buildCockpit(input: CockpitInput): Cockpit {
     org,
     teams: teams.map((t) => ({ teamId: t.teamId, name: t.teamName, evaluation: t.evaluation })),
     currency,
+    closed: input.closed,
   });
 
   // Needs-attention teams carry a finding; order them by the same budget-impact
