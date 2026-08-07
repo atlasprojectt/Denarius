@@ -1,4 +1,4 @@
--- Denarius — issue #78: make Data API privileges explicit.
+-- Denarius — issue #78: make Data API privileges explicit before feature tables opt in.
 --
 -- Older hosted Supabase projects auto-granted new public tables to the API
 -- roles. New local stacks do not, so the RLS suite correctly exposed that the
