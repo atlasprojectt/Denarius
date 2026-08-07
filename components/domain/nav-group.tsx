@@ -18,6 +18,7 @@ import {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
+  useSidebar,
 } from "@/components/ui/sidebar";
 
 // Sidebar nav engine, from the shadcn block @efferd/app-shell-3 (2026-08-02,
@@ -40,6 +41,8 @@ export type SidebarNavGroup = {
 };
 
 export function NavGroup({ label, items }: SidebarNavGroup) {
+  const { setOpenMobile } = useSidebar();
+
   return (
     <SidebarGroup>
       {/* On the collapsed rail the primitive hides the label with `-mt-8
@@ -70,6 +73,7 @@ export function NavGroup({ label, items }: SidebarNavGroup) {
                   <SidebarMenuButton
                     isActive={item.isActive}
                     tooltip={item.title}
+                    className="h-11 md:h-8"
                   />
                 }
               >
@@ -82,7 +86,11 @@ export function NavGroup({ label, items }: SidebarNavGroup) {
                   {item.subItems.map((subItem) => (
                     <SidebarMenuSubItem key={subItem.title}>
                       <SidebarMenuSubButton asChild isActive={subItem.isActive}>
-                        <Link href={subItem.path ?? "#"}>
+                        <Link
+                          href={subItem.path ?? "#"}
+                          onClick={() => setOpenMobile(false)}
+                          className="min-h-11 md:min-h-0"
+                        >
                           {subItem.icon}
                           <span>{subItem.title}</span>
                         </Link>
@@ -98,8 +106,12 @@ export function NavGroup({ label, items }: SidebarNavGroup) {
                 asChild
                 isActive={item.isActive}
                 tooltip={item.title}
+                className="h-11 md:h-8"
               >
-                <Link href={item.path ?? "#"}>
+                <Link
+                  href={item.path ?? "#"}
+                  onClick={() => setOpenMobile(false)}
+                >
                   {item.icon}
                   <span>{item.title}</span>
                 </Link>

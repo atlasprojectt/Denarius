@@ -159,7 +159,6 @@ export default async function HomePage() {
             teams={allTeams}
             attentionCount={cockpit.needsAttention.length}
             currency={currency}
-            variant="table"
           />
         </div>
       </div>

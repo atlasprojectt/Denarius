@@ -8,6 +8,12 @@ import { requireAdmin } from "@/lib/auth/session";
 import { providerFor } from "@/lib/connectors";
 import { encryptCredential } from "@/lib/crypto";
 import { money } from "@/lib/money";
+import {
+  dbFailure,
+  logFailure,
+  logSkipped,
+  logThrown,
+} from "@/lib/logging/server-log";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { runProviderSync, type ProviderName } from "@/lib/sync/provider-sync";
 import { anthropicKeySchema, openAiKeySchema } from "@/lib/validation";
@@ -58,6 +64,7 @@ async function saveKey(
 
   const auth = await requireAdmin();
   if (auth.error !== undefined) return { error: auth.error };
+  const { tenantId } = auth.session;
 
   const parsed = keySchema.safeParse({ adminKey: formData.get("adminKey") });
   if (!parsed.success) return { error: parsed.error.issues[0].message };
@@ -66,24 +73,45 @@ async function saveKey(
   // Test BEFORE storing anything — a bad key never lands in the database.
   const test = await providerFor(providerName, adminKey).testConnection();
   if (!test.ok) {
+    logFailure("provider.test", tenantId, {
+      provider: providerName,
+      reason: test.reason,
+    });
     return {
       error: test.reason === "invalid_key" ? copy.invalidKey : copy.network,
     };
   }
 
-  const { tenantId } = auth.session;
   const admin = createAdminClient();
 
   // Save or rotate? The row's existence answers it — never the ciphertext,
   // which is not read here and is not needed to tell the two apart (#73).
-  const { data: before } = await admin
+  const { data: before, error: beforeError } = await admin
     .from("provider_connection")
     .select("status")
     .eq("tenant_id", tenantId)
     .eq("provider", providerName)
     .maybeSingle();
+  if (beforeError) {
+    logFailure("provider.inspect", tenantId, {
+      provider: providerName,
+      ...dbFailure(beforeError),
+    });
+    return { error: copy.saveFailed };
+  }
   const isRotation =
     (before as { status: string } | null)?.status === "active";
+
+  let encryptedCredential: string;
+  try {
+    encryptedCredential = encryptCredential(adminKey, {
+      tenantId,
+      provider: providerName,
+    });
+  } catch (cause) {
+    logThrown("provider.encrypt", tenantId, cause);
+    return { error: copy.saveFailed };
+  }
 
   const { error } = await admin.from("provider_connection").upsert(
     {
@@ -91,17 +119,20 @@ async function saveKey(
       provider: providerName,
       // Bound to the row it is stored in (#75): a blob moved to another
       // tenant's or another provider's row fails to decrypt.
-      encrypted_credential: encryptCredential(adminKey, {
-        tenantId,
-        provider: providerName,
-      }),
+      encrypted_credential: encryptedCredential,
       status: "active",
       last_sync_error: null,
       updated_at: new Date().toISOString(),
     },
     { onConflict: "tenant_id,provider" },
   );
-  if (error) return { error: copy.saveFailed };
+  if (error) {
+    logFailure("provider.save", tenantId, {
+      provider: providerName,
+      ...dbFailure(error),
+    });
+    return { error: copy.saveFailed };
+  }
 
   await recordAudit(
     auth.session,
@@ -149,8 +180,20 @@ async function revokeKey(
     )
     .eq("tenant_id", auth.session.tenantId)
     .eq("provider", providerName);
-  if (error) return { error: copy.revokeFailed };
-  if (count === 0) return { error: copy.noConnection };
+  if (error) {
+    logFailure("provider.revoke", auth.session.tenantId, {
+      provider: providerName,
+      ...dbFailure(error),
+    });
+    return { error: copy.revokeFailed };
+  }
+  if (count === 0) {
+    logSkipped("provider.revoke", auth.session.tenantId, {
+      provider: providerName,
+      reason: "no active connection",
+    });
+    return { error: copy.noConnection };
+  }
 
   await recordAudit(auth.session, "provider.key_revoked", {
     target: providers[providerName].label,

@@ -40,14 +40,14 @@ export default async function LoginPage({
         <nav className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
           <Link
             href="/privacidade"
-            className="underline-offset-4 hover:text-foreground hover:underline"
+            className="inline-flex min-h-11 items-center underline-offset-4 hover:text-foreground hover:underline"
           >
             {copy.privacy}
           </Link>
           <span aria-hidden>{copy.separator}</span>
           <Link
             href="/termos"
-            className="underline-offset-4 hover:text-foreground hover:underline"
+            className="inline-flex min-h-11 items-center underline-offset-4 hover:text-foreground hover:underline"
           >
             {copy.terms}
           </Link>

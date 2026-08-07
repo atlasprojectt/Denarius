@@ -2,6 +2,7 @@ import "server-only";
 
 import { weekOverWeek } from "@/lib/engine/week-change";
 import { topDrivers } from "@/lib/engine/drivers";
+import { logFailure, logSkipped } from "@/lib/logging/server-log";
 import type { Narrator } from "@/lib/narrate/client";
 import {
   buildDigestFacts,
@@ -37,13 +38,16 @@ export async function sendWeeklyDigest(
 
   // No org budget → cold start; there is no verdict to summarize yet.
   if (snapshot.cockpit.state !== "ready") {
+    logSkipped("notify.digest", tenantId, { reason: "no org budget" });
     return { tenantId, outcome: "no-budget", narrated: false };
   }
   const recipients = digestRecipients(snapshot.users);
   if (recipients.length === 0) {
+    logSkipped("notify.digest", tenantId, { reason: "no recipients" });
     return { tenantId, outcome: "no-recipients", narrated: false };
   }
   if (channel === null) {
+    logSkipped("notify.digest", tenantId, { reason: "no channel configured" });
     return { tenantId, outcome: "no-channel", narrated: false };
   }
 
@@ -77,6 +81,17 @@ export async function sendWeeklyDigest(
       appUrl: appBaseUrl(),
     }),
   );
+
+  if (!sendResult.ok) {
+    logFailure("notify.digest", tenantId, { reason: sendResult.error });
+  } else if (safeNarration === null) {
+    // Sent, but on the deterministic template. Worth a line: a narrator that
+    // is failing or answering with un-injected numbers degrades silently by
+    // design, and silence is exactly how it would stay unnoticed.
+    logSkipped("notify.digest_narration", tenantId, {
+      reason: narrator === null ? "no narrator configured" : "narration rejected",
+    });
+  }
 
   return {
     tenantId,

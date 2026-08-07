@@ -3,6 +3,7 @@ import "server-only";
 import { activeLevels, type ThresholdLevel } from "@/lib/engine/thresholds";
 import { monthStartUtc } from "@/lib/engine/period";
 import { buildBudgetThresholdFinding } from "@/lib/findings/budget-threshold";
+import { dbFailure, logFailure, logSkipped } from "@/lib/logging/server-log";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 import type { NotificationChannel } from "./channel";
@@ -43,12 +44,22 @@ export async function sendBudgetAlerts(
 
   const admin = createAdminClient();
   const periodMonth = monthStartUtc(now);
-  const { data: logData } = await admin
+  const { data: logData, error: readError } = await admin
     .from("notification_log")
     .select("target_id, level")
     .eq("tenant_id", tenantId)
     .eq("channel", "email")
     .eq("period_month", periodMonth);
+  if (readError) {
+    logFailure("notify.alert_log", tenantId, {
+      step: "read",
+      ...dbFailure(readError),
+    });
+    // Without the dedup state, sending could repeat an alert the customer
+    // already received. Fail closed and try again on the next cron run.
+    result.failed = 1;
+    return result;
+  }
 
   const sentByTarget = new Map<string, ThresholdLevel[]>();
   for (const row of (logData ?? []) as LogRow[]) {
@@ -70,6 +81,13 @@ export async function sendBudgetAlerts(
     // A crossing exists but there is no way to deliver it: do NOT record the
     // log — the alert must fire on the first run after email is configured.
     if (channel === null || recipients.length === 0) {
+      // Recorded, because "no alert was sent" and "no threshold was crossed"
+      // look identical from the outside, and only one of them is a problem.
+      logSkipped("notify.alert", tenantId, {
+        scope: scope.scope,
+        level: plan.emailLevel,
+        reason: channel === null ? "no channel configured" : "no recipients",
+      });
       result.undeliverable += 1;
       continue;
     }
@@ -94,6 +112,11 @@ export async function sendBudgetAlerts(
       }),
     );
     if (!sendResult.ok) {
+      logFailure("notify.alert", tenantId, {
+        scope: scope.scope,
+        level: plan.emailLevel,
+        reason: sendResult.error,
+      });
       result.failed += 1;
       continue;
     }
@@ -116,8 +139,17 @@ export async function sendBudgetAlerts(
     // A failed log after a successful send means a possible duplicate next
     // run — acceptable; the alternative (log first) could silence a real
     // alert that was never delivered.
-    if (logError) result.failed += 1;
-    else result.sent += 1;
+    if (logError) {
+      // The e-mail went out; the dedup row did not. Worth a line: the next run
+      // may send it again, and nothing else records why.
+      logFailure("notify.alert_log", tenantId, {
+        scope: scope.scope,
+        ...dbFailure(logError),
+      });
+      result.failed += 1;
+    } else {
+      result.sent += 1;
+    }
   }
 
   return result;
