@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { RiFileList3Line } from "@remixicon/react";
+import { RiErrorWarningLine, RiFileList3Line } from "@remixicon/react";
 
 import { EmptyState } from "@/components/domain/empty-state";
 import { PageContainer } from "@/components/domain/page-container";
@@ -33,7 +33,8 @@ export default async function AuditSettingsPage() {
   // data layer — this is the second lock, not the only one (issue #73).
   if (!canEditCompanySettings(role ?? "viewer")) notFound();
 
-  const [entries, teams] = await Promise.all([listAuditEntries(), listTeams()]);
+  const [audit, teams] = await Promise.all([listAuditEntries(), listTeams()]);
+  const { entries } = audit;
   // Budget targets are stored as team ids (the write path has no name in hand
   // and must not pay for one); the read path already lists teams.
   const teamName = new Map(teams.map((team) => [team.id, team.name]));
@@ -53,7 +54,15 @@ export default async function AuditSettingsPage() {
           <CardDescription>{copy.cardDescription}</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-3">
-          {entries.length === 0 ? (
+          {!audit.ok ? (
+            // Never the empty state here: "nothing was recorded" is a claim
+            // about the past, and this screen has no idea whether it is true.
+            <EmptyState
+              icon={<RiErrorWarningLine />}
+              title={copy.unavailableTitle}
+              description={copy.unavailableDescription}
+            />
+          ) : entries.length === 0 ? (
             <EmptyState
               icon={<RiFileList3Line />}
               title={copy.emptyTitle}

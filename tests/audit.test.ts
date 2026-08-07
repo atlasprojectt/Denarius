@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { ACTION_LABEL } from "@/app/(app)/ajustes/auditoria/copy";
 import type { AuditAction } from "@/lib/audit/log";
@@ -123,5 +123,68 @@ describe("action phrasing", () => {
       // The enum value itself is never what a reader sees.
       expect(ACTION_LABEL[action]).not.toContain(".");
     }
+  });
+});
+
+describe("reading the trail — a failed read is not an empty trail", () => {
+  // The one failure mode an evidence surface must not have. A swallowed error
+  // rendered "Nenhuma ação registrada ainda", which is a confident claim that
+  // no administrative action ever happened — and deploying before the
+  // migration lands produces exactly that (#73).
+  async function readWith(result: { data: unknown; error: unknown }) {
+    vi.resetModules();
+    vi.doMock("server-only", () => ({}));
+    vi.doMock("@/lib/supabase/server", () => ({
+      createClient: async () => ({
+        from: () => {
+          const query = {
+            select: () => query,
+            order: () => query,
+            limit: () => Promise.resolve(result),
+          };
+          return query;
+        },
+      }),
+    }));
+    const { listAuditEntries } = await import("@/lib/audit/queries");
+    return listAuditEntries();
+  }
+
+  it("reports a failed read instead of claiming the trail is empty", async () => {
+    const read = await readWith({ data: null, error: { code: "42P01" } });
+
+    expect(read.ok).toBe(false);
+    expect(read.entries).toEqual([]);
+  });
+
+  it("still reports a genuinely empty trail as a successful read", async () => {
+    const read = await readWith({ data: [], error: null });
+
+    expect(read.ok).toBe(true);
+    expect(read.entries).toEqual([]);
+  });
+
+  it("maps rows on a successful read", async () => {
+    const read = await readWith({
+      data: [
+        {
+          id: "a-1",
+          actor_email: "admin@tenant.test",
+          action: "budget.updated",
+          target: "Empresa",
+          created_at: "2026-08-05T12:00:00Z",
+        },
+      ],
+      error: null,
+    });
+
+    expect(read.ok).toBe(true);
+    expect(read.entries[0]).toEqual({
+      id: "a-1",
+      actorEmail: "admin@tenant.test",
+      action: "budget.updated",
+      target: "Empresa",
+      createdAt: "2026-08-05T12:00:00Z",
+    });
   });
 });

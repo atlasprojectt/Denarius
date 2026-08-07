@@ -14,6 +14,12 @@ export const copy = {
   emptyTitle: "Nenhuma ação registrada ainda",
   emptyDescription:
     "Mudanças de orçamento, conexões, acessos e privacidade aparecem aqui assim que acontecerem.",
+  // Distinct from the empty state on purpose: one says nothing happened, the
+  // other says we could not find out. Only the second one can be wrong in a
+  // way that misleads.
+  unavailableTitle: "Não foi possível carregar o registro",
+  unavailableDescription:
+    "O histórico existe, mas não conseguimos lê-lo agora. Recarregue em instantes; se continuar, fale com o suporte.",
   limitNote: (limit: number) => `Mostrando as ${limit} ações mais recentes.`,
 };
 
