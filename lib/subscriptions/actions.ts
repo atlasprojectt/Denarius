@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import { recordAudit } from "@/lib/audit/log";
 import { requireAdmin } from "@/lib/auth/session";
+import { dbFailure, logFailure } from "@/lib/logging/server-log";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isOwnedTeam } from "@/lib/teams/queries";
 import {
@@ -52,7 +53,7 @@ export async function createSubscription(
 
   // Independent reads → parallel. Amount is stored in the tenant's display
   // currency (day-zero, pre-connectors).
-  const [ownedTeam, { data: tenant }] = await Promise.all([
+  const [ownedTeam, { data: tenant, error: tenantError }] = await Promise.all([
     isOwnedTeam(admin, tenantId, parsed.data.teamId),
     admin
       .from("tenant")
@@ -61,6 +62,10 @@ export async function createSubscription(
       .maybeSingle(),
   ]);
   if (!ownedTeam) return { error: "Escolha um time válido." };
+  if (tenantError) {
+    logFailure("subscription.currency", tenantId, dbFailure(tenantError));
+    return { error: "Não foi possível salvar. Tente novamente." };
+  }
   const currency =
     (tenant as { display_currency: string } | null)?.display_currency ?? "BRL";
 
@@ -72,7 +77,10 @@ export async function createSubscription(
     currency,
     team_id: parsed.data.teamId,
   });
-  if (error) return { error: "Não foi possível salvar. Tente novamente." };
+  if (error) {
+    logFailure("subscription.create", tenantId, dbFailure(error));
+    return { error: "Não foi possível salvar. Tente novamente." };
+  }
 
   await recordAudit(auth.session, "subscription.created", {
     target: parsed.data.tool,
@@ -134,6 +142,10 @@ export async function updateSubscription(
     .eq("id", parsed.data.subscriptionId)
     .eq("tenant_id", tenantId);
   if (error || count === 0) {
+    logFailure("subscription.update", tenantId, {
+      matched: count ?? 0,
+      ...dbFailure(error),
+    });
     return { error: "Não foi possível salvar. Tente novamente." };
   }
 
@@ -173,7 +185,10 @@ export async function deleteSubscription(
     .eq("id", parsed.data.subscriptionId)
     .eq("tenant_id", tenantId)
     .select("tool, seat_count, unit_price");
-  if (error) return { error: "Não foi possível remover. Tente novamente." };
+  if (error) {
+    logFailure("subscription.delete", tenantId, dbFailure(error));
+    return { error: "Não foi possível remover. Tente novamente." };
+  }
   // Idempotent: a repeated submit (or a cross-tenant id, filtered out by the
   // tenant scope above) matches nothing — the desired end state already holds,
   // so this is not an error (QA-05 destructive-action contract).

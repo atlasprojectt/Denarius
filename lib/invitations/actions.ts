@@ -16,6 +16,7 @@ import {
 } from "@/lib/auth/rate-limit";
 import { requireAdmin } from "@/lib/auth/session";
 import { emailChannel } from "@/lib/notify/channel";
+import { dbFailure, logFailure, logSkipped } from "@/lib/logging/server-log";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -86,12 +87,19 @@ export async function inviteUser(
   const admin = createAdminClient();
 
   // Already inside this tenant → nothing to invite.
-  const { data: existing } = await admin
+  const { data: existing, error: existingError } = await admin
     .from("app_user")
     .select("id")
     .eq("tenant_id", auth.session.tenantId)
     .ilike("email", email)
     .maybeSingle();
+  if (existingError) {
+    logFailure("invitation.create", auth.session.tenantId, {
+      step: "existing_user",
+      ...dbFailure(existingError),
+    });
+    return { error: "Não foi possível criar o convite. Tente novamente." };
+  }
   if (existing) {
     return {
       error: "Esta pessoa já tem acesso a este espaço.",
@@ -122,6 +130,7 @@ export async function inviteUser(
         fieldErrors: { email: "Convite já pendente." },
       };
     }
+    logFailure("invitation.create", auth.session.tenantId, dbFailure(error));
     return { error: "Não foi possível criar o convite. Tente novamente." };
   }
 
@@ -139,11 +148,17 @@ export async function inviteUser(
   let emailed = false;
   const channel = emailChannel();
   if (channel) {
-    const { data: tenant } = await admin
+    const { data: tenant, error: tenantError } = await admin
       .from("tenant")
       .select("name")
       .eq("id", auth.session.tenantId)
       .maybeSingle();
+    if (tenantError) {
+      logFailure("invitation.send", auth.session.tenantId, {
+        step: "tenant_name",
+        ...dbFailure(tenantError),
+      });
+    }
     const result = await channel.send(
       renderInvite({
         to: email,
@@ -153,6 +168,15 @@ export async function inviteUser(
       }),
     );
     emailed = result.ok;
+    if (!result.ok) {
+      logFailure("invitation.send", auth.session.tenantId, {
+        reason: result.error,
+      });
+    }
+  } else {
+    logSkipped("invitation.send", auth.session.tenantId, {
+      reason: "no channel configured",
+    });
   }
 
   revalidatePath("/ajustes/usuarios");
@@ -189,7 +213,10 @@ export async function revokeInvitation(
     // The updated row names the invitee for the audit entry — never the hash.
     .select("email, role");
 
-  if (error) return { error: "Não foi possível revogar o convite. Tente novamente." };
+  if (error) {
+    logFailure("invitation.revoke", auth.session.tenantId, dbFailure(error));
+    return { error: "Não foi possível revogar o convite. Tente novamente." };
+  }
 
   const invitation = ((revoked ?? []) as { email: string; role: string }[])[0];
   if (invitation) {
@@ -232,11 +259,18 @@ export async function acceptInvitation(
   }
 
   const admin = createAdminClient();
-  const { data } = await admin
+  const { data, error: lookupError } = await admin
     .from("invitation")
     .select("id, tenant_id, email, role, expires_at, accepted_at, revoked_at")
     .eq("token_hash", hashToken(parsed.data.token))
     .maybeSingle();
+  if (lookupError) {
+    logFailure("invitation.accept", null, {
+      step: "lookup",
+      ...dbFailure(lookupError),
+    });
+    return { error: "Este convite não é mais válido. Peça um novo ao administrador." };
+  }
   const invitation = data as {
     id: string;
     tenant_id: string;
@@ -283,6 +317,10 @@ export async function acceptInvitation(
           "Este e-mail já tem uma conta no Denarius. Faça login com ela — um e-mail pertence a um único espaço.",
       };
     }
+    logFailure("invitation.accept", invitation.tenant_id, {
+      step: "create_auth_user",
+      ...dbFailure(createError),
+    });
     return { error: "Não foi possível criar a conta. Tente novamente." };
   }
 
@@ -295,15 +333,26 @@ export async function acceptInvitation(
   if (userError) {
     // Never strand an auth user with no tenant: they would land on /onboarding
     // and create a second company out of an invitation.
-    await admin.auth.admin.deleteUser(created.user.id);
+    const { error: rollbackError } = await admin.auth.admin.deleteUser(created.user.id);
+    logFailure("invitation.accept", invitation.tenant_id, {
+      step: "create_membership",
+      rollbackCode: rollbackError?.code ?? null,
+      ...dbFailure(userError),
+    });
     return { error: "Não foi possível concluir o convite. Tente novamente." };
   }
 
   // Burn the token only after the membership exists.
-  await admin
+  const { error: burnError } = await admin
     .from("invitation")
     .update({ accepted_at: new Date().toISOString() })
     .eq("id", invitation.id);
+  if (burnError) {
+    logFailure("invitation.accept", invitation.tenant_id, {
+      step: "burn_token",
+      ...dbFailure(burnError),
+    });
+  }
 
   // This path runs unauthenticated by design, so the actor is the invitee —
   // recorded as themselves rather than skipped, which would leave the one
@@ -324,7 +373,13 @@ export async function acceptInvitation(
     password: parsed.data.password,
   });
   // The account exists either way — send them to the door rather than fail.
-  if (signInError) redirect("/login");
+  if (signInError) {
+    logFailure("invitation.accept", invitation.tenant_id, {
+      step: "sign_in",
+      ...dbFailure(signInError),
+    });
+    redirect("/login");
+  }
 
   redirect("/");
 }

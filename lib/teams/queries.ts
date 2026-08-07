@@ -2,6 +2,7 @@ import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { dbFailure, logFailure } from "@/lib/logging/server-log";
 import { createClient } from "@/lib/supabase/server";
 
 export type Team = { id: string; name: string };
@@ -9,11 +10,12 @@ export type Team = { id: string; name: string };
 /** People teams for selects and listings — excludes the internal Unattributed bucket. */
 export async function listTeams(): Promise<Team[]> {
   const supabase = await createClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("team")
     .select("id, name")
     .eq("is_unattributed", false)
     .order("name");
+  if (error) logFailure("team.list", null, dbFailure(error));
   return (data ?? []) as Team[];
 }
 
@@ -28,12 +30,16 @@ export async function isOwnedTeam(
   teamId: string | null,
 ): Promise<boolean> {
   if (teamId === null) return true;
-  const { data } = await client
+  const { data, error } = await client
     .from("team")
     .select("is_unattributed")
     .eq("id", teamId)
     .eq("tenant_id", tenantId)
     .maybeSingle();
+  if (error) {
+    logFailure("team.ownership", tenantId, dbFailure(error));
+    return false;
+  }
   const team = data as { is_unattributed: boolean } | null;
   return team !== null && !team.is_unattributed;
 }

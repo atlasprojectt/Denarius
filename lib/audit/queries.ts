@@ -1,5 +1,6 @@
 import "server-only";
 
+import { dbFailure, logFailure } from "@/lib/logging/server-log";
 import { createClient } from "@/lib/supabase/server";
 
 import type { AuditAction } from "./log";
@@ -43,7 +44,7 @@ export async function listAuditEntries(): Promise<AuditRead> {
   if (error) {
     // The cause belongs in the server log; the screen only needs to know that
     // it must not claim emptiness.
-    console.error(`[audit] could not read the trail: ${error.code}`);
+    logFailure("audit.read", null, dbFailure(error));
     return { ok: false, entries: [] };
   }
 

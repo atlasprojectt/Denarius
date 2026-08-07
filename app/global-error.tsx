@@ -5,6 +5,7 @@ import Link from "next/link";
 import { RiErrorWarningLine } from "@remixicon/react";
 
 import { EmptyState } from "@/components/domain/empty-state";
+import { ErrorReference } from "@/components/domain/error-reference";
 import { LogoWordmark } from "@/components/domain/logo";
 import { Button } from "@/components/ui/button";
 import { THEME_SCRIPT } from "@/lib/theme-script";
@@ -42,6 +43,7 @@ const copy = {
 // must be. Reloading the document retries the render, and an anchor does that
 // with no JavaScript at all.
 export default function GlobalError({
+  error,
   reset: _reset,
 }: {
   error: Error & { digest?: string };
@@ -77,6 +79,7 @@ export default function GlobalError({
             <Link href="/">{copy.home}</Link>
           </Button>
         </div>
+        <ErrorReference digest={error.digest} />
       </body>
     </html>
   );
