@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import {
   RiBuildingLine,
   RiCoinsLine,
+  RiFileList3Line,
   RiPieChartLine,
   RiPlugLine,
   RiShieldKeyholeLine,
@@ -59,6 +60,8 @@ const copy = {
   usersTitle: "Usuários",
   usersDescription: "Gerencie quem pode acessar este espaço.",
   users: (count: number) => counted(count, "usuário", "usuários"),
+  auditTitle: "Auditoria",
+  auditDescription: "Veja quem mudou o quê e quando.",
   adminOnlyMeta: "Restrito a administradores",
 };
 
@@ -214,6 +217,16 @@ export default async function SettingsPage() {
               </SettingsItemStatus>
             }
           />
+          {/* Admin-only surface, and the only settings entry hidden rather than
+              disabled for a Viewer: the trail names people and what they did. */}
+          {isAdmin && (
+            <SettingsNavigationItem
+              href="/ajustes/auditoria"
+              icon={<RiFileList3Line />}
+              title={copy.auditTitle}
+              description={copy.auditDescription}
+            />
+          )}
         </SettingsSection>
       </div>
     </PageContainer>

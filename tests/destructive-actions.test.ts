@@ -36,9 +36,17 @@ vi.mock("@/lib/auth/session", () => ({
             userId: "admin-1",
             tenantId: "tenant-A",
             role: "admin",
+            email: "admin@tenant-a.test",
           },
         }
       : { error: "Somente administradores podem fazer isso." },
+}));
+
+// The audit trail (#73) has its own tests; here it would only add writes to the
+// stub these assertions read.
+vi.mock("@/lib/audit/log", () => ({
+  recordAudit: async () => {},
+  recordAuditBatch: async () => {},
 }));
 
 vi.mock("@/lib/supabase/admin", () => ({

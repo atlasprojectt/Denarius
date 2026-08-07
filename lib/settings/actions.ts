@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
+import { recordAudit } from "@/lib/audit/log";
 import { requireAdmin } from "@/lib/auth/session";
 import { canRemoveUser } from "@/lib/privacy/policy";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -58,6 +59,13 @@ export async function updatePrivacySettings(
     return { error: "Não foi possível salvar as preferências de privacidade." };
   }
 
+  await recordAudit(auth.session, "privacy.updated", {
+    detail: {
+      showNames: parsed.data.showNames,
+      storePerPerson: parsed.data.storePerPerson,
+    },
+  });
+
   revalidateAccountSurfaces();
   return { success: "Privacidade salva." };
 }
@@ -90,7 +98,9 @@ export async function removeUser(
   // Scope to this tenant BEFORE touching auth — never delete across tenants.
   const { data: target } = await admin
     .from("app_user")
-    .select("id")
+    // The email comes along for the audit entry: the row is about to be
+    // cascaded away, and "removed a uuid" is not a trail (#73).
+    .select("id, email")
     .eq("id", userId)
     .eq("tenant_id", auth.session.tenantId)
     .maybeSingle();
@@ -102,6 +112,10 @@ export async function removeUser(
   // Deleting the auth user cascades app_user (id → auth.users on delete cascade).
   const { error } = await admin.auth.admin.deleteUser(userId);
   if (error) return { error: "Não foi possível remover o usuário. Tente novamente." };
+
+  await recordAudit(auth.session, "user.removed", {
+    target: (target as { id: string; email: string }).email,
+  });
 
   revalidateAccountSurfaces();
   return { success: "Usuário removido." };
@@ -148,6 +162,10 @@ export async function updateDisplayCurrency(
   if (error || count !== 1) {
     return { error: "Não foi possível salvar a moeda. Tente novamente." };
   }
+
+  await recordAudit(auth.session, "company.currency_changed", {
+    target: parsed.data.currency,
+  });
 
   revalidateAccountSurfaces();
   return { success: "Moeda salva." };
@@ -233,6 +251,10 @@ export async function updateCompanyName(
   if (error || count !== 1) {
     return { error: "Não foi possível salvar a empresa. Tente novamente." };
   }
+
+  await recordAudit(auth.session, "company.renamed", {
+    target: parsed.data.companyName,
+  });
 
   revalidateAccountSurfaces();
   return { success: "Empresa salva." };

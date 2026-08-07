@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
+import { recordAudit } from "@/lib/audit/log";
 import { requireAdmin } from "@/lib/auth/session";
 import {
   parseRosterCsv,
@@ -74,6 +75,11 @@ export async function importRoster(
   }
 
   const result = data as { imported: number; teams_created: number };
+  // Counts only: the roster itself is the people, and the trail records that an
+  // import happened and how big it was, never who is in the file (#73).
+  await recordAudit(auth.session, "roster.imported", {
+    detail: { imported: result.imported, teamsCreated: result.teams_created },
+  });
   // Roster feeds the seats-vs-roster observations on Home and creates teams —
   // whole-tree invalidation (QA-02 rule, see lib/providers/actions.ts).
   revalidatePath("/", "layout");
@@ -134,6 +140,11 @@ export async function updateEmployee(
   }
   if (count === 0) return { error: "Pessoa não encontrada." };
 
+  await recordAudit(auth.session, "roster.employee_updated", {
+    target: parsed.data.email,
+    detail: { teamId: parsed.data.teamId },
+  });
+
   revalidatePath("/", "layout");
   return { success: "Funcionário atualizado." };
 }
@@ -157,15 +168,23 @@ export async function removeEmployee(
   if (!parsed.success) return { error: parsed.error.issues[0].message };
 
   const admin = createAdminClient();
-  const { error, count } = await admin
+  // The deleted row comes back with the delete, so the trail can name who was
+  // removed without a pre-read (#73).
+  const { data: removed, error, count } = await admin
     .from("employee")
     .delete({ count: "exact" })
     .eq("id", parsed.data.employeeId)
-    .eq("tenant_id", auth.session.tenantId);
+    .eq("tenant_id", auth.session.tenantId)
+    .select("email");
   if (error) return { error: "Não foi possível remover. Tente novamente." };
   // Idempotent: repeated submit / cross-tenant id match nothing — the desired
   // end state already holds (QA-05 destructive-action contract).
   if (count === 0) return { success: "Pessoa já havia sido removida." };
+
+  const deleted = ((removed ?? []) as { email: string }[])[0];
+  await recordAudit(auth.session, "roster.employee_removed", {
+    target: deleted?.email ?? parsed.data.employeeId,
+  });
 
   revalidatePath("/", "layout");
   return { success: "Pessoa removida do roster." };

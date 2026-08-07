@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
+import { recordAudit } from "@/lib/audit/log";
 import { requireAdmin } from "@/lib/auth/session";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isOwnedTeam } from "@/lib/teams/queries";
@@ -95,6 +96,12 @@ export async function saveProjectMap(
       .eq("project_id", c.projectId);
     if (error) return { error: "Não foi possível salvar o mapeamento. Tente novamente." };
   }
+
+  // Attribution moves spend between teams, so what changed is how many
+  // projects are pinned and how many fell back to Unattributed (#73).
+  await recordAudit(auth.session, "attribution.updated", {
+    detail: { pinned: toUpsert.length, cleared: toClear.length },
+  });
 
   // Attribution moves spend between teams on Home, Explore and every team
   // detail page — invalidate the whole tree so no route shows the old split

@@ -2,7 +2,15 @@ import "server-only";
 
 import { createClient } from "@/lib/supabase/server";
 
-export type Session = { userId: string; tenantId: string; role: string };
+/** `email` is carried so an administrative action can snapshot its actor on the
+ *  audit entry (#73): app_user rows get deleted, and a departure must not blank
+ *  every action that person ever took. */
+export type Session = {
+  userId: string;
+  tenantId: string;
+  role: string;
+  email: string;
+};
 
 type RequireResult =
   | { session: Session; error?: undefined }
@@ -26,10 +34,10 @@ async function resolveSession(): Promise<ResolveResult> {
 
   const { data } = await supabase
     .from("app_user")
-    .select("tenant_id, role")
+    .select("tenant_id, role, email")
     .eq("id", user.id)
     .maybeSingle();
-  const row = data as { tenant_id: string; role: string } | null;
+  const row = data as { tenant_id: string; role: string; email: string } | null;
   if (!row) {
     return {
       error: "Cadastro incompleto — conclua o onboarding.",
@@ -37,7 +45,14 @@ async function resolveSession(): Promise<ResolveResult> {
     };
   }
   return {
-    session: { userId: user.id, tenantId: row.tenant_id, role: row.role },
+    session: {
+      userId: user.id,
+      tenantId: row.tenant_id,
+      role: row.role,
+      // The app_user row, not the auth user: it is the membership record, and
+      // it is the address the rest of the product already shows.
+      email: row.email,
+    },
     authenticated: true,
   };
 }
