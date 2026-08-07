@@ -7,13 +7,16 @@ import { RiErrorWarningLine } from "@remixicon/react";
 import { EmptyState } from "@/components/domain/empty-state";
 import { LogoWordmark } from "@/components/domain/logo";
 import { Button } from "@/components/ui/button";
+import { THEME_SCRIPT } from "@/lib/theme-script";
 import { cn } from "@/lib/utils";
 
 // Root error boundary: the app's own root layout failed to render, so this
 // file renders its own <html>/<body> instead of relying on app/layout.tsx —
 // Next.js requires that for global-error. Re-declares the same fonts and
 // theme script as the root layout so the fallback still reads as Denarius,
-// not a bare browser error page.
+// not a bare browser error page. The script is IMPORTED rather than copied:
+// the CSP admits it by hash, which only holds while both call sites ship the
+// identical source (issue #60).
 
 const dmSans = DM_Sans({ subsets: ["latin"], variable: "--font-dm-sans" });
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
@@ -21,8 +24,6 @@ const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
 });
-
-const themeScript = `(function(){try{var m=window.matchMedia('(prefers-color-scheme: dark)');function a(){var t=localStorage.getItem('theme');var d=t==='dark'||((t==='system'||!t)&&m.matches);document.documentElement.classList.toggle('dark',d);}a();m.addEventListener('change',a);}catch(e){}})();`;
 
 const copy = {
   title: "Algo deu errado",
@@ -32,8 +33,16 @@ const copy = {
   home: "Ir para o início",
 };
 
+// `reset` is deliberately unused. Next prerenders this boundary, and a
+// prerendered route's inline flight scripts carry no CSP nonce (issue #60), so
+// under a `script-src` without 'unsafe-inline' this page never hydrates —
+// an onClick handler here would be a button that silently does nothing. Unlike
+// the other prerendered routes, it cannot opt into per-request rendering:
+// route segment config is not read from a Client Component, which global-error
+// must be. Reloading the document retries the render, and an anchor does that
+// with no JavaScript at all.
 export default function GlobalError({
-  reset,
+  reset: _reset,
 }: {
   error: Error & { digest?: string };
   reset: () => void;
@@ -50,7 +59,7 @@ export default function GlobalError({
       )}
     >
       <head>
-        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
       </head>
       <body className="flex min-h-full flex-col items-center justify-center gap-6 p-6 font-sans">
         <LogoWordmark className="h-6 w-auto" />
@@ -61,7 +70,9 @@ export default function GlobalError({
           description={copy.description}
         />
         <div className="flex flex-wrap items-center justify-center gap-2">
-          <Button onClick={() => reset()}>{copy.retry}</Button>
+          <Button asChild>
+            <a href="">{copy.retry}</a>
+          </Button>
           <Button variant="outline" asChild>
             <Link href="/">{copy.home}</Link>
           </Button>

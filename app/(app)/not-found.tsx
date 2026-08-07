@@ -14,6 +14,11 @@ const copy = {
   cta: "Ir para Times",
 };
 
+// Rendered per request so Next can stamp the CSP nonce on its inline flight
+// scripts (issue #60); prerendered, they ship without one and the strict
+// `script-src` blocks them.
+export const dynamic = "force-dynamic";
+
 export default function AppNotFound() {
   return (
     <PageContainer variant="settings" className="flex-1">

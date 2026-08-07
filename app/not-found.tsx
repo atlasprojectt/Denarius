@@ -14,6 +14,11 @@ const copy = {
   home: "Ir para o início",
 };
 
+// Rendered per request so Next can stamp the CSP nonce on its inline flight
+// scripts (issue #60); prerendered, they ship without one and the strict
+// `script-src` blocks them.
+export const dynamic = "force-dynamic";
+
 export default function RootNotFound() {
   return (
     <div className="flex min-h-svh flex-col items-center justify-center gap-6 p-6">
