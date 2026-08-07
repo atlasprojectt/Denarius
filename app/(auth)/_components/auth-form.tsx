@@ -146,7 +146,7 @@ export function AuthForm({ oauthError }: { oauthError?: string }) {
                   variant="ghost"
                   aria-pressed={mode === value}
                   onClick={() => setMode(value)}
-                  className={`relative z-10 h-9 bg-transparent text-sm font-medium transition-colors duration-(--motion-duration-standard) hover:bg-transparent ${
+                  className={`relative z-10 h-11 bg-transparent text-sm font-medium transition-colors duration-(--motion-duration-standard) hover:bg-transparent ${
                     mode === value
                       ? "text-foreground"
                       : "text-muted-foreground hover:text-foreground"
@@ -220,7 +220,7 @@ export function AuthForm({ oauthError }: { oauthError?: string }) {
               {!isSignup && (
                 <Link
                   href="/auth/recuperar"
-                  className="text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground"
+                  className="inline-flex min-h-11 items-center text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground"
                 >
                   {copy.forgotPassword}
                 </Link>
@@ -237,7 +237,7 @@ export function AuthForm({ oauthError }: { oauthError?: string }) {
                     showPassword ? copy.hidePassword : copy.showPassword
                   }
                   onClick={() => setShowPassword((v) => !v)}
-                  className="absolute top-1/2 right-1 -translate-y-1/2"
+                  className="absolute top-1/2 right-0 size-11 -translate-y-1/2"
                 >
                   {showPassword ? (
                     <RiEyeOffLine className={iconClassName} />
@@ -281,7 +281,7 @@ export function AuthForm({ oauthError }: { oauthError?: string }) {
               size="lg"
               loading={pending}
               loadingText={isSignup ? copy.submittingSignup : copy.submittingLogin}
-              className="w-full"
+              className="h-11 w-full"
             >
               {isSignup ? copy.submitSignup : copy.submitLogin}
             </Button>
@@ -291,7 +291,7 @@ export function AuthForm({ oauthError }: { oauthError?: string }) {
             {copy.or}
           </FieldSeparator>
           <Field className="denarius-auth-enter [animation-delay:240ms]">
-            <GoogleButton className="w-full" />
+            <GoogleButton className="h-11 w-full" />
           </Field>
         </FieldGroup>
       </form>

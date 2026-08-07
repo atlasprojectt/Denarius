@@ -66,7 +66,7 @@ export function Hero({
     <Card className="min-h-full">
       <CardHeader>
         <CardTitle className="text-sm font-medium">{c.title}</CardTitle>
-        <p className="flex flex-wrap items-baseline gap-x-2 pt-2 text-4xl font-medium tracking-tight tabular-nums sm:text-5xl">
+        <p className="flex min-w-0 flex-wrap items-baseline gap-x-2 pt-2 text-[clamp(1.875rem,10vw,3rem)] font-medium tracking-tight tabular-nums [overflow-wrap:anywhere]">
           {money(org.spent, currency)}
           <span className="text-base font-normal tracking-normal text-muted-foreground">
             {c.ofBudget(money(org.budget, currency))}

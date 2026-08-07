@@ -143,7 +143,13 @@ function TeamRow({
         <div className="pointer-events-auto relative z-10 flex items-center justify-end gap-1.5">
           {priority === "attention" && (
             <>
-              <Button asChild variant="secondary" size="xs" shape="compact">
+              <Button
+                asChild
+                variant="secondary"
+                size="xs"
+                shape="compact"
+                className="h-11 sm:h-6"
+              >
                 <Link href={href}>{copy.investigate}</Link>
               </Button>
               <SimulateDrawer
