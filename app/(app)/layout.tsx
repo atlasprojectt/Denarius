@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 
 import { AppSidebar } from "@/components/domain/app-sidebar";
 import { NextActionsButton } from "@/components/domain/next-actions-button";
@@ -15,6 +16,7 @@ import {
   type ConnectionStatus,
 } from "@/lib/engine/freshness";
 import { getCockpitData } from "@/lib/home/queries";
+import { isReportPath } from "@/lib/reports/path";
 import { profileInitials, profileLabel } from "@/lib/settings/account";
 import { createClient } from "@/lib/supabase/server";
 
@@ -36,6 +38,8 @@ export default async function AppLayout({
   children: React.ReactNode;
 }) {
   const supabase = await createClient();
+  const pathname = (await headers()).get("x-denarius-pathname");
+  const renderingReport = isReportPath(pathname);
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -47,9 +51,11 @@ export default async function AppLayout({
       .select("email, display_name, tenant:tenant_id(name)")
       .eq("id", user.id)
       .maybeSingle(),
-    supabase
-      .from("provider_connection")
-      .select("provider, status, last_sync_at"),
+    renderingReport
+      ? Promise.resolve({ data: [] as ConnectionRow[] })
+      : supabase
+          .from("provider_connection")
+          .select("provider, status, last_sync_at"),
   ]);
   const appUser = data as AppUserRow | null;
 
@@ -68,8 +74,11 @@ export default async function AppLayout({
   // The all-clear is chrome, not cockpit: it rides the sidebar on every screen,
   // so the verdict's affirmative state is read here rather than on Home. The
   // assembly is per-request memoized, so Home still pays for exactly one.
-  const { cockpit } = await getCockpitData();
-  const allClear = cockpit.state === "ready" && cockpit.allClear;
+  const allClear = renderingReport
+    ? false
+    : await getCockpitData().then(
+        ({ cockpit }) => cockpit.state === "ready" && cockpit.allClear,
+      );
 
   return (
     <AppToastProvider>
@@ -88,7 +97,7 @@ export default async function AppLayout({
           allClear={allClear}
         />
         <SidebarInset className="md:border md:border-border/60">
-          <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2.5 border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/80 md:rounded-t-xl">
+          <header data-app-header className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2.5 border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/80 md:rounded-t-xl">
             <SidebarTrigger className="-ml-1.5 size-10" />
             <Separator
               orientation="vertical"
@@ -107,7 +116,7 @@ export default async function AppLayout({
               RevealController persists across navigations and replays them.
               flex column so a page can opt into filling the viewport height
               (Home's cockpit grid) with flex-1. */}
-          <div data-reveal-root className="flex flex-1 flex-col px-4 py-8 md:px-8">
+          <div data-app-content data-reveal-root className="flex flex-1 flex-col px-4 py-8 md:px-8">
             {children}
           </div>
           <RevealController />

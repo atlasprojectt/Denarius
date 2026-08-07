@@ -239,7 +239,7 @@ The headline metric is **spend in money governed against a budget**; tokens are 
 Resolved in a dedicated UX grilling (P1–P11), extended by the founder's focus realignment (P12–P14), then **restructured by a full UX critique (P15) that collapsed navigation to 3 destinations and made the verdict the headline output**. The product is an **executive cockpit** whose job is to answer *"am I in control of AI spend?"* in **≤10 seconds**, push early warnings, and stay honest about its own limits (read-only, externally-sourced numbers).
 
 **Navigation & screens (P1, P2 — superseded by P15 and P16)**
-- Left sidebar, **3 destinations: Home / Explore / Settings.** A nav slot is earned by *frequency of use*, not importance: observing happens daily (Home), investigating occasionally (Explore), configuring rarely (Settings). Budgets-as-a-tab and Planning-as-a-tab were **removed** — they duplicated the Home or broke the causal chain (see below).
+- Left sidebar, **5 destinations: Home / Times / Explore / Reports / Settings.** P15 originally collapsed the prototype to three; Times later earned a comparable operational index, and Reports earns a durable documentation surface for closed months. Budgets and Planning remain excluded — they duplicate Home or break the causal chain (see below).
 - **Home** — condensed freshness → verdict → linked Next actions → spend hero/composition → pace → one team table → remaining calm observations. The verdict and Next actions fit above the fold at the target desktop viewports.
 - **Explore** — anchored sections for team, model, and seats; sortable tables; threshold-triggered search; explicit reconciliation; team drill-down with contributors and separate team/company budget outcomes.
 - **Settings** — a navigation-only index. Company/currency, Privacy, and Users live on dedicated subpages alongside Connections, Attribution, Roster, Seats, and Budgets.
@@ -356,5 +356,5 @@ What an acquirer will ask: "how do you know it works?" Small, honest set — mea
   10. **Contextual planning: scenario simulator drawer (from a warning/team) + apontamentos footer.**
   11. Secondary: seats-vs-roster waste finding.
   12. Privacy & roles controls.
-- **Navigation is 3 destinations** (Home / Explore / Settings); budget editing is inline; the simulator is a contextual drawer — no Budgets or Planning tab.
+- **Navigation is 5 destinations** (Home / Times / Explore / Reports / Settings); budget editing is inline; the simulator is a contextual drawer — no Budgets or Planning tab.
 - **Sales play baked into the order:** slices 2–4 let you demo value with **manual data** before the customer trusts you with keys — reducing the "give me your key" friction. The hero (verdict + budgets + projected margin) lands once real token data flows in slices 5–8; contextual planning (slice 10) is the demo closer.

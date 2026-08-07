@@ -78,6 +78,10 @@ export async function proxy(request: NextRequest) {
   const forwarded = () => {
     const headers = new Headers(request.headers);
     headers.set("Content-Security-Policy", csp);
+    // Server layouts cannot otherwise see the active pathname. This trusted,
+    // proxy-overwritten value lets the app shell avoid live cockpit reads on
+    // immutable report routes (#95); a client-supplied value never wins.
+    headers.set("X-Denarius-Pathname", path);
     return { headers };
   };
 

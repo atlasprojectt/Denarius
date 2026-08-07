@@ -586,6 +586,128 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 
 /* ---------------------------------------------------------------------------
+   Monthly reports — browser-native print/PDF layer (#95). The frozen report
+   is documentation, so paper always uses the same light palette and geometry
+   regardless of the viewer's saved theme. No PDF runtime or second renderer:
+   the browser prints the exact semantic report visible on screen.
+--------------------------------------------------------------------------- */
+.report-running-header {
+  display: none;
+}
+
+@media print {
+  @page {
+    size: A4 portrait;
+    /* The larger top margin is the running header's reserved lane. */
+    margin: 22mm 14mm 14mm;
+  }
+
+  :root,
+  .dark {
+    color-scheme: light;
+    --background: #ffffff;
+    --foreground: #1c1917;
+    --card: #ffffff;
+    --card-foreground: #1c1917;
+    --muted: #f5f5f4;
+    --muted-foreground: #57534e;
+    --border: #d6d3d1;
+    --status-green: #15803d;
+    --status-green-soft: #f0faf3;
+    --status-green-fg: #166534;
+    --status-amber: #b45309;
+    --status-amber-soft: #fdf6ec;
+    --status-amber-fg: #92400e;
+    --status-red: #b91c1c;
+    --status-red-soft: #fdf1f1;
+    --status-red-fg: #991b1b;
+    --badge-neutral: #57534e;
+    --badge-neutral-soft: #f5f5f4;
+  }
+
+  html,
+  body {
+    background: #ffffff !important;
+    color: #1c1917 !important;
+  }
+
+  [data-slot="sidebar-gap"],
+  [data-slot="sidebar-container"],
+  [data-app-header],
+  [data-print-control],
+  .report-screen-header {
+    display: none !important;
+  }
+
+  [data-slot="sidebar-inset"] {
+    min-height: 0 !important;
+    margin: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: #ffffff !important;
+  }
+
+  [data-app-content] {
+    display: block !important;
+    padding: 0 !important;
+  }
+
+  .report-sheet {
+    max-width: none !important;
+    gap: 5mm !important;
+    padding-top: 0;
+  }
+
+  .report-running-header {
+    position: fixed;
+    /* Fixed elements repeat on every printed page. Keep it in @page's top
+       margin so later pages never start underneath it. */
+    top: -15mm;
+    right: 0;
+    left: 0;
+    z-index: 20;
+    display: block;
+    min-height: 10mm;
+    border-bottom: 1px solid #d6d3d1;
+    padding-bottom: 2mm;
+    background: #ffffff;
+    color: #1c1917;
+    font-size: 11px;
+  }
+
+  .report-section,
+  .report-section > [data-slot="card"],
+  [data-report-sheet] [data-slot="card"] {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  [data-report-sheet] [data-slot="card"] {
+    background: #ffffff !important;
+    box-shadow: none !important;
+  }
+
+  [data-report-sheet] tr,
+  [data-report-sheet] li {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  [data-report-sheet] [data-reveal-bar],
+  [data-report-sheet] [data-reveal-legend],
+  [data-report-sheet] [data-reveal-wipe] {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  * {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+}
+
+/* ---------------------------------------------------------------------------
    Chart hover focus — the hairline, the date pill, the focus dot and the lit
    window that track the hovered day in SpendTrendChart. Their POSITION is
    written imperatively from the Recharts hooks (SVG pixel space); only the

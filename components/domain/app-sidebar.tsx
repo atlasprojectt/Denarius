@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   RiExpandUpDownLine,
+  RiFileChartLine,
   RiLineChartLine,
   RiSettings3Line,
   RiHome5Line,
@@ -53,6 +54,7 @@ const copy = {
   home: "Início",
   teams: "Times",
   explore: "Explorar",
+  reports: "Relatórios",
   settings: "Ajustes",
   profileMenu: "Perfil",
   profileSettings: "Configurações",
@@ -66,6 +68,7 @@ const navigation: { label: string; items: { title: string; path: string; icon: R
       { title: copy.home, path: "/", icon: <RiHome5Line /> },
       { title: copy.teams, path: "/times", icon: <RiTeamLine /> },
       { title: copy.explore, path: "/explorar", icon: <RiLineChartLine /> },
+      { title: copy.reports, path: "/relatorios", icon: <RiFileChartLine /> },
     ],
   },
   {
