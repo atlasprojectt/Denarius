@@ -32,6 +32,8 @@ export type AuditAction =
   | "invitation.accepted"
   | "user.removed"
   | "privacy.updated"
+  | "tenant.exported"
+  | "tenant.deleted"
   | "company.renamed"
   | "company.currency_changed";
 

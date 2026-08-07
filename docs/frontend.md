@@ -219,6 +219,7 @@ Screen-local compositions stay colocated (F5): the cockpit pieces (`Hero`, `Mont
 - **Error boundaries & not-found**: four routes complete the layer — `app/global-error.tsx` (root layout itself failed; renders its own `<html>`/`<body>` and theme script, no sidebar), `app/(app)/error.tsx` (a route failed inside the shell; sidebar and nav survive, retry via `reset`), `app/not-found.tsx` (unmatched URL outside the shell; own wordmark + link home) and `app/(app)/not-found.tsx` (`notFound()` from inside the shell, e.g. an unknown team id; points back to Times). All four reuse `EmptyState`, pt-BR copy in local constants, neutral tone (no semaphore color), and never render a stack trace, exception message or digest.
 - **All-clear**: affirmative soft-green notice (`AllClear`) in the sidebar footer, never a blank section — the screen's own affirmative answer is the green verdict line.
 - **Settings hub**: `/ajustes` contains navigation Items only. Inline Company, Privacy, and Users sections move to `/ajustes/empresa`, `/ajustes/privacidade`, and `/ajustes/usuarios`.
+- **Tenant data rights:** `/ajustes/privacidade` gives Admins a neutral JSON export and a separate destructive deletion dialog. Deletion stays disabled until the exact company name is typed, repeats the export affordance inside the confirmation, and states that deleting Denarius does not affect OpenAI or Anthropic. Viewers see neither affordance; the route/action enforce the same boundary server-side.
 
 ### 9.4 Pendências (deliberately deferred)
 
