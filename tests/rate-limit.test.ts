@@ -10,6 +10,12 @@ import {
   hashSubject,
 } from "@/lib/auth/rate-limit";
 
+import {
+  requireDatabaseSuite,
+  supabaseServiceKey,
+  supabaseUrl,
+} from "./support/db";
+
 // Issue #61 — rate limiting the invitation paths. Two halves: key derivation is
 // pure and tested here directly; the window lives in Postgres behind an
 // advisory lock (without it, two concurrent callers read the same snapshot,
@@ -83,8 +89,8 @@ describe("what the limiter stores", () => {
 // The window, against the real Postgres function.
 // ---------------------------------------------------------------------------
 
-const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const url = supabaseUrl;
+const serviceKey = supabaseServiceKey;
 const hasEnv = Boolean(url && serviceKey);
 
 const admin = hasEnv
@@ -111,13 +117,11 @@ async function limiterApplied(): Promise<boolean> {
   return !error;
 }
 
-const ready = await limiterApplied();
-if (!ready) {
-  console.warn(
-    "\n[rate-limit] SKIPPED — missing env or the rate-limit migration is not applied. " +
-      "Apply supabase/migrations/20260805100000_rate_limit.sql and re-run: npm test\n",
-  );
-}
+const ready = requireDatabaseSuite(
+  "rate-limit",
+  await limiterApplied(),
+  "no database env, or supabase/migrations/20260805100000_rate_limit.sql is not applied",
+);
 
 describe.skipIf(!ready)("the window, in Postgres (issue #61)", () => {
   it("allows up to the limit and then refuses", async () => {

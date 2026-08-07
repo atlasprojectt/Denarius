@@ -1,96 +1,77 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
+import {
+  hasDbEnv,
+  requireDatabaseSuite,
+  requireTable,
+  supabaseAnonKey,
+  supabaseServiceKey,
+  supabaseUrl,
+  tableApplied,
+} from "./support/db";
+
 /**
  * THE most critical test in the repo (CLAUDE.md invariant #1):
  * tenant A must never read tenant B's rows, on any table.
  *
- * Runs against the real Supabase project (env from .env.local). Skips itself
- * with a loud warning when env vars are missing or the migration hasn't been
- * applied yet — it must never pass vacuously.
+ * Runs against a real database — the ephemeral Supabase stack in CI, or the
+ * project in `.env.local` locally. Without one it skips quietly locally and
+ * FAILS in CI (`DENARIUS_REQUIRE_DB_TESTS=1`, see tests/support/db.ts): it must
+ * never pass vacuously, which is precisely what it used to do on every deploy.
  */
 
-const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const url = supabaseUrl;
+const anonKey = supabaseAnonKey;
+const serviceKey = supabaseServiceKey;
 
-const hasEnv = Boolean(url && anonKey && serviceKey);
+const SUITE = "rls-isolation";
 
 async function migrationApplied(): Promise<boolean> {
-  if (!hasEnv) return false;
-  const admin = createClient(url!, serviceKey!, {
-    auth: { persistSession: false },
-  });
-  const { error } = await admin.from("tenant").select("id").limit(1);
-  return !error;
+  if (!hasDbEnv) return false;
+  return tableApplied("tenant");
 }
 
-const ready = await migrationApplied();
-if (!ready) {
-  console.warn(
-    "\n[rls-isolation] SKIPPED — missing env or migration not applied yet. " +
-      "Apply supabase/migrations/*_init_tenancy.sql and re-run: npm test\n",
+const ready = requireDatabaseSuite(
+  SUITE,
+  await migrationApplied(),
+  "no database env, or supabase/migrations/*_init_tenancy.sql is not applied",
+);
+
+// Each later migration gets its own flag so this file covers a new table as
+// soon as its migration lands — and, in CI, refuses to stay green without it.
+const subscriptionReady =
+  ready &&
+  requireTable(SUITE, "subscription", await tableApplied("subscription"), "*_subscriptions.sql");
+
+const providersReady =
+  ready &&
+  requireTable(
+    SUITE,
+    "provider_connection",
+    await tableApplied("provider_connection"),
+    "*_providers.sql",
   );
-}
 
-// Later migrations get their own readiness flag so this file covers each new
-// table as soon as its migration lands, without failing before that.
-async function tableApplied(table: string): Promise<boolean> {
-  if (!hasEnv) return false;
-  const admin = createClient(url!, serviceKey!, {
-    auth: { persistSession: false },
-  });
-  const { error } = await admin.from(table).select("id").limit(1);
-  return !error;
-}
+const projectMapReady =
+  ready &&
+  requireTable(SUITE, "project_map", await tableApplied("project_map"), "*_attribution.sql");
 
-const subscriptionReady = ready && (await tableApplied("subscription"));
-if (ready && !subscriptionReady) {
-  console.warn(
-    "\n[rls-isolation] subscription table not found — apply " +
-      "supabase/migrations/*_subscriptions.sql to cover it here too.\n",
+const budgetReady =
+  ready && requireTable(SUITE, "budget", await tableApplied("budget"), "*_budgets.sql");
+
+const notificationLogReady =
+  ready &&
+  requireTable(
+    SUITE,
+    "notification_log",
+    await tableApplied("notification_log"),
+    "*_notifications.sql",
   );
-}
 
-const providersReady = ready && (await tableApplied("provider_connection"));
-if (ready && !providersReady) {
-  console.warn(
-    "\n[rls-isolation] provider tables not found — apply " +
-      "supabase/migrations/*_providers.sql to cover them here too.\n",
-  );
-}
-
-const projectMapReady = ready && (await tableApplied("project_map"));
-if (ready && !projectMapReady) {
-  console.warn(
-    "\n[rls-isolation] project_map table not found — apply " +
-      "supabase/migrations/*_attribution.sql to cover it here too.\n",
-  );
-}
-
-const budgetReady = ready && (await tableApplied("budget"));
-if (ready && !budgetReady) {
-  console.warn(
-    "\n[rls-isolation] budget table not found — apply " +
-      "supabase/migrations/*_budgets.sql to cover it here too.\n",
-  );
-}
-
-const notificationLogReady = ready && (await tableApplied("notification_log"));
-if (ready && !notificationLogReady) {
-  console.warn(
-    "\n[rls-isolation] notification_log table not found — apply " +
-      "supabase/migrations/*_notifications.sql to cover it here too.\n",
-  );
-}
-
-const invitationReady = ready && (await tableApplied("invitation"));
-if (ready && !invitationReady) {
-  console.warn(
-    "\n[rls-isolation] invitation table not found — apply " +
-      "supabase/migrations/*_invitations.sql to cover it here too.\n",
-  );
-}
+const invitationReady =
+  ready &&
+  requireTable(SUITE, "invitation", await tableApplied("invitation"), "*_invitations.sql");
 
 const TABLES = [
   "tenant",
@@ -491,13 +472,14 @@ describe.skipIf(!ready)("RLS tenant isolation", () => {
 // Appended for issue #61 — rate_limit_hit. New table, new block, at the end.
 // ---------------------------------------------------------------------------
 
-const rateLimitReady = ready && (await tableApplied("rate_limit_hit"));
-if (ready && !rateLimitReady) {
-  console.warn(
-    "\n[rls-isolation] rate_limit_hit table not found — apply " +
-      "supabase/migrations/*_rate_limit.sql to cover it here too.\n",
+const rateLimitReady =
+  ready &&
+  requireTable(
+    SUITE,
+    "rate_limit_hit",
+    await tableApplied("rate_limit_hit"),
+    "*_rate_limit.sql",
   );
-}
 
 describe.skipIf(!rateLimitReady)("rate_limit_hit isolation (issue #61)", () => {
   // Self-contained on purpose: this file is append-only from #78 on, so the
@@ -582,13 +564,8 @@ describe.skipIf(!rateLimitReady)("rate_limit_hit isolation (issue #61)", () => {
 // Appended for issue #73 — audit_log. New table, new block, at the end.
 // ---------------------------------------------------------------------------
 
-const auditReady = ready && (await tableApplied("audit_log"));
-if (ready && !auditReady) {
-  console.warn(
-    "\n[rls-isolation] audit_log table not found — apply " +
-      "supabase/migrations/*_audit_log.sql to cover it here too.\n",
-  );
-}
+const auditReady =
+  ready && requireTable(SUITE, "audit_log", await tableApplied("audit_log"), "*_audit_log.sql");
 
 describe.skipIf(!auditReady)("audit_log isolation (issue #73)", () => {
   // Self-contained: this block needs a VIEWER as well as an Admin, which the
