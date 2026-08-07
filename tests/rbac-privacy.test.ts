@@ -1,35 +1,36 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
+import {
+  hasDbEnv,
+  requireDatabaseSuite,
+  supabaseAnonKey,
+  supabaseServiceKey,
+  supabaseUrl,
+  tableApplied,
+} from "./support/db";
+
 /**
  * Issue #23 acceptance — "removing a user revokes access immediately."
- * Runs against the real Supabase project (env from .env.local); self-skips
- * with a warning when env is missing or the privacy migration hasn't been
- * applied, so it never passes vacuously.
+ * Runs against a real database; skips quietly without one locally and fails
+ * the build in CI (`DENARIUS_REQUIRE_DB_TESTS=1`), so it never passes vacuously.
  */
 
-const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const hasEnv = Boolean(url && anonKey && serviceKey);
+const url = supabaseUrl;
+const anonKey = supabaseAnonKey;
+const serviceKey = supabaseServiceKey;
 
 async function privacyMigrationApplied(): Promise<boolean> {
-  if (!hasEnv) return false;
-  const admin = createClient(url!, serviceKey!, {
-    auth: { persistSession: false },
-  });
+  if (!hasDbEnv) return false;
   // show_names arrives with the #23 migration; its absence errors the select.
-  const { error } = await admin.from("tenant").select("show_names").limit(1);
-  return !error;
+  return tableApplied("tenant", "show_names");
 }
 
-const ready = await privacyMigrationApplied();
-if (!ready) {
-  console.warn(
-    "\n[rbac-privacy] SKIPPED — missing env or privacy migration not applied. " +
-      "Apply supabase/migrations/*_privacy.sql and re-run: npm test\n",
-  );
-}
+const ready = requireDatabaseSuite(
+  "rbac-privacy",
+  await privacyMigrationApplied(),
+  "no database env, or supabase/migrations/*_privacy.sql is not applied",
+);
 
 describe.skipIf(!ready)("remove user revokes access (issue #23)", () => {
   const admin: SupabaseClient = createClient(url ?? "http://skip", serviceKey ?? "skip", {

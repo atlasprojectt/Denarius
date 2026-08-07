@@ -3,6 +3,12 @@
 # duplicated so the gate that guards a PR is byte-for-byte the gate that guards
 # production — a copy-pasted gate drifts the moment someone relaxes one side.
 #
+# The gate runs against a REAL database (issue #78): an ephemeral Supabase
+# stack raised in the job, with every migration in supabase/migrations applied
+# from scratch. Before that, the Supabase-backed suites — RLS isolation above
+# all — self-skipped for want of env, so every push to main deployed having
+# proven the engine arithmetic and nothing whatsoever about tenancy.
+#
 # Dependency policy behind these steps: docs/architecture.md §10.
 
 name: Quality gate
@@ -42,11 +48,42 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
-      # The Supabase-backed tests (RLS, roster RPC) self-skip without DB env,
-      # so this runs the pure engine/connector/crypto suites. Issue #78 removes
-      # that self-skip and moves the isolation test to its own workflow.
+      # A database for the job. `supabase start` applies supabase/migrations
+      # from zero, in order, so a migration that no longer applies fails CI
+      # rather than production — a check nothing performed before this.
+      - uses: supabase/setup-cli@46f7f98c7f948ad727d22c1e67fab04c223a0520 # v3.0.0
+        with:
+          version: 2.112.0
+
+      - name: Start the ephemeral database (applies every migration from scratch)
+        run: supabase start -x realtime,storage-api,imgproxy,mailpit,studio,edge-runtime,logflare,vector,supavisor
+
+      # The local stack mints its own keys per run; they are read back from it
+      # rather than written down, so no credential lives in this file. Nothing
+      # here touches the production project — that is #63's separation, and the
+      # reason this job can afford to be destructive.
+      - name: Export the database env
+        run: |
+          eval "$(supabase status -o env)"
+          # Fail here, loudly, rather than handing the tests empty credentials
+          # and letting them report "no database" as if that were the finding.
+          : "${API_URL:?supabase status reported no API_URL}"
+          : "${ANON_KEY:?supabase status reported no ANON_KEY}"
+          : "${SERVICE_ROLE_KEY:?supabase status reported no SERVICE_ROLE_KEY}"
+          {
+            echo "NEXT_PUBLIC_SUPABASE_URL=$API_URL"
+            echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=$ANON_KEY"
+            echo "SUPABASE_SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY"
+          } >> "$GITHUB_ENV"
+
+      # DENARIUS_REQUIRE_DB_TESTS turns a skipped database suite into a FAILING
+      # one (tests/support/db.ts). A green check over an isolation test that
+      # silently did not run is worse than no test at all, because the check
+      # claims otherwise.
       - name: Test
         run: npm test
+        env:
+          DENARIUS_REQUIRE_DB_TESTS: "1"
 
       # Last, and load-bearing: lint, typecheck and vitest all pass on code
       # `next build` rejects. A "use server" module exporting one constant

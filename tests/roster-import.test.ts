@@ -1,33 +1,29 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
+import {
+  requireDatabaseSuite,
+  supabaseAnonKey,
+  supabaseServiceKey,
+  supabaseUrl,
+  tableApplied,
+} from "./support/db";
+
 /**
- * Integration tests for the atomic roster_import RPC (issue #13), against the
- * real Supabase project. Self-skips loudly until the roster migration is
- * applied — never passes vacuously.
+ * Integration tests for the atomic roster_import RPC (issue #13), against a
+ * real database. Skips quietly without one locally; fails the build in CI
+ * (`DENARIUS_REQUIRE_DB_TESTS=1`) — never passes vacuously.
  */
 
-const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const hasEnv = Boolean(url && anonKey && serviceKey);
+const url = supabaseUrl;
+const anonKey = supabaseAnonKey;
+const serviceKey = supabaseServiceKey;
 
-async function rosterMigrationApplied(): Promise<boolean> {
-  if (!hasEnv) return false;
-  const admin = createClient(url!, serviceKey!, {
-    auth: { persistSession: false },
-  });
-  const { error } = await admin.from("employee").select("id").limit(1);
-  return !error;
-}
-
-const ready = await rosterMigrationApplied();
-if (!ready) {
-  console.warn(
-    "\n[roster-import] SKIPPED — missing env or roster migration not applied. " +
-      "Apply supabase/migrations/*_roster.sql and re-run: npm test\n",
-  );
-}
+const ready = requireDatabaseSuite(
+  "roster-import",
+  await tableApplied("employee"),
+  "no database env, or supabase/migrations/*_roster.sql is not applied",
+);
 
 type Seeded = { tenantId: string; userId: string; email: string; password: string };
 
