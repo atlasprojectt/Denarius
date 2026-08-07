@@ -59,7 +59,7 @@ export function AcceptForm({
         <Field>
           <FieldLabel htmlFor="email">{copy.email}</FieldLabel>
           {/* Fixed, not editable: the token proves THIS address. */}
-          <Input id="email" value={email} readOnly disabled />
+          <Input id="email" value={email} readOnly disabled className="h-11" />
           <FieldDescription>{copy.emailNote}</FieldDescription>
         </Field>
 
@@ -72,6 +72,7 @@ export function AcceptForm({
             autoComplete="new-password"
             minLength={PASSWORD_MIN}
             aria-invalid={state.fieldErrors?.password !== undefined}
+            className="h-11"
           />
           {state.fieldErrors?.password ? (
             <FieldError>{state.fieldErrors.password}</FieldError>
@@ -82,13 +83,21 @@ export function AcceptForm({
 
         <ActionStatus error={state.error} />
 
-        <Button type="submit" loading={pending} loadingText={copy.submitting}>
+        <Button
+          type="submit"
+          className="h-11"
+          loading={pending}
+          loadingText={copy.submitting}
+        >
           {copy.submit}
         </Button>
 
         <FieldDescription className="text-center">
           {copy.hasAccount}{" "}
-          <Link href="/login" className="underline underline-offset-4">
+          <Link
+            href="/login"
+            className="inline-flex min-h-11 items-center underline underline-offset-4"
+          >
             {copy.loginLink}
           </Link>
         </FieldDescription>

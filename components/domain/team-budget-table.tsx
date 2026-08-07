@@ -41,15 +41,9 @@ import { money } from "@/lib/money";
 // "Gerenciar orçamentos" → /ajustes/orcamentos (editing). All numbers are
 // engine-provided; this component only formats them.
 //
-// Layout is chosen by the `variant` prop, not by width:
-//   - "responsive" (default, /times): container-query based (@container on
-//     CardContent) — full-width shows the table, a narrow container falls back
-//     to the compact card list.
-//   - "table" (Home): always the table, even in Home's half-width grid cell.
-//     Home must not flip design as the window resizes, so the width-dependent
-//     compact fallback is dropped and the Orçamento/Projeção columns show
-//     unconditionally; only the wide Consumo (usage-bar) column stays
-//     container-gated so the table stays readable when the cell is narrow.
+// The component follows its own width through the existing container query:
+// wide cards show the table; narrow cards (including Home on a phone) show the
+// compact list. A wide table therefore never expands the page viewport.
 
 // Copy (F2: pt-BR, isolated). Owned here now that the table is a cross-screen
 // domain component rather than a Home-only piece.
@@ -132,33 +126,19 @@ export function TeamBudgetTable({
   teams,
   attentionCount,
   currency,
-  variant = "responsive",
 }: {
   /** Every budgeted team, needs-attention first (cockpit ordering). */
   teams: CockpitTeam[];
   attentionCount: number;
   currency: string;
-  /** "table" forces the table at every width (Home); "responsive" flips to the
-   *  compact list in a narrow container (/times). */
-  variant?: "responsive" | "table";
 }) {
   const router = useRouter();
-  const forceTable = variant === "table";
-  // Columns that are container-gated in "responsive" mode but always visible
-  // when the table is forced (so Home's half-width cell still shows them).
-  const optionalColHead = forceTable ? "text-right" : "hidden text-right @2xl:table-cell";
-  const optionalColCell = forceTable
-    ? "text-right tabular-nums text-muted-foreground"
-    : "hidden text-right tabular-nums text-muted-foreground @2xl:table-cell";
+  const optionalColHead = "hidden text-right @2xl:table-cell";
+  const optionalColCell =
+    "hidden text-right tabular-nums text-muted-foreground @2xl:table-cell";
 
   return (
-    // min-h-full is Home-only (variant="table"): the 2x2 grid cell stretches
-    // the card. On /times the page column is a definite-height flex chain
-    // (min-h-svh → flex-1), so a percentage min-height makes THIS card absorb
-    // the viewport height and flex-shrink squash its siblings — the
-    // "Times sem orçamento" card collapsed to its header (overflow-hidden
-    // disables the min-content floor). Natural height in "responsive" mode.
-    <Card className={forceTable ? "min-h-full" : undefined}>
+    <Card>
       <CardHeader>
         <CardTitle className="text-sm">{c.title}</CardTitle>
         <CardDescription>
@@ -168,8 +148,13 @@ export function TeamBudgetTable({
               ? c.subtitleAttention(attentionCount, teams.length)
               : c.subtitleAllOk(teams.length)}
         </CardDescription>
-        <CardAction>
-          <Button variant="secondary" size="sm" asChild>
+        <CardAction className="col-start-1 row-start-3 mt-2 justify-self-start sm:col-start-2 sm:row-span-2 sm:row-start-1 sm:mt-0 sm:justify-self-end">
+          <Button
+            variant="secondary"
+            size="sm"
+            className="h-11 sm:h-7"
+            asChild
+          >
             <Link href="/ajustes/orcamentos">
               {teams.length === 0 ? c.emptyCta : c.manage}
             </Link>
@@ -178,7 +163,6 @@ export function TeamBudgetTable({
       </CardHeader>
       {teams.length > 0 && (
         <CardContent className="@container">
-          {!forceTable && (
           <div className="grid gap-2 @2xl:hidden">
             {teams.map((team) => {
               const ev = team.evaluation;
@@ -187,7 +171,7 @@ export function TeamBudgetTable({
                   key={team.teamId}
                   href={`/times/${team.teamId}`}
                   aria-label={c.detail(team.teamName)}
-                  className="group rounded-lg border p-3 outline-none transition-colors hover:border-border hover:bg-muted/30 focus-visible:ring-2 focus-visible:ring-ring/40"
+                  className="group min-h-11 rounded-lg border p-3 outline-none transition-colors hover:border-border hover:bg-muted/30 focus-visible:ring-2 focus-visible:ring-ring/40"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <p className="min-w-0 truncate font-medium">{team.teamName}</p>
@@ -229,8 +213,7 @@ export function TeamBudgetTable({
               );
             })}
           </div>
-          )}
-          <div className={forceTable ? "block" : "hidden @2xl:block"}>
+          <div className="hidden @2xl:block">
           <Table className="[&_th]:text-muted-foreground">
             <TableHeader>
               <TableRow>

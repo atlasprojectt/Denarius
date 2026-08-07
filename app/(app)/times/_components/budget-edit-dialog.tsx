@@ -61,12 +61,12 @@ export function BudgetEditDialog({
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
+        <Button variant="outline" size="sm" className="h-11 sm:h-7">
           <RiPencilLine className="size-4" />
           {existing ? copy.edit : copy.define}
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-sm">
+      <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto overscroll-contain max-sm:[&_[data-slot=dialog-close]]:size-11 sm:max-w-sm">
         <DialogHeader>
           <DialogTitle>{copy.title(teamName)}</DialogTitle>
           <DialogDescription>{copy.description}</DialogDescription>
@@ -82,6 +82,7 @@ export function BudgetEditDialog({
               currency={currency}
               defaultValue={existing?.amount}
               invalid={state.fieldErrors?.amount !== undefined}
+              className="min-h-11 sm:min-h-0"
             />
             {state.fieldErrors?.amount && (
               <p className="text-xs text-destructive">
@@ -99,7 +100,7 @@ export function BudgetEditDialog({
               max={99}
               defaultValue={existing?.warnPct ?? 80}
               aria-invalid={state.fieldErrors?.warnPct !== undefined}
-              className="w-24 tabular-nums"
+              className="h-11 w-24 tabular-nums sm:h-9"
             />
             {state.fieldErrors?.warnPct && (
               <p className="text-xs text-destructive">
@@ -109,7 +110,12 @@ export function BudgetEditDialog({
           </div>
           <DialogFooter className="items-center gap-3 sm:justify-between">
             <ActionStatus error={state.error} success={state.success} />
-            <Button type="submit" loading={pending} loadingText={copy.submitting}>
+            <Button
+              type="submit"
+              className="h-11 sm:h-9"
+              loading={pending}
+              loadingText={copy.submitting}
+            >
               {copy.submit}
             </Button>
           </DialogFooter>

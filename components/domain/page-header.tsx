@@ -43,8 +43,12 @@ export function PageHeader({
         )}
       </div>
       {(actions || meta) && (
-        <div className="flex shrink-0 flex-col items-end gap-1.5">
-          {actions && <div className="flex items-center gap-2">{actions}</div>}
+        <div className="flex w-full shrink-0 flex-col items-start gap-1.5 sm:w-auto sm:items-end">
+          {actions && (
+            <div className="flex flex-wrap items-center gap-2 max-sm:[&_[data-slot=button]]:min-h-11">
+              {actions}
+            </div>
+          )}
           {meta && (
             <p className="text-xs text-muted-foreground tabular-nums">{meta}</p>
           )}
