@@ -38,6 +38,8 @@ const state = vi.hoisted(() => ({
     connectionUpdates: [],
   } as WriteLog,
   providerThrows: false,
+  decryptThrows: false,
+  keyringThrows: false,
 }));
 
 function resetState(): void {
@@ -54,6 +56,8 @@ function resetState(): void {
     connectionUpdates: [],
   };
   state.providerThrows = false;
+  state.decryptThrows = false;
+  state.keyringThrows = false;
 }
 
 // Minimal chainable query stub: records writes, answers the exact reads
@@ -116,8 +120,21 @@ function makeQuery(table: string) {
 vi.mock("@/lib/supabase/admin", () => ({
   createAdminClient: () => ({ from: (table: string) => makeQuery(table) }),
 }));
+// Hoisted with the mock factory: a top-level class declaration is not yet
+// initialised when vi.mock runs.
+const { FakeKeyringError } = vi.hoisted(() => ({
+  FakeKeyringError: class FakeKeyringError extends Error {},
+}));
+
 vi.mock("@/lib/crypto", () => ({
-  decryptCredential: () => "sk-fake-demo",
+  CredentialKeyringError: FakeKeyringError,
+  decryptCredential: () => {
+    // What the keyring throws when the env itself is malformed (#75).
+    if (state.keyringThrows) throw new FakeKeyringError("KEYS entries must be <id>:<key>");
+    // What it throws when no configured key can open the blob.
+    if (state.decryptThrows) throw new Error("credential could not be decrypted");
+    return "sk-fake-demo";
+  },
 }));
 vi.mock("@/lib/connectors", () => ({
   providerFor: () => ({
@@ -147,7 +164,11 @@ vi.mock("@/lib/connectors", () => ({
   }),
 }));
 
-import { runProviderSync } from "@/lib/sync/provider-sync";
+import {
+  CREDENTIAL_CONFIG_MESSAGE,
+  runProviderSync,
+  UNREADABLE_CREDENTIAL_MESSAGE,
+} from "@/lib/sync/provider-sync";
 
 beforeEach(resetState);
 
@@ -223,5 +244,52 @@ describe("runProviderSync — failure stays accurately represented", () => {
     state.connection = null;
     const result = await runProviderSync("tenant-1", "openai");
     expect(result.ok).toBe(false);
+  });
+});
+
+describe("runProviderSync — an unreadable credential degrades, never cascades (#75)", () => {
+  it("marks the connection for reconnection instead of throwing", async () => {
+    state.decryptThrows = true;
+
+    const result = await runProviderSync("tenant-1", "openai");
+
+    expect(result.ok).toBe(false);
+    const update = state.log.connectionUpdates.at(-1)!;
+    // "error" is the status the freshness banner turns into "Reconectar", and
+    // the message the card prints tells the Admin exactly that.
+    expect(update.status).toBe("error");
+    expect(update.last_sync_error).toBe(UNREADABLE_CREDENTIAL_MESSAGE);
+    expect(String(update.last_sync_error)).not.toContain("sk-");
+    expect(freshness([
+      { provider: "openai", status: update.status as string, lastSyncAt: null },
+    ]).needsAttention.map((c) => c.provider)).toEqual(["openai"]);
+  });
+
+  it("does not stop the cron for the next tenant in the loop", async () => {
+    state.decryptThrows = true;
+    const stranded = await runProviderSync("tenant-1", "openai");
+    expect(stranded.ok).toBe(false);
+
+    // The cron iterates tenants sequentially; the next one holds a readable key.
+    state.decryptThrows = false;
+    const healthy = await runProviderSync("tenant-2", "openai");
+    expect(healthy.ok).toBe(true);
+    expect(state.log.connectionUpdates.at(-1)!.status).toBe("active");
+  });
+});
+
+describe("runProviderSync — a misconfigured keyring is not the customer's fault (#75)", () => {
+  it("does not tell the tenant to reconnect a key that was never the problem", async () => {
+    state.keyringThrows = true;
+
+    const result = await runProviderSync("tenant-1", "openai");
+
+    expect(result.ok).toBe(false);
+    const update = state.log.connectionUpdates.at(-1)!;
+    expect(update.last_sync_error).toBe(CREDENTIAL_CONFIG_MESSAGE);
+    expect(update.last_sync_error).not.toBe(UNREADABLE_CREDENTIAL_MESSAGE);
+    // The variable name and its contents are the operator's business, not
+    // something to print on a customer's connections card.
+    expect(String(update.last_sync_error)).not.toMatch(/CREDENTIAL_|<id>:<key>/);
   });
 });

@@ -9,6 +9,7 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "rotate:credentials": "node --env-file=.env.local scripts/rotate-credentials.ts",
     "test:e2e": "playwright test"
   },
   "dependencies": {
