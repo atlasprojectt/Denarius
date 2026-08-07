@@ -129,11 +129,12 @@ describe("the privacy policy's substantive claims", () => {
     expect(text).toMatch(/Não vão prompts, respostas, nomes de pessoas/i);
   });
 
-  it("states a retention window and only the rights the app can honor today", () => {
-    expect(text).toMatch(/em até 30 dias/);
-    // Export and full deletion are manual until #74 ships self-service; the
-    // policy must not promise a button that does not exist.
-    expect(text).toMatch(/atendidos manualmente/i);
-    expect(text).not.toMatch(/exporte seus dados|baixar seus dados/i);
+  it("states the implemented self-service data rights without overstating provider deletion", () => {
+    expect(text).toMatch(/apagamos imediatamente os dados ativos/i);
+    expect(text).toMatch(/cópias de segurança.+expiram nos ciclos/i);
+    expect(text).toMatch(/administrador baixa um arquivo JSON completo/i);
+    expect(text).toMatch(/nome exato da empresa/i);
+    expect(text).toMatch(/não altera nem exclui nada na OpenAI ou na Anthropic/i);
+    expect(text).toMatch(/nunca inclui credenciais ou tokens de convite/i);
   });
 });

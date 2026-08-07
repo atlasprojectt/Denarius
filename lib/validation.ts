@@ -114,6 +114,13 @@ export const removeUserSchema = z.object({
   userId: z.uuid("Usuário inválido."),
 });
 
+export const tenantDeletionSchema = z.object({
+  companyName: z
+    .string()
+    .min(1, "Digite o nome da empresa para confirmar.")
+    .max(80, "Nome da empresa muito longo."),
+});
+
 // Supported display currencies — editable only at day zero (no budgets/seats),
 // so a frozen-FX budget can never be silently re-denominated.
 export const displayCurrencySchema = z.object({

@@ -215,7 +215,9 @@ The headline metric is **spend in money governed against a budget**; tokens are 
   | `model_price` | provider, model, input_price, output_price, effective_date (versioned, append-only) |
   | `finding` | id, tenant_id, type (budget_threshold / apontamento / seats_vs_roster), scope/target, numbers (incl. margin), drivers[], control_plan[], severity (stateless — no user-facing status, see UX P6/P11) |
   | `notification_log` | id, tenant_id, channel (email), finding_key (team + threshold-level + period), sent_at — **system state only** (de-dup so each event alert fires once per period; never user-facing status; not reset by budget edits) |
+  | `period_snapshot` | tenant_id, closed period, frozen totals/verdict/team/provider breakdown and honesty flags — aggregates only, immutable after close |
 - **Per-tenant toggle:** store-per-person **on by default**, switchable off (then only team aggregates are kept — data minimization for LGPD/sensitive customers).
+- **LGPD self-service (art. 18):** an Admin can stream a complete tenant-scoped JSON export or permanently delete the company space in **Ajustes → Privacidade**. The export has explicit safe-field allowlists (never provider ciphertext, invitation token hashes or secrets) and applies the tenant's privacy switches: names are omitted when `show_names` is off and person grain is omitted when `store_per_person` is off. Deletion requires typing the exact company name, revokes every provider connection before erasure, deletes every product row and every linked Auth user, and makes clear that removing Denarius does **not** remove or change anything in OpenAI or Anthropic. Viewers can do neither operation.
 
 **Multi-tenancy & auth**
 - Isolation: **shared DB with `tenant_id` on every table + Postgres Row-Level Security (RLS)** as a second layer (a query bug can't leak across customers — the due-diligence answer).

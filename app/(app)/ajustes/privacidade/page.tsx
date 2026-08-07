@@ -7,6 +7,7 @@ import { currentRole } from "@/lib/auth/session";
 import { canEditCompanySettings } from "@/lib/settings/account";
 import { createClient } from "@/lib/supabase/server";
 import { PrivacyForm } from "../_components/privacy-form";
+import { DataRightsPanel } from "./_components/data-rights-panel";
 
 const copy = {
   back: "Ajustes",
@@ -19,10 +20,17 @@ const copy = {
 export default async function PrivacySettingsPage() {
   const supabase = await createClient();
   const [{ data: tenantData }, role] = await Promise.all([
-    supabase.from("tenant").select("show_names, store_per_person").maybeSingle(),
+    supabase
+      .from("tenant")
+      .select("name, show_names, store_per_person")
+      .maybeSingle(),
     currentRole(),
   ]);
-  const tenant = tenantData as { show_names: boolean; store_per_person: boolean } | null;
+  const tenant = tenantData as {
+    name: string;
+    show_names: boolean;
+    store_per_person: boolean;
+  } | null;
   if (!tenant) redirect("/onboarding");
   const isAdmin = canEditCompanySettings(role ?? "viewer");
 
@@ -38,6 +46,7 @@ export default async function PrivacySettingsPage() {
           <PrivacyForm showNames={tenant.show_names} storePerPerson={tenant.store_per_person} isAdmin={isAdmin} />
         </CardContent>
       </Card>
+      {isAdmin && <DataRightsPanel companyName={tenant.name} />}
     </PageContainer>
   );
 }
