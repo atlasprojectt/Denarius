@@ -33,8 +33,16 @@ const copy = {
   home: "Ir para o início",
 };
 
+// `reset` is deliberately unused. Next prerenders this boundary, and a
+// prerendered route's inline flight scripts carry no CSP nonce (issue #60), so
+// under a `script-src` without 'unsafe-inline' this page never hydrates —
+// an onClick handler here would be a button that silently does nothing. Unlike
+// the other prerendered routes, it cannot opt into per-request rendering:
+// route segment config is not read from a Client Component, which global-error
+// must be. Reloading the document retries the render, and an anchor does that
+// with no JavaScript at all.
 export default function GlobalError({
-  reset,
+  reset: _reset,
 }: {
   error: Error & { digest?: string };
   reset: () => void;
@@ -62,7 +70,9 @@ export default function GlobalError({
           description={copy.description}
         />
         <div className="flex flex-wrap items-center justify-center gap-2">
-          <Button onClick={() => reset()}>{copy.retry}</Button>
+          <Button asChild>
+            <a href="">{copy.retry}</a>
+          </Button>
           <Button variant="outline" asChild>
             <Link href="/">{copy.home}</Link>
           </Button>

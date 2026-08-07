@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { readFile } from "node:fs/promises";
 
 import { NextRequest } from "next/server";
 import { describe, expect, it } from "vitest";
@@ -160,5 +161,34 @@ describe("proxy — security headers on the response", () => {
     expect(first.headers.get("Content-Security-Policy")).not.toBe(
       second.headers.get("Content-Security-Policy"),
     );
+  });
+});
+
+// A nonce only reaches the page Next renders for THIS request. A prerendered
+// route is built before any request exists, so its inline flight scripts
+// (`self.__next_f.push(…)` — not the theme script, which the hash admits) ship
+// with no nonce and the strict `script-src` blocks them: the route renders and
+// never hydrates. Verified against a production build — before this guard,
+// /privacidade, /termos, /auth/recuperar and /_not-found each served three
+// inline scripts and zero nonce attributes, while dynamic /login served
+// twenty-five.
+//
+// The file is read rather than imported: route segment config must be a
+// statically analysable literal, which is exactly what this asserts, and
+// importing the module would drag next/font into the test runner for nothing.
+describe("routes that must render per request to receive the nonce", () => {
+  const routes = [
+    // The public legal documents — the pages Google's consent review fetches.
+    "app/(legal)/layout.tsx",
+    // Password recovery drives pending/error/success through useActionState;
+    // without hydration none of those states exist.
+    "app/auth/recuperar/page.tsx",
+    "app/not-found.tsx",
+    "app/(app)/not-found.tsx",
+  ];
+
+  it.each(routes)("%s opts out of prerendering", async (file) => {
+    const source = await readFile(new URL(`../${file}`, import.meta.url), "utf8");
+    expect(source).toMatch(/^export const dynamic = "force-dynamic";$/m);
   });
 });

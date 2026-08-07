@@ -9,6 +9,15 @@ import { LEGAL_CONTACT_EMAIL, legalChrome } from "./copy";
 // pages a stranger — or Google's OAuth reviewer — reaches without a session, so
 // they carry the brand and a way back to the product, and nothing else.
 
+// A prerendered route is built before any request exists, so Next cannot stamp
+// its inline flight scripts with the per-request CSP nonce (issue #60) — the
+// browser then blocks them under a `script-src` that carries no
+// 'unsafe-inline', and the page never hydrates. Rendering per request is what
+// makes the nonce reachable. These documents are static text on a low-traffic
+// path; the caching this gives up is worth nothing next to a CSP violation on
+// the pages Google's consent review fetches.
+export const dynamic = "force-dynamic";
+
 export default function LegalLayout({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-svh flex-col">
