@@ -6,6 +6,7 @@ import { z } from "zod";
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { dbFailure, logFailure, logSkipped } from "@/lib/logging/server-log";
 import {
   fieldErrorsOf,
   loginSchema,
@@ -61,7 +62,10 @@ export async function login(
 
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithPassword(parsed.data);
-  if (error) return { error: "E-mail ou senha incorretos." };
+  if (error) {
+    logSkipped("auth.login", null, { code: error.code ?? "unknown" });
+    return { error: "E-mail ou senha incorretos." };
+  }
 
   redirect("/");
 }
@@ -98,6 +102,7 @@ export async function signup(
     // project's own minimum. Surfaced on the field, never as a generic failure.
     const weak = weakPasswordError(error);
     if (weak) return weak;
+    logFailure("auth.signup", null, dbFailure(error));
     return { error: "Não foi possível criar a conta. Tente novamente." };
   }
 
@@ -132,7 +137,10 @@ export async function verifyEmailOtp(
     token: parsed.data.token,
     type: "signup",
   });
-  if (error) return { error: "Código inválido ou expirado." };
+  if (error) {
+    logSkipped("auth.verify_otp", null, { code: error.code ?? "unknown" });
+    return { error: "Código inválido ou expirado." };
+  }
 
   redirect("/onboarding");
 }
@@ -149,7 +157,10 @@ export async function resendSignupCode(
     type: "signup",
     email: email.data,
   });
-  if (error) return { error: "Não foi possível reenviar o código." };
+  if (error) {
+    logFailure("auth.resend_otp", null, dbFailure(error));
+    return { error: "Não foi possível reenviar o código." };
+  }
 
   return { notice: "Código reenviado. Confira seu e-mail." };
 }
@@ -210,7 +221,10 @@ export async function requestPasswordRecovery(
   const startedAt = Date.now();
   const supabase = await createClient();
   const redirectTo = `${await requestOrigin()}/auth/callback?next=${encodeURIComponent(RECOVERY_PATH)}`;
-  await supabase.auth.resetPasswordForEmail(parsed.data.email, { redirectTo });
+  const { error } = await supabase.auth.resetPasswordForEmail(parsed.data.email, {
+    redirectTo,
+  });
+  if (error) logFailure("auth.recovery_request", null, dbFailure(error));
   await holdUntilFloor(startedAt);
 
   return { notice: RECOVERY_REQUESTED_NOTICE };
@@ -242,18 +256,19 @@ export async function resetPassword(
   const supabase = await createClient();
   const {
     data: { user },
+    error: userError,
   } = await supabase.auth.getUser();
+  if (userError) logFailure("auth.password_reset", null, dbFailure(userError));
   if (!user) return { error: RECOVERY_LINK_DEAD };
 
   const { error } = await supabase.auth.updateUser({
     password: parsed.data.password,
   });
   if (error) {
-    return (
-      weakPasswordError(error) ?? {
-        error: "Não foi possível alterar a senha. Tente novamente.",
-      }
-    );
+    const weak = weakPasswordError(error);
+    if (weak) return weak;
+    logFailure("auth.password_reset", null, dbFailure(error));
+    return { error: "Não foi possível alterar a senha. Tente novamente." };
   }
 
   // Whoever started this recovery — the owner or an attacker — the other side's
@@ -305,7 +320,10 @@ async function passwordIsCorrect(
     { auth: { persistSession: false, autoRefreshToken: false } },
   );
   const { error } = await probe.auth.signInWithPassword({ email, password });
-  if (error) return false;
+  if (error) {
+    logSkipped("auth.password_probe", null, { code: error.code ?? "unknown" });
+    return false;
+  }
 
   await probe.auth.signOut({ scope: "local" });
   return true;
@@ -332,7 +350,9 @@ export async function changePassword(
   const supabase = await createClient();
   const {
     data: { user },
+    error: userError,
   } = await supabase.auth.getUser();
+  if (userError) logFailure("auth.password_change", null, dbFailure(userError));
   if (!user?.email) return { error: CHANGE_SESSION_GONE };
   if (!hasPasswordIdentity(user)) return { error: CHANGE_GOOGLE_ONLY };
 
@@ -365,7 +385,10 @@ export async function changePassword(
         fieldErrors: { password: CHANGE_SAME_PASSWORD },
       };
     }
-    return weakPasswordError(error) ?? { error: CHANGE_FAILED };
+    const weak = weakPasswordError(error);
+    if (weak) return weak;
+    logFailure("auth.password_change", null, dbFailure(error));
+    return { error: CHANGE_FAILED };
   }
 
   // Changing a password is also how someone evicts whoever else is holding a
@@ -377,7 +400,8 @@ export async function changePassword(
 
 export async function logout(): Promise<void> {
   const supabase = await createClient();
-  await supabase.auth.signOut();
+  const { error } = await supabase.auth.signOut();
+  if (error) logFailure("auth.logout", null, dbFailure(error));
   redirect("/login");
 }
 
@@ -398,7 +422,9 @@ export async function completeOnboarding(
   const supabase = await createClient();
   const {
     data: { user },
+    error: userReadError,
   } = await supabase.auth.getUser();
+  if (userReadError) logFailure("onboarding.complete", null, dbFailure(userReadError));
   if (!user) redirect("/login");
 
   const admin = createAdminClient();
@@ -416,6 +442,10 @@ export async function completeOnboarding(
     .select("id")
     .single();
   if (tenantError) {
+    logFailure("onboarding.complete", null, {
+      step: "create_tenant",
+      ...dbFailure(tenantError),
+    });
     return { error: "Não foi possível criar a empresa. Tente novamente." };
   }
 
@@ -426,16 +456,32 @@ export async function completeOnboarding(
     role: "admin",
   });
   if (userError) {
-    await admin.from("tenant").delete().eq("id", tenant.id);
+    const { error: rollbackError } = await admin.from("tenant").delete().eq("id", tenant.id);
+    logFailure("onboarding.complete", tenant.id, {
+      step: "create_admin",
+      rollbackCode: rollbackError?.code ?? null,
+      ...dbFailure(userError),
+    });
     return { error: "Não foi possível concluir o cadastro. Tente novamente." };
   }
 
   // Internal name — the UI renders this bucket from the flag, not the string.
-  await admin.from("team").insert({
+  const { error: teamError } = await admin.from("team").insert({
     tenant_id: tenant.id,
     name: "unattributed",
     is_unattributed: true,
   });
+  if (teamError) {
+    // Keep onboarding retryable: deleting the tenant cascades the app_user row
+    // but deliberately leaves the authenticated identity in auth.users.
+    const { error: rollbackError } = await admin.from("tenant").delete().eq("id", tenant.id);
+    logFailure("onboarding.complete", tenant.id, {
+      step: "create_unattributed",
+      rollbackCode: rollbackError?.code ?? null,
+      ...dbFailure(teamError),
+    });
+    return { error: "Não foi possível concluir o cadastro. Tente novamente." };
+  }
 
   redirect("/");
 }

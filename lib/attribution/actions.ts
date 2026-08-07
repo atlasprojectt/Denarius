@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import { recordAudit } from "@/lib/audit/log";
 import { requireAdmin } from "@/lib/auth/session";
+import { dbFailure, logFailure } from "@/lib/logging/server-log";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isOwnedTeam } from "@/lib/teams/queries";
 import { projectMapEntrySchema } from "@/lib/validation";
@@ -85,7 +86,10 @@ export async function saveProjectMap(
     const { error } = await admin
       .from("project_map")
       .upsert(toUpsert, { onConflict: "tenant_id,provider,project_id" });
-    if (error) return { error: "Não foi possível salvar o mapeamento. Tente novamente." };
+    if (error) {
+      logFailure("attribution.save", tenantId, { step: "upsert", ...dbFailure(error) });
+      return { error: "Não foi possível salvar o mapeamento. Tente novamente." };
+    }
   }
   for (const c of toClear) {
     const { error } = await admin
@@ -94,7 +98,10 @@ export async function saveProjectMap(
       .eq("tenant_id", tenantId)
       .eq("provider", c.provider)
       .eq("project_id", c.projectId);
-    if (error) return { error: "Não foi possível salvar o mapeamento. Tente novamente." };
+    if (error) {
+      logFailure("attribution.save", tenantId, { step: "clear", ...dbFailure(error) });
+      return { error: "Não foi possível salvar o mapeamento. Tente novamente." };
+    }
   }
 
   // Attribution moves spend between teams, so what changed is how many

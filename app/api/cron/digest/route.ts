@@ -3,6 +3,7 @@ import "server-only";
 import { NextResponse } from "next/server";
 
 import { monthStartUtc } from "@/lib/engine/period";
+import { dbFailure, logFailure, logOk } from "@/lib/logging/server-log";
 import { anthropicNarrator } from "@/lib/narrate/client";
 import { emailChannel } from "@/lib/notify/channel";
 import { sendWeeklyDigest } from "@/lib/notify/digest";
@@ -35,6 +36,7 @@ export async function GET(request: Request) {
     .eq("scope", "org")
     .eq("period_month", monthStartUtc());
   if (error) {
+    logFailure("cron.digest", null, dbFailure(error));
     return NextResponse.json({ error: "could not list budgets" }, { status: 500 });
   }
 
@@ -56,6 +58,9 @@ export async function GET(request: Request) {
       counts.skipped += 1;
     }
   }
+
+  if (counts.failed > 0) logFailure("cron.digest", null, { ...counts });
+  else logOk("cron.digest", null, { ...counts });
 
   return NextResponse.json({ ...counts, at: new Date().toISOString() });
 }

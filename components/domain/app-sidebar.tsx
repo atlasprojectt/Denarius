@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   RiExpandUpDownLine,
+  RiCloseLine,
   RiLineChartLine,
   RiSettings3Line,
   RiHome5Line,
@@ -36,7 +37,9 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
+  useSidebar,
 } from "@/components/ui/sidebar";
+import { Button } from "@/components/ui/button";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { logout } from "@/lib/auth/actions";
 import type { ConnectionFreshness } from "@/lib/engine/freshness";
@@ -57,6 +60,7 @@ const copy = {
   profileMenu: "Perfil",
   profileSettings: "Configurações",
   logout: "Sair",
+  closeMenu: "Fechar menu",
 };
 
 const navigation: { label: string; items: { title: string; path: string; icon: React.ReactNode }[] }[] = [
@@ -100,6 +104,7 @@ export function AppSidebar({
   allClear: boolean;
 }) {
   const pathname = usePathname();
+  const { setOpenMobile } = useSidebar();
 
   const navGroups: SidebarNavGroup[] = navigation.map((group) => ({
     label: group.label,
@@ -112,7 +117,7 @@ export function AppSidebar({
   return (
     <TooltipProvider delayDuration={0}>
       <Sidebar collapsible="icon" variant="inset">
-        <SidebarHeader className="h-14 justify-center">
+        <SidebarHeader className="relative h-14 justify-center">
           {/* Wordmark ↔ coin crossfade: both stay mounted (the Link's
               overflow-hidden clips the wordmark as the rail closes) so the swap
               fades instead of jump-cutting, on the same clock as the collapse.
@@ -121,7 +126,7 @@ export function AppSidebar({
               utility — without it the lockup renders at 16px. */}
           <SidebarMenuButton
             asChild
-            className="h-10 group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-0!"
+            className="h-11 pr-12 md:h-10 md:pr-2 group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-0!"
           >
             <Link
               href="/"
@@ -132,6 +137,16 @@ export function AppSidebar({
               <LogoMark className="absolute top-1/2 left-1/2 size-7! -translate-x-1/2 -translate-y-1/2 scale-90 text-brand-accent opacity-0 transition-[opacity,scale] duration-[320ms] ease-(--motion-ease-expressive) group-data-[collapsible=icon]:scale-100 group-data-[collapsible=icon]:opacity-100 group-data-[collapsible=icon]:delay-100" />
             </Link>
           </SidebarMenuButton>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            aria-label={copy.closeMenu}
+            onClick={() => setOpenMobile(false)}
+            className="absolute top-1.5 right-2 size-11 md:hidden"
+          >
+            <RiCloseLine className="size-5" />
+          </Button>
         </SidebarHeader>
 
         <SidebarContent>

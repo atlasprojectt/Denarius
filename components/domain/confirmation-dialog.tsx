@@ -54,7 +54,10 @@ export function ConfirmationDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent showCloseButton={false}>
+      <DialogContent
+        showCloseButton={false}
+        className="max-h-[calc(100dvh-2rem)] overflow-y-auto overscroll-contain max-sm:[&_[data-slot=button]]:min-h-11"
+      >
         <form action={action} className="contents">
           <DialogHeader className="flex-row items-start gap-3">
             <span

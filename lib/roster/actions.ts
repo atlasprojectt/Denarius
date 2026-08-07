@@ -8,6 +8,7 @@ import {
   parseRosterCsv,
   type RosterRowError,
 } from "@/lib/roster/parse-csv";
+import { dbFailure, logFailure } from "@/lib/logging/server-log";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { isOwnedTeam } from "@/lib/teams/queries";
@@ -56,7 +57,13 @@ export async function importRoster(
   if (intent === "preview" || errors.length > 0) {
     // Nothing is written on preview — and never on a file with errors
     // (no partial imports, ever).
-    const { data: existingTeams } = await supabase.from("team").select("name");
+    const { data: existingTeams, error: teamsError } = await supabase
+      .from("team")
+      .select("name");
+    if (teamsError) {
+      logFailure("roster.preview", auth.session.tenantId, dbFailure(teamsError));
+      return { error: "Não foi possível preparar a prévia. Tente novamente." };
+    }
     const existing = new Set(
       (existingTeams ?? []).map((t: { name: string }) => t.name),
     );
@@ -71,6 +78,7 @@ export async function importRoster(
   // depth); a mid-import failure rolls the whole transaction back.
   const { data, error } = await supabase.rpc("roster_import", { rows });
   if (error) {
+    logFailure("roster.import", auth.session.tenantId, dbFailure(error));
     return { error: "A importação falhou — nada foi gravado. Tente novamente." };
   }
 
@@ -136,6 +144,7 @@ export async function updateEmployee(
         fieldErrors: { email: "Já existe uma pessoa com este e-mail." },
       };
     }
+    logFailure("roster.employee_update", tenantId, dbFailure(error));
     return { error: "Não foi possível salvar. Tente novamente." };
   }
   if (count === 0) return { error: "Pessoa não encontrada." };
@@ -176,7 +185,10 @@ export async function removeEmployee(
     .eq("id", parsed.data.employeeId)
     .eq("tenant_id", auth.session.tenantId)
     .select("email");
-  if (error) return { error: "Não foi possível remover. Tente novamente." };
+  if (error) {
+    logFailure("roster.employee_remove", auth.session.tenantId, dbFailure(error));
+    return { error: "Não foi possível remover. Tente novamente." };
+  }
   // Idempotent: repeated submit / cross-tenant id match nothing — the desired
   // end state already holds (QA-05 destructive-action contract).
   if (count === 0) return { success: "Pessoa já havia sido removida." };
