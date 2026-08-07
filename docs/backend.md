@@ -230,3 +230,15 @@ The script requires `NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`; 
 **A key that cannot decrypt degrades, it does not cascade.** `runProviderSync` resolves the credential *outside* its sync `try`: an unreadable blob marks the connection `status: "error"` with `UNREADABLE_CREDENTIAL_MESSAGE` ("Não foi possível ler a credencial guardada. Reconecte o provedor."), which the connections card renders and the freshness banner turns into "Reconectar". The daily cron counts it as one failure and continues to the next tenant — the sync is the one cross-tenant path, and one bad row must not take the fleet down.
 
 Tests: `tests/crypto.test.ts` (round-trip per key, the rotation window, cross-row rejection, unknown key id, legacy `v1` read, keyring misconfiguration, tampering, secret-free errors) and `tests/sync-propagation.test.ts` (the reconnect degradation and the cron continuing).
+
+## 15. Structured server logging — issue #79
+
+**Destination.** Denarius writes one-line JSON events to Vercel runtime logs. An external tracker is deliberately absent: it would add a dependency and a sub-processor before the volume justifies either. `lib/logging/server-log.ts` is the only emission edge, so changing the destination later does not change call sites.
+
+**Shape.** Every Denarius event carries `evt: "denarius"`, an ISO timestamp, stable dotted operation name, `outcome` (`ok` / `failed` / `skipped`) and level. Tenant id is included whenever the operation has resolved one; cross-tenant cron summaries and unauthenticated auth failures legitimately carry none. The two cron routes log their summary, provider sync logs one outcome per tenant/provider, notification and digest delivery log failures/degradation, and operational failure branches in server actions log before returning calm pt-BR copy.
+
+**User reference.** Next assigns a server error `digest`; the app and global error boundaries show only its first eight alphanumeric characters as `Referência`. Next's own platform error line carries the digest, so the short reference is searchable without exposing the exception, message or stack in the UI. Denarius events accept the same digest when one already exists; they never invent a reference for client-only or development errors.
+
+**Redaction is a chokepoint.** `lib/logging/redact.ts` extends the audit redaction rule and runs inside `buildLine()` regardless of what a caller supplied. Secret-shaped keys and values, embedded provider keys/JWTs, e-mail addresses, person identifiers, prompts, responses and content are replaced with `[redacted]`. Thrown values contribute only the error class and a redacted message — never a stack or raw provider/database payload. Database failures record the error code only because messages can quote an offending e-mail or row value. Core event fields are written after detail, so call-site detail cannot override the operation, tenant, outcome or reference.
+
+Tests: `tests/logging.test.ts` asserts the reference contract, embedded-secret and personal-data redaction, stack omission and structural-field integrity.
