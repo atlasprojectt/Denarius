@@ -36,6 +36,11 @@ export type VerdictInput = {
   org: BudgetEvaluation;
   teams: VerdictTeam[];
   currency: string;
+  /** The period has ENDED (#94, a frozen month). Same numbers — on a closed
+   *  period the run-rate projection IS the realized total — but the sentence
+   *  says "fechou", never "projeção": a report of a past month must not speak
+   *  about it in the future tense. */
+  closed?: boolean;
 };
 
 /** The breach clause: "ultrapassou o orçamento em X%" with enough precision
@@ -60,7 +65,7 @@ function breachClause(fraction: number): string {
  * Priority is severity order: a realized breach outranks a projected one.
  */
 export function computeVerdict(input: VerdictInput): Verdict {
-  const { org, teams, currency } = input;
+  const { org, teams, currency, closed = false } = input;
 
   if (org.collecting) {
     return {
@@ -99,7 +104,9 @@ export function computeVerdict(input: VerdictInput): Verdict {
     const over = money(-org.projectedMargin, currency);
     return {
       status: "amber",
-      sentence: `Atenção — projeção de ${over} acima do orçamento.`,
+      sentence: closed
+        ? `Fechou ${over} acima do orçamento.`
+        : `Atenção — projeção de ${over} acima do orçamento.`,
       teamId: null,
     };
   }
@@ -108,7 +115,9 @@ export function computeVerdict(input: VerdictInput): Verdict {
   const under = money(org.projectedMargin ?? 0, currency);
   return {
     status: "green",
-    sentence: `No controle — projeção ${under} abaixo do orçamento.`,
+    sentence: closed
+      ? `Fechou ${under} abaixo do orçamento.`
+      : `No controle — projeção ${under} abaixo do orçamento.`,
     teamId: null,
   };
 }

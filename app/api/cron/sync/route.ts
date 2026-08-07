@@ -6,6 +6,7 @@ import { monthStartUtc } from "@/lib/engine/period";
 import { dbFailure, logFailure, logOk } from "@/lib/logging/server-log";
 import { sendBudgetAlerts } from "@/lib/notify/alerts";
 import { emailChannel } from "@/lib/notify/channel";
+import { closePeriods } from "@/lib/snapshot/close";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { runProviderSync, type ProviderName } from "@/lib/sync/provider-sync";
 
@@ -82,6 +83,11 @@ export async function GET(request: Request) {
     alerts.undeliverable += result.undeliverable;
   }
 
+  // Freeze the previous month once it has ended (#94) — last, so the month
+  // being closed is as complete as this run's sync could make it. Idempotent:
+  // the (tenant, period_month) unique key absorbs every repeat run.
+  const closed = await closePeriods();
+
   // One line for the run itself. The per-connection outcomes are logged inside
   // runProviderSync, where the tenant and the provider are both in scope; this
   // is the line that says the cron ran at all — which a counter in a response
@@ -95,8 +101,12 @@ export async function GET(request: Request) {
     alertsFailed: alerts.failed,
     alertsUndeliverable: alerts.undeliverable,
     budgetQueryFailed: budgetError !== null,
+    snapshotTenants: closed.tenants,
+    snapshotsCreated: closed.created,
+    snapshotsBackfilled: closed.backfilled,
+    snapshotsFailed: closed.failed,
   };
-  if (failed > 0 || alerts.failed > 0 || budgetError) {
+  if (failed > 0 || alerts.failed > 0 || closed.failed > 0 || budgetError) {
     logFailure("cron.sync", null, summary);
   } else {
     logOk("cron.sync", null, summary);
@@ -107,6 +117,7 @@ export async function GET(request: Request) {
     synced,
     failed,
     alerts,
+    closed,
     at: new Date().toISOString(),
   });
 }
