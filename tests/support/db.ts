@@ -37,10 +37,18 @@ export function adminClient() {
   });
 }
 
-/** Whether a table exists and is reachable — the readiness probe. */
-export async function tableApplied(table: string): Promise<boolean> {
+/** Whether a table/column exists and is reachable — the readiness probe. */
+export async function tableApplied(
+  table: string,
+  columns = "id",
+): Promise<boolean> {
   if (!hasDbEnv) return false;
-  const { error } = await adminClient().from(table).select("id").limit(1);
+  const { error } = await adminClient().from(table).select(columns).limit(1);
+  if (error && databaseRequired()) {
+    // Codes are enough to distinguish a missing relation/schema-cache entry
+    // from a privilege failure, without copying a row value into CI output.
+    console.warn(`[database readiness] ${table} failed (${error.code})`);
+  }
   return !error;
 }
 

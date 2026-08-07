@@ -2,12 +2,12 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import {
-  adminClient,
   hasDbEnv,
   requireDatabaseSuite,
   supabaseAnonKey,
   supabaseServiceKey,
   supabaseUrl,
+  tableApplied,
 } from "./support/db";
 
 /**
@@ -23,8 +23,7 @@ const serviceKey = supabaseServiceKey;
 async function privacyMigrationApplied(): Promise<boolean> {
   if (!hasDbEnv) return false;
   // show_names arrives with the #23 migration; its absence errors the select.
-  const { error } = await adminClient().from("tenant").select("show_names").limit(1);
-  return !error;
+  return tableApplied("tenant", "show_names");
 }
 
 const ready = requireDatabaseSuite(

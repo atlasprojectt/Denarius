@@ -63,6 +63,7 @@
 
 - Shared Postgres with **`tenant_id` on every table** + **Row-Level Security policies** as second layer: a query bug cannot leak across customers.
 - RLS policies live in versioned migrations → an acquirer can audit the isolation history commit by commit.
+- Data API privileges are explicit in migrations, not inherited from a Supabase project default: authenticated sessions receive only the reads/RPCs the app uses, browser table writes stay revoked, and `service_role` owns the server-side mutation surface. Every new table/function migration must grant its intended role in the same file; RLS and SQL privileges are two independent controls.
 - Provider credentials: read-only Admin keys, **encrypted at rest**, never in plaintext/logs, rotatable/revocable. `service_role` key only in server-side env (never `NEXT_PUBLIC_`).
 - Stores **metadata only** (counts, cost, model, key/user id, date). **Never prompts/responses** — structural consequence of having no proxy.
 - RBAC: Admin / Viewer + "who can see names" toggle (Admin-only default) + "store per-person data" toggle (LGPD data minimization).
