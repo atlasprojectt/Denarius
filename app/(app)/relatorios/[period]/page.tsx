@@ -14,4 +14,3 @@ export default async function MonthlyReportPage({
 
   return <MonthlyReport report={report} />;
 }
-

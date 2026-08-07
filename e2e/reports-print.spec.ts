@@ -76,4 +76,3 @@ test("the frozen template keeps order and print drops app chrome", async ({ page
   expect(printStyles.background).toBe("rgb(255, 255, 255)");
   expect(printStyles.cardBreak).toBe("avoid");
 });
-

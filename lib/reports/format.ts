@@ -24,4 +24,3 @@ export function reportPeriodPath(periodMonth: string): string {
 export function reportDate(iso: string): string {
   return DATE.format(new Date(iso));
 }
-
