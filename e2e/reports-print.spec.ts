@@ -31,6 +31,22 @@ test("reports stay legible in both screen themes", async ({ page }) => {
   }
 });
 
+test("the print action explains how to remove browser chrome", async ({ page }) => {
+  await page.goto("/relatorios/agora");
+  await page.getByRole("button", { name: "Imprimir ou salvar em PDF" }).click();
+
+  const dialog = page.getByRole("dialog", { name: "Antes de salvar o PDF" });
+  await expect(dialog).toBeVisible();
+  await expect(dialog).toContainText("Papel A4 e escala de 100%.");
+  await expect(dialog).toContainText(
+    "Cabeçalhos e rodapés do navegador desativados.",
+  );
+  await expect(dialog).toContainText("Fundos gráficos ativados");
+
+  await dialog.getByRole("button", { name: "Cancelar" }).click();
+  await expect(dialog).toBeHidden();
+});
+
 test("the on-demand report prints like a closed month, with the partial notice", async ({
   page,
 }) => {
@@ -66,12 +82,32 @@ test("the on-demand report prints like a closed month, with the partial notice",
     runningHeader: getComputedStyle(
       document.querySelector(".report-running-header")!,
     ).display,
+    headerGroup: getComputedStyle(
+      document.querySelector(".report-print-header")!,
+    ).display,
+    runningPosition: getComputedStyle(
+      document.querySelector(".report-running-header")!,
+    ).position,
+    bodyRowBreak: getComputedStyle(
+      document.querySelector(".report-print-frame > tbody > tr")!,
+    ).breakInside,
+    sectionBreak: getComputedStyle(
+      document.querySelector(".report-section:not([data-print-keep])")!,
+    ).breakInside,
+    keepBreak: getComputedStyle(
+      document.querySelector("[data-print-keep]")!,
+    ).breakInside,
     background: getComputedStyle(document.documentElement).backgroundColor,
   }));
 
   expect(printStyles.sidebar).toBe("none");
   expect(printStyles.printControl).toBe("none");
   expect(printStyles.runningHeader).toBe("block");
+  expect(printStyles.headerGroup).toBe("table-header-group");
+  expect(printStyles.runningPosition).toBe("static");
+  expect(printStyles.bodyRowBreak).toBe("auto");
+  expect(printStyles.sectionBreak).toBe("auto");
+  expect(printStyles.keepBreak).toBe("avoid");
   expect(printStyles.background).toBe("rgb(255, 255, 255)");
 });
 
@@ -119,4 +155,26 @@ test("the frozen template keeps order and print drops app chrome", async ({ page
   expect(printStyles.runningHeader).toBe("block");
   expect(printStyles.background).toBe("rgb(255, 255, 255)");
   expect(printStyles.cardBreak).toBe("avoid");
+});
+
+test("Chromium produces a real A4 PDF from the shared report", async ({
+  page,
+  browserName,
+}, testInfo) => {
+  test.skip(browserName !== "chromium", "page.pdf is a Chromium capability.");
+  await page.goto("/relatorios/agora");
+  await expect(page.locator("[data-report-sheet]")).toBeVisible();
+
+  const pdf = await page.pdf({
+    displayHeaderFooter: false,
+    format: "A4",
+    preferCSSPageSize: true,
+    printBackground: true,
+  });
+
+  expect(pdf.byteLength).toBeGreaterThan(20_000);
+  await testInfo.attach("report.pdf", {
+    body: pdf,
+    contentType: "application/pdf",
+  });
 });

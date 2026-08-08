@@ -9,6 +9,10 @@ const reportSheetSource = readFileSync(
   path.join(process.cwd(), "app/(app)/relatorios/_components/report-sheet.tsx"),
   "utf8",
 );
+const printButtonSource = readFileSync(
+  path.join(process.cwd(), "app/(app)/relatorios/_components/print-button.tsx"),
+  "utf8",
+);
 
 const snapshotRow = {
   period_month: "2026-07-01",
@@ -130,15 +134,20 @@ describe("report shell and print contract", () => {
     expect(isReportPath("/relatorios/agora")).toBe(false);
   });
 
-  it("hides app chrome, forces paper light mode and protects report cards", () => {
+  it("keeps the repeated header inside the page and fragments only at safe boundaries", () => {
     const css = readFileSync(path.join(process.cwd(), "app/globals.css"), "utf8");
     const print = css.slice(css.indexOf("@media print"));
 
     expect(print).toContain('[data-slot="sidebar-container"]');
     expect(print).toContain("[data-app-header]");
     expect(print).toContain("color-scheme: light");
-    expect(print).toContain("break-inside: avoid");
-    expect(print).toContain(".report-running-header");
+    expect(print).toContain(".report-print-header");
+    expect(print).toContain("display: table-header-group");
+    expect(print).toContain("[data-print-keep]");
+    expect(print).toContain(".report-section");
+    expect(print).toContain("break-inside: auto");
+    expect(print).not.toContain("position: fixed");
+    expect(print).not.toContain("top: -15mm");
   });
 
   it("keeps the fixed executive sections in the same source order", () => {
@@ -164,6 +173,16 @@ describe("report shell and print contract", () => {
     expect(reportSheetSource).toContain("report-running-header");
     expect(reportSheetSource).toContain("report-screen-header");
     expect(reportSheetSource).toContain("<PrintButton />");
+    expect(reportSheetSource).toContain("report-print-frame");
+    expect(reportSheetSource).toContain("report-print-header");
+    expect(reportSheetSource).toContain("report-print-body");
+    expect(reportSheetSource).toContain("data-print-keep");
+  });
+
+  it("explains the browser settings before opening its print dialog", () => {
+    expect(printButtonSource).toContain("copy.printPrepItems");
+    expect(printButtonSource).toContain("window.requestAnimationFrame");
+    expect(printButtonSource).toContain("window.print()");
   });
 });
 
