@@ -4,6 +4,7 @@
 > **Positioning:** AI-spend governance for tech companies. Denarius connects a company's AI APIs (OpenAI + Anthropic), attributes **token spend in money** by team/person, tracks it **against a budget**, and answers *"am I in control?"* in one line — a **verdict** — backed by **projected margin**, **early warnings**, and **contextual what-if simulation**. An executive cockpit for the CEO/CTO who needs to *keep AI cost under control*, not just look at it.
 > **Exit thesis:** traction (1–3 paying customers) → sale to a strategic acquirer.
 > **Revision note:** this version integrates the founder's focus realignment and the founder-approved 2026-07-11 UI/UX audit. Decision P16 supersedes earlier UI details where they conflict.
+> **Status of the build (2026-08-07):** the v1 build order below (slices 2–12, issues #12–#23) is **complete**. What followed is a pre-launch hardening track — stories 60–66, all shipped — covering the credential self-service, the audit trail, LGPD self-service, closed-month reports and the public legal pages, plus non-story infrastructure work (security headers, rate limiting, credential-key rotation, supply-chain gate, RLS in CI, server-side logging, responsive pass). Everything still open is **HITL**: infrastructure and provider access only a human can provision (issues #11, #56, #59, #63, #64, #65, #66, #67).
 
 ---
 
@@ -129,6 +130,23 @@ The headline metric is **spend in money governed against a budget**; tokens are 
 58. As an Admin, I want to manage company settings (name, display currency), so that it fits my reality.
 59. As an Admin, I want to remove a user, so that I can revoke access for someone who left.
 
+**Credential self-service** *(shipped 2026-08-05, issues #68/#69)*
+60. As a user, I want to request a recovery link by email when I forget my password, so that losing a password doesn't mean losing the account — and I want the answer to look the same whether or not the address is registered, so that the page can't be used to discover who has an account here.
+61. As a user, I want to change my password from settings by confirming the current one, so that an unlocked laptop or a stolen session isn't enough to take the account over; changing it signs every **other** session out.
+
+**Administrative evidence** *(shipped 2026-08-05, issue #73)*
+62. As an Admin, I want an append-only trail of administrative actions — who changed a budget, connected or revoked a key, moved a privacy switch, invited or removed someone — so that I can show an auditor (or an acquirer) what happened in the space. **Admin-only**: the trail names people, so a Viewer reads nothing (principle #1). Retention 24 months, stated on screen.
+
+**Data rights** *(shipped 2026-08-07, issue #74 — see "LGPD self-service" under Data & security)*
+63. As an Admin, I want to export everything my company's space holds as one file, and to permanently delete the space, so that I exercise LGPD art. 18 myself instead of filing a request. Deleting Denarius removes nothing at OpenAI or Anthropic, and the product says so.
+
+**Documented months** *(shipped 2026-08-07, issues #94/#95)*
+64. As a CEO/CTO, I want each finished month frozen the way it actually closed, so that a report I open in six months shows the same numbers it showed on the 1st — seat configuration included, since seats are current state and would otherwise be re-priced with today's.
+65. As a CEO/CTO, I want a closed month rendered as one fixed, printable report (same sections, units and caveats every time), so that I can hand it to a board or an accountant without rebuilding it. Admins and Viewers read the same aggregate-only artifact.
+
+**Public trust surface** *(shipped 2026-08-04, issue #57)*
+66. As a prospective customer, I want a public privacy policy and terms — sub-processors listed — so that my legal review can start before anyone signs in.
+
 ## Implementation Decisions
 
 **Scope & product**
@@ -216,6 +234,9 @@ The headline metric is **spend in money governed against a budget**; tokens are 
   | `finding` | id, tenant_id, type (budget_threshold / apontamento / seats_vs_roster), scope/target, numbers (incl. margin), drivers[], control_plan[], severity (stateless — no user-facing status, see UX P6/P11) |
   | `notification_log` | id, tenant_id, channel (email), finding_key (team + threshold-level + period), sent_at — **system state only** (de-dup so each event alert fires once per period; never user-facing status; not reset by budget edits) |
   | `period_snapshot` | tenant_id, closed period, frozen totals/verdict/team/provider breakdown and honesty flags — aggregates only, immutable after close |
+  | `invitation` | id, tenant_id, email, role, token **hash** (never the raw token), invited_by, expires_at (7 days), accepted_at, revoked_at — tenant + role live here, never in self-writable auth metadata |
+  | `audit_log` | id, tenant_id, actor_id (nullable), actor_email (snapshotted), action, target, detail (redacted), created_at — append-only, Admin-read, 24-month retention |
+  | `rate_limit_hit` | bucket (hashed subject), at — system state only, backs the invitation create/accept limits; fails **open** |
 - **Per-tenant toggle:** store-per-person **on by default**, switchable off (then only team aggregates are kept — data minimization for LGPD/sensitive customers).
 - **LGPD self-service (art. 18):** an Admin can stream a complete tenant-scoped JSON export or permanently delete the company space in **Ajustes → Privacidade**. The export has explicit safe-field allowlists (never provider ciphertext, invitation token hashes or secrets) and applies the tenant's privacy switches: names are omitted when `show_names` is off and person grain is omitted when `store_per_person` is off. Deletion requires typing the exact company name, revokes every provider connection before erasure, deletes every product row and every linked Auth user, and makes clear that removing Denarius does **not** remove or change anything in OpenAI or Anthropic. Viewers can do neither operation.
 
