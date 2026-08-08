@@ -22,8 +22,22 @@ export default defineConfig({
         timeout: 120_000,
       },
   projects: [
-    { name: "desktop", use: { viewport: { width: 1440, height: 900 } } },
-    { name: "compact", use: { viewport: { width: 768, height: 900 } } },
-    { name: "mobile", use: { viewport: { width: 375, height: 812 } } },
+    {
+      name: "desktop",
+      use: { browserName: "chromium", viewport: { width: 1440, height: 900 } },
+    },
+    {
+      name: "desktop-firefox",
+      testMatch: /reports-print\.spec\.ts/,
+      use: { browserName: "firefox", viewport: { width: 1440, height: 900 } },
+    },
+    {
+      name: "compact",
+      use: { browserName: "chromium", viewport: { width: 768, height: 900 } },
+    },
+    {
+      name: "mobile",
+      use: { browserName: "chromium", viewport: { width: 375, height: 812 } },
+    },
   ],
 });

@@ -32,6 +32,16 @@ export const copy = {
   reportDescription: "Relatório mensal fechado",
   liveReportDescription: "Relatório da situação atual",
   print: "Imprimir ou salvar em PDF",
+  printPrepTitle: "Antes de salvar o PDF",
+  printPrepDescription:
+    "A janela de impressão pertence ao navegador. Confira estas opções para preservar o documento do Denarius:",
+  printPrepItems: [
+    "Papel A4 e escala de 100%.",
+    "Cabeçalhos e rodapés do navegador desativados.",
+    "Fundos gráficos ativados para manter os sinais de orçamento.",
+  ],
+  printCancel: "Cancelar",
+  printContinue: "Abrir impressão",
   closedAt: (date: string) => `Fechado em ${date}`,
   generatedAt: (dateTime: string) => `Gerado em ${dateTime}`,
   dayOfPeriod: (day: number, days: number, month: string) =>

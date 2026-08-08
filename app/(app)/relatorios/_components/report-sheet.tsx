@@ -67,7 +67,11 @@ function displayMoney(value: number | null, currency: string): string {
 
 function SectionTitle({ id, children }: { id: string; children: React.ReactNode }) {
   return (
-    <h2 id={id} className="text-sm font-medium tracking-tight">
+    <h2
+      id={id}
+      className="text-sm font-medium tracking-tight"
+      data-print-heading
+    >
       {children}
     </h2>
   );
@@ -179,7 +183,11 @@ export function ReportSheet({
         <p className="mt-2 text-xs text-muted-foreground tabular-nums">{fx}</p>
       </div>
 
-      <div className="report-running-header" aria-hidden>
+      <table className="report-print-frame" role="presentation">
+        <thead className="report-print-header" aria-hidden>
+          <tr>
+            <td>
+              <div className="report-running-header">
         <div className="flex items-baseline justify-between gap-6">
           <strong>{report.companyName}</strong>
           <span>{month}</span>
@@ -189,13 +197,20 @@ export function ReportSheet({
           <span>{fx}</span>
         </div>
       </div>
+            </td>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <div className="report-print-body">
 
       {live && (
         // Neutral, not a semaphore: green/amber/red belong to budget status
         // alone (principle #5), and an unfinished month is not a problem — it
         // is a fact about the document. The shared `Notice` is the app's
         // disclosure voice; the section wrapper carries the print hooks.
-        <section className="report-section" data-report-section="partial">
+        <section className="report-section" data-print-keep data-report-section="partial">
           <Notice icon={<RiInformationLine aria-hidden />} title={copy.partialTitle}>
             {copy.partialBody}
           </Notice>
@@ -207,7 +222,7 @@ export function ReportSheet({
         className="report-section"
         data-report-section="verdict"
       >
-        <Card>
+        <Card data-print-keep>
           <CardHeader>
             <CardTitle>
               <SectionTitle id="report-verdict">{copy.verdictTitle}</SectionTitle>
@@ -232,7 +247,7 @@ export function ReportSheet({
         className="report-section"
         data-report-section="spend"
       >
-        <Card>
+        <Card data-print-keep>
           <CardHeader>
             <CardTitle>
               <SectionTitle id="report-spend">
@@ -293,7 +308,7 @@ export function ReportSheet({
         className="report-section"
         data-report-section="providers"
       >
-        <Card>
+        <Card data-print-keep>
           <CardHeader>
             <CardTitle>
               <SectionTitle id="report-providers">
@@ -326,7 +341,7 @@ export function ReportSheet({
             </p>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-xs">
+              <table className="w-full text-xs" data-report-table>
                 <thead>
                   <tr className="border-b text-left text-[11px] text-muted-foreground">
                     <th className="px-4 py-2 font-medium">{copy.team}</th>
@@ -381,7 +396,7 @@ export function ReportSheet({
           {copy.seatsAndUnattributed}
         </SectionTitle>
         <div className="mt-2 grid gap-4 md:grid-cols-2">
-          <Card>
+          <Card data-print-keep>
             <CardHeader>
               <CardTitle>{copy.seats}</CardTitle>
               <CardDescription>
@@ -414,7 +429,7 @@ export function ReportSheet({
             </CardContent>
           </Card>
 
-          <Card>
+          <Card data-print-keep>
             <CardHeader>
               <CardTitle>{copy.unattributed}</CardTitle>
             </CardHeader>
@@ -453,7 +468,11 @@ export function ReportSheet({
           <CardContent>
             <dl className="grid gap-3 sm:grid-cols-2">
               {caveats.map((caveat) => (
-                <div key={caveat.key} className="rounded-lg border p-3">
+                <div
+                  key={caveat.key}
+                  className="rounded-lg border p-3"
+                  data-print-keep
+                >
                   <dt>
                     <StateBadge icon={RiInformationLine} tone="neutral">
                       {caveat.label}
@@ -468,6 +487,11 @@ export function ReportSheet({
           </CardContent>
         </Card>
       </footer>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </PageContainer>
   );
 }
