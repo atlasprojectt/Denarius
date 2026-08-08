@@ -611,7 +611,7 @@ input[type="number"]::-webkit-outer-spin-button {
 
 @media print {
   @page {
-    size: A4 portrait;
+    size: a4 portrait;
     /* The repeated table header stays inside the printable area. */
     margin: 14mm;
   }
@@ -682,7 +682,6 @@ input[type="number"]::-webkit-outer-spin-button {
   .report-print-header {
     display: table-header-group;
     break-inside: avoid;
-    page-break-inside: avoid;
   }
 
   .report-print-frame > tbody {
@@ -692,7 +691,6 @@ input[type="number"]::-webkit-outer-spin-button {
   .report-print-frame > tbody > tr {
     display: table-row;
     break-inside: auto;
-    page-break-inside: auto;
   }
 
   .report-print-frame > tbody > tr > td {
@@ -717,7 +715,6 @@ input[type="number"]::-webkit-outer-spin-button {
 
   .report-section {
     break-inside: auto;
-    page-break-inside: auto;
     margin-bottom: 5mm;
   }
 
@@ -727,7 +724,6 @@ input[type="number"]::-webkit-outer-spin-button {
 
   [data-print-heading] {
     break-after: avoid-page;
-    page-break-after: avoid;
   }
 
   [data-print-keep] {
