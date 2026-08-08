@@ -157,6 +157,7 @@ describe("buildPeriodSnapshot — the frozen month", () => {
       expect(Object.keys(team).sort()).toEqual([
         "budget",
         "pctSpent",
+        "projection",
         "spend",
         "status",
         "teamId",

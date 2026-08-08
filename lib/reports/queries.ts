@@ -75,6 +75,25 @@ function toSummary(row: SummaryRow): ReportSummary {
   };
 }
 
+/**
+ * A frozen `breakdown` is whatever the builder wrote the day it was written.
+ * Months closed before `findings` and per-team `projection` existed simply do
+ * not carry them, and backfilling a value would put a number in an artifact the
+ * freeze never asserted. Absent reads as "none", which is also the truthful
+ * answer for a month that has already ended: there is no pace left to project
+ * and no action left to recommend.
+ */
+function withBreakdownDefaults(breakdown: SnapshotBreakdown): SnapshotBreakdown {
+  return {
+    ...breakdown,
+    findings: breakdown.findings ?? [],
+    teams: (breakdown.teams ?? []).map((team) => ({
+      ...team,
+      projection: team.projection ?? null,
+    })),
+  };
+}
+
 function toMonthlyReport(row: DetailRow): MonthlyReport {
   if (!row.tenant) throw new Error("report tenant relationship missing");
   const [year, month] = row.period_month.split("-").map(Number);
@@ -106,7 +125,7 @@ function toMonthlyReport(row: DetailRow): MonthlyReport {
     fxRateDate: row.fx_rate_date,
     verdictStatus: row.verdict_status,
     verdictSentence: row.verdict_sentence,
-    breakdown: row.breakdown,
+    breakdown: withBreakdownDefaults(row.breakdown),
     hasUncosted: row.has_uncosted,
     reconciliationOk: row.reconciliation_ok,
     fxMissing: row.fx_missing,

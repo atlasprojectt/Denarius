@@ -30,6 +30,11 @@ import {
 } from "@/lib/engine/cockpit";
 import { topDrivers, type Driver } from "@/lib/engine/drivers";
 import { freshness, type ConnectionStatus } from "@/lib/engine/freshness";
+import {
+  buildBudgetThresholdFinding,
+  orderFindings,
+  type BudgetThresholdFinding,
+} from "@/lib/findings/budget-threshold";
 import type { FrozenFx } from "@/lib/engine/money-model";
 import { monthRange, type Period } from "@/lib/engine/period";
 import { reconcile, type Reconciliation } from "@/lib/engine/reconcile";
@@ -97,6 +102,9 @@ export type SnapshotTeam = {
   pctSpent: number | null;
   /** Budget status at close; null when the team wasn't budgeted. */
   status: VerdictStatus | null;
+  /** Run-rate close projection for the team; null unbudgeted, null before day 5,
+   *  and null on a month frozen before this field existed. */
+  projection: number | null;
 };
 
 export type SnapshotSubscription = {
@@ -132,6 +140,15 @@ export type SnapshotBreakdown = {
   };
   seats: SnapshotSeats;
   reconciliation: Reconciliation;
+  /**
+   * Budget crossings (org + teams), most severe first. Carries the curated
+   * control plan, so the report can state what to do without inventing it.
+   *
+   * Empty on a month frozen before this field existed — which is the honest
+   * reading anyway: a closed month has no action left to take, so the report
+   * shows its crossings as observations, never as advice.
+   */
+  findings: BudgetThresholdFinding[];
 };
 
 export type PeriodSnapshot = {
@@ -172,6 +189,8 @@ export type PeriodSnapshot = {
 };
 
 const UNATTRIBUTED_LABEL = "Não atribuído";
+/** The org scope's name in a finding — the company as a whole. */
+const ORG_LABEL = "Empresa";
 
 /**
  * True when a connection may have left spend out of the closed month: it was
@@ -284,8 +303,32 @@ export function buildPeriodSnapshot(input: PeriodSnapshotInput): PeriodSnapshot 
             ? spend / budget
             : null,
       status: evaluated?.status ?? null,
+      projection: evaluated?.evaluation.projection ?? null,
     };
   });
+
+  // The crossings, org first through severity. `buildCockpit` already carries
+  // each budgeted team's finding; the org scope has no cockpit finding, so it
+  // is built here from the same evaluation the verdict used. `orderFindings`
+  // then applies the PRD's impact order (severity, then size of overrun).
+  const orgFinding =
+    cockpit.state === "ready" && input.orgBudget !== null
+      ? buildBudgetThresholdFinding({
+          scope: "org",
+          targetId: null,
+          targetName: ORG_LABEL,
+          evaluation: cockpit.org,
+          thresholds: input.orgBudget.thresholds,
+          driverInputs: mix === null ? [] : mix.teamDrivers,
+          currency,
+        })
+      : null;
+  const findings = orderFindings([
+    ...(orgFinding === null ? [] : [orgFinding]),
+    ...budgetedTeams(cockpit)
+      .map((t) => t.finding)
+      .filter((f): f is BudgetThresholdFinding => f !== null),
+  ]);
 
   const drivers =
     mix === null
@@ -332,6 +375,7 @@ export function buildPeriodSnapshot(input: PeriodSnapshotInput): PeriodSnapshot 
         seats: seatAttribution?.unattributed ?? null,
         display: mix === null ? null : mix.unattributed,
       },
+      findings,
       seats: {
         available: input.seats.available,
         total: seatsAmount,

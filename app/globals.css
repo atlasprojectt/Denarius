@@ -591,15 +591,17 @@ input[type="number"]::-webkit-outer-spin-button {
    regardless of the viewer's saved theme. No PDF runtime or second renderer:
    the browser prints the exact semantic report visible on screen.
 --------------------------------------------------------------------------- */
-.report-running-header {
+.report-running-header,
+.report-running-footer {
   display: none;
 }
 
 @media print {
   @page {
     size: A4 portrait;
-    /* The larger top margin is the running header's reserved lane. */
-    margin: 22mm 14mm 14mm;
+    /* Top and bottom margins are the running bands' reserved lanes — the
+       header's stamp above, the Denarius mark below. */
+    margin: 22mm 14mm 18mm;
   }
 
   :root,
@@ -673,6 +675,34 @@ input[type="number"]::-webkit-outer-spin-button {
     background: #ffffff;
     color: #1c1917;
     font-size: 11px;
+  }
+
+  /* The issuing mark. Same fixed-position trick as the header, mirrored into
+     @page's bottom margin so it repeats on every sheet without any page ever
+     starting on top of it. Deliberately NEUTRAL ink, not brand orange: the
+     accent is spoken for by the bars, and semaphore colors are budget-only
+     (principle #5). A mark that competes with the data is not discreet. */
+  .report-running-footer {
+    position: fixed;
+    bottom: -12mm;
+    right: 0;
+    left: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6mm;
+    min-height: 6mm;
+    border-top: 1px solid #d6d3d1;
+    padding-top: 1.5mm;
+    background: #ffffff;
+    color: #57534e;
+    font-size: 9px;
+  }
+
+  .report-title-block {
+    border-bottom: 1px solid #d6d3d1;
+    padding-bottom: 4mm;
   }
 
   .report-section,

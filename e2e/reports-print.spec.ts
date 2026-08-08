@@ -44,14 +44,14 @@ test("the on-demand report prints like a closed month, with the partial notice",
     .locator("[data-report-section]")
     .evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-report-section")));
   expect(order).toEqual([
-    "header",
+    "title",
     "partial",
-    "verdict",
-    "spend",
-    "providers",
+    "summary",
+    "position",
+    "composition",
     "teams",
-    "seats-unattributed",
-    "caveats",
+    "attention",
+    "annex",
   ]);
 
   await page.evaluate(() => document.documentElement.classList.add("dark"));
@@ -66,6 +66,13 @@ test("the on-demand report prints like a closed month, with the partial notice",
     runningHeader: getComputedStyle(
       document.querySelector(".report-running-header")!,
     ).display,
+    runningFooter: getComputedStyle(
+      document.querySelector(".report-running-footer")!,
+    ).display,
+    footerPosition: getComputedStyle(
+      document.querySelector(".report-running-footer")!,
+    ).position,
+    markVisible: !!document.querySelector(".report-running-footer svg"),
     background: getComputedStyle(document.documentElement).backgroundColor,
   }));
 
@@ -73,6 +80,10 @@ test("the on-demand report prints like a closed month, with the partial notice",
   expect(printStyles.printControl).toBe("none");
   expect(printStyles.runningHeader).toBe("block");
   expect(printStyles.background).toBe("rgb(255, 255, 255)");
+  // The Denarius mark repeats on every sheet: fixed inside @page's bottom lane.
+  expect(printStyles.runningFooter).toBe("flex");
+  expect(printStyles.footerPosition).toBe("fixed");
+  expect(printStyles.markVisible).toBe(true);
 });
 
 test("the frozen template keeps order and print drops app chrome", async ({ page }) => {
@@ -89,13 +100,13 @@ test("the frozen template keeps order and print drops app chrome", async ({ page
     .locator("[data-report-section]")
     .evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-report-section")));
   expect(order).toEqual([
-    "header",
-    "verdict",
-    "spend",
-    "providers",
+    "title",
+    "summary",
+    "position",
+    "composition",
     "teams",
-    "seats-unattributed",
-    "caveats",
+    "attention",
+    "annex",
   ]);
 
   await page.evaluate(() => document.documentElement.classList.add("dark"));

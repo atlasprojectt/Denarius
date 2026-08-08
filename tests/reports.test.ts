@@ -139,31 +139,66 @@ describe("report shell and print contract", () => {
     expect(print).toContain("color-scheme: light");
     expect(print).toContain("break-inside: avoid");
     expect(print).toContain(".report-running-header");
+    expect(print).toContain(".report-running-footer");
   });
 
-  it("keeps the fixed executive sections in the same source order", () => {
-    // ONE template serves both periods, so this order holds for the closed
-    // month and the on-demand report alike — that is what makes a partial
-    // recognizable as the same document once the month closes.
-    const positions = [
-      "header",
-      "verdict",
-      "spend",
-      "providers",
-      "teams",
-      "seats-unattributed",
-      "caveats",
-    ].map((section) => reportSheetSource.indexOf(`data-report-section="${section}"`));
+  it("keeps the numbered spine in the same source order", () => {
+    // THE contract of a financial report: §1..§6 never move, so August and
+    // September are comparable and a reader finds "Composição do gasto" in the
+    // same place every time. The composer decides emphasis, never order — and
+    // one template serves both periods, so this holds for the frozen month and
+    // the on-demand report alike.
+    const spine = [...reportSheetSource.matchAll(/id="(\w+)"\s+number=\{(\d)\}/g)].map(
+      (m) => [m[1], Number(m[2])] as const,
+    );
 
-    expect(positions.every((position) => position >= 0)).toBe(true);
-    expect(positions).toEqual([...positions].sort((a, b) => a - b));
+    expect(spine).toEqual([
+      ["summary", 1],
+      ["position", 2],
+      ["composition", 3],
+      ["teams", 4],
+      ["attention", 5],
+      ["annex", 6],
+    ]);
+    // The document identifies itself before §1, and the partial notice — the
+    // one thing the live variant adds — sits between them.
+    expect(reportSheetSource.indexOf('data-report-section="title"')).toBeLessThan(
+      reportSheetSource.indexOf('data-report-section="partial"'),
+    );
+    expect(reportSheetSource.indexOf('data-report-section="partial"')).toBeLessThan(
+      reportSheetSource.indexOf('id="summary" number={1}'),
+    );
+  });
+
+  it("renders a decision rather than making one", () => {
+    // No arithmetic, no ranking and no threshold lives in the template: the
+    // document's content comes from the pure composer, so what prints is
+    // reproducible and unit-testable.
+    expect(reportSheetSource).toContain("composeReport(report, variant)");
+    expect(reportSheetSource).not.toMatch(/\.sort\(|\.filter\(|\.reduce\(/);
   });
 
   it("keeps the print hooks on the shared sheet, so both variants print alike", () => {
     expect(reportSheetSource).toContain("data-report-sheet");
     expect(reportSheetSource).toContain("report-running-header");
+    expect(reportSheetSource).toContain("report-running-footer");
+    expect(reportSheetSource).toContain("report-title-block");
     expect(reportSheetSource).toContain("report-screen-header");
     expect(reportSheetSource).toContain("<PrintButton />");
+  });
+
+  it("signs every printed page with a discreet Denarius mark", () => {
+    // The mark rides the footer band, which is fixed inside @page's bottom
+    // margin — the same trick that repeats the header on every sheet.
+    expect(reportSheetSource).toContain("<LogoMark");
+    const css = readFileSync(path.join(process.cwd(), "app/globals.css"), "utf8");
+    const footer = css.slice(css.indexOf(".report-running-footer {", css.indexOf("@media print")));
+    expect(footer).toContain("position: fixed");
+    expect(footer).toMatch(/bottom: -\d+mm/);
+    // Neutral ink: the brand accent belongs to the bars, and green/amber/red
+    // are reserved for budget status (principle #5).
+    expect(footer).toContain("color: #57534e");
+    expect(footer).not.toContain("--brand-accent");
   });
 });
 
