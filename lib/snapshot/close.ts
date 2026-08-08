@@ -3,7 +3,7 @@ import "server-only";
 import { monthRange, previousMonthOf } from "@/lib/engine/period";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-import { buildPeriodSnapshot, type PeriodSnapshot, type SnapshotSource } from "./build";
+import { buildPeriodSnapshot, type PeriodSnapshot, type PersistedSource } from "./build";
 import {
   closedMonthInput,
   closedMonths,
@@ -56,7 +56,7 @@ export async function closeMonth(
   tenantId: string,
   year: number,
   month: number,
-  source: SnapshotSource,
+  source: PersistedSource,
   now: Date = new Date(),
   knownClosedMonths?: ReadonlySet<string>,
 ): Promise<CloseOutcome> {

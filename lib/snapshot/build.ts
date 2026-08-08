@@ -1,4 +1,5 @@
-// Denarius engine — the closed-month snapshot (pure, no I/O). Issue #94.
+// Denarius engine — the period snapshot (pure, no I/O). Issue #94 (closed
+// months), widened by #96 to the month that is still running.
 //
 // WHY FREEZE RATHER THAN RECOMPUTE. `subscription` has no period column: seat
 // count and unit price are current state, mutated in place. A past month
@@ -11,9 +12,15 @@
 //
 // This function reimplements no arithmetic: the numbers come from the same
 // engine the screens use (buildCockpit / evaluateScope / combineTeamSpend /
-// topDrivers / reconcile), fed a CLOSED period. It carries team aggregates
-// only — never a person — so a frozen month can't become the back door around
-// the privacy switches.
+// topDrivers / reconcile), fed a period. It carries team aggregates only —
+// never a person — so a frozen month can't become the back door around the
+// privacy switches.
+//
+// It is period-agnostic by construction, which is what lets the on-demand
+// report (#96) reuse it: hand it `currentPeriod()` with `closed: false` and the
+// same assembly describes the month in flight — run-rate projection, day-5
+// guard and present-tense verdict all come from the engine, not from here. The
+// live report is rendered and thrown away; only closed months are persisted.
 
 import { attributeSeats, type SeatSubscription } from "@/lib/engine/accrual";
 import {
@@ -22,14 +29,21 @@ import {
   type CockpitTeamInput,
 } from "@/lib/engine/cockpit";
 import { topDrivers, type Driver } from "@/lib/engine/drivers";
+import { freshness, type ConnectionStatus } from "@/lib/engine/freshness";
 import type { FrozenFx } from "@/lib/engine/money-model";
 import { monthRange, type Period } from "@/lib/engine/period";
 import { reconcile, type Reconciliation } from "@/lib/engine/reconcile";
 import { combineTeamSpend } from "@/lib/engine/team-spend";
 import type { VerdictStatus } from "@/lib/engine/verdict";
 
-/** How the row came to exist: closed by the daily cron, or reconstructed later. */
-export type SnapshotSource = "auto" | "backfill";
+/** How a PERSISTED row came to exist: closed by the daily cron, or
+ *  reconstructed later. This is the `period_snapshot.source` domain — nothing
+ *  outside these two values is ever written. */
+export type PersistedSource = "auto" | "backfill";
+
+/** `live` is the on-demand report (#96): the same assembly over the running
+ *  month, rendered and discarded. It never reaches the table. */
+export type SnapshotSource = PersistedSource | "live";
 
 /** The seat configuration as it stood when the month was frozen. A backfilled
  *  month has none — seats are then UNAVAILABLE, never zero (a disclosed gap). */
@@ -38,11 +52,17 @@ export type SnapshotSeatState =
   | { available: false };
 
 export type PeriodSnapshotInput = {
-  /** The CLOSED month — build with `closedPeriod(year, month)`. */
+  /** The month being described — `closedPeriod(year, month)` to freeze one,
+   *  `currentPeriod()` for the report of the month in flight. */
   period: Period;
+  /** The period has ENDED. Default true (every closing caller). False makes the
+   *  cockpit project at run-rate under the day-5 guard, keeps the verdict in the
+   *  present tense, and switches staleness to the live connector rule. */
+  closed?: boolean;
   currency: string;
   source: SnapshotSource;
-  /** ISO instant the month was frozen. */
+  /** ISO instant the snapshot was taken — the close for a frozen month, "now"
+   *  for a live report. */
   closedAt: string;
   /** The org budget governing the month, or null (a month may have had none). */
   orgBudget: { amount: number; thresholds: number[] } | null;
@@ -62,8 +82,8 @@ export type PeriodSnapshotInput = {
   derivedUsd: number;
   /** At least one usage bucket carried a model with no price. */
   hasUncosted: boolean;
-  /** Connections at close, for the stale-sync flag. */
-  connections: { status: string; lastSyncAt: string | null }[];
+  /** Connections as they stood, for the stale-sync flag. */
+  connections: ConnectionStatus[];
 };
 
 export type SnapshotTeam = {
@@ -120,6 +140,9 @@ export type PeriodSnapshot = {
   monthLabel: string;
   closedAt: string;
   source: SnapshotSource;
+  /** Elapsed days including today; equals `daysInPeriod` for a closed month. */
+  dayOfPeriod: number;
+  daysInPeriod: number;
   currency: string;
   /** Provider-reported API cost for the month (USD, the headline truth). */
   apiUsd: number;
@@ -128,6 +151,11 @@ export type PeriodSnapshot = {
   combinedAmount: number | null;
   budgetAmount: number | null;
   pctSpent: number | null;
+  /** Run-rate close projection, straight from the cockpit — never recomputed
+   *  here. Null without an org budget and null before day 5 (invariant #5: no
+   *  projection while the month is still collecting pace). A closed month has
+   *  fully elapsed, so its projection IS its realized total. */
+  projection: number | null;
   frozenFxRate: number | null;
   fxRateSource: string | null;
   fxRateDate: string | null;
@@ -150,19 +178,21 @@ const UNATTRIBUTED_LABEL = "Não atribuído";
  * active (not deliberately revoked) and its last successful sync predates the
  * month's end, so the final days may never have been fetched.
  */
-function syncWasStale(
-  connections: { status: string; lastSyncAt: string | null }[],
-  periodEndIso: string,
-): boolean {
+function syncWasStale(connections: ConnectionStatus[], periodEndIso: string): boolean {
   return connections.some(
     (c) =>
       c.status !== "revoked" && (c.lastSyncAt === null || c.lastSyncAt < periodEndIso),
   );
 }
 
-/** Freezes one closed month. Pure — the same inputs always produce the same row. */
+/**
+ * Describes one period. Pure — the same inputs always produce the same row.
+ * Freezes a closed month by default; `closed: false` describes the month in
+ * flight for the on-demand report.
+ */
 export function buildPeriodSnapshot(input: PeriodSnapshotInput): PeriodSnapshot {
   const { period, currency, fx, teams } = input;
+  const closed = input.closed ?? true;
 
   const apiUsd = input.reportedByProvider.reduce((sum, p) => sum + p.usd, 0);
   const apiDerivedUsd =
@@ -221,7 +251,7 @@ export function buildPeriodSnapshot(input: PeriodSnapshotInput): PeriodSnapshot 
         : null,
     teams: cockpitTeams,
     composition: input.reportedByProvider,
-    closed: true,
+    closed,
   });
 
   const budgetedById = new Map(budgetedTeams(cockpit).map((t) => [t.teamId, t]));
@@ -273,6 +303,8 @@ export function buildPeriodSnapshot(input: PeriodSnapshotInput): PeriodSnapshot 
     monthLabel: period.monthLabel,
     closedAt: input.closedAt,
     source: input.source,
+    dayOfPeriod: period.dayOfPeriod,
+    daysInPeriod: period.daysInPeriod,
     currency,
     apiUsd,
     seatsAmount,
@@ -281,6 +313,7 @@ export function buildPeriodSnapshot(input: PeriodSnapshotInput): PeriodSnapshot 
     // Only a month with both an org budget and a known seat half has a
     // percentage — the cockpit is "ready" in exactly that case.
     pctSpent: cockpit.state === "ready" ? cockpit.org.pctSpent : null,
+    projection: cockpit.state === "ready" ? cockpit.org.projection : null,
     frozenFxRate: fx?.rate ?? null,
     fxRateSource: fx?.source ?? null,
     fxRateDate: fx?.date ?? null,
@@ -319,6 +352,12 @@ export function buildPeriodSnapshot(input: PeriodSnapshotInput): PeriodSnapshot 
     hasUncosted: input.hasUncosted,
     reconciliationOk: reconciliation.withinTolerance,
     fxMissing,
-    staleSync: syncWasStale(input.connections, `${nextStart}T00:00:00.000Z`),
+    // A month still running has no "end" to have synced past — every active
+    // connector would trivially qualify. It gets the live rule the banners use
+    // instead (>24h without a successful sync), so the report discloses exactly
+    // what the screens disclose.
+    staleSync: closed
+      ? syncWasStale(input.connections, `${nextStart}T00:00:00.000Z`)
+      : freshness(input.connections, new Date(input.closedAt)).showBanner,
   };
 }

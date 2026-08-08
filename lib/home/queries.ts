@@ -7,7 +7,7 @@ import type { SeatSubscription } from "@/lib/engine/accrual";
 import { combinedSpend } from "@/lib/engine/budget";
 import { budgetedTeams, buildCockpit, type Cockpit } from "@/lib/engine/cockpit";
 import { buildMonthlyPace, type MonthlyPace } from "@/lib/engine/monthly-pace";
-import { oldestActiveSync } from "@/lib/engine/freshness";
+import { oldestActiveSync, type ConnectionStatus } from "@/lib/engine/freshness";
 import { periodFx, type FrozenFx } from "@/lib/engine/money-model";
 import { currentPeriod, monthStartUtc, type Period } from "@/lib/engine/period";
 import { combineTeamSpend } from "@/lib/engine/team-spend";
@@ -15,7 +15,7 @@ import { isoDaysAgo, weekOverWeek } from "@/lib/engine/week-change";
 import { buildApontamentos } from "@/lib/findings/apontamentos";
 import { buildSeatWaste } from "@/lib/findings/seats-vs-roster";
 import { money } from "@/lib/money";
-import { listBudgets } from "@/lib/budgets/queries";
+import { listBudgets, type BudgetList } from "@/lib/budgets/queries";
 import { listSubscriptions } from "@/lib/subscriptions/queries";
 import { listTeams } from "@/lib/teams/queries";
 import { createClient } from "@/lib/supabase/server";
@@ -73,6 +73,7 @@ export type HomeData = CockpitData & {
 };
 
 type ConnectionRow = {
+  provider: string;
   status: string;
   last_sync_at: string | null;
 };
@@ -188,6 +189,19 @@ type CockpitAssembly = CockpitData & {
   orgSeatTotal: number;
   seatUnattributed: number;
   apiUnattributedUsd: number;
+  /** Provider-REPORTED month-to-date cost (USD) per provider — the headline
+   *  truth behind the composition list. */
+  providers: { provider: string; usd: number }[];
+  /** Σ DERIVED cost, costed models only (USD) — the reconciliation input. */
+  derivedUsd: number;
+  /** At least one usage bucket carried a model with no price. */
+  hasUncosted: boolean;
+  /** Raw connection states, for consumers that need the freshness rule itself
+   *  rather than just the stamp. */
+  connections: ConnectionStatus[];
+  /** The period's budget rows as read — carried so consumers never re-query
+   *  them (this assembly is the one memoized read). */
+  budgets: BudgetList;
   connected: boolean;
   hasOrgBudget: boolean;
   /** Oldest successful sync among active connections — THE freshness stamp
@@ -209,7 +223,7 @@ const assembleCockpit = cache(async function assembleCockpit(): Promise<CockpitA
       teamApiSpend(),
       listTeams(),
       providerCostToDate(),
-      supabase.from("provider_connection").select("status, last_sync_at"),
+      supabase.from("provider_connection").select("provider, status, last_sync_at"),
     ]);
 
   const seats = attributeSeats(subscriptions, period);
@@ -254,7 +268,13 @@ const assembleCockpit = cache(async function assembleCockpit(): Promise<CockpitA
     composition: providers,
   });
 
-  const connections = (connectionData ?? []) as ConnectionRow[];
+  const connections = ((connectionData ?? []) as ConnectionRow[]).map(
+    (c): ConnectionStatus => ({
+      provider: c.provider as ConnectionStatus["provider"],
+      status: c.status,
+      lastSyncAt: c.last_sync_at,
+    }),
+  );
 
   return {
     cockpit,
@@ -269,11 +289,14 @@ const assembleCockpit = cache(async function assembleCockpit(): Promise<CockpitA
     orgSeatTotal: seats.orgTotal,
     seatUnattributed: seats.unattributed,
     apiUnattributedUsd: apiTeams.unattributedUsd,
+    providers,
+    derivedUsd: apiTeams.orgTotalUsd,
+    hasUncosted: apiTeams.hasUncosted,
+    connections,
+    budgets,
     connected: connections.some((connection) => connection.status === "active"),
     hasOrgBudget: budgets.org !== null,
-    lastSyncAt: oldestActiveSync(
-      connections.map((c) => ({ status: c.status, lastSyncAt: c.last_sync_at })),
-    ),
+    lastSyncAt: oldestActiveSync(connections),
   };
 });
 
@@ -283,6 +306,54 @@ const assembleCockpit = cache(async function assembleCockpit(): Promise<CockpitA
 export async function getCockpitData(): Promise<CockpitData> {
   const { cockpit, period, fx } = await assembleCockpit();
   return { cockpit, period, fx };
+}
+
+/** Everything the on-demand report needs to describe the running month, from
+ *  the SAME memoized assembly Home reads — so the report can never disagree
+ *  with the cockpit the user just looked at. Adds no query of its own. */
+export type ReportParts = Pick<
+  CockpitAssembly,
+  | "period"
+  | "fx"
+  | "currency"
+  | "teams"
+  | "subscriptions"
+  | "apiByTeam"
+  | "apiUnattributedUsd"
+  | "providers"
+  | "derivedUsd"
+  | "hasUncosted"
+  | "connections"
+> & {
+  orgBudget: { amount: number; thresholds: number[] } | null;
+  teamBudgets: { teamId: string; amount: number; thresholds: number[] }[];
+};
+
+export async function getReportParts(): Promise<ReportParts> {
+  const a = await assembleCockpit();
+  return {
+    period: a.period,
+    fx: a.fx,
+    currency: a.currency,
+    teams: a.teams,
+    subscriptions: a.subscriptions,
+    apiByTeam: a.apiByTeam,
+    apiUnattributedUsd: a.apiUnattributedUsd,
+    providers: a.providers,
+    derivedUsd: a.derivedUsd,
+    hasUncosted: a.hasUncosted,
+    connections: a.connections,
+    orgBudget: a.budgets.org
+      ? { amount: a.budgets.org.amount, thresholds: a.budgets.org.thresholds }
+      : null,
+    teamBudgets: a.budgets.teams
+      .filter((b) => b.teamId !== null)
+      .map((b) => ({
+        teamId: b.teamId as string,
+        amount: b.amount,
+        thresholds: b.thresholds,
+      })),
+  };
 }
 
 export type TimesData = CockpitData & {

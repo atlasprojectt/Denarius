@@ -31,6 +31,50 @@ test("reports stay legible in both screen themes", async ({ page }) => {
   }
 });
 
+test("the on-demand report prints like a closed month, with the partial notice", async ({
+  page,
+}) => {
+  await page.goto("/relatorios");
+  await page.getByRole("link", { name: "Gerar relatório atual" }).click();
+  await page.waitForURL("**/relatorios/agora");
+  await expect(page.locator("[data-report-sheet]")).toBeVisible();
+
+  // Same fixed template, plus the notice that the month has not closed.
+  const order = await page
+    .locator("[data-report-section]")
+    .evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-report-section")));
+  expect(order).toEqual([
+    "header",
+    "partial",
+    "verdict",
+    "spend",
+    "providers",
+    "teams",
+    "seats-unattributed",
+    "caveats",
+  ]);
+
+  await page.evaluate(() => document.documentElement.classList.add("dark"));
+  await page.emulateMedia({ media: "print" });
+  const printStyles = await page.evaluate(() => ({
+    sidebar: getComputedStyle(
+      document.querySelector('[data-slot="sidebar-container"]')!,
+    ).display,
+    printControl: getComputedStyle(
+      document.querySelector("[data-print-control]")!,
+    ).display,
+    runningHeader: getComputedStyle(
+      document.querySelector(".report-running-header")!,
+    ).display,
+    background: getComputedStyle(document.documentElement).backgroundColor,
+  }));
+
+  expect(printStyles.sidebar).toBe("none");
+  expect(printStyles.printControl).toBe("none");
+  expect(printStyles.runningHeader).toBe("block");
+  expect(printStyles.background).toBe("rgb(255, 255, 255)");
+});
+
 test("the frozen template keeps order and print drops app chrome", async ({ page }) => {
   await page.goto("/relatorios");
   const reportLink = page.locator('a[href^="/relatorios/20"]').first();

@@ -138,7 +138,11 @@ export function TeamBudgetTable({
     "hidden text-right tabular-nums text-muted-foreground @2xl:table-cell";
 
   return (
-    <Card>
+    // `min-h-full` makes the card fill its grid cell so it ends on the same line
+    // as the pace chart beside it (Home's 2x2 cockpit stretches its row); the
+    // scroller below keeps a long roster inside that height instead of pushing
+    // past the row into the observations footer.
+    <Card className="min-h-full">
       <CardHeader>
         <CardTitle className="text-sm">{c.title}</CardTitle>
         <CardDescription>
@@ -162,7 +166,8 @@ export function TeamBudgetTable({
         </CardAction>
       </CardHeader>
       {teams.length > 0 && (
-        <CardContent className="@container">
+        <CardContent className="@container flex min-h-0 flex-1 flex-col">
+          <div className="min-h-0 flex-1 overflow-y-auto">
           <div className="grid gap-2 @2xl:hidden">
             {teams.map((team) => {
               const ev = team.evaluation;
@@ -286,6 +291,7 @@ export function TeamBudgetTable({
               })}
             </TableBody>
           </Table>
+          </div>
           </div>
         </CardContent>
       )}

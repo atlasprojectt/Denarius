@@ -1,12 +1,13 @@
 import "server-only";
 
 import type { SeatSubscription } from "@/lib/engine/accrual";
+import type { ConnectionStatus } from "@/lib/engine/freshness";
 import { periodFx, type FrozenFx } from "@/lib/engine/money-model";
 import { closedPeriod, monthRange } from "@/lib/engine/period";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { mapKey } from "@/lib/usage/attribution";
 
-import type { PeriodSnapshotInput, SnapshotSource } from "./build";
+import type { PeriodSnapshotInput, PersistedSource } from "./build";
 
 // Reads for the closed-month snapshot (#94). Deliberately NOT a refactor of the
 // query layer: every function in lib/*/queries.ts is zero-arg and resolves the
@@ -46,7 +47,11 @@ type UsageRow = {
 };
 type MapRow = { provider: string; project_id: string; team_id: string };
 type CostRow = { provider: string; amount: number };
-type ConnectionRow = { status: string; last_sync_at: string | null };
+type ConnectionRow = {
+  provider: string;
+  status: string;
+  last_sync_at: string | null;
+};
 type ReadError = { code?: string | null } | null;
 
 function assertReads(reads: { name: string; error: ReadError }[]): void {
@@ -73,7 +78,7 @@ export async function closedMonthInput(
   tenantId: string,
   year: number,
   month: number,
-  options: { source: SnapshotSource; closedAt: string },
+  options: { source: PersistedSource; closedAt: string },
 ): Promise<PeriodSnapshotInput> {
   const admin = createAdminClient();
   const { start, nextStart } = monthRange(year, month);
@@ -126,7 +131,7 @@ export async function closedMonthInput(
       .lt("date", nextStart),
     admin
       .from("provider_connection")
-      .select("status, last_sync_at")
+      .select("provider, status, last_sync_at")
       .eq("tenant_id", tenantId),
   ]);
 
@@ -244,10 +249,13 @@ export async function closedMonthInput(
       .sort((a, b) => b.usd - a.usd),
     derivedUsd,
     hasUncosted,
-    connections: ((connectionData ?? []) as ConnectionRow[]).map((c) => ({
-      status: c.status,
-      lastSyncAt: c.last_sync_at,
-    })),
+    connections: ((connectionData ?? []) as ConnectionRow[]).map(
+      (c): ConnectionStatus => ({
+        provider: c.provider as ConnectionStatus["provider"],
+        status: c.status,
+        lastSyncAt: c.last_sync_at,
+      }),
+    ),
   };
 }
 
