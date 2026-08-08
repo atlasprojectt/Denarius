@@ -3,7 +3,12 @@ import path from "node:path";
 
 import { describe, expect, it, vi } from "vitest";
 
-import { isReportPath } from "@/lib/reports/path";
+import { isReportPath, LIVE_REPORT_PATH } from "@/lib/reports/path";
+
+const reportSheetSource = readFileSync(
+  path.join(process.cwd(), "app/(app)/relatorios/_components/report-sheet.tsx"),
+  "utf8",
+);
 
 const snapshotRow = {
   period_month: "2026-07-01",
@@ -118,6 +123,13 @@ describe("report shell and print contract", () => {
     expect(isReportPath("/times")).toBe(false);
   });
 
+  it("exempts the on-demand report, which is live by definition", () => {
+    // The frozen surfaces suppress the shell's current-month reads; the report
+    // of right now must keep them — its stale-sync banner is the point.
+    expect(isReportPath(LIVE_REPORT_PATH)).toBe(false);
+    expect(isReportPath("/relatorios/agora")).toBe(false);
+  });
+
   it("hides app chrome, forces paper light mode and protects report cards", () => {
     const css = readFileSync(path.join(process.cwd(), "app/globals.css"), "utf8");
     const print = css.slice(css.indexOf("@media print"));
@@ -130,13 +142,9 @@ describe("report shell and print contract", () => {
   });
 
   it("keeps the fixed executive sections in the same source order", () => {
-    const component = readFileSync(
-      path.join(
-        process.cwd(),
-        "app/(app)/relatorios/_components/monthly-report.tsx",
-      ),
-      "utf8",
-    );
+    // ONE template serves both periods, so this order holds for the closed
+    // month and the on-demand report alike — that is what makes a partial
+    // recognizable as the same document once the month closes.
     const positions = [
       "header",
       "verdict",
@@ -145,9 +153,57 @@ describe("report shell and print contract", () => {
       "teams",
       "seats-unattributed",
       "caveats",
-    ].map((section) => component.indexOf(`data-report-section="${section}"`));
+    ].map((section) => reportSheetSource.indexOf(`data-report-section="${section}"`));
 
     expect(positions.every((position) => position >= 0)).toBe(true);
     expect(positions).toEqual([...positions].sort((a, b) => a - b));
+  });
+
+  it("keeps the print hooks on the shared sheet, so both variants print alike", () => {
+    expect(reportSheetSource).toContain("data-report-sheet");
+    expect(reportSheetSource).toContain("report-running-header");
+    expect(reportSheetSource).toContain("report-screen-header");
+    expect(reportSheetSource).toContain("<PrintButton />");
+  });
+});
+
+describe("the on-demand report", () => {
+  const source = readFileSync(
+    path.join(process.cwd(), "lib/reports/current.ts"),
+    "utf8",
+  );
+
+  it("stays inside the tenant's own session — never the service role", () => {
+    // The closing job is the one deliberate cross-tenant path; a user asking
+    // for their own situation is not (invariant #1).
+    expect(source).toContain("@/lib/supabase/server");
+    expect(source).not.toContain("createAdminClient");
+    expect(source).not.toContain("@/lib/supabase/admin");
+  });
+
+  it("writes nothing: a partial month is rendered and discarded", () => {
+    for (const write of ["insert(", "upsert(", "update(", "delete("]) {
+      expect(source).not.toContain(write);
+    }
+    expect(source).not.toContain("period_snapshot");
+  });
+
+  it("reuses the engine rather than recomputing anything", () => {
+    expect(source).toContain("buildPeriodSnapshot");
+    expect(source).toContain("closed: false");
+    expect(source).toContain('source: "live"');
+    // Home's memoized assembly is the single source — a second read path could
+    // drift from the cockpit the user just looked at.
+    expect(source).toContain("getReportParts");
+  });
+
+  it("renders the live variant of the one shared template", () => {
+    const page = readFileSync(
+      path.join(process.cwd(), "app/(app)/relatorios/agora/page.tsx"),
+      "utf8",
+    );
+    expect(page).toContain('variant="live"');
+    expect(page).toContain('export const dynamic = "force-dynamic"');
+    expect(reportSheetSource).toContain('data-report-section="partial"');
   });
 });

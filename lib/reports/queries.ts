@@ -2,10 +2,10 @@ import "server-only";
 
 import type {
   PeriodSnapshot,
+  PersistedSource,
   SnapshotBreakdown,
-  SnapshotSource,
 } from "@/lib/snapshot/build";
-import { monthLabelOf } from "@/lib/engine/period";
+import { closedPeriod, monthLabelOf } from "@/lib/engine/period";
 import { createClient } from "@/lib/supabase/server";
 
 const SUMMARY_COLUMNS =
@@ -29,7 +29,7 @@ type SummaryRow = {
 };
 
 type DetailRow = SummaryRow & {
-  source: SnapshotSource;
+  source: PersistedSource;
   api_usd: number;
   seats_amount: number | null;
   pct_spent: number | null;
@@ -78,6 +78,9 @@ function toSummary(row: SummaryRow): ReportSummary {
 function toMonthlyReport(row: DetailRow): MonthlyReport {
   if (!row.tenant) throw new Error("report tenant relationship missing");
   const [year, month] = row.period_month.split("-").map(Number);
+  // A frozen month is fully elapsed by definition, so its day counters are
+  // derived rather than stored.
+  const period = closedPeriod(year, month);
 
   return {
     companyName: row.tenant.name,
@@ -85,12 +88,19 @@ function toMonthlyReport(row: DetailRow): MonthlyReport {
     monthLabel: monthLabelOf(year, month),
     closedAt: row.closed_at,
     source: row.source,
+    dayOfPeriod: period.dayOfPeriod,
+    daysInPeriod: period.daysInPeriod,
     currency: row.currency,
     apiUsd: row.api_usd,
     seatsAmount: row.seats_amount,
     combinedAmount: row.combined_amount,
     budgetAmount: row.budget_amount,
     pctSpent: row.pct_spent,
+    // Not a stored column: a closed month has nothing left to project, and the
+    // closed template never shows the field. Null means "not recoverable", not
+    // "still collecting" — inventing the realized total here would put a number
+    // in the report that the freeze never asserted.
+    projection: null,
     frozenFxRate: row.frozen_fx_rate,
     fxRateSource: row.fx_rate_source,
     fxRateDate: row.fx_rate_date,

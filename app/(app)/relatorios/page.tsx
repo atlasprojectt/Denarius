@@ -3,6 +3,7 @@ import {
   RiArrowRightSLine,
   RiErrorWarningLine,
   RiFileChartLine,
+  RiFlashlightLine,
   RiInformationLine,
 } from "@remixicon/react";
 
@@ -11,12 +12,20 @@ import { PageContainer } from "@/components/domain/page-container";
 import { PageHeader } from "@/components/domain/page-header";
 import { StateBadge } from "@/components/domain/state-badge";
 import { StatusPill } from "@/components/domain/status-pill";
-import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { money } from "@/lib/money";
 import {
   reportMonth,
   reportPeriodPath,
 } from "@/lib/reports/format";
+import { LIVE_REPORT_PATH } from "@/lib/reports/path";
 import { listMonthlyReports } from "@/lib/reports/queries";
 import { copy } from "./copy";
 
@@ -26,6 +35,33 @@ export default async function ReportsPage() {
   return (
     <PageContainer variant="wide" className="gap-6">
       <PageHeader title={copy.indexTitle} description={copy.indexDescription} />
+
+      {/* Rendered before and independently of the list: the on-demand report is
+          available from day one, including for a company that has not lived
+          through a single close yet. */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm">{copy.liveCardTitle}</CardTitle>
+          <CardDescription>{copy.liveCardBody}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button asChild size="sm">
+            <Link href={LIVE_REPORT_PATH}>
+              <RiFlashlightLine aria-hidden />
+              {copy.liveCardCta}
+            </Link>
+          </Button>
+        </CardContent>
+      </Card>
+
+      <div className="flex flex-col gap-1">
+        <h2 className="font-heading text-sm font-medium">
+          {copy.closedListTitle}
+        </h2>
+        <p className="text-xs text-muted-foreground">
+          {copy.closedListDescription}
+        </p>
+      </div>
 
       {!read.ok ? (
         <EmptyState

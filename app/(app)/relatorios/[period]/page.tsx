@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { monthlyReport } from "@/lib/reports/queries";
-import { MonthlyReport } from "../_components/monthly-report";
+import { ReportSheet } from "../_components/report-sheet";
 
 export default async function MonthlyReportPage({
   params,
@@ -12,5 +12,5 @@ export default async function MonthlyReportPage({
   const report = await monthlyReport(period);
   if (!report) notFound();
 
-  return <MonthlyReport report={report} />;
+  return <ReportSheet report={report} variant="closed" />;
 }

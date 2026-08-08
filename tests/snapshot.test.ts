@@ -76,7 +76,7 @@ function input(overrides: Partial<PeriodSnapshotInput> = {}): PeriodSnapshotInpu
     ],
     derivedUsd: 150,
     hasUncosted: false,
-    connections: [{ status: "active", lastSyncAt: "2026-07-01T02:00:00.000Z" }],
+    connections: [{ provider: "openai" as const, status: "active", lastSyncAt: "2026-07-01T02:00:00.000Z" }],
     ...overrides,
   };
 }
@@ -218,18 +218,18 @@ describe("buildPeriodSnapshot — the honesty flags travel with the numbers", ()
 
   it("flags a connector that had not synced by the time the month ended", () => {
     const stale = buildPeriodSnapshot(
-      input({ connections: [{ status: "active", lastSyncAt: "2026-06-28T00:00:00.000Z" }] }),
+      input({ connections: [{ provider: "openai" as const, status: "active", lastSyncAt: "2026-06-28T00:00:00.000Z" }] }),
     );
     expect(stale.staleSync).toBe(true);
 
     const never = buildPeriodSnapshot(
-      input({ connections: [{ status: "active", lastSyncAt: null }] }),
+      input({ connections: [{ provider: "openai" as const, status: "active", lastSyncAt: null }] }),
     );
     expect(never.staleSync).toBe(true);
 
     // A connection the tenant deliberately revoked is not a data-quality problem.
     const revoked = buildPeriodSnapshot(
-      input({ connections: [{ status: "revoked", lastSyncAt: null }] }),
+      input({ connections: [{ provider: "openai" as const, status: "revoked", lastSyncAt: null }] }),
     );
     expect(revoked.staleSync).toBe(false);
   });
@@ -264,6 +264,82 @@ describe("buildPeriodSnapshot — a backfilled month", () => {
     expect(snapshot.verdictStatus).toBeNull();
     expect(snapshot.verdictSentence).toBeNull();
     expect(snapshot.breakdown.teams.every((t) => t.spend === null)).toBe(true);
+  });
+});
+
+// #96 — the SAME builder over the month still running. What is under test is
+// that "live" changes exactly what it should (projection, tense, staleness) and
+// nothing else: a partial report and a closed one are the same document.
+describe("buildPeriodSnapshot — the month in flight", () => {
+  /** Day `day` of June 2026 (30 days), with the same money as the closed case. */
+  function live(day: number, overrides: Partial<PeriodSnapshotInput> = {}) {
+    const closed = closedPeriod(2026, 6);
+    return buildPeriodSnapshot(
+      input({
+        period: { ...closed, dayOfPeriod: day },
+        closed: false,
+        source: "live",
+        closedAt: `2026-06-${String(day).padStart(2, "0")}T12:00:00.000Z`,
+        connections: [
+          {
+            provider: "openai" as const,
+            status: "active",
+            lastSyncAt: `2026-06-${String(day).padStart(2, "0")}T06:00:00.000Z`,
+          },
+        ],
+        ...overrides,
+      }),
+    );
+  }
+
+  it("carries where the month is, not just which month it is", () => {
+    const snapshot = live(10);
+    expect(snapshot.source).toBe("live");
+    expect(snapshot.periodMonth).toBe("2026-06-01");
+    expect(snapshot.dayOfPeriod).toBe(10);
+    expect(snapshot.daysInPeriod).toBe(30);
+  });
+
+  it("projects the close at run-rate once the pace is established", () => {
+    // Day 10 of 30: seats accrue pro-rata (1200 × 10/30 = 400) on top of the
+    // API's 150 USD × 5 = 750, so 1150 to date → run-rate close of 3450.
+    const snapshot = live(10);
+    expect(snapshot.combinedAmount).toBe(1_150);
+    expect(snapshot.projection).toBeCloseTo(3_450, 6);
+  });
+
+  it("refuses to project before day 5 (invariant #5)", () => {
+    const snapshot = live(3);
+    expect(snapshot.projection).toBeNull();
+    // The spend itself is still reported — only the extrapolation is withheld.
+    expect(snapshot.combinedAmount).toBe(870);
+  });
+
+  it("uses the live connector rule for staleness, not the month's end", () => {
+    // Synced six hours ago: fresh. Under the closed rule every mid-month
+    // connection would trivially predate the month's end and read as stale.
+    expect(live(10).staleSync).toBe(false);
+
+    const stale = live(10, {
+      connections: [
+        {
+          provider: "openai" as const,
+          status: "active",
+          lastSyncAt: "2026-06-05T06:00:00.000Z",
+        },
+      ],
+    });
+    expect(stale.staleSync).toBe(true);
+  });
+
+  it("leaves a closed month exactly as it was (the default is still closed)", () => {
+    const closed = buildPeriodSnapshot(input());
+    expect(closed.dayOfPeriod).toBe(30);
+    expect(closed.daysInPeriod).toBe(30);
+    // A fully elapsed month has nothing left to project: run-rate lands on the
+    // realized total.
+    expect(closed.projection).toBeCloseTo(closed.combinedAmount as number, 6);
+    expect(closed.staleSync).toBe(false);
   });
 });
 
