@@ -43,11 +43,19 @@ test("the print action explains how to remove browser chrome", async ({ page }) 
   );
   await expect(dialog).toContainText("Fundos gráficos ativados");
 
+  await page.emulateMedia({ media: "print" });
+  await expect(page.locator('[data-slot="dialog-overlay"]')).toHaveCSS(
+    "display",
+    "none",
+  );
+  await expect(dialog).toHaveCSS("display", "none");
+
+  await page.emulateMedia({ media: "screen" });
   await dialog.getByRole("button", { name: "Cancelar" }).click();
   await expect(dialog).toBeHidden();
 });
 
-test("the on-demand report prints like a closed month, with the partial notice", async ({
+test("the on-demand report prints as the shared executive document", async ({
   page,
 }) => {
   await page.goto("/relatorios");
@@ -55,18 +63,18 @@ test("the on-demand report prints like a closed month, with the partial notice",
   await page.waitForURL("**/relatorios/agora");
   await expect(page.locator("[data-report-sheet]")).toBeVisible();
 
-  // Same fixed template, plus the notice that the month has not closed.
+  // One editorial structure serves both the live and frozen reports.
   const order = await page
     .locator("[data-report-section]")
     .evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-report-section")));
   expect(order).toEqual([
     "header",
-    "partial",
-    "verdict",
-    "spend",
+    "summary",
+    "overview",
     "providers",
     "teams",
-    "seats-unattributed",
+    "subscriptions",
+    "unattributed",
     "caveats",
   ]);
 
@@ -79,15 +87,15 @@ test("the on-demand report prints like a closed month, with the partial notice",
     printControl: getComputedStyle(
       document.querySelector("[data-print-control]")!,
     ).display,
-    runningHeader: getComputedStyle(
-      document.querySelector(".report-running-header")!,
+    documentHeader: getComputedStyle(
+      document.querySelector(".report-document-header")!,
     ).display,
     headerGroup: getComputedStyle(
       document.querySelector(".report-print-header")!,
     ).display,
-    runningPosition: getComputedStyle(
-      document.querySelector(".report-running-header")!,
-    ).position,
+    footerGroup: getComputedStyle(
+      document.querySelector(".report-print-footer")!,
+    ).display,
     bodyRowBreak: getComputedStyle(
       document.querySelector(".report-print-frame > tbody > tr")!,
     ).breakInside,
@@ -102,9 +110,9 @@ test("the on-demand report prints like a closed month, with the partial notice",
 
   expect(printStyles.sidebar).toBe("none");
   expect(printStyles.printControl).toBe("none");
-  expect(printStyles.runningHeader).toBe("block");
+  expect(printStyles.documentHeader).toBe("block");
   expect(printStyles.headerGroup).toBe("table-header-group");
-  expect(printStyles.runningPosition).toBe("static");
+  expect(printStyles.footerGroup).toBe("table-footer-group");
   expect(printStyles.bodyRowBreak).toBe("auto");
   expect(printStyles.sectionBreak).toBe("auto");
   expect(printStyles.keepBreak).toBe("avoid");
@@ -126,11 +134,12 @@ test("the frozen template keeps order and print drops app chrome", async ({ page
     .evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-report-section")));
   expect(order).toEqual([
     "header",
-    "verdict",
-    "spend",
+    "summary",
+    "overview",
     "providers",
     "teams",
-    "seats-unattributed",
+    "subscriptions",
+    "unattributed",
     "caveats",
   ]);
 
@@ -141,20 +150,28 @@ test("the frozen template keeps order and print drops app chrome", async ({ page
       document.querySelector('[data-slot="sidebar-container"]')!,
     ).display,
     appHeader: getComputedStyle(document.querySelector("[data-app-header]")!).display,
-    runningHeader: getComputedStyle(
-      document.querySelector(".report-running-header")!,
+    documentHeader: getComputedStyle(
+      document.querySelector(".report-document-header")!,
+    ).display,
+    footerGroup: getComputedStyle(
+      document.querySelector(".report-print-footer")!,
     ).display,
     background: getComputedStyle(document.documentElement).backgroundColor,
-    cardBreak: getComputedStyle(
-      document.querySelector('[data-report-sheet] [data-slot="card"]')!,
-    ).breakInside,
+    documentBackground: getComputedStyle(
+      document.querySelector(".report-print-frame")!,
+    ).backgroundColor,
+    documentShadow: getComputedStyle(
+      document.querySelector(".report-print-frame")!,
+    ).boxShadow,
   }));
 
   expect(printStyles.sidebar).toBe("none");
   expect(printStyles.appHeader).toBe("none");
-  expect(printStyles.runningHeader).toBe("block");
+  expect(printStyles.documentHeader).toBe("block");
+  expect(printStyles.footerGroup).toBe("table-footer-group");
   expect(printStyles.background).toBe("rgb(255, 255, 255)");
-  expect(printStyles.cardBreak).toBe("avoid");
+  expect(printStyles.documentBackground).toBe("rgb(255, 255, 255)");
+  expect(printStyles.documentShadow).toBe("none");
 });
 
 test("Chromium produces a real A4 PDF from the shared report", async ({

@@ -1,38 +1,13 @@
-import { RiInformationLine, RiSubtractLine } from "@remixicon/react";
-
-import { BudgetBar } from "@/components/domain/budget-bar";
-import { Notice } from "@/components/domain/notice";
+import { LogoWordmark } from "@/components/domain/logo";
 import { PageContainer } from "@/components/domain/page-container";
 import { PageHeader } from "@/components/domain/page-header";
-import { RankedTickList } from "@/components/domain/ranked-tick-list";
-import { StateBadge } from "@/components/domain/state-badge";
-import { StatusPill } from "@/components/domain/status-pill";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import type { VerdictStatus } from "@/lib/engine/verdict";
 import { percent } from "@/lib/format";
 import { money } from "@/lib/money";
 import { reportDate, reportDateTime, reportMonth } from "@/lib/reports/format";
 import type { PeriodSnapshot } from "@/lib/snapshot/build";
 import { copy, reportStatus } from "../copy";
 import { PrintButton } from "./print-button";
-
-// THE executive report template — one component, two periods (#95, #96).
-//
-// A closed month and the month in flight are the same document: same sections
-// in the same order, same units, same caveats, same A4 geometry. Only the tense
-// changes, so the CEO who prints a partial in the middle of August recognises
-// it instantly when the closed August arrives. Keeping one template is what
-// guarantees that; a second renderer would drift.
-//
-// The live variant adds exactly three things and nothing else: a notice that
-// the month has not closed, the close projection beside the spend, and the
-// present-tense wording of the caveats. Every number — including the projection
-// — comes from `buildPeriodSnapshot`; this component only formats.
 
 const providerName: Record<string, string> = {
   openai: "OpenAI",
@@ -45,8 +20,6 @@ const FX_FORMAT = new Intl.NumberFormat("pt-BR", {
 });
 
 export type ReportSheetData = PeriodSnapshot & { companyName: string };
-
-/** "closed" documents a frozen month; "live" describes the running one. */
 export type ReportVariant = "closed" | "live";
 
 function fxLabel(report: ReportSheetData, live: boolean): string {
@@ -65,24 +38,48 @@ function displayMoney(value: number | null, currency: string): string {
   return value === null ? copy.unavailable : money(value, currency);
 }
 
-function SectionTitle({ id, children }: { id: string; children: React.ReactNode }) {
+function SectionTitle({
+  id,
+  number,
+  children,
+}: {
+  id: string;
+  number?: number;
+  children: React.ReactNode;
+}) {
   return (
-    <h2
-      id={id}
-      className="text-sm font-medium tracking-tight"
-      data-print-heading
-    >
-      {children}
+    <h2 id={id} className="report-section-title" data-print-heading>
+      {number !== undefined && (
+        <span className="report-section-number" aria-hidden>
+          {number}.
+        </span>
+      )}
+      <span>{children}</span>
     </h2>
   );
 }
 
 function Metric({ label, value }: { label: string; value: string }) {
   return (
-    <div>
-      <dt className="text-[11px] text-muted-foreground">{label}</dt>
-      <dd className="mt-1 text-sm font-medium tabular-nums">{value}</dd>
+    <div className="report-summary-row" data-print-keep>
+      <dt>{label}</dt>
+      <dd>{value}</dd>
     </div>
+  );
+}
+
+function StatusLabel({
+  status,
+  children,
+}: {
+  status: VerdictStatus;
+  children: React.ReactNode;
+}) {
+  return (
+    <span className={`report-status report-status-${status}`}>
+      <span aria-hidden />
+      {children}
+    </span>
   );
 }
 
@@ -95,7 +92,6 @@ export function ReportSheet({
 }) {
   const live = variant === "live";
   const month = reportMonth(report.periodMonth);
-  // Both variants stamp `closedAt`; for a live report that instant is "now".
   const stamp = live
     ? `${copy.generatedAt(reportDateTime(report.closedAt))} · ${copy.dayOfPeriod(
         report.dayOfPeriod,
@@ -103,25 +99,16 @@ export function ReportSheet({
         report.monthLabel,
       )}`
     : copy.closedAt(reportDate(report.closedAt));
+  const documentStamp = live
+    ? `${reportDateTime(report.closedAt)} · ${copy.dayOfPeriod(
+        report.dayOfPeriod,
+        report.daysInPeriod,
+        report.monthLabel,
+      )}`
+    : reportDate(report.closedAt);
   const fx = fxLabel(report, live);
-  const providerTotal = report.breakdown.providers.reduce(
-    (sum, provider) => sum + provider.usd,
-    0,
-  );
-  const providerRows = report.breakdown.providers.map((provider) => ({
-    key: provider.provider,
-    label: providerName[provider.provider] ?? provider.provider,
-    value:
-      provider.display === null
-        ? money(provider.usd, "USD")
-        : `${money(provider.display, report.currency)} · ${money(provider.usd, "USD")}`,
-    share: providerTotal === 0 ? 0 : provider.usd / providerTotal,
-  }));
   const seats = report.breakdown.seats;
   const unattributed = report.breakdown.unattributed;
-  // A projection only exists where a budget does. Before day 5 the engine
-  // returns null and we say so rather than extrapolating four days into a month
-  // (invariant #5).
   const showProjection = live && report.budgetAmount !== null;
 
   const caveats = [
@@ -166,12 +153,8 @@ export function ReportSheet({
   ];
 
   return (
-    <PageContainer
-      variant="wide"
-      className="report-sheet gap-6"
-      data-report-sheet
-    >
-      <div className="report-screen-header" data-report-section="header">
+    <PageContainer variant="wide" className="report-sheet gap-6" data-report-sheet>
+      <div className="report-screen-header">
         <PageHeader
           title={`${report.companyName} · ${month}`}
           description={live ? copy.liveReportDescription : copy.reportDescription}
@@ -180,317 +163,342 @@ export function ReportSheet({
           actions={<PrintButton />}
           meta={`${stamp} · ${copy.currency(report.currency)}`}
         />
-        <p className="mt-2 text-xs text-muted-foreground tabular-nums">{fx}</p>
       </div>
 
       <table className="report-print-frame" role="presentation">
-        <thead className="report-print-header" aria-hidden>
+        <thead className="report-print-header">
           <tr>
             <td>
-              <div className="report-running-header">
-        <div className="flex items-baseline justify-between gap-6">
-          <strong>{report.companyName}</strong>
-          <span>{month}</span>
-        </div>
-        <div className="mt-1 flex items-baseline justify-between gap-4 text-[9px] text-neutral-600">
-          <span>{`${stamp} · ${copy.currency(report.currency)}`}</span>
-          <span>{fx}</span>
-        </div>
-      </div>
+              <header className="report-document-header" data-report-section="header">
+                <div className="report-document-brand">
+                  <LogoWordmark className="report-header-wordmark" />
+                  <p>{copy.documentTitle}</p>
+                </div>
+                <div className="report-document-period">
+                  <strong>{month}</strong>
+                  <span>{report.companyName}</span>
+                </div>
+                <dl className="report-document-meta">
+                  <div>
+                    <dt>{live ? copy.generated : copy.closed}</dt>
+                    <dd>{documentStamp}</dd>
+                  </div>
+                  <div>
+                    <dt>{copy.currencyLabel}</dt>
+                    <dd>{report.currency}</dd>
+                  </div>
+                  <div>
+                    <dt>{copy.fxLabel}</dt>
+                    <dd>{fx}</dd>
+                  </div>
+                </dl>
+              </header>
             </td>
           </tr>
         </thead>
         <tbody>
           <tr>
             <td>
-              <div className="report-print-body">
-
-      {live && (
-        // Neutral, not a semaphore: green/amber/red belong to budget status
-        // alone (principle #5), and an unfinished month is not a problem — it
-        // is a fact about the document. The shared `Notice` is the app's
-        // disclosure voice; the section wrapper carries the print hooks.
-        <section className="report-section" data-print-keep data-report-section="partial">
-          <Notice icon={<RiInformationLine aria-hidden />} title={copy.partialTitle}>
-            {copy.partialBody}
-          </Notice>
-        </section>
-      )}
-
-      <section
-        aria-labelledby="report-verdict"
-        className="report-section"
-        data-report-section="verdict"
-      >
-        <Card data-print-keep>
-          <CardHeader>
-            <CardTitle>
-              <SectionTitle id="report-verdict">{copy.verdictTitle}</SectionTitle>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="flex items-start gap-3">
-            {report.verdictStatus && (
-              <StatusPill
-                status={report.verdictStatus}
-                label={reportStatus[report.verdictStatus]}
-              />
-            )}
-            <p className="text-sm/relaxed">
-              {report.verdictSentence ?? copy.noVerdict}
-            </p>
-          </CardContent>
-        </Card>
-      </section>
-
-      <section
-        aria-labelledby="report-spend"
-        className="report-section"
-        data-report-section="spend"
-      >
-        <Card data-print-keep>
-          <CardHeader>
-            <CardTitle>
-              <SectionTitle id="report-spend">
-                {live ? copy.spentTitleLive : copy.spentTitle}
-              </SectionTitle>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-4xl font-semibold tracking-tight tabular-nums sm:text-5xl">
-              {displayMoney(report.combinedAmount, report.currency)}
-            </p>
-            <p className="mt-2 text-xs text-muted-foreground tabular-nums">
-              {report.combinedAmount !== null && report.budgetAmount !== null
-                ? copy.spentOfBudget(
-                    money(report.combinedAmount, report.currency),
-                    money(report.budgetAmount, report.currency),
-                  )
-                : copy.noBudget}
-            </p>
-            <div className="mt-4">
-              {report.pctSpent !== null && report.verdictStatus !== null ? (
-                <BudgetBar
-                  pctSpent={report.pctSpent}
-                  pctProjected={
-                    report.projection !== null && report.budgetAmount
-                      ? report.projection / report.budgetAmount
-                      : null
-                  }
-                  status={report.verdictStatus}
-                />
-              ) : (
-                <div className="h-2.5 w-full rounded-sm bg-muted" />
-              )}
-            </div>
-            {showProjection && (
-              <dl className="mt-4 border-t pt-3">
-                <Metric
-                  label={copy.projection}
-                  value={
-                    report.projection === null
-                      ? copy.projectionCollecting
-                      : money(report.projection, report.currency)
-                  }
-                />
-                {report.projection === null && (
-                  <p className="mt-1 text-[11px] text-muted-foreground">
-                    {copy.projectionCollectingHint}
-                  </p>
-                )}
-              </dl>
-            )}
-          </CardContent>
-        </Card>
-      </section>
-
-      <section
-        aria-labelledby="report-providers"
-        className="report-section"
-        data-report-section="providers"
-      >
-        <Card data-print-keep>
-          <CardHeader>
-            <CardTitle>
-              <SectionTitle id="report-providers">
-                {live ? copy.providerTitleLive : copy.providerTitle}
-              </SectionTitle>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {providerRows.length === 0 ? (
-              <p className="text-xs text-muted-foreground">{copy.providerEmpty}</p>
-            ) : (
-              <RankedTickList rows={providerRows} />
-            )}
-          </CardContent>
-        </Card>
-      </section>
-
-      <section
-        aria-labelledby="report-teams"
-        className="report-section"
-        data-report-section="teams"
-      >
-        <Card className="gap-0 py-0">
-          <div className="border-b border-border/60 px-4 py-3">
-            <SectionTitle id="report-teams">{copy.teamsTitle}</SectionTitle>
-          </div>
-          {report.breakdown.teams.length === 0 ? (
-            <p className="px-4 py-5 text-xs text-muted-foreground">
-              {copy.teamsEmpty}
-            </p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs" data-report-table>
-                <thead>
-                  <tr className="border-b text-left text-[11px] text-muted-foreground">
-                    <th className="px-4 py-2 font-medium">{copy.team}</th>
-                    <th className="px-3 py-2 font-medium">{copy.spend}</th>
-                    <th className="px-3 py-2 font-medium">{copy.budget}</th>
-                    <th className="px-3 py-2 font-medium">{copy.percent}</th>
-                    <th className="px-4 py-2 font-medium">{copy.status}</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border/60">
-                  {report.breakdown.teams.map((team) => (
-                    <tr key={team.teamId}>
-                      <td className="px-4 py-3 font-medium">{team.teamName}</td>
-                      <td className="px-3 py-3 tabular-nums">
-                        {displayMoney(team.spend, report.currency)}
-                      </td>
-                      <td className="px-3 py-3 tabular-nums text-muted-foreground">
-                        {team.budget === null
-                          ? copy.noBudget
-                          : money(team.budget, report.currency)}
-                      </td>
-                      <td className="px-3 py-3 tabular-nums text-muted-foreground">
-                        {team.pctSpent === null ? "—" : percent(team.pctSpent)}
-                      </td>
-                      <td className="px-4 py-3">
-                        {team.status ? (
-                          <StatusPill
-                            status={team.status}
-                            label={reportStatus[team.status]}
-                          />
-                        ) : (
-                          <StateBadge icon={RiSubtractLine} tone="neutral">
-                            {copy.noBudget}
-                          </StateBadge>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </Card>
-      </section>
-
-      <section
-        aria-labelledby="report-seats-unattributed"
-        className="report-section"
-        data-report-section="seats-unattributed"
-      >
-        <SectionTitle id="report-seats-unattributed">
-          {copy.seatsAndUnattributed}
-        </SectionTitle>
-        <div className="mt-2 grid gap-4 md:grid-cols-2">
-          <Card data-print-keep>
-            <CardHeader>
-              <CardTitle>{copy.seats}</CardTitle>
-              <CardDescription>
-                {!seats.available
-                  ? copy.seatsUnavailable
-                  : live
-                    ? copy.seatCountLive(seats.subscriptions.length)
-                    : copy.seatCount(seats.subscriptions.length)}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-semibold tabular-nums">
-                {displayMoney(seats.total, report.currency)}
-              </p>
-              {seats.subscriptions.length > 0 && (
-                <ul className="mt-3 divide-y divide-border/60">
-                  {seats.subscriptions.map((subscription, index) => (
-                    <li
-                      key={`${subscription.tool}-${subscription.teamId ?? "shared"}-${index}`}
-                      className="flex justify-between gap-3 py-2"
-                    >
-                      <span className="min-w-0 truncate">{subscription.tool}</span>
-                      <span className="shrink-0 tabular-nums text-muted-foreground">
-                        {money(subscription.monthlyTotal, report.currency)}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card data-print-keep>
-            <CardHeader>
-              <CardTitle>{copy.unattributed}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-semibold tabular-nums">
-                {displayMoney(unattributed.display, report.currency)}
-              </p>
-              <dl className="mt-4 grid grid-cols-2 gap-4">
-                <Metric label={copy.api} value={money(unattributed.apiUsd, "USD")} />
-                <Metric
-                  label={copy.sharedSeats}
-                  value={displayMoney(unattributed.seats, report.currency)}
-                />
-              </dl>
-            </CardContent>
-          </Card>
-        </div>
-      </section>
-
-      <footer
-        aria-labelledby="report-caveats"
-        className="report-section"
-        data-report-section="caveats"
-      >
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              <SectionTitle id="report-caveats">
-                {live ? copy.caveatsTitleLive : copy.caveatsTitle}
-              </SectionTitle>
-            </CardTitle>
-            <CardDescription>
-              {live ? copy.caveatsDescriptionLive : copy.caveatsDescription}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <dl className="grid gap-3 sm:grid-cols-2">
-              {caveats.map((caveat) => (
-                <div
-                  key={caveat.key}
-                  className="rounded-lg border p-3"
+              <main className="report-print-body">
+                <section
+                  aria-labelledby="report-summary"
+                  className="report-section report-summary"
                   data-print-keep
+                  data-report-section="summary"
                 >
-                  <dt>
-                    <StateBadge icon={RiInformationLine} tone="neutral">
-                      {caveat.label}
-                    </StateBadge>
-                  </dt>
-                  <dd className="mt-2 text-xs/relaxed text-muted-foreground">
-                    {caveat.value}
-                  </dd>
-                </div>
-              ))}
-            </dl>
-          </CardContent>
-        </Card>
-      </footer>
-              </div>
+                  <SectionTitle id="report-summary">{copy.summaryTitle}</SectionTitle>
+                  <dl className="report-summary-metrics">
+                    <Metric
+                      label={live ? copy.spentTitleLive : copy.spentTitle}
+                      value={displayMoney(report.combinedAmount, report.currency)}
+                    />
+                    <Metric
+                      label={copy.budget}
+                      value={displayMoney(report.budgetAmount, report.currency)}
+                    />
+                    <Metric
+                      label={copy.utilization}
+                      value={
+                        report.pctSpent === null
+                          ? copy.unavailable
+                          : percent(report.pctSpent)
+                      }
+                    />
+                    {showProjection && (
+                      <Metric
+                        label={copy.projection}
+                        value={
+                          report.projection === null
+                            ? copy.projectionCollecting
+                            : money(report.projection, report.currency)
+                        }
+                      />
+                    )}
+                  </dl>
+                  <div
+                    className={`report-verdict report-verdict-${
+                      report.verdictStatus ?? "neutral"
+                    }`}
+                  >
+                    {report.verdictStatus && (
+                      <StatusLabel status={report.verdictStatus}>
+                        {reportStatus[report.verdictStatus]}
+                      </StatusLabel>
+                    )}
+                    <p>{report.verdictSentence ?? copy.noVerdict}</p>
+                  </div>
+                </section>
+
+                <section
+                  aria-labelledby="report-overview"
+                  className="report-section"
+                  data-report-section="overview"
+                >
+                  <SectionTitle id="report-overview" number={1}>
+                    {copy.overviewTitle}
+                  </SectionTitle>
+                  <p className="report-section-copy">
+                    {live
+                      ? copy.overviewLive(
+                          report.dayOfPeriod,
+                          report.daysInPeriod,
+                          report.monthLabel,
+                        )
+                      : copy.overviewClosed(report.monthLabel)}
+                  </p>
+                  {live && report.projection === null && showProjection && (
+                    <p className="report-method-note">
+                      {copy.projectionCollectingHint}
+                    </p>
+                  )}
+                </section>
+
+                <section
+                  aria-labelledby="report-providers"
+                  className="report-section"
+                  data-report-section="providers"
+                >
+                  <SectionTitle id="report-providers" number={2}>
+                    {copy.providersSectionTitle}
+                  </SectionTitle>
+                  {report.breakdown.providers.length === 0 ? (
+                    <p className="report-empty">{copy.providerEmpty}</p>
+                  ) : (
+                    <div className="report-table-wrap">
+                      <table className="report-data-table" data-report-table>
+                        <thead>
+                          <tr>
+                            <th scope="col">{copy.provider}</th>
+                            <th scope="col">{report.currency}</th>
+                            <th scope="col">{copy.usd}</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {report.breakdown.providers.map((provider) => (
+                            <tr key={provider.provider}>
+                              <th scope="row">
+                                {providerName[provider.provider] ?? provider.provider}
+                              </th>
+                              <td className="report-number">
+                                {displayMoney(provider.display, report.currency)}
+                              </td>
+                              <td className="report-number">
+                                {money(provider.usd, "USD")}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </section>
+
+                <section
+                  aria-labelledby="report-teams"
+                  className="report-section"
+                  data-report-section="teams"
+                >
+                  <SectionTitle id="report-teams" number={3}>
+                    {copy.teamsSectionTitle}
+                  </SectionTitle>
+                  {report.breakdown.teams.length === 0 ? (
+                    <p className="report-empty">{copy.teamsEmpty}</p>
+                  ) : (
+                    <div className="report-table-wrap">
+                      <table className="report-data-table" data-report-table>
+                        <thead>
+                          <tr>
+                            <th scope="col">{copy.team}</th>
+                            <th scope="col">{copy.spend}</th>
+                            <th scope="col">{copy.budget}</th>
+                            <th scope="col">{copy.utilization}</th>
+                            <th scope="col">{copy.status}</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {report.breakdown.teams.map((team) => (
+                            <tr key={team.teamId}>
+                              <th scope="row">{team.teamName}</th>
+                              <td className="report-number">
+                                {displayMoney(team.spend, report.currency)}
+                              </td>
+                              <td className="report-number">
+                                {team.budget === null
+                                  ? copy.noBudget
+                                  : money(team.budget, report.currency)}
+                              </td>
+                              <td className="report-number">
+                                {team.pctSpent === null
+                                  ? copy.dash
+                                  : percent(team.pctSpent)}
+                              </td>
+                              <td>
+                                {team.status ? (
+                                  <StatusLabel status={team.status}>
+                                    {reportStatus[team.status]}
+                                  </StatusLabel>
+                                ) : (
+                                  <span className="report-status report-status-neutral">
+                                    <span aria-hidden />
+                                    {copy.noBudget}
+                                  </span>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </section>
+
+                <section
+                  aria-labelledby="report-subscriptions"
+                  className="report-section"
+                  data-report-section="subscriptions"
+                >
+                  <SectionTitle id="report-subscriptions" number={4}>
+                    {copy.subscriptionsTitle}
+                  </SectionTitle>
+                  {!seats.available ? (
+                    <p className="report-empty">{copy.seatsUnavailable}</p>
+                  ) : seats.subscriptions.length === 0 ? (
+                    <p className="report-empty">{copy.subscriptionsEmpty}</p>
+                  ) : (
+                    <div className="report-table-wrap">
+                      <table className="report-data-table" data-report-table>
+                        <thead>
+                          <tr>
+                            <th scope="col">{copy.subscription}</th>
+                            <th scope="col">{copy.allocation}</th>
+                            <th scope="col">{copy.seatQuantity}</th>
+                            <th scope="col">{copy.monthlyCost}</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {seats.subscriptions.map((subscription, index) => (
+                            <tr
+                              key={`${subscription.tool}-${subscription.teamId ?? "shared"}-${index}`}
+                            >
+                              <th scope="row">{subscription.tool}</th>
+                              <td>
+                                {subscription.teamName ?? copy.companyWide}
+                              </td>
+                              <td className="report-number">
+                                {subscription.seatCount}
+                              </td>
+                              <td className="report-number">
+                                {money(subscription.monthlyTotal, report.currency)}
+                              </td>
+                            </tr>
+                          ))}
+                          <tr className="report-total-row">
+                            <th scope="row" colSpan={3}>
+                              {copy.totalSubscriptions}
+                            </th>
+                            <td className="report-number">
+                              {displayMoney(seats.total, report.currency)}
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </section>
+
+                <section
+                  aria-labelledby="report-unattributed"
+                  className="report-section"
+                  data-report-section="unattributed"
+                >
+                  <SectionTitle id="report-unattributed" number={5}>
+                    {copy.unattributedSectionTitle}
+                  </SectionTitle>
+                  <div className="report-table-wrap">
+                    <table className="report-data-table report-cost-table" data-report-table>
+                      <thead>
+                        <tr>
+                          <th scope="col">{copy.costType}</th>
+                          <th scope="col">{copy.value}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <th scope="row">{copy.api}</th>
+                          <td className="report-number">
+                            {money(unattributed.apiUsd, "USD")}
+                          </td>
+                        </tr>
+                        <tr>
+                          <th scope="row">{copy.sharedSeats}</th>
+                          <td className="report-number">
+                            {displayMoney(unattributed.seats, report.currency)}
+                          </td>
+                        </tr>
+                        <tr className="report-total-row">
+                          <th scope="row">{copy.totalUnattributed}</th>
+                          <td className="report-number">
+                            {displayMoney(unattributed.display, report.currency)}
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </section>
+
+                <section
+                  aria-labelledby="report-caveats"
+                  className="report-section report-caveats"
+                  data-report-section="caveats"
+                >
+                  <SectionTitle id="report-caveats" number={6}>
+                    {copy.dataQualityTitle}
+                  </SectionTitle>
+                  <p className="report-section-copy">
+                    {live ? copy.caveatsDescriptionLive : copy.caveatsDescription}
+                  </p>
+                  <ol className="report-notes">
+                    {caveats.map((caveat) => (
+                      <li key={caveat.key} data-print-keep>
+                        <strong>{caveat.label}</strong>
+                        <p>{caveat.value}</p>
+                      </li>
+                    ))}
+                  </ol>
+                </section>
+              </main>
             </td>
           </tr>
         </tbody>
+        <tfoot className="report-print-footer">
+          <tr>
+            <td>
+              <div className="report-brand-footer">
+                <LogoWordmark monochrome className="report-footer-wordmark" />
+              </div>
+            </td>
+          </tr>
+        </tfoot>
       </table>
     </PageContainer>
   );

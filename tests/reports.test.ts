@@ -140,9 +140,12 @@ describe("report shell and print contract", () => {
 
     expect(print).toContain('[data-slot="sidebar-container"]');
     expect(print).toContain("[data-app-header]");
+    expect(print).toContain('[data-slot="dialog-overlay"]');
     expect(print).toContain("color-scheme: light");
     expect(print).toContain(".report-print-header");
     expect(print).toContain("display: table-header-group");
+    expect(print).toContain(".report-print-footer");
+    expect(print).toContain("display: table-footer-group");
     expect(print).toContain("[data-print-keep]");
     expect(print).toContain(".report-section");
     expect(print).toContain("break-inside: auto");
@@ -156,11 +159,12 @@ describe("report shell and print contract", () => {
     // recognizable as the same document once the month closes.
     const positions = [
       "header",
-      "verdict",
-      "spend",
+      "summary",
+      "overview",
       "providers",
       "teams",
-      "seats-unattributed",
+      "subscriptions",
+      "unattributed",
       "caveats",
     ].map((section) => reportSheetSource.indexOf(`data-report-section="${section}"`));
 
@@ -170,11 +174,14 @@ describe("report shell and print contract", () => {
 
   it("keeps the print hooks on the shared sheet, so both variants print alike", () => {
     expect(reportSheetSource).toContain("data-report-sheet");
-    expect(reportSheetSource).toContain("report-running-header");
+    expect(reportSheetSource).toContain("report-document-header");
+    expect(reportSheetSource).toContain("report-brand-footer");
+    expect(reportSheetSource).toContain("<LogoWordmark");
     expect(reportSheetSource).toContain("report-screen-header");
     expect(reportSheetSource).toContain("<PrintButton />");
     expect(reportSheetSource).toContain("report-print-frame");
     expect(reportSheetSource).toContain("report-print-header");
+    expect(reportSheetSource).toContain("report-print-footer");
     expect(reportSheetSource).toContain("report-print-body");
     expect(reportSheetSource).toContain("data-print-keep");
   });
@@ -223,6 +230,7 @@ describe("the on-demand report", () => {
     );
     expect(page).toContain('variant="live"');
     expect(page).toContain('export const dynamic = "force-dynamic"');
-    expect(reportSheetSource).toContain('data-report-section="partial"');
+    expect(reportSheetSource).toContain("copy.overviewLive");
+    expect(reportSheetSource).toContain("showProjection");
   });
 });
