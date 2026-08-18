@@ -164,7 +164,7 @@ export default async function HomePage() {
       </div>
 
       <ObservationsFooter
-        items={observations.filter((item) => item.kind === "observation")}
+        items={observations}
         hasSeatWaste={hasSeatWaste}
       />
     </PageContainer>

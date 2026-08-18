@@ -29,6 +29,10 @@ export type CurrentReport = PeriodSnapshot & {
   generatedAt: string;
 };
 
+export type CurrentReportRead =
+  | { ok: true; report: CurrentReport }
+  | { ok: false; report: null };
+
 async function companyName(): Promise<string> {
   const supabase = await createClient();
   const { data } = await supabase.from("tenant").select("name").maybeSingle();
@@ -62,4 +66,14 @@ export async function currentReport(now: Date = new Date()): Promise<CurrentRepo
   });
 
   return { ...snapshot, companyName: name, generatedAt };
+}
+
+/** Keeps the frozen report history available when the live assembly fails. */
+export async function readCurrentReport(): Promise<CurrentReportRead> {
+  try {
+    return { ok: true, report: await currentReport() };
+  } catch {
+    console.error("[reports] current read failed");
+    return { ok: false, report: null };
+  }
 }

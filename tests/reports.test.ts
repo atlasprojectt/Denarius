@@ -9,8 +9,12 @@ const reportSheetSource = readFileSync(
   path.join(process.cwd(), "app/(app)/relatorios/_components/report-sheet.tsx"),
   "utf8",
 );
-const printButtonSource = readFileSync(
-  path.join(process.cwd(), "app/(app)/relatorios/_components/print-button.tsx"),
+const reportsIndexSource = readFileSync(
+  path.join(process.cwd(), "app/(app)/relatorios/page.tsx"),
+  "utf8",
+);
+const reportViewerSource = readFileSync(
+  path.join(process.cwd(), "app/(app)/relatorios/_components/report-viewer.tsx"),
   "utf8",
 );
 
@@ -28,7 +32,7 @@ const snapshotRow = {
   fx_rate_source: "open.er-api.com",
   fx_rate_date: "2026-07-01",
   verdict_status: "amber",
-  verdict_sentence: "A empresa fechou julho dentro do orçamento, perto do limite.",
+  verdict_sentence: "A empresa fechou julho dentro do orÃ§amento, perto do limite.",
   breakdown: {
     teams: [],
     providers: [{ provider: "openai", usd: 100, display: 550 }],
@@ -95,7 +99,7 @@ describe("monthly report reads", () => {
     });
   });
 
-  it("builds a month from period_snapshot alone — never live spend tables", async () => {
+  it("builds a month from period_snapshot alone â€” never live spend tables", async () => {
     const query = await loadQueries({ data: snapshotRow, error: null });
     const report = await query.monthlyReport("2026-07");
 
@@ -120,6 +124,14 @@ describe("monthly report reads", () => {
 });
 
 describe("report shell and print contract", () => {
+  it("keeps the current report as the primary, independently readable entry", () => {
+    expect(reportsIndexSource).toContain("readCurrentReport");
+    expect(reportsIndexSource).toContain("listMonthlyReports");
+    expect(reportsIndexSource).toContain("Promise.all");
+    expect(reportsIndexSource).toContain("copy.liveCardCta");
+    expect(reportsIndexSource).toContain("LIVE_REPORT_PATH");
+  });
+
   it("recognizes the list and detail paths so the shell skips live cockpit reads", () => {
     expect(isReportPath("/relatorios")).toBe(true);
     expect(isReportPath("/relatorios/2026-07")).toBe(true);
@@ -129,7 +141,7 @@ describe("report shell and print contract", () => {
 
   it("exempts the on-demand report, which is live by definition", () => {
     // The frozen surfaces suppress the shell's current-month reads; the report
-    // of right now must keep them — its stale-sync banner is the point.
+    // of right now must keep them â€” its stale-sync banner is the point.
     expect(isReportPath(LIVE_REPORT_PATH)).toBe(false);
     expect(isReportPath("/relatorios/agora")).toBe(false);
   });
@@ -155,7 +167,7 @@ describe("report shell and print contract", () => {
 
   it("keeps the fixed executive sections in the same source order", () => {
     // ONE template serves both periods, so this order holds for the closed
-    // month and the on-demand report alike — that is what makes a partial
+    // month and the on-demand report alike â€” that is what makes a partial
     // recognizable as the same document once the month closes.
     const positions = [
       "header",
@@ -177,19 +189,21 @@ describe("report shell and print contract", () => {
     expect(reportSheetSource).toContain("report-document-header");
     expect(reportSheetSource).toContain("report-brand-footer");
     expect(reportSheetSource).toContain("<LogoWordmark");
-    expect(reportSheetSource).toContain("report-screen-header");
-    expect(reportSheetSource).toContain("<PrintButton />");
+    expect(reportSheetSource).toContain("<ReportViewer");
+    expect(reportViewerSource).toContain("pdfUrl");
+    expect(reportViewerSource).toContain("RiExpandDiagonalLine");
+    expect(reportViewerSource).not.toContain("pagedjs");
     expect(reportSheetSource).toContain("report-print-frame");
     expect(reportSheetSource).toContain("report-print-header");
     expect(reportSheetSource).toContain("report-print-footer");
     expect(reportSheetSource).toContain("report-print-body");
     expect(reportSheetSource).toContain("data-print-keep");
   });
-
-  it("explains the browser settings before opening its print dialog", () => {
-    expect(printButtonSource).toContain("copy.printPrepItems");
-    expect(printButtonSource).toContain("window.requestAnimationFrame");
-    expect(printButtonSource).toContain("window.print()");
+  it("keeps the legacy print-instructions modal out of the report flow", () => {
+    expect(reportSheetSource).not.toContain("printPrepTitle");
+    expect(reportViewerSource).not.toContain("Antes de imprimir");
+    expect(reportViewerSource).toContain("Baixar PDF");
+    expect(reportViewerSource).toContain("Expandir");
   });
 });
 
@@ -199,7 +213,7 @@ describe("the on-demand report", () => {
     "utf8",
   );
 
-  it("stays inside the tenant's own session — never the service role", () => {
+  it("stays inside the tenant's own session â€” never the service role", () => {
     // The closing job is the one deliberate cross-tenant path; a user asking
     // for their own situation is not (invariant #1).
     expect(source).toContain("@/lib/supabase/server");
@@ -214,11 +228,16 @@ describe("the on-demand report", () => {
     expect(source).not.toContain("period_snapshot");
   });
 
+  it("lets the reports index fail independently from the frozen history", () => {
+    expect(source).toContain("export async function readCurrentReport");
+    expect(source).toContain('return { ok: false, report: null }');
+  });
+
   it("reuses the engine rather than recomputing anything", () => {
     expect(source).toContain("buildPeriodSnapshot");
     expect(source).toContain("closed: false");
     expect(source).toContain('source: "live"');
-    // Home's memoized assembly is the single source — a second read path could
+    // Home's memoized assembly is the single source â€” a second read path could
     // drift from the cockpit the user just looked at.
     expect(source).toContain("getReportParts");
   });

@@ -1,11 +1,11 @@
 "use server";
 
-import { getNextActions, type Observation } from "@/lib/home/queries";
+import type { BudgetNotification } from "@/lib/home/notifications";
+import { getBudgetNotifications } from "@/lib/home/queries";
 
-// On-demand read for the global header "Próximas ações" pop-up. A server action
-// (not RSC) so the always-present header pays nothing per navigation — the
-// actions are computed only when the user opens the pop-up. Runs under RLS via
-// the queries' server client, so it is tenant-scoped; no client DB access.
-export async function fetchNextActions(): Promise<Observation[]> {
-  return getNextActions();
+// On-demand read for the global notification center. A server action keeps the
+// always-present header cheap across navigations. The alert list is computed
+// from tenant-scoped cockpit findings; there is no client DB access.
+export async function fetchBudgetNotifications(): Promise<BudgetNotification[]> {
+  return getBudgetNotifications();
 }

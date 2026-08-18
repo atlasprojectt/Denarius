@@ -14,7 +14,10 @@ import { combineTeamSpend } from "@/lib/engine/team-spend";
 import { isoDaysAgo, weekOverWeek } from "@/lib/engine/week-change";
 import { buildApontamentos } from "@/lib/findings/apontamentos";
 import { buildSeatWaste } from "@/lib/findings/seats-vs-roster";
-import { money } from "@/lib/money";
+import {
+  buildBudgetNotifications,
+  type BudgetNotification,
+} from "@/lib/home/notifications";
 import { listBudgets, type BudgetList } from "@/lib/budgets/queries";
 import { listSubscriptions } from "@/lib/subscriptions/queries";
 import { listTeams } from "@/lib/teams/queries";
@@ -39,12 +42,6 @@ export type CockpitData = {
 export type Observation = {
   id: string;
   text: string;
-  kind: "observation" | "action";
-  href?: string;
-  actionLabel?: string;
-  title?: string;
-  context?: string;
-  impact?: string;
 };
 
 export type HomeData = CockpitData & {
@@ -408,9 +405,8 @@ export async function getTimesData(): Promise<TimesData> {
 
 /**
  * The calm feed (#21/#22): apontamentos then secondary seat-waste, mapped into
- * one ordered Observation[] split by kind. Pure over already-fetched aggregates
- * — the single source of truth for both the Home footer (kind "observation")
- * and the header's Próximas ações button (kind "action").
+ * one ordered Observation[]. Pure over already-fetched aggregates — the single
+ * source of truth for the Home footer.
  */
 function buildObservations(
   assembly: CockpitAssembly,
@@ -456,34 +452,11 @@ function buildObservations(
     ...apontamentos.map((a) => ({
       id: `apontamento:${a.id}`,
       text: a.text,
-      kind: a.kind === "unattributed" ? ("action" as const) : ("observation" as const),
-      href: a.kind === "unattributed" ? "/ajustes/atribuicao" : undefined,
-      actionLabel: a.kind === "unattributed" ? "Mapear atribuição" : undefined,
-      title:
-        a.kind === "unattributed" && spendMix !== null
-          ? `${money(spendMix.unattributed, assembly.currency)} sem atribuição`
-          : undefined,
-      context:
-        a.kind === "unattributed"
-          ? "Gastos ainda não associados a times ou projetos"
-          : undefined,
     })),
-    ...seatWaste.map((w) => {
-      const subscription = assembly.subscriptions.find((s) => s.id === w.id);
-      return {
-        id: `seat:${w.id}`,
-        text: w.text,
-        kind: "action" as const,
-        href: "/ajustes/assinaturas",
-        actionLabel: "Revisar assinaturas",
-        title:
-          w.excessSeats === 1
-            ? "1 assento acima do roster"
-            : `${w.excessSeats} assentos acima do roster`,
-        context: `${w.tool} · ${subscription?.teamName ?? "Toda a empresa"}`,
-        impact: `Impacto aproximado de ${money(w.monthlySavings, assembly.currency)}/mês`,
-      };
-    }),
+    ...seatWaste.map((w) => ({
+      id: `seat:${w.id}`,
+      text: w.text,
+    })),
   ];
 }
 
@@ -541,18 +514,10 @@ export async function getHomeData(): Promise<HomeData> {
 }
 
 /**
- * Just the actionable subset of the observations feed — the header's
- * "Próximas ações" pop-up (global, on-demand). Same rules and reads as the Home
- * footer, filtered to kind "action". Runs under RLS, so it's tenant-scoped.
+ * Active budget alerts for the global notification center. Runs under RLS and
+ * reuses the cockpit engine, so the header cannot disagree with the Home.
  */
-export async function getNextActions(): Promise<Observation[]> {
-  const now = new Date();
-  const [assembly, weekRows, roster] = await Promise.all([
-    assembleCockpit(),
-    teamWeekChanges(now),
-    rosterHeadcount(),
-  ]);
-  return buildObservations(assembly, weekRows, roster).filter(
-    (o) => o.kind === "action",
-  );
+export async function getBudgetNotifications(): Promise<BudgetNotification[]> {
+  const { cockpit } = await assembleCockpit();
+  return buildBudgetNotifications(cockpit);
 }

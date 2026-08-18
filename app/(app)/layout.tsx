@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 
 import { AppSidebar } from "@/components/domain/app-sidebar";
-import { NextActionsButton } from "@/components/domain/next-actions-button";
+import { NotificationsButton } from "@/components/domain/notifications-button";
 import { RevealController } from "@/components/domain/reveal-controller";
 import { AppToastProvider } from "@/components/domain/toast-provider";
 import { Separator } from "@/components/ui/separator";
@@ -107,7 +107,7 @@ export default async function AppLayout({
               {appUser.tenant?.name}
             </span>
             <div className="ml-auto">
-              <NextActionsButton />
+              <NotificationsButton />
             </div>
           </header>
           {/* SidebarInset already renders the page's <main> landmark — a

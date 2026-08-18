@@ -8,8 +8,13 @@ import { ReportSheet } from "../_components/report-sheet";
 // company as it stands the second the CEO asks.
 export const dynamic = "force-dynamic";
 
-export default async function CurrentReportPage() {
+export default async function CurrentReportPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ pdf?: string }>;
+}) {
   const report = await currentReport();
+  const { pdf } = await searchParams;
 
-  return <ReportSheet report={report} variant="live" />;
+  return <ReportSheet report={report} variant="live" printOnly={pdf === "1"} />;
 }
