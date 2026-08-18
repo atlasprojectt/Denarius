@@ -1,13 +1,11 @@
 import { LogoWordmark } from "@/components/domain/logo";
-import { PageContainer } from "@/components/domain/page-container";
-import { PageHeader } from "@/components/domain/page-header";
 import type { VerdictStatus } from "@/lib/engine/verdict";
 import { percent } from "@/lib/format";
 import { money } from "@/lib/money";
 import { reportDate, reportDateTime, reportMonth } from "@/lib/reports/format";
 import type { PeriodSnapshot } from "@/lib/snapshot/build";
 import { copy, reportStatus } from "../copy";
-import { PrintButton } from "./print-button";
+import { ReportViewer } from "./report-viewer";
 
 const providerName: Record<string, string> = {
   openai: "OpenAI",
@@ -34,6 +32,14 @@ function fxLabel(report: ReportSheetData, live: boolean): string {
   return live ? copy.fxMissingLive : copy.fxMissing;
 }
 
+function safeFilename(value: string): string {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "") || "empresa";
+}
 function displayMoney(value: number | null, currency: string): string {
   return value === null ? copy.unavailable : money(value, currency);
 }
@@ -86,9 +92,11 @@ function StatusLabel({
 export function ReportSheet({
   report,
   variant,
+  printOnly,
 }: {
   report: ReportSheetData;
   variant: ReportVariant;
+  printOnly?: boolean;
 }) {
   const live = variant === "live";
   const month = reportMonth(report.periodMonth);
@@ -152,20 +160,8 @@ export function ReportSheet({
     },
   ];
 
-  return (
-    <PageContainer variant="wide" className="report-sheet gap-6" data-report-sheet>
-      <div className="report-screen-header">
-        <PageHeader
-          title={`${report.companyName} · ${month}`}
-          description={live ? copy.liveReportDescription : copy.reportDescription}
-          backHref="/relatorios"
-          backLabel={copy.back}
-          actions={<PrintButton />}
-          meta={`${stamp} · ${copy.currency(report.currency)}`}
-        />
-      </div>
-
-      <table className="report-print-frame" role="presentation">
+  const document = (
+      <table className="report-print-frame" role="presentation" data-report-sheet>
         <thead className="report-print-header">
           <tr>
             <td>
@@ -500,6 +496,29 @@ export function ReportSheet({
           </tr>
         </tfoot>
       </table>
-    </PageContainer>
+    );
+
+  if (printOnly) {
+    return <div className="report-print-source">{document}</div>;
+  }
+
+  const period = report.periodMonth.slice(0, 7);
+  const pdfUrl = live ? "/api/relatorios/agora/pdf" : `/api/relatorios/${period}/pdf`;
+  const downloadFilename = `denarius-relatorio-${safeFilename(`${report.companyName}-${period}`)}.pdf`;
+
+  // The frozen/live report is always a two-page A4 document; the viewer only
+  // receives this as discrete metadata to display — it holds no internal
+  // knowledge of page counts.
+  const REPORT_PAGE_COUNT = 2;
+
+  return (
+    <ReportViewer
+      title={month}
+      meta={`${stamp} · ${copy.currency(report.currency)}`}
+      pdfUrl={pdfUrl}
+      downloadFilename={downloadFilename}
+      reportDocument={document}
+      pageCount={REPORT_PAGE_COUNT}
+    />
   );
 }

@@ -3,7 +3,6 @@ import {
   RiArrowRightSLine,
   RiErrorWarningLine,
   RiFileChartLine,
-  RiFlashlightLine,
   RiInformationLine,
 } from "@remixicon/react";
 
@@ -25,29 +24,80 @@ import {
   reportMonth,
   reportPeriodPath,
 } from "@/lib/reports/format";
+import { readCurrentReport } from "@/lib/reports/current";
 import { LIVE_REPORT_PATH } from "@/lib/reports/path";
 import { listMonthlyReports } from "@/lib/reports/queries";
 import { copy } from "./copy";
 
+function displayMoney(amount: number | null, currency: string) {
+  return amount === null ? copy.unavailable : money(amount, currency);
+}
+
 export default async function ReportsPage() {
-  const read = await listMonthlyReports();
+  const [read, current] = await Promise.all([
+    listMonthlyReports(),
+    readCurrentReport(),
+  ]);
 
   return (
     <PageContainer variant="wide" className="gap-6">
       <PageHeader title={copy.indexTitle} description={copy.indexDescription} />
 
-      {/* Rendered before and independently of the list: the on-demand report is
-          available from day one, including for a company that has not lived
-          through a single close yet. */}
+      {/* Rendered before and independently of the frozen list: the on-demand
+          report is available from day one, including before the first close. */}
       <Card>
-        <CardHeader>
+        <CardHeader className="border-b border-border/60">
           <CardTitle className="text-sm">{copy.liveCardTitle}</CardTitle>
-          <CardDescription>{copy.liveCardBody}</CardDescription>
+          <CardDescription>
+            {current.ok
+              ? `${reportMonth(current.report.periodMonth)} · ${copy.liveDataThrough(
+                  current.report.dayOfPeriod,
+                  current.report.monthLabel,
+                )}`
+              : copy.liveCardUnavailable}
+          </CardDescription>
         </CardHeader>
-        <CardContent>
-          <Button asChild size="sm">
+        <CardContent className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          {current.ok ? (
+            <div className="grid gap-2">
+              <div className="grid gap-0.5">
+                <p className="text-[11px] font-medium text-muted-foreground">
+                  {copy.currentSpend}
+                </p>
+                <p className="font-heading text-lg font-semibold tracking-tight tabular-nums">
+                  {current.report.budgetAmount === null
+                    ? copy.currentSpendWithoutBudget(
+                        displayMoney(
+                          current.report.combinedAmount,
+                          current.report.currency,
+                        ),
+                      )
+                    : copy.currentSpendOfBudget(
+                        displayMoney(
+                          current.report.combinedAmount,
+                          current.report.currency,
+                        ),
+                        money(
+                          current.report.budgetAmount,
+                          current.report.currency,
+                        ),
+                      )}
+                </p>
+              </div>
+              {current.report.verdictStatus ? (
+                <StatusPill status={current.report.verdictStatus} />
+              ) : (
+                <StateBadge icon={RiInformationLine} tone="neutral">
+                  {copy.verdictUnavailable}
+                </StateBadge>
+              )}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">{copy.liveCardBody}</p>
+          )}
+          <Button asChild className="max-sm:min-h-11">
             <Link href={LIVE_REPORT_PATH}>
-              <RiFlashlightLine aria-hidden />
+              <RiFileChartLine aria-hidden />
               {copy.liveCardCta}
             </Link>
           </Button>

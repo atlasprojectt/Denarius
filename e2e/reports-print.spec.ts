@@ -18,7 +18,7 @@ test.beforeEach(async ({ page }) => {
 
 test("reports stay legible in both screen themes", async ({ page }) => {
   await page.goto("/relatorios");
-  await expect(page.getByRole("heading", { name: "Relatórios" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "RelatÃ³rios" })).toBeVisible();
 
   for (const dark of [false, true]) {
     await page.evaluate((enabled) => {
@@ -31,36 +31,26 @@ test("reports stay legible in both screen themes", async ({ page }) => {
   }
 });
 
-test("the print action explains how to remove browser chrome", async ({ page }) => {
+test("the report viewer exposes direct print, download, and expand actions", async ({ page }) => {
   await page.goto("/relatorios/agora");
-  await page.getByRole("button", { name: "Imprimir ou salvar em PDF" }).click();
-
-  const dialog = page.getByRole("dialog", { name: "Antes de salvar o PDF" });
-  await expect(dialog).toBeVisible();
-  await expect(dialog).toContainText("Papel A4 e escala de 100%.");
-  await expect(dialog).toContainText(
-    "Cabeçalhos e rodapés do navegador desativados.",
-  );
-  await expect(dialog).toContainText("Fundos gráficos ativados");
-
-  await page.emulateMedia({ media: "print" });
-  await expect(page.locator('[data-slot="dialog-overlay"]')).toHaveCSS(
-    "display",
-    "none",
-  );
-  await expect(dialog).toHaveCSS("display", "none");
-
-  await page.emulateMedia({ media: "screen" });
-  await dialog.getByRole("button", { name: "Cancelar" }).click();
-  await expect(dialog).toBeHidden();
+  await expect(page.getByRole("button", { name: "Imprimir" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Baixar PDF" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Expandir" })).toBeVisible();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await page.getByRole("button", { name: "Expandir" }).click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("dialog")).toBeHidden();
 });
 
 test("the on-demand report prints as the shared executive document", async ({
   page,
 }) => {
   await page.goto("/relatorios");
-  await page.getByRole("link", { name: "Gerar relatório atual" }).click();
+  await page.getByRole("link", { name: "Visualizar relatÃ³rio" }).click();
   await page.waitForURL("**/relatorios/agora");
+  await page.goto("/relatorios/agora?pdf=1");
+  await page.emulateMedia({ media: "print" });
   await expect(page.locator("[data-report-sheet]")).toBeVisible();
 
   // One editorial structure serves both the live and frozen reports.
@@ -124,9 +114,11 @@ test("the frozen template keeps order and print drops app chrome", async ({ page
   const reportLink = page.locator('a[href^="/relatorios/20"]').first();
   test.skip(
     (await reportLink.count()) === 0,
-    "A migration de period_snapshot ainda não tem um mês fechado para imprimir.",
+    "A migration de period_snapshot ainda nÃ£o tem um mÃªs fechado para imprimir.",
   );
   await reportLink.click();
+  await page.goto(`${page.url()}?pdf=1`);
+  await page.emulateMedia({ media: "print" });
   await expect(page.locator("[data-report-sheet]")).toBeVisible();
 
   const order = await page
@@ -180,6 +172,8 @@ test("Chromium produces a real A4 PDF from the shared report", async ({
 }, testInfo) => {
   test.skip(browserName !== "chromium", "page.pdf is a Chromium capability.");
   await page.goto("/relatorios/agora");
+  await page.goto("/relatorios/agora?pdf=1");
+  await page.emulateMedia({ media: "print" });
   await expect(page.locator("[data-report-sheet]")).toBeVisible();
 
   const pdf = await page.pdf({

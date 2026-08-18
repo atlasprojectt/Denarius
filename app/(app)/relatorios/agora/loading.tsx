@@ -4,20 +4,21 @@ import { Skeleton } from "@/components/ui/skeleton";
 export default function CurrentReportLoading() {
   return (
     <PageContainer variant="wide" className="gap-6" aria-busy>
-      <div className="flex flex-col gap-2">
-        <Skeleton className="h-7 w-64" />
-        <Skeleton className="h-4 w-3/4 max-w-xl" />
-      </div>
-      {/* The partial-month notice sits above the sections in the real sheet. */}
-      <Skeleton className="h-16 w-full rounded-lg" />
-      {["verdict", "spend", "providers", "teams"].map((section, index) => (
-        <div key={section} className="rounded-xl p-4 ring-1 ring-foreground/10">
-          <Skeleton className="h-4 w-32" />
-          <Skeleton
-            className={index === 1 ? "mt-4 h-12 w-56" : "mt-4 h-16 w-full"}
-          />
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex flex-col gap-2">
+          <Skeleton className="h-5 w-48" />
+          <Skeleton className="h-4 w-64" />
         </div>
-      ))}
+        <Skeleton className="h-9 w-40" />
+      </div>
+      <div className="h-[clamp(460px,61vh,640px)] rounded-xl border border-border bg-foreground/5 p-4 sm:p-8">
+        <div className="mx-auto grid h-full w-full max-w-[680px] content-start gap-5 rounded-sm border border-stone-200 bg-white p-8 shadow-sm">
+          <Skeleton className="h-4 w-40" />
+          <Skeleton className="h-8 w-64" />
+          <Skeleton className="h-16 w-full" />
+          <Skeleton className="h-40 w-full" />
+        </div>
+      </div>
     </PageContainer>
   );
 }

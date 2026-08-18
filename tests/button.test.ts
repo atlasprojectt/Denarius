@@ -75,7 +75,7 @@ describe("Button interaction state", () => {
   it("exposes disclosure intent for expanded-state chevrons", () => {
     const button = Button({
       "aria-expanded": true,
-      children: "Próximas ações",
+      children: "Notificações",
       motion: "disclosure",
       variant: "secondary",
     });

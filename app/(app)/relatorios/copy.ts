@@ -3,14 +3,22 @@ import type { VerdictStatus } from "@/lib/engine/verdict";
 export const copy = {
   indexTitle: "Relatórios",
   indexDescription:
-    "A situação de agora, a qualquer momento, e os meses fechados para prestação de contas.",
-  liveCardTitle: "Situação agora",
+    "Consulte o relatório do período atual e o histórico financeiro já fechado.",
+  liveCardTitle: "Relatório atual",
   liveCardBody:
-    "Gere o relatório da situação financeira da empresa neste momento — sem esperar o mês fechar. Abre pronto para imprimir ou salvar em PDF.",
-  liveCardCta: "Gerar relatório atual",
-  closedListTitle: "Meses fechados",
+    "A situação financeira do mês em andamento, pronta para consultar, imprimir ou salvar em PDF.",
+  liveCardCta: "Visualizar relatório",
+  liveDataThrough: (day: number, month: string) =>
+    `Dados até ${day} de ${month}`,
+  liveCardUnavailable: "Os dados atuais estão indisponíveis no momento.",
+  currentSpend: "Gasto atual",
+  currentSpendOfBudget: (spend: string, budget: string) =>
+    `${spend} gastos de ${budget}`,
+  currentSpendWithoutBudget: (spend: string) => `${spend} gastos`,
+  verdictUnavailable: "Veredito indisponível",
+  closedListTitle: "Histórico de relatórios",
   closedListDescription:
-    "Congelados no fechamento e nunca recalculados.",
+    "Meses encerrados, congelados no fechamento e nunca recalculados.",
   unavailableTitle: "Não foi possível carregar os relatórios",
   unavailableDescription:
     "Os meses fechados continuam preservados. Tente abrir esta área novamente.",
@@ -61,17 +69,7 @@ export const copy = {
   totalUnattributed: "Total não atribuído",
   dataQualityTitle: "Ressalvas e qualidade dos dados",
   dash: "—",
-  print: "Imprimir ou salvar em PDF",
-  printPrepTitle: "Antes de salvar o PDF",
-  printPrepDescription:
-    "A janela de impressão pertence ao navegador. Confira estas opções para preservar o documento do Denarius:",
-  printPrepItems: [
-    "Papel A4 e escala de 100%.",
-    "Cabeçalhos e rodapés do navegador desativados.",
-    "Fundos gráficos ativados para manter os sinais de orçamento.",
-  ],
-  printCancel: "Cancelar",
-  printContinue: "Abrir impressão",
+  print: "Imprimir",
   closedAt: (date: string) => `Fechado em ${date}`,
   generatedAt: (dateTime: string) => `Gerado em ${dateTime}`,
   dayOfPeriod: (day: number, days: number, month: string) =>
@@ -82,7 +80,7 @@ export const copy = {
     "A projeção começa a partir do dia 5 — antes disso o ritmo do mês ainda não se firmou.",
   currency: (currency: string) => `Moeda: ${currency}`,
   fx: (rate: string, source: string, date: string) =>
-    `${rate}/US$ · ${source} · ${date}`,
+    `${rate}/US$ — ${source} — ${date}`,
   fxNotNeeded: "Não necessário neste mês",
   fxMissing: "Indisponível no fechamento",
   fxMissingLive: "Indisponível para este período",

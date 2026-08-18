@@ -14,7 +14,7 @@
   --font-sans: var(--font-dm-sans);
   --font-mono: var(--font-geist-mono);
   --font-heading: var(--font-dm-sans);
-  /* Semaphore — reserved for budget status (product principle #5). */
+  /* Semaphore Ã¢â‚¬â€ reserved for budget status (product principle #5). */
   --color-status-green: var(--status-green);
   --color-status-green-soft: var(--status-green-soft);
   --color-status-green-fg: var(--status-green-fg);
@@ -86,7 +86,7 @@
   --motion-duration-standard: 160ms;
   --motion-duration-max: 180ms;
   --motion-ease-standard: cubic-bezier(0.22, 1, 0.36, 1);
-  /* Signature motion only (sidebar collapse, chart reveals, auth entrance) —
+  /* Signature motion only (sidebar collapse, chart reveals, auth entrance) Ã¢â‚¬â€
      everything at interaction speed uses --motion-ease-standard. */
   --motion-ease-expressive: cubic-bezier(0.16, 1, 0.3, 1);
   --motion-icon-shift: 3px;
@@ -176,33 +176,33 @@ input[type="number"]::-webkit-outer-spin-button {
   }
 }
 
-.next-actions-popover {
+.notifications-popover {
   animation: none !important;
   transition-property: opacity, transform;
   transition-duration: var(--motion-duration-standard);
   transition-timing-function: var(--motion-ease-standard);
 }
 
-.next-actions-popover[data-starting-style],
-.next-actions-popover[data-ending-style] {
+.notifications-popover[data-starting-style],
+.notifications-popover[data-ending-style] {
   opacity: 0;
   transform: translateY(-3px);
 }
 
-.next-actions-sheet {
+.notifications-sheet {
   transition-duration: var(--motion-duration-max) !important;
   transition-timing-function: var(--motion-ease-standard) !important;
 }
 
-.next-actions-sheet[data-starting-style],
-.next-actions-sheet[data-ending-style] {
+.notifications-sheet[data-starting-style],
+.notifications-sheet[data-ending-style] {
   opacity: 0;
   transform: translateY(12px);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .next-actions-popover,
-  .next-actions-sheet {
+  .notifications-popover,
+  .notifications-sheet {
     transition-duration: var(--motion-duration-fast) !important;
     transform: none;
   }
@@ -325,10 +325,10 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 
 /* ---------------------------------------------------------------------------
-   Sidebar collapse — the shadcn primitive ships a 200ms ease-linear width
+   Sidebar collapse Ã¢â‚¬â€ the shadcn primitive ships a 200ms ease-linear width
    snap: it arrives at the rail as fast as it left, which reads as a cut rather
    than movement. The rail is signature motion, so it eases out on
-   --motion-ease-expressive (expo-out) — quick departure, long settle — the same
+   --motion-ease-expressive (expo-out) Ã¢â‚¬â€ quick departure, long settle Ã¢â‚¬â€ the same
    curve the chart reveals and the verdict pulse use. F5 keeps components/ui
    untouched, so the clock is overridden here through the primitive's data-slot
    hooks; these rules are unlayered, so they win over Tailwind's layered
@@ -346,17 +346,17 @@ input[type="number"]::-webkit-outer-spin-button {
   transition-timing-function: var(--motion-ease-expressive);
 }
 
-/* The inset card's left margin flips 0↔8px with the collapsed state but the
-   primitive gives it no transition — it snapped while the rail was still
+/* The inset card's left margin flips 0Ã¢â€ â€8px with the collapsed state but the
+   primitive gives it no transition Ã¢â‚¬â€ it snapped while the rail was still
    travelling, a visible hitch at the start of every toggle. */
 [data-slot="sidebar-inset"] {
   transition: margin 320ms var(--motion-ease-expressive);
 }
 
 /* ---------------------------------------------------------------------------
-   Status-dot pulse — the verdict dot pulses (an expanding, fading ring + a
+   Status-dot pulse Ã¢â‚¬â€ the verdict dot pulses (an expanding, fading ring + a
    subtle breathe on the dot) instead of blinking, in the dot's own semaphore
-   color. It signals "live", not "alarm" — slow and soft enough to stay calm
+   color. It signals "live", not "alarm" Ã¢â‚¬â€ slow and soft enough to stay calm
    in green (product principle #6). The ring's base opacity is 0 so reduced
    motion leaves it invisible, not solid.
 --------------------------------------------------------------------------- */
@@ -393,8 +393,8 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 
 /* ---------------------------------------------------------------------------
-   Auth entrance — a calm one-shot rise/fade for the login screen. Elements
-   stagger via Tailwind [animation-delay:…]; reduced motion renders the final
+   Auth entrance Ã¢â‚¬â€ a calm one-shot rise/fade for the login screen. Elements
+   stagger via Tailwind [animation-delay:Ã¢â‚¬Â¦]; reduced motion renders the final
    state instantly (the classes only animate inside the media query).
 --------------------------------------------------------------------------- */
 @keyframes denarius-auth-enter {
@@ -428,7 +428,7 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 
 /* ---------------------------------------------------------------------------
-   Denarius theme — shadcn preset b3lVLrQZM, adapted only where the product has
+   Denarius theme Ã¢â‚¬â€ shadcn preset b3lVLrQZM, adapted only where the product has
    a stronger semantic contract (budget semaphore and the existing theme
    switch). These blocks follow the generated base so the preset is the visual
    source of truth across every route.
@@ -476,7 +476,7 @@ input[type="number"]::-webkit-outer-spin-button {
   --sidebar-border: oklch(0.923 0.003 48.717);
   --sidebar-ring: var(--focus-ring);
 
-  /* Semaphore — budget status only. Strong = bar fills & dots; soft = pill and
+  /* Semaphore Ã¢â‚¬â€ budget status only. Strong = bar fills & dots; soft = pill and
      callout backgrounds; fg = text sitting on a soft background. */
   --status-green: #16a34a;
   --status-green-soft: #f0faf3;
@@ -515,7 +515,7 @@ input[type="number"]::-webkit-outer-spin-button {
   --focus-ring: var(--brand-accent-light);
   --primary: var(--brand-action);
   --primary-foreground: oklch(0.98 0.016 73.684);
-  /* Dark primary is deliberately deep for button fills — hovered text needs a
+  /* Dark primary is deliberately deep for button fills Ã¢â‚¬â€ hovered text needs a
      much brighter orange to stay legible on the dark card. */
   --primary-hover: var(--brand-accent);
   --secondary: oklch(0.274 0.006 286.033);
@@ -566,7 +566,7 @@ input[type="number"]::-webkit-outer-spin-button {
 
 /* Description links inside the empty/field/item primitives hover in the brand
    hover accent. Kept here (unlayered, so it wins over the primitives' layered
-   [&>a:hover]:text-primary utility) instead of editing components/ui/* — F5
+   [&>a:hover]:text-primary utility) instead of editing components/ui/* Ã¢â‚¬â€ F5
    keeps those files untouched. */
 [data-slot="empty-description"] > a:hover,
 [data-slot="field-description"] > a:hover,
@@ -575,22 +575,327 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 
 /* Outlined cards (2026-07-30, founder-directed): a card is defined by its
-   contour alone — no fill, so every surface sits on the page background and the
+   contour alone Ã¢â‚¬â€ no fill, so every surface sits on the page background and the
    only ink on screen is content. The primitive's `ring-1 ring-foreground/10` is
    what draws that contour; only its `bg-card` is dropped. Unlayered so it beats
    the layered utility, and here rather than in components/ui/card.tsx (F5).
-   Alerts and the theme swatches keep their own bg-card fill on purpose — they
+   Alerts and the theme swatches keep their own bg-card fill on purpose Ã¢â‚¬â€ they
    are not cards and need to read as raised against one. */
 [data-slot="card"] {
   background-color: transparent;
 }
 
 /* ---------------------------------------------------------------------------
-   Monthly reports — browser-native print/PDF layer (#95). The frozen report
-   is documentation, so paper always uses the same light palette and geometry
-   regardless of the viewer's saved theme. No PDF runtime or second renderer:
-   the browser prints the exact semantic report visible on screen.
+   Monthly reports — inline preview (#95 follow-up). The frozen report is
+   documentation, so the preview shows the SAME semantic HTML the PDF is built
+   from — never a PDF canvas/reader. Height is deliberately contained so the
+   page chrome, title and actions stay visible; a soft gradient at the bottom
+   of the viewport dissolves the sheet into the dark surface, signalling more
+   report continues below without a reader-style control bar. The expanded
+   (modal) viewer keeps its pdfjs canvas rendering and is out of scope here.
 --------------------------------------------------------------------------- */
+.report-viewer {
+  display: flex;
+  flex-direction: column;
+  /* Match the shared PageContainer width so the report aligns with the rest of
+     the app instead of stretching under the sidebar. */
+  max-width: 80rem;
+  width: 100%;
+  margin-inline: auto;
+  min-height: 0;
+  gap: 1.5rem;
+}
+
+.report-viewer-toolbar,
+.report-viewer-title,
+.report-viewer-actions,
+.report-viewer-dialog-header,
+.report-viewer-dialog-actions {
+  display: flex;
+  align-items: center;
+}
+
+.report-viewer-toolbar {
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.report-viewer-title {
+  min-width: 0;
+  gap: 0.5rem;
+}
+
+.report-viewer-title h1 {
+  font-family: var(--font-heading);
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.report-viewer-title p,
+.report-viewer-dialog-header p {
+  color: var(--muted-foreground);
+  font-size: 0.75rem;
+}
+
+.report-viewer-actions,
+.report-viewer-dialog-actions {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.35rem;
+}
+
+/* The preview viewport — a contained, deliberately short dark surface. */
+.report-viewer-canvas {
+  --report-preview-bg: color-mix(in oklab, var(--foreground) 6%, var(--background));
+  position: relative;
+  overflow: hidden;
+  border: 1px solid color-mix(in oklab, var(--foreground) 14%, transparent);
+  border-radius: var(--radius-xl);
+  background: var(--report-preview-bg);
+  padding: clamp(1rem, 2.5vw, 2.25rem);
+  /* Contained height: leaves room for header, title, actions and breathing
+     space below even on a 1366×768 notebook. */
+  height: clamp(460px, 61vh, 640px);
+}
+
+/* The white sheet — centered, A4-ish, fluid width, never stretched. */
+.report-viewer-preview {
+  position: relative;
+  width: min(680px, calc(100% - 48px));
+  min-height: 100%;
+  margin: 0 auto;
+  overflow: hidden;
+  border-radius: 2px;
+  background: #ffffff;
+  box-shadow: 0 0.5rem 1.25rem rgb(0 0 0 / 0.1);
+}
+
+/* Render the report HTML with its table layout (the screen default is
+   `display: block`, which would stack the sections instead of paginating). */
+.report-preview-document {
+  display: table;
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  overflow: visible;
+}
+
+.report-preview-document .report-print-frame {
+  display: table;
+  border: 0;
+}
+
+.report-preview-document .report-print-header {
+  display: table-header-group;
+}
+
+.report-preview-document .report-print-footer {
+  display: table-footer-group;
+}
+
+.report-preview-document .report-print-frame > tbody {
+  display: table-row-group;
+}
+
+.report-preview-document .report-print-frame > tbody > tr {
+  display: table-row;
+}
+
+.report-preview-document .report-print-frame > tbody > tr > td {
+  display: table-cell;
+}
+
+/* Bottom fade — belongs to the viewport, not the sheet. It dissolves the lower
+   portion of the report into the dark surface: transparent at the top, ending
+   exactly at the container background, so the cut reads as intentional. */
+.report-viewer-canvas::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 26%;
+  pointer-events: none;
+  z-index: 1;
+  background: linear-gradient(
+    to bottom,
+    transparent 30%,
+    color-mix(in oklab, var(--report-preview-bg) 45%, transparent) 65%,
+    color-mix(in oklab, var(--report-preview-bg) 80%, transparent) 85%,
+    var(--report-preview-bg) 100%
+  );
+}
+
+/* Floating metadata — discrete, bottom-left, never a toolbar. */
+.report-preview-page-count {
+  position: absolute;
+  left: clamp(0.75rem, 2vw, 1.25rem);
+  bottom: clamp(0.75rem, 2vw, 1.25rem);
+  z-index: 2;
+  color: var(--muted-foreground);
+  font-size: 0.7rem;
+  letter-spacing: 0.01em;
+}
+
+/* Floating expand control — bottom-right, the only in-preview action. */
+.report-preview-expand {
+  position: absolute;
+  right: clamp(0.75rem, 2vw, 1.25rem);
+  bottom: clamp(0.75rem, 2vw, 1.25rem);
+  z-index: 2;
+}
+
+/* Kept for the expanded (modal) viewer's pdfjs canvas rendering. */
+.report-viewer-page-slot {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  min-height: 1px;
+}
+
+.report-viewer-page-slot canvas {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  background: #ffffff;
+}
+
+.report-viewer-message {
+  display: grid;
+  min-height: 20rem;
+  place-content: center;
+  justify-items: center;
+  gap: 0.75rem;
+  color: var(--muted-foreground);
+  font-size: 0.875rem;
+  text-align: center;
+}
+
+.report-viewer-message svg {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.report-viewer-dialog {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100dvh;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  /* Clear the Radix/BaseUI content centering (-translate-x-1/2/-translate-y-1/2)
+     that a fullscreen viewer must not inherit. `translate` is a standalone
+     property; `transform: none` alone does not reset it. */
+  translate: none;
+  transform: none;
+  scale: none;
+  animation: none;
+  max-width: none;
+  max-height: none;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.report-viewer-dialog-header {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  left: auto;
+  z-index: 50;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: flex-start;
+  gap: 0.35rem;
+  flex: 0 0 auto;
+}
+
+.report-viewer-dialog-header p {
+  margin-top: 0.15rem;
+}
+
+.report-viewer-expanded-document {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  gap: 1.25rem;
+  /* Top padding clears the fixed toolbar; bottom padding keeps the last
+     page from sticking to the viewport edge. */
+  padding: 5.5rem clamp(1rem, 3vw, 2rem) 3rem;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  overflow: visible;
+}
+
+.report-viewer-expanded-document .report-viewer-page-slot {
+  width: min(100%, 210mm);
+  padding: 0;
+  border: 1px solid #d6d3d1;
+  background: #ffffff;
+  box-shadow: 0 1rem 2.5rem rgb(0 0 0 / 0.14);
+}
+
+.report-print-frame-hidden {
+  position: fixed;
+  width: 1px;
+  height: 1px;
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.report-print-source {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .report-viewer-toolbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .report-viewer-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .report-viewer-canvas {
+    height: clamp(440px, 64vh, 560px);
+    margin-inline: -0.25rem;
+    padding: 0.75rem;
+  }
+
+  .report-viewer-preview {
+    width: min(680px, calc(100% - 24px));
+  }
+
+  .report-viewer-dialog {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100dvh;
+    margin: 0;
+    padding: 0;
+  }
+
+  .report-viewer-dialog-header {
+    top: 0.75rem;
+    right: 0.75rem;
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .report-viewer-dialog-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
 .report-print-frame,
 .report-print-frame > tbody,
 .report-print-frame > tbody > tr,
@@ -960,7 +1265,7 @@ input[type="number"]::-webkit-outer-spin-button {
   [data-app-header],
   [data-slot="dialog-overlay"],
   [data-print-control],
-  .report-screen-header {
+  [data-report-viewer] {
     display: none !important;
   }
 
@@ -975,6 +1280,10 @@ input[type="number"]::-webkit-outer-spin-button {
   [data-app-content] {
     display: block !important;
     padding: 0 !important;
+  }
+
+  .report-print-source {
+    display: block !important;
   }
 
   .report-sheet {
@@ -1136,7 +1445,7 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 
 /* ---------------------------------------------------------------------------
-   Chart hover focus — the hairline, the date pill, the focus dot and the lit
+   Chart hover focus Ã¢â‚¬â€ the hairline, the date pill, the focus dot and the lit
    window that track the hovered day in SpendTrendChart. Their POSITION is
    written imperatively from the Recharts hooks (SVG pixel space); only the
    glide and the fade live here, so reduced motion drops the movement while the
@@ -1145,7 +1454,7 @@ input[type="number"]::-webkit-outer-spin-button {
    The ruler responds quickly so it never feels detached from the pointer, and
    the highlight window keeps a light trail behind it. Measured 2026-08-01: the
    earlier 260ms + 35ms head start left the two 223px apart 40ms into a jump
-   and still 28px apart at 120ms — the ruler arrived, then the highlight
+   and still 28px apart at 120ms Ã¢â‚¬â€ the ruler arrived, then the highlight
    crawled after it, which reads as stuttering rather than as trailing. The
    trail has to stay close enough that they move as one object. (Frame timing
    was clean throughout, so the SVG mask is not the cost.)
@@ -1156,12 +1465,12 @@ input[type="number"]::-webkit-outer-spin-button {
   --chart-highlight-move: 150ms;
   --chart-highlight-delay: 0ms;
   /* Same CURVE as the ruler, only a longer one. With the expressive ease here
-     the highlight sprinted ahead and led the ruler by ~100px mid-jump — a
+     the highlight sprinted ahead and led the ruler by ~100px mid-jump Ã¢â‚¬â€ a
      desync either way. Sharing the shape makes it trail and converge. */
   --chart-highlight-ease: ease-out;
   --chart-focus-fade: 120ms;
   /* The plot settling into its dimmed state is the one moment here that should
-     be FELT rather than merely fast — it is a change of mode, not a follow.
+     be FELT rather than merely fast Ã¢â‚¬â€ it is a change of mode, not a follow.
      Kept separate from --chart-focus-fade, which the hairline/pill/dot use to
      appear and must stay snappy. */
   --chart-veil-fade: 260ms;
@@ -1200,7 +1509,7 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 
 /* Recharts' wrapper sets its own cursor, which beat the utility class on the
-   ChartContainer — unlayered here so the crosshair actually reaches the
+   ChartContainer Ã¢â‚¬â€ unlayered here so the crosshair actually reaches the
    pointer (F5 keeps components/ui untouched). */
 [data-slot="chart"] .recharts-wrapper,
 [data-slot="chart"] .recharts-surface {
