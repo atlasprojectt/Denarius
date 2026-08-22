@@ -39,8 +39,34 @@ test("the report viewer exposes direct print, download, and expand actions", asy
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await page.getByRole("button", { name: "Expandir" }).click();
   await expect(page.getByRole("dialog")).toBeVisible();
+  await expect(
+    page.getByRole("dialog").locator(".report-viewer-dialog-header"),
+  ).toBeVisible();
+  const pageRatios = await page
+    .getByRole("dialog")
+    .locator(".report-page")
+    .evaluateAll((pages) =>
+      pages.map((item) => getComputedStyle(item).aspectRatio),
+    );
+  expect(pageRatios).toEqual(["210 / 297", "210 / 297"]);
   await page.keyboard.press("Escape");
   await expect(page.getByRole("dialog")).toBeHidden();
+});
+
+test("the print action stays on the report and invokes print", async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    window.print = () => {
+      document.documentElement.dataset.printInvoked = "true";
+    };
+  });
+  await page.goto("/relatorios/agora");
+  const reportUrl = page.url();
+
+  await page.getByRole("button", { name: "Imprimir" }).click();
+  await expect(page.locator("html")).toHaveAttribute("data-print-invoked", "true");
+  expect(page.url()).toBe(reportUrl);
 });
 
 test("the on-demand report prints as the shared executive document", async ({
@@ -49,7 +75,7 @@ test("the on-demand report prints as the shared executive document", async ({
   await page.goto("/relatorios");
   await page.getByRole("link", { name: "Visualizar relatÃ³rio" }).click();
   await page.waitForURL("**/relatorios/agora");
-  await page.goto("/relatorios/agora?pdf=1");
+  await page.goto("/relatorios/agora?mode=pdf");
   await page.emulateMedia({ media: "print" });
   await expect(page.locator("[data-report-sheet]")).toBeVisible();
 
@@ -80,12 +106,6 @@ test("the on-demand report prints as the shared executive document", async ({
     documentHeader: getComputedStyle(
       document.querySelector(".report-document-header")!,
     ).display,
-    headerGroup: getComputedStyle(
-      document.querySelector(".report-print-header")!,
-    ).display,
-    footerGroup: getComputedStyle(
-      document.querySelector(".report-print-footer")!,
-    ).display,
     bodyRowBreak: getComputedStyle(
       document.querySelector(".report-print-frame > tbody > tr")!,
     ).breakInside,
@@ -101,8 +121,6 @@ test("the on-demand report prints as the shared executive document", async ({
   expect(printStyles.sidebar).toBe("none");
   expect(printStyles.printControl).toBe("none");
   expect(printStyles.documentHeader).toBe("block");
-  expect(printStyles.headerGroup).toBe("table-header-group");
-  expect(printStyles.footerGroup).toBe("table-footer-group");
   expect(printStyles.bodyRowBreak).toBe("auto");
   expect(printStyles.sectionBreak).toBe("auto");
   expect(printStyles.keepBreak).toBe("avoid");
@@ -117,7 +135,7 @@ test("the frozen template keeps order and print drops app chrome", async ({ page
     "A migration de period_snapshot ainda nÃ£o tem um mÃªs fechado para imprimir.",
   );
   await reportLink.click();
-  await page.goto(`${page.url()}?pdf=1`);
+  await page.goto(`${page.url()}?mode=pdf`);
   await page.emulateMedia({ media: "print" });
   await expect(page.locator("[data-report-sheet]")).toBeVisible();
 
@@ -145,8 +163,8 @@ test("the frozen template keeps order and print drops app chrome", async ({ page
     documentHeader: getComputedStyle(
       document.querySelector(".report-document-header")!,
     ).display,
-    footerGroup: getComputedStyle(
-      document.querySelector(".report-print-footer")!,
+    footer: getComputedStyle(
+      document.querySelector(".report-brand-footer")!,
     ).display,
     background: getComputedStyle(document.documentElement).backgroundColor,
     documentBackground: getComputedStyle(
@@ -160,7 +178,7 @@ test("the frozen template keeps order and print drops app chrome", async ({ page
   expect(printStyles.sidebar).toBe("none");
   expect(printStyles.appHeader).toBe("none");
   expect(printStyles.documentHeader).toBe("block");
-  expect(printStyles.footerGroup).toBe("table-footer-group");
+  expect(printStyles.footer).toBe("block");
   expect(printStyles.background).toBe("rgb(255, 255, 255)");
   expect(printStyles.documentBackground).toBe("rgb(255, 255, 255)");
   expect(printStyles.documentShadow).toBe("none");
@@ -172,7 +190,7 @@ test("Chromium produces a real A4 PDF from the shared report", async ({
 }, testInfo) => {
   test.skip(browserName !== "chromium", "page.pdf is a Chromium capability.");
   await page.goto("/relatorios/agora");
-  await page.goto("/relatorios/agora?pdf=1");
+  await page.goto("/relatorios/agora?mode=pdf");
   await page.emulateMedia({ media: "print" });
   await expect(page.locator("[data-report-sheet]")).toBeVisible();
 

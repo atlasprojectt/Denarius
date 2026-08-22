@@ -73,6 +73,14 @@ export async function requireAdmin(): Promise<RequireResult> {
   return { session: result.session };
 }
 
+/** Resolves a complete signed-in membership without imposing a role. Use this
+ * at authenticated read/API edges that are shared by Admins and Viewers. */
+export async function requireSession(): Promise<RequireResult> {
+  const result = await resolveSession();
+  if (result.error !== undefined) return { error: result.error };
+  return { session: result.session };
+}
+
 /**
  * Page-level guard for display gating (not mutations — requireAdmin remains
  * the authority there). Returns the role, defaulting to "viewer" when the

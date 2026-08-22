@@ -8,6 +8,8 @@ export const copy = {
   liveCardBody:
     "A situação financeira do mês em andamento, pronta para consultar, imprimir ou salvar em PDF.",
   liveCardCta: "Visualizar relatório",
+  previewUnavailable: "Não foi possível exibir o relatório.",
+  retry: "Tentar novamente",
   liveDataThrough: (day: number, month: string) =>
     `Dados até ${day} de ${month}`,
   liveCardUnavailable: "Os dados atuais estão indisponíveis no momento.",

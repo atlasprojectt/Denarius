@@ -35,7 +35,7 @@ From the user's perspective:
 4. I **set budgets** — for the whole company and per team — and Denarius tracks consumption against them on fresh daily data, always showing the **margin**: how much headroom is left now, and how much will be left (or overrun) at the projected close.
 5. Denarius **warns me early**: "Engineering is at 92% of its $3k budget with 8 days left; at the current pace it will land at ~$3.6k (+20%)." Warnings are generated deterministically; the numbers are never invented.
 6. Each warning comes with a **control plan** — a prioritized, advisory set of actions ("review the 3 users driving 70% of the spike", "consider Haiku for non-critical tasks") — and from any warning or team I can **simulate a scenario** ("if Engineering slows 15%, where do we close?") in a **side panel**, in context, before deciding.
-7. Between warnings, Denarius surfaces **apontamentos** (decision-support pointers). Actionable items become linked **Next actions** immediately below the verdict; non-actionable observations remain in a calm footer feed.
+7. Between warnings, Denarius can surface **apontamentos** (decision-support pointers). Actionable items become linked **Next actions** immediately below the verdict. The destination for non-actionable observations is intentionally deferred; they are not shown on Home.
 8. On the **home dashboard** I see a **one-line verdict** (in control / attention / over budget), the total spend vs. budget with a **spend-vs-time pacing pair**, the **projected margin** (how much I'll be over/under at close), the teams **that need attention** (healthy ones collapsed), and where the money goes — default view by team, with a permissioned per-person drill-down.
 9. I get an **executive digest** in natural language summarizing the period (total, change, top drivers, budget status, margin, projection).
 10. *(Secondary)* Denarius flags obvious **waste** — e.g., paying for more seats than the roster has people (seats-vs-roster mismatch).
@@ -94,8 +94,8 @@ The headline metric is **spend in money governed against a budget**; tokens are 
 **Verdict, planning & decision support**
 36a. As a CEO/CTO, I want a **one-line verdict** with a status color at the top of the home ("in control" / "attention" / "over budget"), so that I get the conclusion in one glance instead of computing it from the numbers.
 36. As a CEO/CTO, I want to launch a **scenario simulator from a warning or a team** (a side panel, team pre-loaded) that recomputes the projected close and margin instantly, so that I can test a fix in context without leaving the screen.
-37. As a CEO/CTO, I want a calm **"Observations" feed** of apontamentos on the home — deterministic decision-support observations (e.g., "Data, Product and Ops crossed 50%", "3 teams concentrate 87% of spend", "Marketing accelerated 40% week-over-week", "R$ 900 unattributed") — so that I get food for thought without alarm fatigue.
-38. As a CEO/CTO, I want apontamentos clearly separated from warnings (footer, in-app only, no email, calm tone), so that the alert channel stays reserved for what's urgent.
+37. As a CEO/CTO, I want calm apontamentos — deterministic decision-support observations (e.g., "Data, Product and Ops crossed 50%", "3 teams concentrate 87% of spend", "Marketing accelerated 40% week-over-week", "R$ 900 unattributed") — so that I get food for thought without alarm fatigue. Their final in-app placement is deferred and they are currently not shown on Home.
+38. As a CEO/CTO, I want apontamentos clearly separated from warnings (in-app only, no email, calm tone), so that the alert channel stays reserved for what's urgent.
 
 **Visibility (dashboard)**
 39. As a CEO/CTO, I want to see total company AI spend, budget status, the spend-vs-time pacing pair, and projected margin, so that I have the number and the guardrail that don't exist today.
@@ -144,6 +144,12 @@ The headline metric is **spend in money governed against a budget**; tokens are 
 64. As a CEO/CTO, I want each finished month frozen the way it actually closed, so that a report I open in six months shows the same numbers it showed on the 1st — seat configuration included, since seats are current state and would otherwise be re-priced with today's.
 65. As a CEO/CTO, I want a closed month rendered as one fixed, printable report (same sections, units and caveats every time), so that I can hand it to a board or an accountant without rebuilding it. Admins and Viewers read the same aggregate-only artifact.
 
+**Report interaction clarification (2026-08-22).** The fixed report is one
+semantic aggregate-only document across screen, print and PDF. Printing uses
+that same document without leaving the current report route; PDF remains a direct
+download generated from it. Page count may grow with tenant data and is never
+presented as a fixed two-page promise.
+
 **Public trust surface** *(shipped 2026-08-04, issue #57)*
 66. As a prospective customer, I want a public privacy policy and terms — sub-processors listed — so that my legal review can start before anyone signs in.
 
@@ -177,8 +183,8 @@ The headline metric is **spend in money governed against a budget**; tokens are 
 **Planning layer (contextual — not a destination)**
 - **Scenario simulator is a contextual side panel (drawer)**, invoked by a "Simulate" action on a warning or a team — never a standalone nav destination. It opens with that team pre-loaded, so the causal chain (this team is at risk → what fixes it?) is never broken by navigation.
 - Mechanics: pure **client-side arithmetic** over the deterministic aggregates already on screen (no LLM, no backend round-trip). v1 lever: adjust the team's projected pace by ±% → recompute org projected close and margin instantly; presets for "current pace", "close on budget" (the break-even reduction), and a fixed cut. Multi-variable/ML scenario modeling is **out** (see Out of Scope).
-- **Apontamentos (decision-support pointers):** deterministic observations generated by rules **below the warning threshold**. Items with a useful destination render as calm linked **Next actions** immediately below the verdict; remaining observations stay in the footer. **In-app only, no email, no severity escalation**.
-- Distinction is structural: **warnings** = urgent, pushed (email), rare (de-duped), attached to the team row; **apontamentos** = ambient, pull-only, footer, refreshed each sync.
+- **Apontamentos (decision-support pointers):** deterministic observations generated by rules **below the warning threshold**. Items with a useful destination render as calm linked **Next actions** immediately below the verdict. The final destination for remaining observations is deferred; they are not shown on Home. **In-app only, no email, no severity escalation**.
+- Distinction is structural: **warnings** = urgent, pushed (email), rare (de-duped), attached to the team row; **apontamentos** = ambient and pull-only, with placement pending.
 
 **Attribution**
 - Hierarchy: **Organization → Team/Cost center → Person → Provider/Model**.
@@ -263,7 +269,7 @@ Resolved in a dedicated UX grilling (P1–P11), extended by the founder's focus 
 
 **Navigation & screens (P1, P2 — superseded by P15 and P16)**
 - Left sidebar, **5 destinations: Home / Times / Explore / Reports / Settings.** P15 originally collapsed the prototype to three; Times later earned a comparable operational index, and Reports earns a durable documentation surface for closed months. Budgets and Planning remain excluded — they duplicate Home or break the causal chain (see below).
-- **Home** — condensed freshness → verdict → linked Next actions → spend hero/composition → pace → one team table → remaining calm observations. The verdict and Next actions fit above the fold at the target desktop viewports.
+- **Home** — condensed freshness → verdict → linked Next actions → spend hero/composition → pace → one team table. The verdict and Next actions fit above the fold at the target desktop viewports. Non-actionable observations are not shown here.
 - **Explore** — anchored sections for team, model, and seats; sortable tables; threshold-triggered search; explicit reconciliation; team drill-down with contributors and separate team/company budget outcomes.
 - **Settings** — a navigation-only index. Company/currency, Privacy, and Users live on dedicated subpages alongside Connections, Attribution, Roster, Seats, and Budgets.
 - **Budget editing is inline, not a destination:** a pencil on each team row and on the org hero opens the budget modal. Setting a budget happens once + rare edits — it doesn't deserve a nav slot.
@@ -290,7 +296,7 @@ Resolved in a dedicated UX grilling (P1–P11), extended by the founder's focus 
 
 **Planning & apontamentos (P13, P14 — restructured by P15)**
 - **Simulator is a contextual drawer, not a tab (P15):** invoked by **[Simulate]** on a warning or a team (also from Explore's team detail). Opens with that team pre-loaded — the causal chain "this team is at risk → what fixes it?" is never broken by navigation. One lever (team pace ±%), instant recompute of projected close + margin, presets ("current pace", "close on budget" = break-even, fixed cut). Copy makes explicit that scenarios are estimates and the system **does not decide** — it shows effects.
-- **P14 — Apontamentos ≠ warnings:** actionable apontamentos render as calm linked **Next actions** below the verdict; the rest remain in the footer. They never use urgency styling or email. **Warnings** remain urgent and pushed.
+- **P14 — Apontamentos ≠ warnings:** actionable apontamentos render as calm linked **Next actions** below the verdict; placement for the rest is deferred and they are not shown on Home. They never use urgency styling or email. **Warnings** remain urgent and pushed.
 
 **P16 — 2026-07-11 UI/UX audit (founder-approved; supersedes conflicting UI details)**
 - Display currency is consistent across the product: BRL is primary and original USD is secondary detail. Reported, derived, seat, governed, Unattributed, and uncosted values remain explicitly labeled and reconciled.
@@ -376,7 +382,7 @@ What an acquirer will ask: "how do you know it works?" Small, honest set — mea
   7. Attribution + per-person cost + daily Cron + reconciliation check.
   8. **Hero: Budgets, Margin & Control engine** (budgets, projected margin, run-rate projection + guard, threshold findings, top drivers, control plans, FX freeze) — plus the **verdict** (deterministic sentence + status) and the home layout (pacing pair, "Needs attention" rows, "Under control" collapse).
   9. Notifications: event alerts + weekly digest (email via Resend) + `notification_log` de-dup.
-  10. **Contextual planning: scenario simulator drawer (from a warning/team) + apontamentos footer.**
+  10. **Contextual planning: scenario simulator drawer (from a warning/team) + deterministic apontamentos, with the non-actionable placement deferred.**
   11. Secondary: seats-vs-roster waste finding.
   12. Privacy & roles controls.
 - **Navigation is 5 destinations** (Home / Times / Explore / Reports / Settings); budget editing is inline; the simulator is a contextual drawer — no Budgets or Planning tab.

@@ -9,7 +9,6 @@ import { syncStamp } from "@/lib/format";
 import { getHomeData } from "@/lib/home/queries";
 import { Hero } from "./_components/hero";
 import { MonthlyPaceChart } from "./_components/monthly-pace-chart";
-import { ObservationsFooter } from "./_components/observations-footer";
 import { ProviderComposition } from "./_components/provider-composition";
 import { TeamBudgetTable } from "@/components/domain/team-budget-table";
 import { SetupChecklist } from "./_components/setup-checklist";
@@ -18,7 +17,7 @@ import { homeCopy } from "./_components/copy";
 // The Home cockpit (#19, redesigned 2026-07): a stable, read-mostly overview —
 // the verdict line (the answer) over a 2x2 card grid: hero (the money
 // headline) + composition (where it goes) on top, monthly pace + the teams
-// table (drill-down entry) below, observations as the ambient footer. Nothing
+// table (drill-down entry) below. Nothing
 // on this screen expands, opens drawers or edits; simulation and control plans
 // live in /times/[id], budget editing in /ajustes/orcamentos. No arithmetic
 // here; buildCockpit already did it (architecture §9).
@@ -27,8 +26,6 @@ export default async function HomePage() {
   const {
     cockpit,
     period,
-    observations,
-    hasSeatWaste,
     orgWeekPct,
     setup,
     unattributed,
@@ -162,11 +159,6 @@ export default async function HomePage() {
           />
         </div>
       </div>
-
-      <ObservationsFooter
-        items={observations}
-        hasSeatWaste={hasSeatWaste}
-      />
     </PageContainer>
   );
 }

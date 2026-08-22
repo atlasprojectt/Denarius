@@ -2,13 +2,12 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import type { PDFDocumentProxy, RenderTask } from "pdfjs-dist";
+import { motion, useReducedMotion } from "motion/react";
 import {
   RiArrowLeftLine,
   RiCloseLine,
   RiDownloadLine,
   RiExpandDiagonalLine,
-  RiFileTextLine,
   RiPrinterLine,
 } from "@remixicon/react";
 
@@ -17,110 +16,20 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-
-type ViewerState = "loading" | "ready" | "error";
+import { ActionStatus } from "@/components/domain/action-status";
 
 const copy = {
   back: "Relatórios",
   expand: "Expandir",
-  close: "Fechar visualização",
+  close: "Fechar relatório",
   download: "Baixar PDF",
   print: "Imprimir",
-  preparing: "Preparando relatório…",
   preparingPdf: "Preparando PDF…",
-  error: "Não foi possível preparar o relatório.",
-  retry: "Tentar novamente",
-  pageCount: (count: number) => `${count} ${count === 1 ? "página" : "páginas"}`,
+  documentFormat: "Documento A4",
+  downloadError: "Não foi possível baixar o PDF. Tente novamente.",
 };
-
-function PageCanvas({
-  document,
-  pageNumber,
-  expanded,
-}: {
-  document: PDFDocumentProxy;
-  pageNumber: number;
-  expanded: boolean;
-}) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const renderTaskRef = useRef<RenderTask | null>(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    const container = containerRef.current;
-    if (!canvas || !container || !document) return;
-
-    let cancelled = false;
-
-    const draw = () => {
-      void document.getPage(pageNumber).then((page) => {
-        if (cancelled) return;
-        // Cancel any in-flight paint on this canvas first: starting a second
-        // render on the same canvas throws "Cannot use the same canvas during
-        // multiple render() operations" and leaves the preview blank/partial.
-        if (renderTaskRef.current) {
-          renderTaskRef.current.cancel();
-          renderTaskRef.current = null;
-        }
-        const style = window.getComputedStyle(container);
-        const padX = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight);
-        const padY = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom);
-        const availableWidth = Math.max(container.clientWidth - padX - 2, 1);
-        const availableHeight = Math.max(container.clientHeight - padY - 2, 1);
-        // The compact preview shrinks a page to fit the fixed-height slot, so it
-        // never grows beyond the page's natural size. The expanded viewer sizes
-        // by width to the A4 frame (min(100%, 210mm)), so it may grow up to real
-        // A4 width on wide screens — its own rule, decoupled from the preview's
-        // math (no inherited translate/scale/compact dimensions).
-        const pageViewport = page.getViewport({ scale: 1 });
-        const scale = expanded
-          ? availableWidth / pageViewport.width
-          : Math.min(1, availableWidth / pageViewport.width, availableHeight / pageViewport.height);
-        const outputScale = Math.min(window.devicePixelRatio || 1, 2);
-        const viewport = page.getViewport({ scale: scale * outputScale });
-        const cssViewport = page.getViewport({ scale });
-
-        canvas.width = Math.ceil(viewport.width);
-        canvas.height = Math.ceil(viewport.height);
-        canvas.style.width = `${cssViewport.width}px`;
-        canvas.style.height = `${cssViewport.height}px`;
-
-        const context = canvas.getContext("2d");
-        if (!context) return;
-        const task = page.render({ canvas, canvasContext: context, viewport });
-        renderTaskRef.current = task;
-        void task.promise.catch(() => undefined);
-      });
-    };
-
-    draw();
-    const observer = new ResizeObserver(draw);
-    observer.observe(container);
-    return () => {
-      cancelled = true;
-      if (renderTaskRef.current) {
-        renderTaskRef.current.cancel();
-        renderTaskRef.current = null;
-      }
-      observer.disconnect();
-    };
-  }, [document, pageNumber, expanded]);
-
-  return (
-    <div
-      ref={containerRef}
-      className="report-viewer-page-slot"
-      data-expanded={expanded}
-      data-page-number={pageNumber}
-    >
-      <canvas ref={canvasRef} aria-label={`Página ${pageNumber}`} />
-    </div>
-  );
-}
 
 export function ReportViewer({
   title,
@@ -128,54 +37,45 @@ export function ReportViewer({
   pdfUrl,
   downloadFilename,
   reportDocument,
-  pageCount,
 }: {
   title: string;
   meta: string;
   pdfUrl: string;
   downloadFilename: string;
   reportDocument: React.ReactNode;
-  pageCount: number;
 }) {
-  const [pdfState, setPdfState] = useState<ViewerState>("loading");
-  const [pdfDocument, setPdfDocument] = useState<PDFDocumentProxy | null>(null);
   const [expanded, setExpanded] = useState(false);
-  const [busyAction, setBusyAction] = useState<"download" | "print" | null>(null);
+  const [busyAction, setBusyAction] = useState<"download" | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const reduceMotion = useReducedMotion();
   const objectUrlRef = useRef<string | null>(null);
   const blobRef = useRef<Blob | null>(null);
-  const requestRef = useRef<Promise<PDFDocumentProxy> | null>(null);
+  const requestRef = useRef<Promise<Blob> | null>(null);
 
-  // pdfjs is loaded lazily — only when the expanded viewer is opened or when
-  // download/print is triggered. The inline preview never depends on it: it
-  // shows the report's native HTML (passed as `reportDocument`), so the screen
-  // never reads as a PDF reader.
-  async function loadDocument() {
+  useEffect(() => {
+    return () => {
+      if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
+    };
+  }, []);
+
+  async function loadPdf() {
     if (requestRef.current) return requestRef.current;
-    setPdfState("loading");
     const request = fetch(pdfUrl, {
       credentials: "same-origin",
       cache: "no-store",
     })
       .then(async (response) => {
         if (!response.ok) throw new Error("report-pdf-failed");
+        const contentType = response.headers.get("content-type");
+        if (!contentType?.toLowerCase().startsWith("application/pdf")) {
+          throw new Error("report-pdf-invalid");
+        }
         const blob = await response.blob();
         blobRef.current = blob;
-        const buffer = await blob.arrayBuffer();
-        const pdfjs = await import("pdfjs-dist");
-        pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-          "pdfjs-dist/build/pdf.worker.min.mjs",
-          import.meta.url,
-        ).toString();
-        return pdfjs.getDocument({ data: buffer }).promise;
-      })
-      .then((loaded) => {
-        setPdfDocument(loaded);
-        setPdfState("ready");
-        return loaded;
+        return blob;
       })
       .catch((error: unknown) => {
         requestRef.current = null;
-        setPdfState("error");
         throw error;
       });
     requestRef.current = request;
@@ -184,7 +84,7 @@ export function ReportViewer({
 
   async function getPdfUrl() {
     if (!objectUrlRef.current) {
-      if (!blobRef.current) await loadDocument();
+      if (!blobRef.current) await loadPdf();
       if (!blobRef.current) throw new Error("report-pdf-failed");
       objectUrlRef.current = URL.createObjectURL(blobRef.current);
     }
@@ -193,49 +93,33 @@ export function ReportViewer({
 
   async function download() {
     if (busyAction) return;
+    setActionError(null);
     setBusyAction("download");
     try {
       const url = await getPdfUrl();
       const anchor = window.document.createElement("a");
       anchor.href = url;
       anchor.download = downloadFilename;
+      anchor.hidden = true;
+      window.document.body.appendChild(anchor);
       anchor.click();
+      anchor.remove();
     } catch {
-      setPdfState("error");
+      setActionError(copy.downloadError);
     } finally {
       setBusyAction(null);
     }
   }
 
-  async function print() {
-    if (busyAction) return;
-    setBusyAction("print");
-    try {
-      const url = await getPdfUrl();
-      const frame = window.document.createElement("iframe");
-      frame.className = "report-print-frame-hidden";
-      frame.src = url;
-      frame.onload = () => {
-        frame.contentWindow?.focus();
-        frame.contentWindow?.print();
-        window.setTimeout(() => frame.remove(), 1000);
-      };
-      window.document.body.appendChild(frame);
-    } catch {
-      setPdfState("error");
-    } finally {
-      setBusyAction(null);
-    }
+  function print() {
+    setActionError(null);
+    window.print();
   }
 
   function handleExpand() {
     setExpanded(true);
-    if (!pdfDocument && !requestRef.current) {
-      void loadDocument().catch(() => undefined);
-    }
   }
 
-  const pages = pdfDocument?.numPages ?? null;
   const actionBusy = busyAction !== null;
 
   return (
@@ -259,10 +143,10 @@ export function ReportViewer({
             variant="secondary"
             size="sm"
             disabled={actionBusy}
-            onClick={() => void print()}
+            onClick={print}
           >
             <RiPrinterLine aria-hidden />
-            <span>{busyAction === "print" ? copy.preparingPdf : copy.print}</span>
+            <span>{copy.print}</span>
           </Button>
           <Button
             type="button"
@@ -276,11 +160,17 @@ export function ReportViewer({
         </div>
       </header>
 
+      {actionError && (
+        <div className="report-viewer-feedback" data-print-control>
+          <ActionStatus error={actionError} />
+        </div>
+      )}
+
       <div className="report-viewer-canvas">
         <div className="report-viewer-preview" aria-label={`Prévia de ${title}`}>
           <div className="report-preview-document">{reportDocument}</div>
         </div>
-        <span className="report-preview-page-count">{copy.pageCount(pageCount)}</span>
+        <span className="report-preview-page-count">{copy.documentFormat}</span>
         <Button
           type="button"
           variant="secondary"
@@ -299,12 +189,23 @@ export function ReportViewer({
           showCloseButton={false}
           style={{ translate: "none", transform: "none", scale: "none" }}
         >
-          <DialogHeader className="report-viewer-dialog-header">
-            <div>
+          <header className="report-viewer-dialog-header">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              aria-label={copy.close}
+              className="report-viewer-dialog-close"
+              onClick={() => setExpanded(false)}
+            >
+              <RiCloseLine aria-hidden />
+            </Button>
+            <div className="report-viewer-dialog-meta">
               <DialogTitle>{title}</DialogTitle>
               <DialogDescription>
                 {meta}
-                {pages ? ` · ${copy.pageCount(pages)}` : ""}
+                {" · "}
+                {copy.documentFormat}
               </DialogDescription>
             </div>
             <div className="report-viewer-dialog-actions" data-print-control>
@@ -312,63 +213,56 @@ export function ReportViewer({
                 type="button"
                 variant="ghost"
                 size="sm"
+                aria-label={copy.print}
+                data-report-dialog-action
                 disabled={actionBusy}
-                onClick={() => void print()}
+                onClick={print}
               >
                 <RiPrinterLine aria-hidden />
-                {copy.print}
+                <span>{copy.print}</span>
               </Button>
               <Button
                 type="button"
                 variant="ghost"
                 size="sm"
+                aria-label={copy.download}
+                data-report-dialog-action
                 disabled={actionBusy}
                 onClick={() => void download()}
               >
                 <RiDownloadLine aria-hidden />
-                {copy.download}
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon-sm"
-                aria-label={copy.close}
-                onClick={() => setExpanded(false)}
-              >
-                <RiCloseLine aria-hidden />
+                <span>{busyAction === "download" ? copy.preparingPdf : copy.download}</span>
               </Button>
             </div>
-          </DialogHeader>
-          <div className="report-viewer-expanded-document">
-            {pdfState === "loading" && (
-              <div className="report-viewer-message" role="status">
-                <RiFileTextLine aria-hidden />
-                {copy.preparing}
-              </div>
-            )}
-            {pdfState === "error" && (
-              <div className="report-viewer-message" role="alert">
-                <RiFileTextLine aria-hidden />
-                <span>{copy.error}</span>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => void loadDocument().catch(() => undefined)}
-                >
-                  {copy.retry}
-                </Button>
-              </div>
-            )}
-            {pdfDocument &&
-              Array.from({ length: pdfDocument.numPages }, (_, index) => (
-                <PageCanvas
-                  key={index + 1}
-                  document={pdfDocument}
-                  pageNumber={index + 1}
-                  expanded
-                />
-              ))}
+          </header>
+
+          <div
+            className="report-viewer-expanded-scroll"
+            role="region"
+            aria-label="Documento do relatório"
+            onClick={(event) => {
+              if (event.target === event.currentTarget) {
+                setExpanded(false);
+              }
+            }}
+          >
+            <motion.div
+              className="report-viewer-expanded-paper"
+              initial={
+                reduceMotion
+                  ? false
+                  : { opacity: 0, y: 12, scale: 0.985 }
+              }
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={
+                reduceMotion
+                  ? { duration: 0 }
+                  : { duration: 0.24, ease: [0.22, 1, 0.36, 1] }
+              }
+              onClick={(event) => event.stopPropagation()}
+            >
+              {reportDocument}
+            </motion.div>
           </div>
         </DialogContent>
       </Dialog>

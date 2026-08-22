@@ -23,3 +23,6 @@ Thumbs.db
 # Playwright artifacts (also keeps Tailwind v4 source-scan away from HTML dumps)
 test-results/
 playwright-report/
+
+# Local development server output
+.denarius-dev.*.log

@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { monthlyReport } from "@/lib/reports/queries";
+import { reportRenderMode } from "@/lib/reports/mode";
 import { ReportSheet } from "../_components/report-sheet";
 
 export default async function MonthlyReportPage({
@@ -8,12 +9,12 @@ export default async function MonthlyReportPage({
   searchParams,
 }: {
   params: Promise<{ period: string }>;
-  searchParams: Promise<{ pdf?: string }>;
+  searchParams: Promise<{ mode?: string; pdf?: string }>;
 }) {
   const { period } = await params;
-  const { pdf } = await searchParams;
+  const mode = reportRenderMode(await searchParams);
   const report = await monthlyReport(period);
   if (!report) notFound();
 
-  return <ReportSheet report={report} variant="closed" printOnly={pdf === "1"} />;
+  return <ReportSheet report={report} variant="closed" mode={mode} />;
 }

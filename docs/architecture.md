@@ -91,7 +91,7 @@ The forwarded request headers are built **fresh at each use, never captured once
 3. **Attribute**: key/project/workspace → team; per-person only where per-person keys/user ids exist; anything unmappable → **Unattributed** bucket. Invariant: **org total = Σ teams + Unattributed**.
 4. **Reconcile**: derived cost vs provider Costs total at the shared grain; drift beyond tolerance → data-quality notice.
 5. **Engine** (pure functions): spend vs budget, **projected margin**, linear run-rate projection with **day-5 guard**, threshold crossings, top drivers, **verdict** (green/amber/red + one deterministic sentence).
-6. **Findings**: `budget_threshold` (warnings), `apontamento` (calm observations), `seats_vs_roster` (secondary waste). Stateless — no user-facing status.
+6. **Findings**: `budget_threshold` (warnings), `apontamento` (calm observations), `seats_vs_roster` (secondary waste). Stateless — no user-facing status. The non-actionable apontamento/seat-waste rules remain in the domain, but are not assembled or rendered by Home while their final placement is reconsidered.
 7. **Notify**: event alert once per (team, threshold-level, period), escalation-only re-fire, via `notification_log`; weekly digest to Admins (opt-out). Numbers injected into narration; the LLM never computes.
 8. **Close** (#94, same daily cron, after the sync and the alerts): once a month has ended, freeze it into `period_snapshot` — one row per `(tenant, period_month)`, so a repeat run creates nothing. **Freezing, not recomputing**: `subscription` has no period column (seat count and unit price are current state, mutated in place), so a past month recomputed later would be priced with today's seat configuration. The report layer reads the frozen row and never live spend.
 

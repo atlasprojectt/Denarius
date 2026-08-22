@@ -8,6 +8,16 @@ import { existsSync } from "node:fs";
 import { platform } from "node:os";
 import { execFileSync } from "node:child_process";
 
+export class ReportPdfError extends Error {
+  constructor(
+    message: string,
+    readonly status: 404 | 503,
+  ) {
+    super(message);
+    this.name = "ReportPdfError";
+  }
+}
+
 function safeFilename(value: string) {
   return value
     .normalize("NFD")
@@ -100,9 +110,16 @@ export async function reportPdf(path: string, filename: string) {
   try {
     const page = await browser.newPage();
     if (cookie) await page.setExtraHTTPHeaders({ cookie });
-    const response = await page.goto(`${origin}${path}?pdf=1`, { waitUntil: "domcontentloaded" });
+    page.setDefaultTimeout(30_000);
+    page.setDefaultNavigationTimeout(30_000);
+    const response = await page.goto(`${origin}${path}?mode=pdf`, {
+      waitUntil: "domcontentloaded",
+    });
     if (!response || !response.ok() || page.url().includes("/login")) {
-      throw new Error("report pdf document unavailable");
+      throw new ReportPdfError(
+        "report pdf document unavailable",
+        response?.status() === 404 ? 404 : 503,
+      );
     }
     await page.evaluate(async () => { await document.fonts.ready; });
     await page.emulateMediaType("print");

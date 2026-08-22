@@ -88,7 +88,7 @@ export async function importRoster(
   await recordAudit(auth.session, "roster.imported", {
     detail: { imported: result.imported, teamsCreated: result.teams_created },
   });
-  // Roster feeds the seats-vs-roster observations on Home and creates teams —
+  // Roster feeds the seats-vs-roster finding rules and creates teams —
   // whole-tree invalidation (QA-02 rule, see lib/providers/actions.ts).
   revalidatePath("/", "layout");
   return {
@@ -162,7 +162,7 @@ export async function updateEmployee(
  * Removes one person from the roster (2026-07-11 audit, UX-14). Historical
  * API usage is attributed by provider project/workspace via project_map — it
  * never referenced the employee row — so past spend stays exactly where it
- * was; only the roster headcount (seats-vs-roster observations) changes.
+ * was; only the roster headcount used by seats-vs-roster findings changes.
  */
 export async function removeEmployee(
   _prev: RosterFormState,

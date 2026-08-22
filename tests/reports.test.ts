@@ -4,6 +4,7 @@ import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
 
 import { isReportPath, LIVE_REPORT_PATH } from "@/lib/reports/path";
+import { reportRenderMode } from "@/lib/reports/mode";
 
 const reportSheetSource = readFileSync(
   path.join(process.cwd(), "app/(app)/relatorios/_components/report-sheet.tsx"),
@@ -124,6 +125,14 @@ describe("monthly report reads", () => {
 });
 
 describe("report shell and print contract", () => {
+  it("normalizes screen, PDF and legacy print/PDF queries", () => {
+    expect(reportRenderMode({})).toBe("screen");
+    expect(reportRenderMode({ mode: "print" })).toBe("screen");
+    expect(reportRenderMode({ mode: "pdf" })).toBe("pdf");
+    expect(reportRenderMode({ pdf: "1" })).toBe("pdf");
+    expect(reportRenderMode({ mode: "unknown" })).toBe("screen");
+  });
+
   it("keeps the current report as the primary, independently readable entry", () => {
     expect(reportsIndexSource).toContain("readCurrentReport");
     expect(reportsIndexSource).toContain("listMonthlyReports");
@@ -146,7 +155,7 @@ describe("report shell and print contract", () => {
     expect(isReportPath("/relatorios/agora")).toBe(false);
   });
 
-  it("keeps the repeated header inside the page and fragments only at safe boundaries", () => {
+  it("keeps print isolated and allows long sections to paginate naturally", () => {
     const css = readFileSync(path.join(process.cwd(), "app/globals.css"), "utf8");
     const print = css.slice(css.indexOf("@media print"));
 
@@ -154,10 +163,14 @@ describe("report shell and print contract", () => {
     expect(print).toContain("[data-app-header]");
     expect(print).toContain('[data-slot="dialog-overlay"]');
     expect(print).toContain("color-scheme: light");
-    expect(print).toContain(".report-print-header");
-    expect(print).toContain("display: table-header-group");
-    expect(print).toContain(".report-print-footer");
-    expect(print).toContain("display: table-footer-group");
+    expect(print).not.toContain(".report-page + .report-page");
+    expect(print).not.toContain("break-before: page");
+    expect(print).toContain(".report-document-header");
+    expect(print).toContain("break-after: avoid-page");
+    expect(print).toContain(".report-brand-footer");
+    expect(print).toContain("break-inside: avoid");
+    expect(print).not.toContain("report-print-header");
+    expect(print).not.toContain("report-print-footer");
     expect(print).toContain("[data-print-keep]");
     expect(print).toContain(".report-section");
     expect(print).toContain("break-inside: auto");
@@ -193,12 +206,40 @@ describe("report shell and print contract", () => {
     expect(reportViewerSource).toContain("pdfUrl");
     expect(reportViewerSource).toContain("RiExpandDiagonalLine");
     expect(reportViewerSource).not.toContain("pagedjs");
+    expect(reportViewerSource).not.toContain("pdfjs-dist");
+    expect(reportViewerSource).not.toContain("contentWindow?.print");
+    expect(reportViewerSource).toContain("window.print()");
+    expect(reportViewerSource).not.toContain("window.open(");
+    expect(reportViewerSource).toContain('from "motion/react"');
+    expect(reportViewerSource).toContain("useReducedMotion");
+    expect(reportViewerSource).toContain("<motion.div");
     expect(reportSheetSource).toContain("report-print-frame");
-    expect(reportSheetSource).toContain("report-print-header");
-    expect(reportSheetSource).toContain("report-print-footer");
+    expect(reportSheetSource).toContain('mode === "pdf"');
+    expect(reportSheetSource).toContain('className="report-print-source" aria-hidden');
+    expect(reportSheetSource).toContain('data-report-page="1"');
+    expect(reportSheetSource).toContain('data-report-page="2"');
     expect(reportSheetSource).toContain("report-print-body");
     expect(reportSheetSource).toContain("data-print-keep");
+    expect(reportSheetSource).not.toContain("report-print-header");
+    expect(reportSheetSource).not.toContain("report-print-footer");
   });
+
+  it("keeps both expanded preview leaves at the A4 ratio", () => {
+    const css = readFileSync(path.join(process.cwd(), "app/globals.css"), "utf8");
+    expect(css).toContain(".report-viewer-expanded-paper .report-page");
+    expect(css).toContain("aspect-ratio: 210 / 297");
+  });
+
+  it("orders the expanded mini menu as close, context, then actions", () => {
+    const close = reportViewerSource.indexOf("report-viewer-dialog-close");
+    const meta = reportViewerSource.indexOf("report-viewer-dialog-meta");
+    const actions = reportViewerSource.indexOf("report-viewer-dialog-actions");
+    expect(close).toBeGreaterThan(-1);
+    expect([close, meta, actions]).toEqual(
+      [...[close, meta, actions]].sort((a, b) => a - b),
+    );
+  });
+
   it("keeps the legacy print-instructions modal out of the report flow", () => {
     expect(reportSheetSource).not.toContain("printPrepTitle");
     expect(reportViewerSource).not.toContain("Antes de imprimir");
@@ -251,5 +292,44 @@ describe("the on-demand report", () => {
     expect(page).toContain('export const dynamic = "force-dynamic"');
     expect(reportSheetSource).toContain("copy.overviewLive");
     expect(reportSheetSource).toContain("showProjection");
+  });
+});
+
+describe("report preview resilience (P0 hardening)", () => {
+  const pageSource = readFileSync(
+    path.join(process.cwd(), "app/(app)/relatorios/agora/page.tsx"),
+    "utf8",
+  );
+  const sheetSource = readFileSync(
+    path.join(process.cwd(), "app/(app)/relatorios/_components/report-sheet.tsx"),
+    "utf8",
+  );
+
+  it("does not let the live report throw through the Server Component boundary", () => {
+    // The data assembly is guarded: a provider/RLS failure is caught (and
+    // logged server-side) instead of blanking the preview or throwing into the
+    // Client Component error boundary, which cannot catch SC errors.
+    expect(pageSource).toContain("try {");
+    expect(pageSource).toContain("await currentReport()");
+    expect(pageSource).toContain('logThrown("report.current.read"');
+    expect(pageSource).toContain("<ReportUnavailable />");
+  });
+
+  it("renders a discreet fallback instead of an empty preview", () => {
+    expect(sheetSource).toContain("export function ReportUnavailable");
+    expect(sheetSource).toContain("copy.previewUnavailable");
+    expect(sheetSource).toContain('data-report-unavailable');
+  });
+
+  it("keeps editorial groups ordered without forcing a physical page count", () => {
+    const first = sheetSource.indexOf('data-report-page="1"');
+    const second = sheetSource.indexOf('data-report-page="2"');
+    expect(first).toBeGreaterThan(-1);
+    expect(second).toBeGreaterThan(first);
+
+    expect(sheetSource).not.toContain("REPORT_PAGE_COUNT");
+    const css = readFileSync(path.join(process.cwd(), "app/globals.css"), "utf8");
+    const print = css.slice(css.indexOf("@media print"));
+    expect(print).not.toContain(".report-page + .report-page");
   });
 });
