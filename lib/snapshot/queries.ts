@@ -2,9 +2,22 @@ import "server-only";
 
 import type { SeatSubscription } from "@/lib/engine/accrual";
 import type { ConnectionStatus } from "@/lib/engine/freshness";
+import {
+  findNotificationBudgets,
+  findNotificationProjectMap,
+  findSnapshotConnections,
+  findSnapshotCostsForPeriod,
+  findSnapshotSubscriptions,
+  findSnapshotTeamsOrdered,
+  findSnapshotUsageForPeriod,
+  findTenantDisplayCurrency,
+  listClosedSnapshotMonths,
+  listMonthsWithCost,
+  listTenantsExistingBefore,
+  type NotificationBudgetRow,
+} from "@/lib/db/admin";
 import { periodFx, type FrozenFx } from "@/lib/engine/money-model";
 import { closedPeriod, monthRange } from "@/lib/engine/period";
-import { createAdminClient } from "@/lib/supabase/admin";
 import { mapKey } from "@/lib/usage/attribution";
 
 import type { PeriodSnapshotInput, PersistedSource } from "./build";
@@ -22,15 +35,7 @@ import type { PeriodSnapshotInput, PersistedSource } from "./build";
 
 const DEFAULT_THRESHOLDS = [0.8, 1.0];
 
-type BudgetRow = {
-  scope: "org" | "team";
-  team_id: string | null;
-  amount: number;
-  thresholds: number[] | null;
-  frozen_fx_rate: number | null;
-  fx_rate_source: string | null;
-  fx_rate_date: string | null;
-};
+type BudgetRow = NotificationBudgetRow;
 type TeamRow = { id: string; name: string };
 type SubscriptionRow = {
   id: string;
@@ -52,17 +57,16 @@ type ConnectionRow = {
   status: string;
   last_sync_at: string | null;
 };
-type ReadError = { code?: string | null } | null;
 
-function assertReads(reads: { name: string; error: ReadError }[]): void {
-  const failed = reads.filter((read) => read.error !== null);
-  if (failed.length === 0) return;
-  // Codes identify the failing contract without copying a row value or
-  // provider payload into the thrown error/platform log.
-  throw new Error(
-    `snapshot reads failed: ${failed
-      .map((read) => `${read.name}:${read.error?.code ?? "unknown"}`)
-      .join(",")}`,
+/**
+ * The PostgREST path aggregated every read's error code into one thrown
+ * message ("snapshot reads failed: name:code,..."); the direct driver throws
+ * per query instead. This reproduces that exact message from whichever reads
+ * rejected, so platform logs keep matching the old format.
+ */
+function failedReadCode(cause: unknown): string {
+  return (
+    ((cause as { code?: unknown } | null)?.code as string | undefined) ?? "unknown"
   );
 }
 
@@ -80,88 +84,59 @@ export async function closedMonthInput(
   month: number,
   options: { source: PersistedSource; closedAt: string },
 ): Promise<PeriodSnapshotInput> {
-  const admin = createAdminClient();
   const { start, nextStart } = monthRange(year, month);
 
   const [
-    tenantResult,
-    budgetResult,
-    teamResult,
-    subscriptionResult,
-    usageResult,
-    mapResult,
-    costResult,
-    connectionResult,
-  ] = await Promise.all([
-    admin.from("tenant").select("display_currency").eq("id", tenantId).maybeSingle(),
-    admin
-      .from("budget")
-      .select(
-        "scope, team_id, amount, thresholds, frozen_fx_rate, fx_rate_source, fx_rate_date",
-      )
-      .eq("tenant_id", tenantId)
-      .eq("period_month", start),
-    admin
-      .from("team")
-      .select("id, name")
-      .eq("tenant_id", tenantId)
-      .eq("is_unattributed", false)
-      .order("name"),
+    tenantSettled,
+    budgetSettled,
+    teamSettled,
+    subscriptionSettled,
+    usageSettled,
+    mapSettled,
+    costSettled,
+    connectionSettled,
+  ] = await Promise.allSettled([
+    findTenantDisplayCurrency(tenantId),
+    findNotificationBudgets(tenantId, start),
+    findSnapshotTeamsOrdered(tenantId),
     options.source === "auto"
-      ? admin
-          .from("subscription")
-          .select("id, tool, seat_count, unit_price, team_id")
-          .eq("tenant_id", tenantId)
-      : Promise.resolve({ data: [] as SubscriptionRow[], error: null }),
-    admin
-      .from("usage_daily")
-      .select("provider, project_id, derived_cost, uncosted")
-      .eq("tenant_id", tenantId)
-      .gte("date", start)
-      .lt("date", nextStart),
-    admin
-      .from("project_map")
-      .select("provider, project_id, team_id")
-      .eq("tenant_id", tenantId),
-    admin
-      .from("cost_daily")
-      .select("provider, amount")
-      .eq("tenant_id", tenantId)
-      .gte("date", start)
-      .lt("date", nextStart),
-    admin
-      .from("provider_connection")
-      .select("provider, status, last_sync_at")
-      .eq("tenant_id", tenantId),
+      ? findSnapshotSubscriptions(tenantId)
+      : Promise.resolve([] as Awaited<ReturnType<typeof findSnapshotSubscriptions>>),
+    findSnapshotUsageForPeriod(tenantId, start, nextStart),
+    findNotificationProjectMap(tenantId),
+    findSnapshotCostsForPeriod(tenantId, start, nextStart),
+    findSnapshotConnections(tenantId),
   ]);
 
-  assertReads([
-    { name: "tenant", error: tenantResult.error },
-    { name: "budget", error: budgetResult.error },
-    { name: "team", error: teamResult.error },
-    { name: "subscription", error: subscriptionResult.error },
-    { name: "usage_daily", error: usageResult.error },
-    { name: "project_map", error: mapResult.error },
-    { name: "cost_daily", error: costResult.error },
-    { name: "provider_connection", error: connectionResult.error },
-  ]);
+  // Same aggregated contract as before: one thrown message naming every
+  // failing read by table and Postgres code, never a row value.
+  const names = [
+    "tenant",
+    "budget",
+    "team",
+    "subscription",
+    "usage_daily",
+    "project_map",
+    "cost_daily",
+    "provider_connection",
+  ] as const;
+  const settled = [tenantSettled, budgetSettled, teamSettled, subscriptionSettled, usageSettled, mapSettled, costSettled, connectionSettled];
+  const failures = settled
+    .map((s, i) => (s.status === "rejected" ? `${names[i]}:${failedReadCode(s.reason)}` : null))
+    .filter((f): f is string => f !== null);
+  if (failures.length > 0) {
+    throw new Error(`snapshot reads failed: ${failures.join(",")}`);
+  }
 
-  const tenantData = tenantResult.data;
-  const budgetData = budgetResult.data;
-  const teamData = teamResult.data;
-  const subData = subscriptionResult.data;
-  const usageData = usageResult.data;
-  const mapData = mapResult.data;
-  const costData = costResult.data;
-  const connectionData = connectionResult.data;
+  const [currencyOrNull, budgets, teams, subRows, usage, projectMap, costs, connections] =
+    settled.map(
+      (
+        s,
+      ): unknown =>
+        s.status === "fulfilled" ? s.value : null,
+    ) as [string | null, BudgetRow[], TeamRow[], SubscriptionRow[], UsageRow[], MapRow[], CostRow[], ConnectionRow[]];
 
-  const currency =
-    (tenantData as { display_currency: string } | null)?.display_currency ?? "BRL";
-  const budgets = (budgetData ?? []) as BudgetRow[];
-  const teams = ((teamData ?? []) as TeamRow[]).map((t) => ({
-    id: t.id,
-    name: t.name,
-  }));
+  const currency = currencyOrNull ?? "BRL";
   const teamName = new Map(teams.map((t) => [t.id, t.name]));
 
   const orgBudgetRow = budgets.find((b) => b.scope === "org") ?? null;
@@ -179,7 +154,7 @@ export async function closedMonthInput(
       .map((b) => ({ ...asCarrier(b), teamId: b.team_id })),
   });
 
-  const subscriptions: SeatSubscription[] = ((subData ?? []) as SubscriptionRow[]).map(
+  const subscriptions: SeatSubscription[] = subRows.map(
     (s) => ({
       id: s.id,
       tool: s.tool,
@@ -193,13 +168,13 @@ export async function closedMonthInput(
   // Derived API cost by team via project_map; anything unmapped is the
   // first-class Unattributed bucket (invariant #3 — spend never disappears).
   const projectTeam = new Map(
-    ((mapData ?? []) as MapRow[]).map((m) => [mapKey(m.provider, m.project_id), m.team_id]),
+    projectMap.map((m) => [mapKey(m.provider, m.project_id), m.team_id]),
   );
   const apiUsdByTeam = new Map<string, number>();
   let apiUnattributedUsd = 0;
   let derivedUsd = 0;
   let hasUncosted = false;
-  for (const row of (usageData ?? []) as UsageRow[]) {
+  for (const row of usage) {
     if (row.uncosted || row.derived_cost === null) {
       hasUncosted = true;
       continue;
@@ -214,7 +189,7 @@ export async function closedMonthInput(
   }
 
   const byProvider = new Map<string, number>();
-  for (const row of (costData ?? []) as CostRow[]) {
+  for (const row of costs) {
     byProvider.set(row.provider, (byProvider.get(row.provider) ?? 0) + row.amount);
   }
 
@@ -249,7 +224,7 @@ export async function closedMonthInput(
       .sort((a, b) => b.usd - a.usd),
     derivedUsd,
     hasUncosted,
-    connections: ((connectionData ?? []) as ConnectionRow[]).map(
+    connections: connections.map(
       (c): ConnectionStatus => ({
         provider: c.provider as ConnectionStatus["provider"],
         status: c.status,
@@ -262,24 +237,22 @@ export async function closedMonthInput(
 /** Tenants that already existed when the month ended — a month a customer was
  *  not there for is not a month to report on. */
 export async function tenantsExistingBefore(nextStart: string): Promise<string[]> {
-  const admin = createAdminClient();
-  const { data, error } = await admin
-    .from("tenant")
-    .select("id")
-    .lt("created_at", `${nextStart}T00:00:00.000Z`);
-  assertReads([{ name: "tenant", error }]);
-  return ((data ?? []) as { id: string }[]).map((t) => t.id);
+  try {
+    return await listTenantsExistingBefore(nextStart);
+  } catch (cause) {
+    throw new Error(`snapshot reads failed: tenant:${failedReadCode(cause)}`);
+  }
 }
 
 /** period_month values already frozen for a tenant (yyyy-mm-dd). */
 export async function closedMonths(tenantId: string): Promise<Set<string>> {
-  const admin = createAdminClient();
-  const { data, error } = await admin
-    .from("period_snapshot")
-    .select("period_month")
-    .eq("tenant_id", tenantId);
-  assertReads([{ name: "period_snapshot", error }]);
-  return new Set(((data ?? []) as { period_month: string }[]).map((r) => r.period_month));
+  let rows: string[];
+  try {
+    rows = await listClosedSnapshotMonths(tenantId);
+  } catch (cause) {
+    throw new Error(`snapshot reads failed: period_snapshot:${failedReadCode(cause)}`);
+  }
+  return new Set(rows);
 }
 
 /** Distinct months (yyyy-mm-01) in which the tenant has reported API cost —
@@ -289,18 +262,9 @@ export async function monthsWithCost(
   since: string,
   before: string,
 ): Promise<string[]> {
-  const admin = createAdminClient();
-  const { data, error } = await admin
-    .from("cost_daily")
-    .select("date")
-    .eq("tenant_id", tenantId)
-    .gte("date", since)
-    .lt("date", before);
-  assertReads([{ name: "cost_daily", error }]);
-  const months = new Set(
-    ((data ?? []) as { date: string }[]).map((r) => `${r.date.slice(0, 7)}-01`),
-  );
-  // Most recent history becomes available first while the daily cron advances
-  // the bounded backfill one month at a time.
-  return [...months].sort().reverse();
+  try {
+    return await listMonthsWithCost(tenantId, since, before);
+  } catch (cause) {
+    throw new Error(`snapshot reads failed: cost_daily:${failedReadCode(cause)}`);
+  }
 }

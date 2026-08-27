@@ -3,7 +3,7 @@ import "server-only";
 import { createHash } from "node:crypto";
 import { headers } from "next/headers";
 
-import { createAdminClient } from "@/lib/supabase/admin";
+import { rateLimitTake } from "@/lib/db/admin";
 
 /**
  * Rate limiting for the paths Supabase cannot see (issue #61).
@@ -113,14 +113,15 @@ export async function takeRateLimitSlot(
   rule: RateLimitRule,
   subject: string,
 ): Promise<boolean> {
-  const admin = createAdminClient();
-  const { data, error } = await admin.rpc("rate_limit_take", {
-    p_bucket: bucketKey(rule, subject),
-    p_limit: rule.limit,
-    p_window_seconds: rule.windowSeconds,
-  });
-  if (error) return true;
-  return data !== false;
+  try {
+    return await rateLimitTake({
+      p_bucket: bucketKey(rule, subject),
+      p_limit: rule.limit,
+      p_window_seconds: rule.windowSeconds,
+    });
+  } catch {
+    return true;
+  }
 }
 
 /** One calm answer, in pt-BR, that discloses nothing about accounts or tokens —

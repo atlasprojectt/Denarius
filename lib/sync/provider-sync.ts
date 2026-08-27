@@ -12,8 +12,19 @@ import {
   logOk,
   logSkipped,
 } from "@/lib/logging/server-log";
+import {
+  activateProviderConnectionSync,
+  deleteUsageDailyFrom,
+  findProviderConnectionForSync,
+  findTenantStorePerPerson,
+  listModelPrices,
+  markProviderConnectionSyncError,
+  upsertCostDaily,
+  upsertUsageDaily,
+  type CostDailyUpsert,
+  type UsageDailyUpsert,
+} from "@/lib/db/admin";
 import { collapsePersonGrain } from "@/lib/privacy/minimize";
-import { createAdminClient } from "@/lib/supabase/admin";
 
 // On-demand sync for ONE tenant's connection to ONE provider (connect button /
 // rotate / sync-now). Provider-agnostic: everything specific lives behind the
@@ -49,50 +60,42 @@ export type SyncResult =
   | { ok: true; usageRows: number; costRows: number; monthUsd: number }
   | { ok: false; error: string };
 
-type ConnectionRow = {
-  id: string;
-  encrypted_credential: string | null;
-  status: string;
-};
-
-type PriceRow = {
-  provider: string;
-  model: string;
-  input_price_per_1m: number;
-  output_price_per_1m: number;
-  effective_date: string;
-};
-
 export async function runProviderSync(
   tenantId: string,
   providerName: ProviderName,
 ): Promise<SyncResult> {
-  const admin = createAdminClient();
+  // Postgres errors arrive as throws with a `.code`; the old PostgREST path
+  // returned `{ error }`. This adapter keeps every dbFailure() log line
+  // carrying the same `code` field it always did.
+  const codeOf = (cause: unknown): { code?: string | null } => ({
+    code: (cause as { code?: unknown } | null)?.code as string | undefined ?? null,
+  });
 
-  const [connectionResult, tenantResult] = await Promise.all([
-    admin
-      .from("provider_connection")
-      .select("id, encrypted_credential, status")
-      .eq("tenant_id", tenantId)
-      .eq("provider", providerName)
-      .maybeSingle(),
-    admin.from("tenant").select("store_per_person").eq("id", tenantId).maybeSingle(),
+  const [connectionSettled, tenantSettled] = await Promise.allSettled([
+    findProviderConnectionForSync(tenantId, providerName),
+    findTenantStorePerPerson(tenantId),
   ]);
-  if (connectionResult.error || tenantResult.error) {
+  if (
+    connectionSettled.status === "rejected" ||
+    tenantSettled.status === "rejected"
+  ) {
     logFailure("provider.sync", tenantId, {
       provider: providerName,
       step: "load_context",
-      connectionCode: connectionResult.error?.code ?? null,
-      tenantCode: tenantResult.error?.code ?? null,
+      connectionCode:
+        connectionSettled.status === "rejected"
+          ? (codeOf(connectionSettled.reason).code ?? null)
+          : null,
+      tenantCode:
+        tenantSettled.status === "rejected"
+          ? (codeOf(tenantSettled.reason).code ?? null)
+          : null,
     });
     return { ok: false, error: "sync context could not be loaded" };
   }
-  const connectionData = connectionResult.data;
-  const tenantData = tenantResult.data;
-  const connection = connectionData as ConnectionRow | null;
+  const connection = connectionSettled.value;
   // Data minimization (#23): default on if the tenant row is somehow missing.
-  const storePerPerson =
-    (tenantData as { store_per_person: boolean } | null)?.store_per_person ?? true;
+  const storePerPerson = tenantSettled.value ?? true;
   if (!connection || connection.status === "revoked" || !connection.encrypted_credential) {
     logSkipped("provider.sync", tenantId, { provider: providerName, reason: "no active connection" });
     return { ok: false, error: `no active ${providerName} connection` };
@@ -112,18 +115,16 @@ export async function runProviderSync(
       reason: message,
       ...detail,
     });
-    const { error } = await admin
-      .from("provider_connection")
-      .update({
-        status: "error",
-        last_sync_error: message,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", connection.id);
-    if (error) {
+    try {
+      await markProviderConnectionSyncError(
+        connection.id,
+        message,
+        new Date().toISOString(),
+      );
+    } catch (cause) {
       logFailure("provider.sync_state", tenantId, {
         provider: providerName,
-        ...dbFailure(error),
+        ...dbFailure(codeOf(cause)),
       });
     }
     return { ok: false, error: message };
@@ -159,34 +160,30 @@ export async function runProviderSync(
     // One stamp per sync: every row written by this run carries the same time.
     const syncedAt = new Date().toISOString();
 
-    const [rawUsage, costs, priceResult] = await Promise.all([
+    const [rawUsage, costs, pricesResult] = await Promise.all([
       provider.fetchUsage(range),
       provider.fetchCosts(range),
-      admin
-        .from("model_price")
-        .select("provider, model, input_price_per_1m, output_price_per_1m, effective_date"),
+      listModelPrices().catch((cause) => ({ error: cause })),
     ]);
-    if (priceResult.error) {
+    if ("error" in pricesResult) {
       return markError(SYNC_FAILED_MESSAGE, {
         step: "price_lookup",
-        ...dbFailure(priceResult.error),
+        ...dbFailure(codeOf(pricesResult.error)),
       });
     }
-    const priceData = priceResult.data;
+    const prices: ModelPrice[] = pricesResult.map((p) => ({
+      provider: p.provider,
+      model: p.model,
+      inputPricePer1M: p.inputPricePer1M,
+      outputPricePer1M: p.outputPricePer1M,
+      effectiveDate: p.effectiveDate,
+    }));
 
     // "Store per-person data" off → collapse to team/project grain before any
     // person-grain row is derived or persisted (aggregates stay exact).
     const usage = storePerPerson ? rawUsage : collapsePersonGrain(rawUsage);
 
-    const prices: ModelPrice[] = ((priceData ?? []) as PriceRow[]).map((p) => ({
-      provider: p.provider,
-      model: p.model,
-      inputPricePer1M: p.input_price_per_1m,
-      outputPricePer1M: p.output_price_per_1m,
-      effectiveDate: p.effective_date,
-    }));
-
-    const usageRows = usage.map((bucket) => {
+    const usageRows: UsageDailyUpsert[] = usage.map((bucket) => {
       const derived = deriveCost(
         { provider: providerName, model: bucket.model, date: bucket.date, inputTokens: bucket.inputTokens, outputTokens: bucket.outputTokens },
         prices,
@@ -195,9 +192,9 @@ export async function runProviderSync(
         tenant_id: tenantId,
         date: bucket.date,
         provider: providerName,
-        project_id: bucket.projectId,
-        api_key_id: bucket.apiKeyId,
-        user_id: bucket.userId,
+        project_id: bucket.projectId ?? null,
+        api_key_id: bucket.apiKeyId ?? null,
+        user_id: bucket.userId ?? null,
         model: bucket.model,
         input_tokens: bucket.inputTokens,
         output_tokens: bucket.outputTokens,
@@ -207,11 +204,11 @@ export async function runProviderSync(
       };
     });
 
-    const costRows = costs.map((bucket) => ({
+    const costRows: CostDailyUpsert[] = costs.map((bucket) => ({
       tenant_id: tenantId,
       date: bucket.date,
       provider: providerName,
-      project_id: bucket.projectId,
+      project_id: bucket.projectId ?? null,
       line_item: bucket.lineItem,
       amount: bucket.amount,
       currency: bucket.currency,
@@ -222,60 +219,41 @@ export async function runProviderSync(
     // slice before inserting. This prevents stale person-grain rows from
     // surviving after store_per_person is turned off, and prevents stale shared
     // rows from double-counting if it is turned back on.
-    const { error: usageDeleteError } = await admin
-      .from("usage_daily")
-      .delete()
-      .eq("tenant_id", tenantId)
-      .eq("provider", providerName)
-      .gte("date", monthStart);
-    if (usageDeleteError) {
+    try {
+      await deleteUsageDailyFrom(tenantId, providerName, monthStart);
+    } catch (cause) {
       return markError(SYNC_FAILED_MESSAGE, {
         step: "usage_cleanup",
-        ...dbFailure(usageDeleteError),
+        ...dbFailure(codeOf(cause)),
       });
     }
 
     // Independent tables — after usage cleanup, the two upserts run in parallel.
-    const noError = { error: null };
-    const [usageResult, costResult] = await Promise.all([
-      usageRows.length > 0
-        ? admin.from("usage_daily").upsert(usageRows, {
-            onConflict:
-              "tenant_id,date,provider,project_id,api_key_id,user_id,model",
-          })
-        : Promise.resolve(noError),
-      costRows.length > 0
-        ? admin.from("cost_daily").upsert(costRows, {
-            onConflict: "tenant_id,date,provider,project_id,line_item",
-          })
-        : Promise.resolve(noError),
+    // allSettled keeps the original check order (usage first, then cost) even
+    // when both fail at once.
+    const [usageOutcome, costOutcome] = await Promise.allSettled([
+      upsertUsageDaily(usageRows),
+      upsertCostDaily(costRows),
     ]);
-    if (usageResult.error) {
+    if (usageOutcome.status === "rejected") {
       return markError(SYNC_FAILED_MESSAGE, {
         step: "usage_upsert",
-        ...dbFailure(usageResult.error),
+        ...dbFailure(codeOf(usageOutcome.reason)),
       });
     }
-    if (costResult.error) {
+    if (costOutcome.status === "rejected") {
       return markError(SYNC_FAILED_MESSAGE, {
         step: "cost_upsert",
-        ...dbFailure(costResult.error),
+        ...dbFailure(codeOf(costOutcome.reason)),
       });
     }
 
-    const { error: stateError } = await admin
-      .from("provider_connection")
-      .update({
-        status: "active",
-        last_sync_at: syncedAt,
-        last_sync_error: null,
-        updated_at: syncedAt,
-      })
-      .eq("id", connection.id);
-    if (stateError) {
+    try {
+      await activateProviderConnectionSync(connection.id, syncedAt);
+    } catch (cause) {
       return markError(SYNC_FAILED_MESSAGE, {
         step: "connection_state",
-        ...dbFailure(stateError),
+        ...dbFailure(codeOf(cause)),
       });
     }
 

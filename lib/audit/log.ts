@@ -1,6 +1,6 @@
 import "server-only";
 
-import { createAdminClient } from "@/lib/supabase/admin";
+import { insertAuditLog } from "@/lib/db/admin";
 import { dbFailure, logFailure, logThrown } from "@/lib/logging/server-log";
 
 import { redactDetail, redactTarget, type AuditDetail } from "./redact";
@@ -81,15 +81,21 @@ function row(actor: AuditActor, action: AuditAction, context: AuditContext): Row
 async function insert(rows: Row[]): Promise<void> {
   if (rows.length === 0) return;
   try {
-    const { error } = await createAdminClient().from("audit_log").insert(rows);
-    if (error) {
+    await insertAuditLog(rows);
+  } catch (cause) {
+    // The direct Postgres driver reports every failure as a throw, where the
+    // old PostgREST path split them into a returned `error` (logged by code
+    // only — a message can quote an e-mail) and a thrown value. Rebuild that
+    // split so the log lines stay byte-for-byte what they were.
+    const code = (cause as { code?: unknown } | null)?.code;
+    if (typeof code === "string") {
       logFailure("audit.insert", rows[0]?.tenant_id ?? null, {
         actions: rows.map((r) => r.action),
-        ...dbFailure(error),
+        ...dbFailure({ code }),
       });
+    } else {
+      logThrown("audit.insert", rows[0]?.tenant_id ?? null, cause);
     }
-  } catch (cause) {
-    logThrown("audit.insert", rows[0]?.tenant_id ?? null, cause);
   }
 }
 

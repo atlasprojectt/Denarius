@@ -9,9 +9,12 @@ import {
   type RosterRowError,
 } from "@/lib/roster/parse-csv";
 import { dbFailure, logFailure } from "@/lib/logging/server-log";
-import { createAdminClient } from "@/lib/supabase/admin";
+import {
+  deleteEmployeeReturning,
+  isOwnedTeam,
+  updateEmployeeById,
+} from "@/lib/db/admin";
 import { createClient } from "@/lib/supabase/server";
-import { isOwnedTeam } from "@/lib/teams/queries";
 import {
   employeeDeleteSchema,
   employeeUpdateSchema,
@@ -117,37 +120,37 @@ export async function updateEmployee(
   }
 
   const { tenantId } = auth.session;
-  const admin = createAdminClient();
 
-  if (!(await isOwnedTeam(admin, tenantId, parsed.data.teamId))) {
+  if (!(await isOwnedTeam(tenantId, parsed.data.teamId))) {
     return { error: "Escolha um time válido." };
   }
 
-  const { error, count } = await admin
-    .from("employee")
-    .update(
+  let matched: number;
+  try {
+    matched = await updateEmployeeById(
+      parsed.data.employeeId,
+      tenantId,
       {
         name: parsed.data.name,
         email: parsed.data.email,
         team_id: parsed.data.teamId,
         updated_at: new Date().toISOString(),
       },
-      { count: "exact" },
-    )
-    .eq("id", parsed.data.employeeId)
-    .eq("tenant_id", tenantId);
-  if (error) {
+    );
+  } catch (cause) {
     // 23505 = unique (tenant_id, email): the import identity key (UX-14).
-    if (error.code === "23505") {
+    if ((cause as { code?: unknown } | null)?.code === "23505") {
       return {
         error: "Já existe uma pessoa com este e-mail no roster.",
         fieldErrors: { email: "Já existe uma pessoa com este e-mail." },
       };
     }
-    logFailure("roster.employee_update", tenantId, dbFailure(error));
+    logFailure("roster.employee_update", tenantId, dbFailure({
+      code: ((cause as { code?: unknown } | null)?.code as string | undefined) ?? null,
+    }));
     return { error: "Não foi possível salvar. Tente novamente." };
   }
-  if (count === 0) return { error: "Pessoa não encontrada." };
+  if (matched === 0) return { error: "Pessoa não encontrada." };
 
   await recordAudit(auth.session, "roster.employee_updated", {
     target: parsed.data.email,
@@ -176,24 +179,25 @@ export async function removeEmployee(
   });
   if (!parsed.success) return { error: parsed.error.issues[0].message };
 
-  const admin = createAdminClient();
   // The deleted row comes back with the delete, so the trail can name who was
   // removed without a pre-read (#73).
-  const { data: removed, error, count } = await admin
-    .from("employee")
-    .delete({ count: "exact" })
-    .eq("id", parsed.data.employeeId)
-    .eq("tenant_id", auth.session.tenantId)
-    .select("email");
-  if (error) {
-    logFailure("roster.employee_remove", auth.session.tenantId, dbFailure(error));
+  let outcome: { count: number; row: { email: string } | null };
+  try {
+    outcome = await deleteEmployeeReturning(
+      parsed.data.employeeId,
+      auth.session.tenantId,
+    );
+  } catch (cause) {
+    logFailure("roster.employee_remove", auth.session.tenantId, dbFailure({
+      code: ((cause as { code?: unknown } | null)?.code as string | undefined) ?? null,
+    }));
     return { error: "Não foi possível remover. Tente novamente." };
   }
   // Idempotent: repeated submit / cross-tenant id match nothing — the desired
   // end state already holds (QA-05 destructive-action contract).
-  if (count === 0) return { success: "Pessoa já havia sido removida." };
+  if (outcome.count === 0) return { success: "Pessoa já havia sido removida." };
 
-  const deleted = ((removed ?? []) as { email: string }[])[0];
+  const deleted = outcome.row;
   await recordAudit(auth.session, "roster.employee_removed", {
     target: deleted?.email ?? parsed.data.employeeId,
   });

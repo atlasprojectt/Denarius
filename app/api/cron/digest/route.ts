@@ -3,11 +3,11 @@ import "server-only";
 import { NextResponse } from "next/server";
 
 import { monthStartUtc } from "@/lib/engine/period";
+import { listDigestTenantIds } from "@/lib/db/admin";
 import { dbFailure, logFailure, logOk } from "@/lib/logging/server-log";
 import { anthropicNarrator } from "@/lib/narrate/client";
 import { emailChannel } from "@/lib/notify/channel";
 import { sendWeeklyDigest } from "@/lib/notify/digest";
-import { createAdminClient } from "@/lib/supabase/admin";
 
 // Weekly executive digest (issue #20) — Vercel Cron, Fridays (vercel.json).
 // Cross-tenant like the sync cron and guarded the same way: bearer
@@ -29,20 +29,17 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  const admin = createAdminClient();
-  const { data, error } = await admin
-    .from("budget")
-    .select("tenant_id")
-    .eq("scope", "org")
-    .eq("period_month", monthStartUtc());
-  if (error) {
-    logFailure("cron.digest", null, dbFailure(error));
+  let budgetTenants: string[];
+  try {
+    budgetTenants = await listDigestTenantIds(monthStartUtc());
+  } catch (cause) {
+    logFailure("cron.digest", null, dbFailure({
+      code: ((cause as { code?: unknown } | null)?.code as string | undefined) ?? null,
+    }));
     return NextResponse.json({ error: "could not list budgets" }, { status: 500 });
   }
 
-  const tenants = [
-    ...new Set(((data ?? []) as { tenant_id: string }[]).map((b) => b.tenant_id)),
-  ];
+  const tenants = [...new Set(budgetTenants)];
   const channel = emailChannel();
   const narrator = anthropicNarrator();
 

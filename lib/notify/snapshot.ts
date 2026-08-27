@@ -13,7 +13,17 @@ import { periodFx } from "@/lib/engine/money-model";
 import { combineTeamSpend } from "@/lib/engine/team-spend";
 import { currentPeriod, monthStartUtc, type Period } from "@/lib/engine/period";
 import { isoDaysAgo } from "@/lib/engine/week-change";
-import { createAdminClient } from "@/lib/supabase/admin";
+import {
+  findNotifiableUsers,
+  findNotificationBudgets,
+  findNotificationProjectMap,
+  findNotificationRecentCosts,
+  findNotificationSubscriptions,
+  findNotificationTeams,
+  findNotificationUsage,
+  findTenantDisplayCurrency,
+  type NotificationBudgetRow,
+} from "@/lib/db/admin";
 
 import type { NotifiableUser } from "./recipients";
 
@@ -54,98 +64,44 @@ export type TenantSnapshot = {
   recentCosts: { date: string; amount: number }[];
 };
 
-type BudgetRow = {
-  scope: "org" | "team";
-  team_id: string | null;
-  amount: number;
-  thresholds: number[] | null;
-  frozen_fx_rate: number | null;
-  fx_rate_source: string | null;
-  fx_rate_date: string | null;
-};
-type SubscriptionRow = {
-  tool: string;
-  seat_count: number;
-  unit_price: number;
-  team_id: string | null;
-};
-type TeamRow = { id: string; name: string };
-type UsageRow = {
-  provider: string;
-  project_id: string;
-  derived_cost: number | null;
-  uncosted: boolean;
-};
-type MapRow = { provider: string; project_id: string; team_id: string };
-type CostRow = { date: string; provider: string; amount: number };
-type UserRow = { email: string; role: string; digest_opt_out: boolean };
-
 export async function tenantSnapshot(
   tenantId: string,
   now: Date = new Date(),
 ): Promise<TenantSnapshot> {
-  const admin = createAdminClient();
   const period = currentPeriod(now);
   const monthStart = monthStartUtc(now);
   // One window covers both the month-to-date totals and the 14-day change.
   const costSince =
     isoDaysAgo(now, 14) < monthStart ? isoDaysAgo(now, 14) : monthStart;
 
+  // The PostgREST path never checked these reads' `error` fields: a failed
+  // query arrived as null/[] and the snapshot degraded to its defaults
+  // (currency "BRL", no scopes). Each catch below replicates exactly that.
   const [
-    { data: tenantData },
-    { data: budgetData },
-    { data: subData },
-    { data: teamData },
-    { data: usageData },
-    { data: mapData },
-    { data: costData },
-    { data: userData },
+    currencyOrNull,
+    budgets,
+    subs,
+    teams,
+    usage,
+    projectMap,
+    costs,
+    users,
   ] = await Promise.all([
-    admin.from("tenant").select("display_currency").eq("id", tenantId).maybeSingle(),
-    admin
-      .from("budget")
-      .select(
-        "scope, team_id, amount, thresholds, frozen_fx_rate, fx_rate_source, fx_rate_date",
-      )
-      .eq("tenant_id", tenantId)
-      .eq("period_month", monthStart),
-    admin
-      .from("subscription")
-      .select("tool, seat_count, unit_price, team_id")
-      .eq("tenant_id", tenantId),
-    admin
-      .from("team")
-      .select("id, name")
-      .eq("tenant_id", tenantId)
-      .eq("is_unattributed", false),
-    admin
-      .from("usage_daily")
-      .select("provider, project_id, derived_cost, uncosted")
-      .eq("tenant_id", tenantId)
-      .gte("date", monthStart),
-    admin
-      .from("project_map")
-      .select("provider, project_id, team_id")
-      .eq("tenant_id", tenantId),
-    admin
-      .from("cost_daily")
-      .select("date, provider, amount")
-      .eq("tenant_id", tenantId)
-      .gte("date", costSince),
-    admin
-      .from("app_user")
-      .select("email, role, digest_opt_out")
-      .eq("tenant_id", tenantId),
+    findTenantDisplayCurrency(tenantId).catch(() => null),
+    findNotificationBudgets(tenantId, monthStart).catch(() => []),
+    findNotificationSubscriptions(tenantId).catch(() => []),
+    findNotificationTeams(tenantId).catch(() => []),
+    findNotificationUsage(tenantId, monthStart).catch(() => []),
+    findNotificationProjectMap(tenantId).catch(() => []),
+    findNotificationRecentCosts(tenantId, costSince).catch(() => []),
+    findNotifiableUsers(tenantId).catch(() => []),
   ]);
 
-  const currency =
-    (tenantData as { display_currency: string } | null)?.display_currency ?? "BRL";
-  const budgets = (budgetData ?? []) as BudgetRow[];
-  const teams = (teamData ?? []) as TeamRow[];
+  const currency = currencyOrNull ?? "BRL";
   const teamName = new Map(teams.map((t) => [t.id, t.name]));
 
   // Seats: accrued-to-date in the display currency, by team.
-  const subs: SeatSubscription[] = ((subData ?? []) as SubscriptionRow[]).map(
+  const seatSubs: SeatSubscription[] = subs.map(
     (s, i) => ({
       id: String(i),
       tool: s.tool,
@@ -155,16 +111,16 @@ export async function tenantSnapshot(
       teamName: s.team_id ? (teamName.get(s.team_id) ?? "—") : null,
     }),
   );
-  const seats = attributeSeats(subs, period);
+  const seats = attributeSeats(seatSubs, period);
   const seatByTeam = new Map(seats.teams.map((t) => [t.teamId, t.accrued]));
 
   // API derived cost (USD) by team via project_map; unmapped → unattributed.
   const projectTeam = new Map(
-    ((mapData ?? []) as MapRow[]).map((m) => [`${m.provider} ${m.project_id}`, m.team_id]),
+    projectMap.map((m) => [`${m.provider} ${m.project_id}`, m.team_id]),
   );
   const apiByTeam = new Map<string, number>();
   let apiUnattributed = 0;
-  for (const row of (usageData ?? []) as UsageRow[]) {
+  for (const row of usage) {
     if (row.uncosted || row.derived_cost === null) continue;
     const teamId =
       row.project_id === ""
@@ -175,7 +131,6 @@ export async function tenantSnapshot(
   }
 
   // Provider-reported cost (USD, headline truth): month-to-date + 14-day rows.
-  const costs = (costData ?? []) as CostRow[];
   const monthCosts = costs.filter((c) => c.date >= monthStart);
   const reportedUsd = monthCosts.reduce((sum, c) => sum + c.amount, 0);
   const byProvider = new Map<string, number>();
@@ -186,7 +141,7 @@ export async function tenantSnapshot(
   const orgBudget = budgets.find((b) => b.scope === "org") ?? null;
   // Same period-FX resolution as the screens (money-model contract) — an
   // e-mail total that disagreed with Home would burn the product's trust.
-  const asCarrier = (b: BudgetRow) => ({
+  const asCarrier = (b: NotificationBudgetRow) => ({
     frozenFxRate: b.frozen_fx_rate,
     fxRateSource: b.fx_rate_source,
     fxRateDate: b.fx_rate_date,
@@ -287,7 +242,7 @@ export async function tenantSnapshot(
     scopes,
     cockpit,
     teamSpendDrivers,
-    users: ((userData ?? []) as UserRow[]).map((u) => ({
+    users: users.map((u) => ({
       email: u.email,
       role: u.role,
       digestOptOut: u.digest_opt_out,

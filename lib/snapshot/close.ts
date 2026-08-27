@@ -1,7 +1,7 @@
 import "server-only";
 
 import { monthRange, previousMonthOf } from "@/lib/engine/period";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { insertPeriodSnapshotIfAbsent } from "@/lib/db/admin";
 
 import { buildPeriodSnapshot, type PeriodSnapshot, type PersistedSource } from "./build";
 import {
@@ -71,14 +71,10 @@ export async function closeMonth(
     });
     const snapshot = buildPeriodSnapshot(input);
 
-    const admin = createAdminClient();
-    const { error } = await admin
-      .from("period_snapshot")
-      .upsert(toRow(tenantId, snapshot), {
-        onConflict: "tenant_id,period_month",
-        ignoreDuplicates: true,
-      });
-    return error ? "failed" : "created";
+    // DO NOTHING under (tenant_id, period_month): the unique key absorbs a
+    // race with a concurrent run — a frozen month is never rewritten.
+    await insertPeriodSnapshotIfAbsent(toRow(tenantId, snapshot));
+    return "created";
   } catch {
     // One unreadable tenant/month must not stop the cross-tenant cron.
     return "failed";

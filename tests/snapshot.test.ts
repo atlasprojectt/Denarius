@@ -11,12 +11,12 @@ import * as queries from "@/lib/snapshot/queries";
 
 // The closing job's I/O edges are stubbed: the reads and the write. What is
 // asserted is the rule that makes closing safe to run every single day.
-const { upsert } = vi.hoisted(() => ({
-  upsert: vi.fn(async () => ({ error: null })),
+const { insertPeriodSnapshotIfAbsent } = vi.hoisted(() => ({
+  insertPeriodSnapshotIfAbsent: vi.fn(async () => {}),
 }));
 
-vi.mock("@/lib/supabase/admin", () => ({
-  createAdminClient: () => ({ from: () => ({ upsert }) }),
+vi.mock("@/lib/db/admin", () => ({
+  insertPeriodSnapshotIfAbsent,
 }));
 
 vi.mock("@/lib/snapshot/queries", () => ({
@@ -358,8 +358,8 @@ describe("closeMonth — closing is idempotent", () => {
   const mocked = vi.mocked(queries);
 
   beforeEach(() => {
-    upsert.mockReset();
-    upsert.mockResolvedValue({ error: null });
+    insertPeriodSnapshotIfAbsent.mockReset();
+    insertPeriodSnapshotIfAbsent.mockResolvedValue(undefined);
     mocked.closedMonthInput.mockReset();
     mocked.closedMonths.mockReset();
     mocked.tenantsExistingBefore.mockReset();
@@ -380,20 +380,16 @@ describe("closeMonth — closing is idempotent", () => {
     const outcome = await closeMonth("tenant-1", 2026, 6, "auto");
 
     expect(outcome).toBe("created");
-    expect(upsert).toHaveBeenCalledTimes(1);
-    const [row, options] = upsert.mock.calls[0] as unknown as [
-      Record<string, unknown>,
+    expect(insertPeriodSnapshotIfAbsent).toHaveBeenCalledTimes(1);
+    const [row] = insertPeriodSnapshotIfAbsent.mock.calls[0] as unknown as [
       Record<string, unknown>,
     ];
     expect(row.tenant_id).toBe("tenant-1");
     expect(row.period_month).toBe("2026-06-01");
     expect(row.verdict_status).toBe("green");
-    // The unique key absorbs a race with a concurrent run rather than
-    // overwriting a month someone may already have printed.
-    expect(options).toEqual({
-      onConflict: "tenant_id,period_month",
-      ignoreDuplicates: true,
-    });
+    // The DO NOTHING under (tenant_id, period_month) — asserted against the
+    // helper's SQL in tests/db-admin.test.ts — absorbs a race with a
+    // concurrent run rather than overwriting a month someone may have printed.
   });
 
   it("a second run writes nothing — a frozen month is never rewritten", async () => {
@@ -402,14 +398,14 @@ describe("closeMonth — closing is idempotent", () => {
     const outcome = await closeMonth("tenant-1", 2026, 6, "auto");
 
     expect(outcome).toBe("exists");
-    expect(upsert).not.toHaveBeenCalled();
+    expect(insertPeriodSnapshotIfAbsent).not.toHaveBeenCalled();
     // It does not even read the month back: nothing can be recomputed.
     expect(mocked.closedMonthInput).not.toHaveBeenCalled();
   });
 
   it("reports a failed write instead of claiming the month was closed", async () => {
     mocked.closedMonths.mockResolvedValue(new Set<string>());
-    upsert.mockResolvedValueOnce({ error: { message: "boom" } } as never);
+    insertPeriodSnapshotIfAbsent.mockRejectedValueOnce(new Error("boom"));
 
     expect(await closeMonth("tenant-1", 2026, 6, "auto")).toBe("failed");
   });
@@ -419,7 +415,7 @@ describe("closeMonth — closing is idempotent", () => {
     mocked.closedMonthInput.mockRejectedValueOnce(new Error("database unavailable"));
 
     expect(await closeMonth("tenant-1", 2026, 6, "auto")).toBe("failed");
-    expect(upsert).not.toHaveBeenCalled();
+    expect(insertPeriodSnapshotIfAbsent).not.toHaveBeenCalled();
   });
 
   it("closes each tenant and advances only one backfill month per run", async () => {

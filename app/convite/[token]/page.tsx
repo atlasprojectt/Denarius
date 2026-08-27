@@ -4,7 +4,7 @@ import { LogoWordmark } from "@/components/domain/logo";
 import { Button } from "@/components/ui/button";
 import { invitationState } from "@/lib/invitations/policy";
 import { hashToken } from "@/lib/invitations/token";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { findInvitationByTokenHash } from "@/lib/db/admin";
 
 import { BrandPanel } from "../../(auth)/_components/brand-panel";
 import { AcceptForm } from "./_components/accept-form";
@@ -18,14 +18,6 @@ const copy = {
   deadBody:
     "Este link expirou, já foi usado ou foi revogado. Peça um novo convite ao administrador da empresa.",
   login: "Ir para o login",
-};
-
-type InvitationRow = {
-  email: string;
-  expires_at: string;
-  accepted_at: string | null;
-  revoked_at: string | null;
-  tenant: { name: string } | null;
 };
 
 function Shell({ children }: { children: React.ReactNode }) {
@@ -51,13 +43,12 @@ export default async function InvitePage({
 }) {
   const { token } = await params;
 
-  const admin = createAdminClient();
-  const { data } = await admin
-    .from("invitation")
-    .select("email, expires_at, accepted_at, revoked_at, tenant:tenant_id(name)")
-    .eq("token_hash", hashToken(token))
-    .maybeSingle();
-  const invitation = data as InvitationRow | null;
+  // Only the HASH of the token reaches the database — the plaintext token is
+  // never stored, logged or bound into a query. A read failure renders the
+  // same "dead link" page the old unchecked-error path produced.
+  const invitation = await findInvitationByTokenHash(hashToken(token)).catch(
+    () => null,
+  );
 
   const usable =
     invitation !== null &&
@@ -89,7 +80,7 @@ export default async function InvitePage({
       <AcceptForm
         token={token}
         email={invitation.email}
-        companyName={invitation.tenant?.name ?? "sua empresa"}
+        companyName={invitation.tenant_name ?? "sua empresa"}
       />
     </Shell>
   );

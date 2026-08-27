@@ -4,12 +4,29 @@ import { revalidatePath } from "next/cache";
 
 import { recordAudit, recordAuditBatch } from "@/lib/audit/log";
 import { requireAdmin } from "@/lib/auth/session";
+import {
+  deleteBudgetReturning,
+  filterOwnedTeamIds,
+  findBudgetForScope,
+  findBudgetsForPeriod,
+  findTenantDisplayCurrency,
+  insertBudget,
+  isOwnedTeam,
+  updateBudgetById,
+  type DeletedBudget,
+} from "@/lib/db/admin";
 import { monthStartUtc } from "@/lib/engine/period";
 import { fetchUsdRate } from "@/lib/fx/rate";
 import { dbFailure, logFailure } from "@/lib/logging/server-log";
-import { createAdminClient } from "@/lib/supabase/admin";
-import { isOwnedTeam } from "@/lib/teams/queries";
 import { budgetDeleteSchema, budgetSchema, fieldErrorsOf } from "@/lib/validation";
+
+// Postgres errors arrive as throws with a `.code`; this keeps the dbFailure()
+// log lines carrying the same `code` field the PostgREST path logged.
+function errorCodeOf(cause: unknown): { code?: string | null } {
+  return {
+    code: ((cause as { code?: unknown } | null)?.code as string | undefined) ?? null,
+  };
+}
 
 export type BudgetFormState = {
   error?: string;
@@ -54,65 +71,59 @@ export async function upsertBudget(
 
   const { scope, teamId, amount, warnPct } = parsed.data;
   const { tenantId } = auth.session;
-  const admin = createAdminClient();
   const period = monthStartUtc();
   const thresholds = [warnPct / 100, 1.0];
 
   // Resolve the tenant currency (budget amount is in the display currency) and,
   // for team scope, verify the team belongs to this tenant.
-  const [tenantResult, ownedTeam] = await Promise.all([
-    admin.from("tenant").select("display_currency").eq("id", tenantId).maybeSingle(),
+  const [currencyResult, ownedTeam] = await Promise.all([
+    findTenantDisplayCurrency(tenantId).then(
+      (currency) => ({ ok: true as const, currency }),
+      (cause: unknown) => ({ ok: false as const, cause }),
+    ),
     scope === "team"
-      ? isOwnedTeam(admin, tenantId, teamId)
+      ? isOwnedTeam(tenantId, teamId)
       : Promise.resolve(true),
   ]);
-  if (tenantResult.error) {
+  if (!currencyResult.ok) {
     logFailure("budget.save", tenantId, {
       step: "currency",
-      ...dbFailure(tenantResult.error),
+      ...dbFailure(errorCodeOf(currencyResult.cause)),
     });
     return { error: "Não foi possível salvar. Tente novamente." };
   }
   if (scope === "team" && !ownedTeam) return { error: "Escolha um time válido." };
-  const tenant = tenantResult.data;
-  const currency =
-    (tenant as { display_currency: string } | null)?.display_currency ?? "BRL";
+  // Data default: a missing tenant row reads as the day-zero BRL (#23 posture).
+  const currency = currencyResult.currency ?? "BRL";
 
   // Existing budget for this scope + period? Edit it (keeping the frozen rate);
   // otherwise create it and freeze the rate now.
-  const existingQuery = admin
-    .from("budget")
-    // The previous amount is what makes the audit entry evidence rather than a
-    // notification: "changed from X to Y" is the auditable substance (#73).
-    .select("id, amount")
-    .eq("tenant_id", tenantId)
-    .eq("scope", scope)
-    .eq("period_month", period);
-  const { data: existingData, error: existingError } = await (teamId === null
-    ? existingQuery.is("team_id", null)
-    : existingQuery.eq("team_id", teamId)
-  ).maybeSingle();
-  if (existingError) {
+  let existing: { id: string; amount: number } | null;
+  try {
+    existing = await findBudgetForScope(tenantId, scope, teamId, period);
+  } catch (cause) {
     logFailure("budget.save", tenantId, {
       step: "existing_budget",
-      ...dbFailure(existingError),
+      ...dbFailure(errorCodeOf(cause)),
     });
     return { error: "Não foi possível salvar. Tente novamente." };
   }
-  const existing = existingData as { id: string; amount: number } | null;
   const auditTarget = scope === "org" ? "Empresa" : teamId;
 
   if (existing) {
-    const { error, count } = await admin
-      .from("budget")
-      .update(
-        { amount, thresholds, updated_at: new Date().toISOString() },
-        { count: "exact" },
-      )
-      .eq("id", existing.id)
-      .eq("tenant_id", tenantId);
-    if (error || count === 0) {
-      logFailure("budget.update", tenantId, { scope, matched: count ?? 0, ...dbFailure(error) });
+    let matched: number;
+    try {
+      matched = await updateBudgetById(existing.id, tenantId, {
+        amount,
+        thresholds,
+        updated_at: new Date().toISOString(),
+      });
+    } catch (cause) {
+      logFailure("budget.update", tenantId, { scope, matched: 0, ...dbFailure(errorCodeOf(cause)) });
+      return { error: "Não foi possível salvar. Tente novamente." };
+    }
+    if (matched === 0) {
+      logFailure("budget.update", tenantId, { scope, matched: 0, ...dbFailure(null) });
       return { error: "Não foi possível salvar. Tente novamente." };
     }
     await recordAudit(auth.session, "budget.updated", {
@@ -121,20 +132,21 @@ export async function upsertBudget(
     });
   } else {
     const frozen = await fetchUsdRate(currency);
-    const { error } = await admin.from("budget").insert({
-      tenant_id: tenantId,
-      scope,
-      team_id: teamId,
-      period_month: period,
-      amount,
-      currency,
-      thresholds,
-      frozen_fx_rate: frozen?.rate ?? null,
-      fx_rate_source: frozen?.source ?? null,
-      fx_rate_date: frozen?.date ?? null,
-    });
-    if (error) {
-      logFailure("budget.create", tenantId, { scope, ...dbFailure(error) });
+    try {
+      await insertBudget({
+        tenant_id: tenantId,
+        scope,
+        team_id: teamId,
+        period_month: period,
+        amount,
+        currency,
+        thresholds,
+        frozen_fx_rate: frozen?.rate ?? null,
+        fx_rate_source: frozen?.source ?? null,
+        fx_rate_date: frozen?.date ?? null,
+      });
+    } catch (cause) {
+      logFailure("budget.create", tenantId, { scope, ...dbFailure(errorCodeOf(cause)) });
       return { error: "Não foi possível salvar. Tente novamente." };
     }
     await recordAudit(auth.session, "budget.created", {
@@ -183,7 +195,6 @@ export async function saveBudgetsBatch(
   const auth = await requireAdmin();
   if (auth.error !== undefined) return { error: auth.error };
   const { tenantId } = auth.session;
-  const admin = createAdminClient();
   const period = monthStartUtc();
 
   // 1. Parse + validate EVERY submitted row before touching the database.
@@ -236,20 +247,17 @@ export async function saveBudgetsBatch(
   // 2. Tenant ownership for every team row (one query, not N).
   const teamIds = rows.filter((r) => r.teamId !== null).map((r) => r.teamId as string);
   if (teamIds.length > 0) {
-    const { data: ownedData, error: ownedError } = await admin
-      .from("team")
-      .select("id")
-      .eq("tenant_id", tenantId)
-      .eq("is_unattributed", false)
-      .in("id", teamIds);
-    if (ownedError) {
+    let ownedIds: string[];
+    try {
+      ownedIds = await filterOwnedTeamIds(tenantId, teamIds);
+    } catch (cause) {
       logFailure("budget.batch", tenantId, {
         step: "team_ownership",
-        ...dbFailure(ownedError),
+        ...dbFailure(errorCodeOf(cause)),
       });
       return { error: "Não foi possível salvar os orçamentos. Tente novamente." };
     }
-    const owned = new Set(((ownedData ?? []) as { id: string }[]).map((t) => t.id));
+    const owned = new Set(ownedIds);
     for (const row of rows) {
       if (row.teamId !== null && !owned.has(row.teamId)) {
         return { error: "Escolha um time válido." };
@@ -258,33 +266,30 @@ export async function saveBudgetsBatch(
   }
 
   // 3. Split update vs insert against the budgets governing this period.
-  const [tenantResult, existingResult] = await Promise.all([
-    admin.from("tenant").select("display_currency").eq("id", tenantId).maybeSingle(),
-    admin
-      .from("budget")
-      .select("id, scope, team_id, amount, thresholds")
-      .eq("tenant_id", tenantId)
-      .eq("period_month", period),
+  const [currencyResult, existingResult] = await Promise.allSettled([
+    findTenantDisplayCurrency(tenantId),
+    findBudgetsForPeriod(tenantId, period),
   ]);
-  if (tenantResult.error || existingResult.error) {
+  if (
+    currencyResult.status === "rejected" ||
+    existingResult.status === "rejected"
+  ) {
     logFailure("budget.batch", tenantId, {
       step: "load_context",
-      tenantCode: tenantResult.error?.code ?? null,
-      budgetCode: existingResult.error?.code ?? null,
+      tenantCode:
+        currencyResult.status === "rejected"
+          ? (errorCodeOf(currencyResult.reason).code ?? null)
+          : null,
+      budgetCode:
+        existingResult.status === "rejected"
+          ? (errorCodeOf(existingResult.reason).code ?? null)
+          : null,
     });
     return { error: "Não foi possível salvar os orçamentos. Tente novamente." };
   }
-  const tenant = tenantResult.data;
-  const existingData = existingResult.data;
-  const currency =
-    (tenant as { display_currency: string } | null)?.display_currency ?? "BRL";
-  const existing = (existingData ?? []) as {
-    id: string;
-    scope: string;
-    team_id: string | null;
-    amount: number;
-    thresholds: (number | string)[];
-  }[];
+  // Data default: a missing tenant row reads as the day-zero BRL (#23 posture).
+  const currency = currencyResult.value ?? "BRL";
+  const existing = existingResult.value;
   const existingRow = (scope: string, teamId: string | null) =>
     existing.find((b) => b.scope === scope && b.team_id === teamId) ?? null;
 
@@ -316,21 +321,29 @@ export async function saveBudgetsBatch(
     const label = row.scope === "org" ? "Empresa" : row.key;
     const target = row.scope === "org" ? "Empresa" : row.teamId;
     if (previous !== null) {
-      const { error, count } = await admin
-        .from("budget")
-        .update(
-          { amount: row.amount, thresholds: row.thresholds, updated_at: now },
-          { count: "exact" },
-        )
-        .eq("id", previous.id)
-        .eq("tenant_id", tenantId);
-      const warnPct = warnPctOf(row.thresholds);
-      const previousWarnPct = warnPctOf(previous.thresholds);
-      if (error || count === 0) {
+      let matched: number;
+      try {
+        matched = await updateBudgetById(previous.id, tenantId, {
+          amount: row.amount,
+          thresholds: row.thresholds,
+          updated_at: now,
+        });
+      } catch (cause) {
         logFailure("budget.batch_update", tenantId, {
           scope: row.scope,
-          matched: count ?? 0,
-          ...dbFailure(error),
+          matched: 0,
+          ...dbFailure(errorCodeOf(cause)),
+        });
+        failed.push(label);
+        continue;
+      }
+      const warnPct = warnPctOf(row.thresholds);
+      const previousWarnPct = warnPctOf(previous.thresholds);
+      if (matched === 0) {
+        logFailure("budget.batch_update", tenantId, {
+          scope: row.scope,
+          matched: 0,
+          ...dbFailure(null),
         });
         failed.push(label);
       } else if (previous.amount !== row.amount || previousWarnPct !== warnPct) {
@@ -354,27 +367,28 @@ export async function saveBudgetsBatch(
         });
       }
     } else {
-      const { error } = await admin.from("budget").insert({
-        tenant_id: tenantId,
-        scope: row.scope,
-        team_id: row.teamId,
-        period_month: period,
-        amount: row.amount,
-        currency,
-        thresholds: row.thresholds,
-        frozen_fx_rate: frozen?.rate ?? null,
-        fx_rate_source: frozen?.source ?? null,
-        fx_rate_date: frozen?.date ?? null,
-      });
-      if (error) {
-        logFailure("budget.batch_create", tenantId, { scope: row.scope, ...dbFailure(error) });
-        failed.push(label);
-      } else {
-        audited.push({
-          action: "budget.created",
-          context: { target, detail: { scope: row.scope, amount: row.amount, currency } },
+      try {
+        await insertBudget({
+          tenant_id: tenantId,
+          scope: row.scope,
+          team_id: row.teamId,
+          period_month: period,
+          amount: row.amount,
+          currency,
+          thresholds: row.thresholds,
+          frozen_fx_rate: frozen?.rate ?? null,
+          fx_rate_source: frozen?.source ?? null,
+          fx_rate_date: frozen?.date ?? null,
         });
+      } catch (cause) {
+        logFailure("budget.batch_create", tenantId, { scope: row.scope, ...dbFailure(errorCodeOf(cause)) });
+        failed.push(label);
+        continue;
       }
+      audited.push({
+        action: "budget.created",
+        context: { target, detail: { scope: row.scope, amount: row.amount, currency } },
+      });
     }
   }
 
@@ -402,29 +416,21 @@ export async function deleteBudget(
   if (!parsed.success) return { error: parsed.error.issues[0].message };
 
   const { tenantId } = auth.session;
-  const admin = createAdminClient();
 
   // Returning the deleted row costs nothing extra and is what the audit entry
   // needs: which budget was removed, and for how much (#73).
-  const { data: removed, error, count } = await admin
-    .from("budget")
-    .delete({ count: "exact" })
-    .eq("id", parsed.data.budgetId)
-    .eq("tenant_id", tenantId)
-    .select("scope, team_id, amount");
-  if (error) {
-    logFailure("budget.delete", tenantId, dbFailure(error));
+  let outcome: { count: number; row: DeletedBudget | null };
+  try {
+    outcome = await deleteBudgetReturning(parsed.data.budgetId, tenantId);
+  } catch (cause) {
+    logFailure("budget.delete", tenantId, dbFailure(errorCodeOf(cause)));
     return { error: "Não foi possível remover. Tente novamente." };
   }
   // Idempotent: repeated submit / cross-tenant id match nothing — the desired
   // end state already holds (QA-05 destructive-action contract).
-  if (count === 0) return { success: "Orçamento já havia sido removido." };
+  if (outcome.count === 0) return { success: "Orçamento já havia sido removido." };
 
-  const deleted = ((removed ?? []) as {
-    scope: string;
-    team_id: string | null;
-    amount: number;
-  }[])[0];
+  const deleted = outcome.row;
   if (deleted) {
     await recordAudit(auth.session, "budget.deleted", {
       target: deleted.scope === "org" ? "Empresa" : deleted.team_id,

@@ -3,11 +3,14 @@ import "server-only";
 import { NextResponse } from "next/server";
 
 import { monthStartUtc } from "@/lib/engine/period";
+import {
+  listActiveProviderConnections,
+  listBudgetTenantIds,
+} from "@/lib/db/admin";
 import { dbFailure, logFailure, logOk } from "@/lib/logging/server-log";
 import { sendBudgetAlerts } from "@/lib/notify/alerts";
 import { emailChannel } from "@/lib/notify/channel";
 import { closePeriods } from "@/lib/snapshot/close";
-import { createAdminClient } from "@/lib/supabase/admin";
 import { runProviderSync, type ProviderName } from "@/lib/sync/provider-sync";
 
 // Daily sync of every tenant's active connections — the one deliberate
@@ -25,6 +28,14 @@ export const maxDuration = 60;
 
 type ConnectionRow = { tenant_id: string; provider: ProviderName };
 
+// Postgres errors arrive as throws with a `.code`; this keeps the dbFailure()
+// log lines carrying the same `code` field the PostgREST path logged.
+function errorCodeOf(cause: unknown): { code?: string | null } {
+  return {
+    code: ((cause as { code?: unknown } | null)?.code as string | undefined) ?? null,
+  };
+}
+
 function authorized(request: Request): boolean {
   const secret = process.env.CRON_SECRET;
   // Fail closed: with no secret configured the route is disabled, never open.
@@ -37,17 +48,14 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  const admin = createAdminClient();
-  const { data, error } = await admin
-    .from("provider_connection")
-    .select("tenant_id, provider")
-    .eq("status", "active");
-  if (error) {
-    logFailure("cron.sync", null, dbFailure(error));
+  let connections: ConnectionRow[];
+  try {
+    connections = (await listActiveProviderConnections()) as ConnectionRow[];
+  } catch (cause) {
+    logFailure("cron.sync", null, dbFailure(errorCodeOf(cause)));
     return NextResponse.json({ error: "could not list connections" }, { status: 500 });
   }
 
-  const connections = (data ?? []) as ConnectionRow[];
   let synced = 0;
   let failed = 0;
   // Sequential: keeps provider rate limits and DB load predictable; the daily
@@ -60,19 +68,17 @@ export async function GET(request: Request) {
 
   // Event alerts run on budgets, not connections: a threshold can be crossed
   // by seat accrual alone, so every tenant budgeted this period is checked.
-  const { data: budgetData, error: budgetError } = await admin
-    .from("budget")
-    .select("tenant_id")
-    .eq("period_month", monthStartUtc());
-  if (budgetError) {
+  let budgetTenants: string[] = [];
+  let budgetFailed = false;
+  try {
+    budgetTenants = [...new Set(await listBudgetTenantIds(monthStartUtc()))];
+  } catch (cause) {
+    budgetFailed = true;
     logFailure("cron.sync", null, {
       step: "list_budget_tenants",
-      ...dbFailure(budgetError),
+      ...dbFailure(errorCodeOf(cause)),
     });
   }
-  const budgetTenants = [
-    ...new Set(((budgetData ?? []) as { tenant_id: string }[]).map((b) => b.tenant_id)),
-  ];
 
   const channel = emailChannel();
   const alerts = { tenants: budgetTenants.length, sent: 0, failed: 0, undeliverable: 0 };
@@ -100,13 +106,13 @@ export async function GET(request: Request) {
     alertsSent: alerts.sent,
     alertsFailed: alerts.failed,
     alertsUndeliverable: alerts.undeliverable,
-    budgetQueryFailed: budgetError !== null,
+    budgetQueryFailed: budgetFailed,
     snapshotTenants: closed.tenants,
     snapshotsCreated: closed.created,
     snapshotsBackfilled: closed.backfilled,
     snapshotsFailed: closed.failed,
   };
-  if (failed > 0 || alerts.failed > 0 || closed.failed > 0 || budgetError) {
+  if (failed > 0 || alerts.failed > 0 || closed.failed > 0 || budgetFailed) {
     logFailure("cron.sync", null, summary);
   } else {
     logOk("cron.sync", null, summary);

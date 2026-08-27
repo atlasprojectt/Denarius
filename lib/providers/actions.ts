@@ -7,6 +7,11 @@ import { recordAudit } from "@/lib/audit/log";
 import { requireAdmin } from "@/lib/auth/session";
 import { providerFor } from "@/lib/connectors";
 import { encryptCredential } from "@/lib/crypto";
+import {
+  findProviderConnectionStatus,
+  revokeProviderConnection,
+  upsertProviderConnectionCredential,
+} from "@/lib/db/admin";
 import { money } from "@/lib/money";
 import {
   dbFailure,
@@ -14,7 +19,6 @@ import {
   logSkipped,
   logThrown,
 } from "@/lib/logging/server-log";
-import { createAdminClient } from "@/lib/supabase/admin";
 import { runProviderSync, type ProviderName } from "@/lib/sync/provider-sync";
 import { anthropicKeySchema, openAiKeySchema } from "@/lib/validation";
 
@@ -54,6 +58,14 @@ function revalidateConsumers(): void {
   revalidatePath("/", "layout");
 }
 
+// Postgres errors arrive as throws with a `.code`; this keeps the dbFailure()
+// log lines carrying the same `code` field the PostgREST path logged.
+function errorCodeOf(cause: unknown): { code?: string | null } {
+  return {
+    code: ((cause as { code?: unknown } | null)?.code as string | undefined) ?? null,
+  };
+}
+
 /** Save-or-rotate: upserting the (tenant, provider) row IS the rotation. */
 async function saveKey(
   providerName: ProviderName,
@@ -82,25 +94,19 @@ async function saveKey(
     };
   }
 
-  const admin = createAdminClient();
-
   // Save or rotate? The row's existence answers it — never the ciphertext,
   // which is not read here and is not needed to tell the two apart (#73).
-  const { data: before, error: beforeError } = await admin
-    .from("provider_connection")
-    .select("status")
-    .eq("tenant_id", tenantId)
-    .eq("provider", providerName)
-    .maybeSingle();
-  if (beforeError) {
+  let beforeStatus: string | null;
+  try {
+    beforeStatus = await findProviderConnectionStatus(tenantId, providerName);
+  } catch (cause) {
     logFailure("provider.inspect", tenantId, {
       provider: providerName,
-      ...dbFailure(beforeError),
+      ...dbFailure(errorCodeOf(cause)),
     });
     return { error: copy.saveFailed };
   }
-  const isRotation =
-    (before as { status: string } | null)?.status === "active";
+  const isRotation = beforeStatus === "active";
 
   let encryptedCredential: string;
   try {
@@ -113,23 +119,21 @@ async function saveKey(
     return { error: copy.saveFailed };
   }
 
-  const { error } = await admin.from("provider_connection").upsert(
-    {
-      tenant_id: tenantId,
-      provider: providerName,
-      // Bound to the row it is stored in (#75): a blob moved to another
-      // tenant's or another provider's row fails to decrypt.
-      encrypted_credential: encryptedCredential,
-      status: "active",
-      last_sync_error: null,
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: "tenant_id,provider" },
-  );
-  if (error) {
+  try {
+    await upsertProviderConnectionCredential(
+      {
+        tenant_id: tenantId,
+        provider: providerName,
+        // Bound to the row it is stored in (#75): a blob moved to another
+        // tenant's or another provider's row fails to decrypt.
+        encrypted_credential: encryptedCredential,
+      },
+      new Date().toISOString(),
+    );
+  } catch (cause) {
     logFailure("provider.save", tenantId, {
       provider: providerName,
-      ...dbFailure(error),
+      ...dbFailure(errorCodeOf(cause)),
     });
     return { error: copy.saveFailed };
   }
@@ -167,27 +171,21 @@ async function revokeKey(
   const auth = await requireAdmin();
   if (auth.error !== undefined) return { error: auth.error };
 
-  const admin = createAdminClient();
-  const { error, count } = await admin
-    .from("provider_connection")
-    .update(
-      {
-        status: "revoked",
-        encrypted_credential: null, // the ciphertext is discarded, not kept
-        updated_at: new Date().toISOString(),
-      },
-      { count: "exact" },
-    )
-    .eq("tenant_id", auth.session.tenantId)
-    .eq("provider", providerName);
-  if (error) {
+  let revokedCount: number;
+  try {
+    revokedCount = await revokeProviderConnection(
+      auth.session.tenantId,
+      providerName,
+      new Date().toISOString(),
+    );
+  } catch (cause) {
     logFailure("provider.revoke", auth.session.tenantId, {
       provider: providerName,
-      ...dbFailure(error),
+      ...dbFailure(errorCodeOf(cause)),
     });
     return { error: copy.revokeFailed };
   }
-  if (count === 0) {
+  if (revokedCount === 0) {
     logSkipped("provider.revoke", auth.session.tenantId, {
       provider: providerName,
       reason: "no active connection",

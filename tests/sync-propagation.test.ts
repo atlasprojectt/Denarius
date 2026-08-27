@@ -60,65 +60,48 @@ function resetState(): void {
   state.keyringThrows = false;
 }
 
-// Minimal chainable query stub: records writes, answers the exact reads
-// runProviderSync performs, and resolves like the supabase-js builder.
-function makeQuery(table: string) {
-  const ops: { name: string; args: unknown[] }[] = [];
-  const push =
-    (name: string) =>
-    (...args: unknown[]) => {
-      ops.push({ name, args });
-      return query;
-    };
-  const resolve = () => {
-    const has = (name: string) => ops.some((o) => o.name === name);
-    if (table === "provider_connection" && has("update")) {
-      const payload = ops.find((o) => o.name === "update")!.args[0] as Record<
-        string,
-        unknown
-      >;
-      state.log.connectionUpdates.push(payload);
-      return { data: null, error: null };
-    }
-    if (table === "provider_connection") {
-      return { data: state.connection, error: null };
-    }
-    if (table === "tenant") {
-      return { data: { store_per_person: state.storePerPerson }, error: null };
-    }
-    if (table === "model_price") return { data: state.prices, error: null };
-    if (table === "usage_daily" && has("delete")) {
-      state.log.usageDeleted = true;
-      return { data: null, error: null };
-    }
-    if (table === "usage_daily" && has("upsert")) {
-      state.log.usageRows = ops.find((o) => o.name === "upsert")!
-        .args[0] as Record<string, unknown>[];
-      return { data: null, error: null };
-    }
-    if (table === "cost_daily" && has("upsert")) {
-      state.log.costRows = ops.find((o) => o.name === "upsert")!
-        .args[0] as Record<string, unknown>[];
-      return { data: null, error: null };
-    }
-    return { data: null, error: null };
-  };
-  const query = {
-    select: push("select"),
-    eq: push("eq"),
-    gte: push("gte"),
-    update: push("update"),
-    upsert: push("upsert"),
-    delete: push("delete"),
-    maybeSingle: () => Promise.resolve(resolve()),
-    then: (onFulfilled: (value: unknown) => unknown) =>
-      Promise.resolve(resolve()).then(onFulfilled),
-  };
-  return query;
-}
-
-vi.mock("@/lib/supabase/admin", () => ({
-  createAdminClient: () => ({ from: (table: string) => makeQuery(table) }),
+// Minimal in-memory stand-in for the Neon admin helpers: records writes,
+// answers the exact reads runProviderSync performs.
+vi.mock("@/lib/db/admin", () => ({
+  findProviderConnectionForSync: async () => state.connection,
+  findTenantStorePerPerson: async () =>
+    state.connection === null ? null : state.storePerPerson,
+  listModelPrices: async () =>
+    state.prices.map((p) => ({
+      provider: p.provider,
+      model: p.model,
+      inputPricePer1M: p.input_price_per_1m,
+      outputPricePer1M: p.output_price_per_1m,
+      effectiveDate: p.effective_date,
+    })),
+  deleteUsageDailyFrom: async () => {
+    state.log.usageDeleted = true;
+  },
+  upsertUsageDaily: async (rows: Record<string, unknown>[]) => {
+    state.log.usageRows = rows;
+  },
+  upsertCostDaily: async (rows: Record<string, unknown>[]) => {
+    state.log.costRows = rows;
+  },
+  markProviderConnectionSyncError: async (
+    _id: string,
+    message: string,
+    updatedAt: string,
+  ) => {
+    state.log.connectionUpdates.push({
+      status: "error",
+      last_sync_error: message,
+      updated_at: updatedAt,
+    });
+  },
+  activateProviderConnectionSync: async (_id: string, syncedAt: string) => {
+    state.log.connectionUpdates.push({
+      status: "active",
+      last_sync_at: syncedAt,
+      last_sync_error: null,
+      updated_at: syncedAt,
+    });
+  },
 }));
 // Hoisted with the mock factory: a top-level class declaration is not yet
 // initialised when vi.mock runs.

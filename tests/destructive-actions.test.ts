@@ -49,29 +49,37 @@ vi.mock("@/lib/audit/log", () => ({
   recordAuditBatch: async () => {},
 }));
 
-vi.mock("@/lib/supabase/admin", () => ({
-  createAdminClient: () => ({
-    from: (table: string) => {
-      const query = {
-        delete: () => query,
-        update: () => query,
-        select: () => query,
-        eq: (column: string, value: unknown) => {
-          state.filters.push({ table, column, value });
-          return query;
-        },
-        maybeSingle: () =>
-          Promise.resolve({ data: null, error: null }),
-        then: (onFulfilled: (value: unknown) => unknown) =>
-          Promise.resolve({
-            data: null,
-            error: state.deleteError,
-            count: state.deleteError ? null : state.deleteCount,
-          }).then(onFulfilled),
-      };
-      return query;
-    },
-  }),
+// Both destructive actions now run through the Neon admin seam (stages 4-5);
+// the in-memory helpers record the scoping so the tenant-isolation assertions
+// below keep holding against the new seam.
+vi.mock("@/lib/db/admin", () => ({
+  isOwnedTeam: async () => true,
+  insertSubscription: async () => {},
+  updateSubscriptionById: async () => 1,
+  deleteSubscriptionReturning: async (id: string, tenantId: string) => {
+    state.filters.push({ table: "subscription", column: "id", value: id });
+    state.filters.push({ table: "subscription", column: "tenant_id", value: tenantId });
+    if (state.deleteError) throw Object.assign(new Error("db failure"), state.deleteError);
+    return {
+      count: state.deleteCount,
+      row:
+        state.deleteCount > 0
+          ? { tool: "Figma", seat_count: 5, unit_price: 10 }
+          : null,
+    };
+  },
+  deleteBudgetReturning: async (id: string, tenantId: string) => {
+    state.filters.push({ table: "budget", column: "id", value: id });
+    state.filters.push({ table: "budget", column: "tenant_id", value: tenantId });
+    if (state.deleteError) throw Object.assign(new Error("db failure"), state.deleteError);
+    return {
+      count: state.deleteCount,
+      row:
+        state.deleteCount > 0
+          ? { scope: "org", team_id: null, amount: 100 }
+          : null,
+    };
+  },
 }));
 
 import { deleteSubscription } from "@/lib/subscriptions/actions";

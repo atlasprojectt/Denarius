@@ -82,56 +82,28 @@ vi.mock("@/lib/fx/rate", () => ({
   },
 }));
 
-vi.mock("@/lib/supabase/admin", () => ({
-  createAdminClient: () => ({
-    from: (table: string) => {
-      const ops: { name: string; args: unknown[] }[] = [];
-      const push =
-        (name: string) =>
-        (...args: unknown[]) => {
-          ops.push({ name, args });
-          return query;
-        };
-      const resolve = () => {
-        if (table === "team") {
-          return {
-            data: state.ownedTeams.map((id) => ({ id })),
-            error: null,
-          };
-        }
-        if (table === "tenant") {
-          return { data: { display_currency: "BRL" }, error: null };
-        }
-        if (table === "budget" && ops.some((o) => o.name === "select")) {
-          return { data: state.existing, error: null };
-        }
-        if (table === "budget" && ops.some((o) => o.name === "update")) {
-          const payload = ops.find((o) => o.name === "update")!.args[0] as Row;
-          const id = ops.find((o) => o.name === "eq" && o.args[0] === "id")!
-            .args[1] as string;
-          if (state.updateFails) return { data: null, error: { code: "XX" }, count: null };
-          state.updates.push({ id, payload });
-          return { data: null, error: null, count: 1 };
-        }
-        if (table === "budget" && ops.some((o) => o.name === "insert")) {
-          state.inserts.push(ops.find((o) => o.name === "insert")!.args[0] as Row);
-          return { data: null, error: null };
-        }
-        return { data: null, error: null };
-      };
-      const query = {
-        select: push("select"),
-        insert: push("insert"),
-        update: push("update"),
-        eq: push("eq"),
-        in: push("in"),
-        maybeSingle: () => Promise.resolve(resolve()),
-        then: (onFulfilled: (value: unknown) => unknown) =>
-          Promise.resolve(resolve()).then(onFulfilled),
-      };
-      return query;
-    },
-  }),
+// The batch now runs through the Neon admin seam (stage 5); the in-memory
+// helpers record exactly what the old Supabase stub captured.
+vi.mock("@/lib/db/admin", () => ({
+  isOwnedTeam: async () => true,
+  findTenantDisplayCurrency: async () => "BRL",
+  filterOwnedTeamIds: async (_tenantId: string, teamIds: string[]) =>
+    teamIds.filter((id) => state.ownedTeams.includes(id)),
+  findBudgetForScope: async () => null,
+  findBudgetsForPeriod: async () => state.existing.map((e) => ({ ...e })),
+  updateBudgetById: async (
+    id: string,
+    _tenantId: string,
+    payload: Record<string, unknown>,
+  ) => {
+    if (state.updateFails) throw Object.assign(new Error("db failure"), { code: "XX" });
+    state.updates.push({ id, payload });
+    return 1;
+  },
+  insertBudget: async (row: Row) => {
+    state.inserts.push(row);
+  },
+  deleteBudgetReturning: async () => ({ count: 0, row: null }),
 }));
 
 import { saveBudgetsBatch } from "@/lib/budgets/actions";

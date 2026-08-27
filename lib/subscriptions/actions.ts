@@ -4,9 +4,14 @@ import { revalidatePath } from "next/cache";
 
 import { recordAudit } from "@/lib/audit/log";
 import { requireAdmin } from "@/lib/auth/session";
+import {
+  deleteSubscriptionReturning,
+  findTenantDisplayCurrency,
+  insertSubscription,
+  isOwnedTeam,
+  updateSubscriptionById,
+} from "@/lib/db/admin";
 import { dbFailure, logFailure } from "@/lib/logging/server-log";
-import { createAdminClient } from "@/lib/supabase/admin";
-import { isOwnedTeam } from "@/lib/teams/queries";
 import {
   fieldErrorsOf,
   subscriptionDeleteSchema,
@@ -14,11 +19,25 @@ import {
   subscriptionUpdateSchema,
 } from "@/lib/validation";
 
+// Postgres errors arrive as throws with a `.code`; this keeps the dbFailure()
+// log lines carrying the same `code` field the PostgREST path logged.
+function errorCodeOf(cause: unknown): { code?: string | null } {
+  return {
+    code: ((cause as { code?: unknown } | null)?.code as string | undefined) ?? null,
+  };
+}
+
 export type SubscriptionFormState = {
   error?: string;
   success?: string;
   /** Field-name → message, for the unified inline validation (S2/QA-06). */
   fieldErrors?: Record<string, string>;
+};
+
+type DeletedSubscriptionRow = {
+  tool: string;
+  seat_count: number;
+  unit_price: number;
 };
 
 /** An empty team select ("") means shared/company-wide → stored as null. */
@@ -49,36 +68,35 @@ export async function createSubscription(
   }
 
   const { tenantId } = auth.session;
-  const admin = createAdminClient();
 
   // Independent reads → parallel. Amount is stored in the tenant's display
   // currency (day-zero, pre-connectors).
-  const [ownedTeam, { data: tenant, error: tenantError }] = await Promise.all([
-    isOwnedTeam(admin, tenantId, parsed.data.teamId),
-    admin
-      .from("tenant")
-      .select("display_currency")
-      .eq("id", tenantId)
-      .maybeSingle(),
+  const [ownedTeam, currencyResult] = await Promise.all([
+    isOwnedTeam(tenantId, parsed.data.teamId),
+    findTenantDisplayCurrency(tenantId).then(
+      (currency) => ({ ok: true as const, currency }),
+      (cause: unknown) => ({ ok: false as const, cause }),
+    ),
   ]);
   if (!ownedTeam) return { error: "Escolha um time válido." };
-  if (tenantError) {
-    logFailure("subscription.currency", tenantId, dbFailure(tenantError));
+  if (!currencyResult.ok) {
+    logFailure("subscription.currency", tenantId, dbFailure(errorCodeOf(currencyResult.cause)));
     return { error: "Não foi possível salvar. Tente novamente." };
   }
-  const currency =
-    (tenant as { display_currency: string } | null)?.display_currency ?? "BRL";
+  // Data default: a missing tenant row reads as the day-zero BRL (#23 posture).
+  const currency = currencyResult.currency ?? "BRL";
 
-  const { error } = await admin.from("subscription").insert({
-    tenant_id: tenantId,
-    tool: parsed.data.tool,
-    seat_count: parsed.data.seatCount,
-    unit_price: parsed.data.unitPrice,
-    currency,
-    team_id: parsed.data.teamId,
-  });
-  if (error) {
-    logFailure("subscription.create", tenantId, dbFailure(error));
+  try {
+    await insertSubscription({
+      tenant_id: tenantId,
+      tool: parsed.data.tool,
+      seat_count: parsed.data.seatCount,
+      unit_price: parsed.data.unitPrice,
+      currency,
+      team_id: parsed.data.teamId,
+    });
+  } catch (cause) {
+    logFailure("subscription.create", tenantId, dbFailure(errorCodeOf(cause)));
     return { error: "Não foi possível salvar. Tente novamente." };
   }
 
@@ -121,15 +139,16 @@ export async function updateSubscription(
   }
 
   const { tenantId } = auth.session;
-  const admin = createAdminClient();
 
-  if (!(await isOwnedTeam(admin, tenantId, parsed.data.teamId))) {
+  if (!(await isOwnedTeam(tenantId, parsed.data.teamId))) {
     return { error: "Escolha um time válido." };
   }
 
-  const { error, count } = await admin
-    .from("subscription")
-    .update(
+  let matched: number;
+  try {
+    matched = await updateSubscriptionById(
+      parsed.data.subscriptionId,
+      tenantId,
       {
         tool: parsed.data.tool,
         seat_count: parsed.data.seatCount,
@@ -137,14 +156,18 @@ export async function updateSubscription(
         team_id: parsed.data.teamId,
         updated_at: new Date().toISOString(),
       },
-      { count: "exact" },
-    )
-    .eq("id", parsed.data.subscriptionId)
-    .eq("tenant_id", tenantId);
-  if (error || count === 0) {
+    );
+  } catch (cause) {
     logFailure("subscription.update", tenantId, {
-      matched: count ?? 0,
-      ...dbFailure(error),
+      matched: 0,
+      ...dbFailure(errorCodeOf(cause)),
+    });
+    return { error: "Não foi possível salvar. Tente novamente." };
+  }
+  if (matched === 0) {
+    logFailure("subscription.update", tenantId, {
+      matched: 0,
+      ...dbFailure(null),
     });
     return { error: "Não foi possível salvar. Tente novamente." };
   }
@@ -175,30 +198,22 @@ export async function deleteSubscription(
   if (!parsed.success) return { error: parsed.error.issues[0].message };
 
   const { tenantId } = auth.session;
-  const admin = createAdminClient();
 
   // The deleted row comes back with the delete — the audit entry needs to name
   // the tool, and a pre-read would cost a round trip for it (#73).
-  const { data: removed, error, count } = await admin
-    .from("subscription")
-    .delete({ count: "exact" })
-    .eq("id", parsed.data.subscriptionId)
-    .eq("tenant_id", tenantId)
-    .select("tool, seat_count, unit_price");
-  if (error) {
-    logFailure("subscription.delete", tenantId, dbFailure(error));
+  let outcome: { count: number; row: DeletedSubscriptionRow | null };
+  try {
+    outcome = await deleteSubscriptionReturning(parsed.data.subscriptionId, tenantId);
+  } catch (cause) {
+    logFailure("subscription.delete", tenantId, dbFailure(errorCodeOf(cause)));
     return { error: "Não foi possível remover. Tente novamente." };
   }
   // Idempotent: a repeated submit (or a cross-tenant id, filtered out by the
   // tenant scope above) matches nothing — the desired end state already holds,
   // so this is not an error (QA-05 destructive-action contract).
-  if (count === 0) return { success: "Assinatura já havia sido removida." };
+  if (outcome.count === 0) return { success: "Assinatura já havia sido removida." };
 
-  const deleted = ((removed ?? []) as {
-    tool: string;
-    seat_count: number;
-    unit_price: number;
-  }[])[0];
+  const deleted = outcome.row;
   if (deleted) {
     await recordAudit(auth.session, "subscription.deleted", {
       target: deleted.tool,

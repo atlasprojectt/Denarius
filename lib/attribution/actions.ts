@@ -4,9 +4,13 @@ import { revalidatePath } from "next/cache";
 
 import { recordAudit } from "@/lib/audit/log";
 import { requireAdmin } from "@/lib/auth/session";
+import {
+  clearProjectMapping,
+  isOwnedTeam,
+  upsertProjectMap,
+  type ProjectMapUpsert,
+} from "@/lib/db/admin";
 import { dbFailure, logFailure } from "@/lib/logging/server-log";
-import { createAdminClient } from "@/lib/supabase/admin";
-import { isOwnedTeam } from "@/lib/teams/queries";
 import { projectMapEntrySchema } from "@/lib/validation";
 
 export type ProjectMapFormState = {
@@ -40,14 +44,19 @@ export async function saveProjectMap(
   const auth = await requireAdmin();
   if (auth.error !== undefined) return { error: auth.error };
   const { tenantId } = auth.session;
-  const admin = createAdminClient();
+
+  // Postgres errors arrive as throws with a `.code`; this keeps the dbFailure()
+  // log lines carrying the same `code` field the PostgREST path logged.
+  const codeOf = (cause: unknown): { code?: string | null } => ({
+    code: ((cause as { code?: unknown } | null)?.code as string | undefined) ?? null,
+  });
 
   // De-duplicate: the responsive form renders each row twice (mobile cards +
   // desktop table), so every field arrives in duplicate — and a duplicated
   // upsert row would make Postgres fail the whole batch ("cannot affect row a
   // second time"). Last occurrence wins; values agree anyway (one shared draft).
   const rows = [...new Set(formData.getAll("project").map((v) => String(v)))];
-  const toUpsert: { tenant_id: string; provider: string; project_id: string; team_id: string; updated_at: string }[] = [];
+  const toUpsert: ProjectMapUpsert[] = [];
   const toClear: { provider: string; projectId: string }[] = [];
   const saved: { key: string; teamId: string | null }[] = [];
   const now = new Date().toISOString();
@@ -69,7 +78,7 @@ export async function saveProjectMap(
     if (parsed.data.teamId === null) {
       toClear.push({ provider: parsed.data.provider, projectId: parsed.data.projectId });
     } else {
-      if (!(await isOwnedTeam(admin, tenantId, parsed.data.teamId))) {
+      if (!(await isOwnedTeam(tenantId, parsed.data.teamId))) {
         return { error: "Escolha um time válido." };
       }
       toUpsert.push({
@@ -83,23 +92,18 @@ export async function saveProjectMap(
   }
 
   if (toUpsert.length > 0) {
-    const { error } = await admin
-      .from("project_map")
-      .upsert(toUpsert, { onConflict: "tenant_id,provider,project_id" });
-    if (error) {
-      logFailure("attribution.save", tenantId, { step: "upsert", ...dbFailure(error) });
+    try {
+      await upsertProjectMap(toUpsert);
+    } catch (cause) {
+      logFailure("attribution.save", tenantId, { step: "upsert", ...dbFailure(codeOf(cause)) });
       return { error: "Não foi possível salvar o mapeamento. Tente novamente." };
     }
   }
   for (const c of toClear) {
-    const { error } = await admin
-      .from("project_map")
-      .delete()
-      .eq("tenant_id", tenantId)
-      .eq("provider", c.provider)
-      .eq("project_id", c.projectId);
-    if (error) {
-      logFailure("attribution.save", tenantId, { step: "clear", ...dbFailure(error) });
+    try {
+      await clearProjectMapping(tenantId, c.provider, c.projectId);
+    } catch (cause) {
+      logFailure("attribution.save", tenantId, { step: "clear", ...dbFailure(codeOf(cause)) });
       return { error: "Não foi possível salvar o mapeamento. Tente novamente." };
     }
   }

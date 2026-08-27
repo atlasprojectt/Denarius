@@ -2,9 +2,12 @@ import "server-only";
 
 import { activeLevels, type ThresholdLevel } from "@/lib/engine/thresholds";
 import { monthStartUtc } from "@/lib/engine/period";
+import {
+  findNotificationLogLevels,
+  insertNotificationLogIfAbsent,
+} from "@/lib/db/admin";
 import { buildBudgetThresholdFinding } from "@/lib/findings/budget-threshold";
 import { dbFailure, logFailure, logSkipped } from "@/lib/logging/server-log";
-import { createAdminClient } from "@/lib/supabase/admin";
 
 import type { NotificationChannel } from "./channel";
 import { planAlert } from "./plan";
@@ -27,8 +30,6 @@ export type AlertRunResult = {
   undeliverable: number;
 };
 
-type LogRow = { target_id: string; level: string };
-
 function logKey(targetId: string | null): string {
   return targetId ?? ORG_TARGET;
 }
@@ -42,18 +43,16 @@ export async function sendBudgetAlerts(
   const snapshot = await tenantSnapshot(tenantId, now);
   if (snapshot.scopes.length === 0) return result;
 
-  const admin = createAdminClient();
   const periodMonth = monthStartUtc(now);
-  const { data: logData, error: readError } = await admin
-    .from("notification_log")
-    .select("target_id, level")
-    .eq("tenant_id", tenantId)
-    .eq("channel", "email")
-    .eq("period_month", periodMonth);
-  if (readError) {
+  let logRows: { target_id: string; level: string }[];
+  try {
+    logRows = await findNotificationLogLevels(tenantId, periodMonth);
+  } catch (cause) {
     logFailure("notify.alert_log", tenantId, {
       step: "read",
-      ...dbFailure(readError),
+      ...dbFailure({
+        code: ((cause as { code?: unknown } | null)?.code as string | undefined) ?? null,
+      }),
     });
     // Without the dedup state, sending could repeat an alert the customer
     // already received. Fail closed and try again on the next cron run.
@@ -62,7 +61,7 @@ export async function sendBudgetAlerts(
   }
 
   const sentByTarget = new Map<string, ThresholdLevel[]>();
-  for (const row of (logData ?? []) as LogRow[]) {
+  for (const row of logRows) {
     const list = sentByTarget.get(row.target_id) ?? [];
     list.push(row.level as ThresholdLevel);
     sentByTarget.set(row.target_id, list);
@@ -122,34 +121,30 @@ export async function sendBudgetAlerts(
     }
 
     // Log every newly-crossed level (the email carries the most severe one).
-    // ignoreDuplicates keeps a retried run idempotent under the unique key.
-    const { error: logError } = await admin.from("notification_log").upsert(
-      plan.logLevels.map((level) => ({
-        tenant_id: tenantId,
-        channel: "email",
-        target_id: logKey(scope.targetId),
-        level,
-        period_month: periodMonth,
-      })),
-      {
-        onConflict: "tenant_id,channel,target_id,level,period_month",
-        ignoreDuplicates: true,
-      },
-    );
-    // A failed log after a successful send means a possible duplicate next
-    // run — acceptable; the alternative (log first) could silence a real
-    // alert that was never delivered.
-    if (logError) {
+    // DO NOTHING under the unique key keeps a retried run idempotent.
+    try {
+      await insertNotificationLogIfAbsent(
+        plan.logLevels.map((level) => ({
+          tenant_id: tenantId,
+          channel: "email",
+          target_id: logKey(scope.targetId),
+          level,
+          period_month: periodMonth,
+        })),
+      );
+    } catch (cause) {
       // The e-mail went out; the dedup row did not. Worth a line: the next run
       // may send it again, and nothing else records why.
       logFailure("notify.alert_log", tenantId, {
         scope: scope.scope,
-        ...dbFailure(logError),
+        ...dbFailure({
+          code: ((cause as { code?: unknown } | null)?.code as string | undefined) ?? null,
+        }),
       });
       result.failed += 1;
-    } else {
-      result.sent += 1;
+      continue;
     }
+    result.sent += 1;
   }
 
   return result;
