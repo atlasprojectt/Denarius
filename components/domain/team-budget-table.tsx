@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { RiArrowRightSLine } from "@remixicon/react";
+import { RiArrowRightSLine, RiTeamLine } from "@remixicon/react";
 
 import { BudgetBar } from "@/components/domain/budget-bar";
 import { StatusPill } from "@/components/domain/status-pill";
@@ -144,7 +144,10 @@ export function TeamBudgetTable({
     // past the row into the observations footer.
     <Card className="min-h-full">
       <CardHeader>
-        <CardTitle className="text-sm">{c.title}</CardTitle>
+        <CardTitle className="flex items-center gap-2 text-sm">
+          <RiTeamLine className="size-4 text-muted-foreground" aria-hidden />
+          {c.title}
+        </CardTitle>
         <CardDescription>
           {teams.length === 0
             ? c.emptyBody

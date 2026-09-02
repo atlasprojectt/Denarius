@@ -17,6 +17,11 @@ import { STATIC_SECURITY_HEADERS } from "./lib/security/headers";
 const SERVER_ACTION_ORIGINS = ["denarius-nine.vercel.app"];
 
 const nextConfig: NextConfig = {
+  // Playwright and the in-app browser use the loopback host while developers
+  // commonly open localhost. Next 16 rejects dev chunks when these aliases are
+  // not declared, leaving the server-rendered UI visible but unhydrated.
+  allowedDevOrigins: ["127.0.0.1", "localhost"],
+
   // Next 16.3 appends a managed block to AGENTS.md and CLAUDE.md on `next dev`.
   // Both are the project constitution and a locked file under PARALLEL.md §3 —
   // a dev server must not rewrite them, in any worktree.

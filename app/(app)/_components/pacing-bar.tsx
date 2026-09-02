@@ -59,7 +59,7 @@ export function PacingBar({
 
       <div className="mb-1 flex items-baseline justify-between gap-3 text-xs">
         <span className="text-muted-foreground tabular-nums">
-          {c.periodDay(dayOfPeriod, daysInPeriod)}
+          {c.periodDay(dayOfPeriod, daysInPeriod, percent(pctElapsed))}
         </span>
         <span className="font-medium tabular-nums">{percent(pctSpent)}</span>
       </div>

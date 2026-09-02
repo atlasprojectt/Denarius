@@ -1,6 +1,10 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { RiArrowRightSLine, RiGroupLine } from "@remixicon/react";
+import {
+  RiArrowRightSLine,
+  RiGroupLine,
+  RiPieChart2Line,
+} from "@remixicon/react";
 
 import {
   Card,
@@ -63,9 +67,12 @@ export function ProviderComposition({
   return (
     <Card size="sm" className="min-h-full">
       <CardHeader>
-        <CardTitle className="flex items-center gap-1.5 text-sm">
+        <CardTitle className="flex items-center gap-2 text-sm">
+          <RiPieChart2Line className="size-4 text-muted-foreground" aria-hidden />
           {c.title}
-          <InfoTip label={c.title}>{c.info}</InfoTip>
+          <span className="-ml-0.5">
+            <InfoTip label={c.infoLabel}>{c.info}</InfoTip>
+          </span>
         </CardTitle>
       </CardHeader>
       <CardContent className="flex flex-1 flex-col">

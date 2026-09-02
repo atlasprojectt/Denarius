@@ -73,7 +73,7 @@ export function NavGroup({ label, items }: SidebarNavGroup) {
                   <SidebarMenuButton
                     isActive={item.isActive}
                     tooltip={item.title}
-                    className="h-11 md:h-8"
+                    className="h-11 text-sidebar-foreground/70 hover:text-sidebar-accent-foreground data-active:text-sidebar-accent-foreground md:h-8"
                   />
                 }
               >
@@ -106,7 +106,7 @@ export function NavGroup({ label, items }: SidebarNavGroup) {
                 asChild
                 isActive={item.isActive}
                 tooltip={item.title}
-                className="h-11 md:h-8"
+                className="h-11 text-sidebar-foreground/70 hover:text-sidebar-accent-foreground data-active:text-sidebar-accent-foreground md:h-8"
               >
                 <Link
                   href={item.path ?? "#"}

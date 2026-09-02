@@ -156,3 +156,7 @@ No npm flag fixes this from Windows. `--package-lock-only`, a delete-and-regener
 **The consequence to remember:** running `npm install` on Windows can silently re-prune the lockfile and reintroduce the gap. The safety net is that `ci.yml` now runs `npm ci` on every pull request, so a re-pruned lockfile fails in review instead of at deploy. If it happens, do not hand-edit the file — regenerate it on Linux. Nothing about this is Windows' fault or npm's version; assume it recurs.
 
 **Node version.** CI pins Node 22 in `setup-node`; the Vercel project must stay on the same major. Not enforced by `engines` yet.
+
+## 11. Global workspace search
+
+`/search` is a small client interaction island over a Server Action. The action resolves the authenticated membership with `requireSession()` and passes the server-derived tenant and role to independent providers for teams, closed reports, subscriptions and provider connections. Each database query repeats the tenant predicate explicitly and still runs through the signed-in Supabase client under RLS. Admin-only providers are excluded before execution; independent providers run in parallel and a single failure degrades only its category. The browser receives only the common, bounded `SearchResult` projection, never source rows or credentials.

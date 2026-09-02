@@ -20,9 +20,10 @@ export function InfoTip({ label, children }: { label: string; children: string }
     <TooltipProvider delayDuration={150}>
       <Tooltip>
         <TooltipTrigger
+          data-info-tip
           type="button"
           aria-label={label}
-          className="inline-flex size-5 shrink-0 items-center justify-center rounded-full text-muted-foreground/70 outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/40"
+          className="inline-flex size-5 shrink-0 items-center justify-center rounded-full text-muted-foreground/70 outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/40 max-md:-m-3 max-md:size-11"
         >
           <RiInformationLine className="size-4" aria-hidden />
         </TooltipTrigger>

@@ -1,6 +1,12 @@
 "use client";
 
-import { useState, type ReactElement, type ReactNode } from "react";
+import {
+  cloneElement,
+  useState,
+  type MouseEventHandler,
+  type ReactElement,
+  type ReactNode,
+} from "react";
 import { RiErrorWarningLine } from "@remixicon/react";
 
 import { Button } from "@/components/ui/button";
@@ -12,7 +18,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 
 const copy = { cancel: "Cancelar" };
@@ -29,7 +34,7 @@ export function ConfirmationDialog({
   icon,
   children,
 }: {
-  trigger: ReactElement;
+  trigger: ReactElement<{ onClick?: MouseEventHandler }>;
   title: string;
   description: string;
   confirmLabel: string;
@@ -51,9 +56,16 @@ export function ConfirmationDialog({
     if (success) setOpen(false);
   }
 
+  const triggerWithOpen = cloneElement(trigger, {
+    onClick: (event) => {
+      trigger.props.onClick?.(event);
+      if (!event.defaultPrevented) setOpen(true);
+    },
+  });
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{trigger}</DialogTrigger>
+      {triggerWithOpen}
       <DialogContent
         showCloseButton={false}
         className="max-h-[calc(100dvh-2rem)] overflow-y-auto overscroll-contain max-sm:[&_[data-slot=button]]:min-h-11"

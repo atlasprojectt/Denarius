@@ -1,9 +1,16 @@
 "use client";
 
+import { RiLineChartLine } from "@remixicon/react";
 import {
   CHART_ANNOTATION_Z_INDEX,
   SpendTrendChart,
 } from "@/components/domain/spend-trend-chart";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import type { ChartConfig } from "@/components/ui/chart";
 import type { MonthlyPace, MonthlyPaceRow } from "@/lib/engine/monthly-pace";
 import { percent } from "@/lib/format";
@@ -86,7 +93,7 @@ function EndLabel({ viewBox, parentViewBox, value }: LabelProps) {
         width={rectWidth}
         height={17}
         rx={3}
-        fill="var(--background)"
+        fill="var(--chart-surface, var(--background))"
         fillOpacity={0.96}
       />
       <text
@@ -127,21 +134,28 @@ export function MonthlyPaceChart({
 
   if (todayValue <= 0) {
     return (
-      <section className="flex min-h-full flex-col gap-4 py-4">
-        <h2 className="flex items-center gap-1.5 font-heading text-sm font-medium">
-          {c.title}
-          <InfoTip label={c.title}>{c.info}</InfoTip>
-        </h2>
-        <div className="flex flex-1 items-center justify-center">
+      <Card data-monthly-pace className="min-h-full [--chart-surface:var(--card)]">
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-sm font-medium">
+              <RiLineChartLine className="size-4 text-muted-foreground" aria-hidden />
+              {c.title}
+            </CardTitle>
+            <InfoTip label={c.infoLabel}>{c.info}</InfoTip>
+          </div>
+        </CardHeader>
+        <CardContent className="flex flex-1 items-center justify-center">
           <p className="py-8 text-center text-sm text-muted-foreground">
             {c.empty}
           </p>
-        </div>
-      </section>
+        </CardContent>
+      </Card>
     );
   }
 
   const daysInPeriod = rows.length;
+  // Keep the budget and the whole period as permanent context. Collecting pace
+  // suppresses only the projection; it never zooms either axis.
   const maxY = Math.max(budget, projection ?? 0, todayValue, 1) * 1.08;
   const projectionText =
     projection === null ? c.collectingShort : money(projection, currency);
@@ -162,24 +176,29 @@ export function MonthlyPaceChart({
       : c.projectionValue(compactMoney(projection, currency, 2));
 
   return (
-    <section className="flex min-h-full flex-col gap-2.5 py-4">
-      <h2 className="flex items-center gap-1.5 font-heading text-sm font-medium">
-        {c.title}
-        <InfoTip label={c.title}>{c.info}</InfoTip>
-      </h2>
-      <div className="flex flex-wrap gap-x-6 gap-y-2">
-        <Metric label={c.realizedLabel} value={money(todayValue, currency)} />
-        <Metric
-          label={c.paceTodayLabel}
-          value={paceToday === null ? "—" : money(paceToday, currency)}
-        />
-        <Metric label={c.projectionLabel} value={projectionText} />
-      </div>
-      <div className="flex flex-1 flex-col justify-center">
+    <Card data-monthly-pace className="min-h-full [--chart-surface:var(--card)]">
+      <CardHeader className="gap-2.5">
+        <div className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 text-sm font-medium">
+            <RiLineChartLine className="size-4 text-muted-foreground" aria-hidden />
+            {c.title}
+          </CardTitle>
+          <InfoTip label={c.infoLabel}>{c.info}</InfoTip>
+        </div>
+        <div className="flex flex-wrap gap-x-6 gap-y-2">
+          <Metric label={c.realizedLabel} value={money(todayValue, currency)} />
+          <Metric
+            label={c.paceTodayLabel}
+            value={paceToday === null ? "—" : money(paceToday, currency)}
+          />
+          <Metric label={c.projectionLabel} value={projectionText} />
+        </div>
+      </CardHeader>
+      <CardContent className="flex min-h-0 flex-1 flex-col justify-center">
         <div
           data-reveal="monthly-pace"
           suppressHydrationWarning
-          className="flex min-h-[220px] flex-1 flex-col"
+          className="flex min-h-[240px] flex-1 flex-col sm:min-h-[280px] xl:min-h-[360px]"
         >
           <p className="sr-only">{ariaLabel}</p>
           <SpendTrendChart
@@ -214,7 +233,7 @@ export function MonthlyPaceChart({
               x={todayDay}
               y={todayValue}
               r={4}
-              fill="var(--background)"
+              fill="var(--chart-surface, var(--background))"
               stroke="var(--brand-accent)"
               strokeWidth={2.5}
             >
@@ -235,7 +254,7 @@ export function MonthlyPaceChart({
                 r={2.5}
                 fill="var(--brand-accent)"
                 fillOpacity={0.58}
-                stroke="var(--background)"
+                stroke="var(--chart-surface, var(--background))"
                 strokeWidth={1}
                 ifOverflow="extendDomain"
               />
@@ -247,7 +266,7 @@ export function MonthlyPaceChart({
                 y={projection}
                 r={4.5}
                 fill="var(--brand-accent)"
-                stroke="var(--background)"
+                stroke="var(--chart-surface, var(--background))"
                 strokeWidth={1.5}
                 ifOverflow="visible"
               >
@@ -259,8 +278,8 @@ export function MonthlyPaceChart({
             )}
           </SpendTrendChart>
         </div>
-      </div>
-    </section>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -297,7 +316,7 @@ function PaceTooltip({
       <p className="mb-1.5 pl-0.5 text-xs font-medium text-foreground">
         {c.dayLabel(row.day, monthLabel)}
       </p>
-      <div className="rounded-lg border border-white/10 bg-zinc-950 px-3 py-2.5 text-xs text-zinc-50 shadow-lg">
+      <div className="rounded-lg border border-border bg-popover px-3 py-2.5 text-xs text-popover-foreground shadow-lg">
         <div className="grid grid-cols-[1fr_auto] gap-x-5 gap-y-1.5">
           {row.realized !== null && (
             <TooltipRow
@@ -364,14 +383,14 @@ function TooltipRow({
 }) {
   return (
     <>
-      <span className="flex items-center gap-1.5 text-zinc-400">
+      <span className="flex items-center gap-1.5 text-muted-foreground">
         {marker && (
           <span aria-hidden className="size-2 rounded-full bg-brand-accent" />
         )}
         {label}
       </span>
       <span
-        className={`text-right tabular-nums ${muted ? "text-zinc-300" : "font-medium text-zinc-50"}`}
+        className={`text-right tabular-nums ${muted ? "text-muted-foreground" : "font-medium text-popover-foreground"}`}
       >
         {value}
       </span>

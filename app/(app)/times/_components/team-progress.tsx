@@ -6,6 +6,13 @@ const copy = {
   label: "Gasto atual, projeção e marcador de orçamento",
 };
 
+const realizedTone: Record<VerdictStatus, string> = {
+  green: "text-status-green",
+  amber: "text-status-amber",
+  red: "text-status-red",
+  collecting: "text-muted-foreground",
+};
+
 export function TeamProgress({
   pctSpent,
   pctProjected,
@@ -19,7 +26,6 @@ export function TeamProgress({
 }) {
   const geometry = barGeometry(pctSpent, pctProjected);
   const pct = (value: number) => `${Math.max(0, value * 100).toFixed(2)}%`;
-  const realizedTone = status === "red" ? "text-status-red" : "text-brand-accent";
 
   return (
     <div
@@ -41,7 +47,7 @@ export function TeamProgress({
       )}
       <div
         data-reveal-bar
-        className={cn("absolute inset-0", realizedTone)}
+        className={cn("absolute inset-0", realizedTone[status])}
         style={{ ...TICKS, clipPath: cut(0, geometry.fill), animationDelay: "70ms" }}
       />
       {geometry.marker < 1 && (

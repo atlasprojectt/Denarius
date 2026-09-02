@@ -113,6 +113,12 @@ function Button({
   const render = renderElement
     ? React.cloneElement(renderElement, undefined, composedChildren)
     : undefined;
+  const renderHasHref = Boolean(
+    renderElement &&
+      typeof renderElement.props === "object" &&
+      renderElement.props !== null &&
+      "href" in renderElement.props,
+  );
 
   return (
     <ButtonPrimitive
@@ -126,6 +132,7 @@ function Button({
       )}
       render={render}
       nativeButton={render ? render.type === "button" : true}
+      role={renderHasHref ? "link" : undefined}
       disabled={disabled || loading}
       aria-busy={loading || undefined}
       {...props}

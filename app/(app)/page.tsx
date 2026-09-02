@@ -123,7 +123,7 @@ export default async function HomePage() {
           takes every leftover pixel — the pace chart grows with it, so the
           viewport is filled by the chart, not by voids inside the top cards
           (proportion pass, 2026-07-14). */}
-      <div className="grid flex-1 items-stretch gap-4 xl:grid-cols-2 xl:grid-rows-[auto_minmax(0,1fr)]">
+      <div className="home-cockpit grid flex-1 items-stretch gap-4 xl:grid-cols-2 xl:grid-rows-[auto_minmax(0,1fr)]">
         <div className="min-w-0">
           <Hero
             org={org}

@@ -1,5 +1,6 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { teamsSearchProvider } from "@/lib/search/providers/teams";
 
 import {
   hasDbEnv,
@@ -292,6 +293,21 @@ describe.skipIf(!ready)("RLS tenant isolation", () => {
       .select("id")
       .eq("id", b.userId);
     expect(crossUser).toEqual([]);
+  });
+
+  it("global search cannot find a team belonging to tenant B", async () => {
+    const clientA = await signedInClient(a);
+    const crossTenantResults = await teamsSearchProvider.search(
+      { client: clientA, tenantId: a.tenantId, role: "admin" },
+      "team-b",
+    );
+    expect(crossTenantResults).toEqual([]);
+
+    const ownResults = await teamsSearchProvider.search(
+      { client: clientA, tenantId: a.tenantId, role: "admin" },
+      "team-a",
+    );
+    expect(ownResults.map(({ id }) => id)).toEqual([a.teamId]);
   });
 
   it("the same holds in the other direction (B cannot read A)", async () => {

@@ -167,7 +167,10 @@ export function ReportViewer({
       )}
 
       <div className="report-viewer-canvas">
-        <div className="report-viewer-preview" aria-label={`Prévia de ${title}`}>
+        <div
+          className="report-viewer-preview"
+          aria-label={`Prévia de ${title}`}
+        >
           <div className="report-preview-document">{reportDocument}</div>
         </div>
         <span className="report-preview-page-count">{copy.documentFormat}</span>

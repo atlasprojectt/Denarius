@@ -61,8 +61,8 @@ function marginLabel(team: CockpitTeam, currency: string): string {
 function Metric({ label, value }: { label: string; value: string }) {
   return (
     <div className="min-w-0">
-      <dt className="text-[11px] text-muted-foreground xl:sr-only">{label}</dt>
-      <dd className="mt-0.5 truncate text-[13px] font-medium tabular-nums xl:mt-0">
+      <dt className="team-index-metric-label text-[11px] text-muted-foreground">{label}</dt>
+      <dd className="team-index-metric-value mt-0.5 truncate text-[13px] font-medium tabular-nums">
         {value}
       </dd>
     </div>
@@ -100,7 +100,7 @@ function TeamRow({
         className="absolute inset-0 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/40"
       />
 
-      <div className="relative pointer-events-none grid gap-3 xl:grid-cols-[minmax(170px,1.35fr)_104px_108px_108px_118px_138px_minmax(110px,0.8fr)_172px] xl:items-center xl:gap-4">
+      <div className="team-index-row-grid relative pointer-events-none grid gap-3">
         <div className="min-w-0">
           <h3 className="truncate text-[13px] font-medium text-foreground">
             {team.teamName}
@@ -114,7 +114,7 @@ function TeamRow({
           <StatusPill status={team.status} label={statusLabel(team)} />
         </div>
 
-        <dl className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-4 xl:contents">
+        <dl className="team-index-metrics grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-4">
           <Metric label={copy.spent} value={money(evaluation.spent, currency)} />
           <Metric label={copy.budget} value={money(evaluation.budget, currency)} />
           <Metric
@@ -128,7 +128,7 @@ function TeamRow({
           <Metric label={copy.margin} value={marginLabel(team, currency)} />
         </dl>
 
-        <div className="flex items-center gap-2.5 xl:pr-3">
+        <div className="team-index-progress flex items-center gap-2.5">
           <TeamProgress
             className="flex-1"
             pctSpent={evaluation.pctSpent}
@@ -201,10 +201,11 @@ export function TeamIndex({
       </div>
       <Card
         data-reveal={`teams-${priority}`}
+        data-team-index
         suppressHydrationWarning
-        className="gap-0 py-0"
+        className="team-index-card gap-0 py-0"
       >
-        <div className="hidden grid-cols-[minmax(170px,1.35fr)_104px_108px_108px_118px_138px_minmax(110px,0.8fr)_172px] gap-4 border-b border-border/60 px-4 py-2 text-[11px] font-medium text-muted-foreground xl:grid">
+        <div className="team-index-header hidden gap-4 border-b border-border/60 px-4 py-2 text-[11px] font-medium text-muted-foreground">
           <span>{copy.team}</span>
           <span>{copy.status}</span>
           <span>{copy.spent}</span>

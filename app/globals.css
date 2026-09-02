@@ -334,9 +334,8 @@ input[type="number"]::-webkit-outer-spin-button {
    hooks; these rules are unlayered, so they win over Tailwind's layered
    utilities.
 
-   No prefers-reduced-motion guard, deliberately: this is a direct response to
-   the user's own click, not decorative motion, and neither the primitive nor
-   this app has ever guarded it.
+   Reduced-motion users still receive the state change immediately: the guard
+   below removes the travelling layout transition.
 --------------------------------------------------------------------------- */
 [data-slot="sidebar-gap"],
 [data-slot="sidebar-container"],
@@ -351,6 +350,64 @@ input[type="number"]::-webkit-outer-spin-button {
    travelling, a visible hitch at the start of every toggle. */
 [data-slot="sidebar-inset"] {
   transition: margin 320ms var(--motion-ease-expressive);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-slot="sidebar-gap"],
+  [data-slot="sidebar-container"],
+  [data-slot="sidebar-group-label"],
+  [data-slot="sidebar-menu-button"],
+  [data-slot="sidebar-inset"] {
+    transition: none !important;
+  }
+}
+
+/* Times changes from compact comparison cards to the dense eight-column
+   table based on the width the surface actually receives after the sidebar,
+   not on the browser viewport. */
+.team-index-card {
+  container: team-index / inline-size;
+}
+
+@container team-index (min-width: 1180px) {
+  .team-index-header {
+    display: grid;
+    grid-template-columns:
+      minmax(170px, 1.35fr) 104px 108px 108px 118px 138px
+      minmax(110px, 0.8fr) 172px;
+  }
+
+  .team-index-row-grid {
+    grid-template-columns:
+      minmax(170px, 1.35fr) 104px 108px 108px 118px 138px
+      minmax(110px, 0.8fr) 172px;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .team-index-metrics {
+    display: contents;
+  }
+
+  .team-index-metric-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .team-index-metric-value {
+    margin-top: 0;
+  }
+
+  .team-index-progress {
+    padding-right: 0.75rem;
+  }
 }
 
 /* ---------------------------------------------------------------------------
@@ -434,7 +491,7 @@ input[type="number"]::-webkit-outer-spin-button {
    source of truth across every route.
 --------------------------------------------------------------------------- */
 :root {
-  --background: oklch(1 0 0);
+  --background: oklch(0.985 0.001 106.423);
   --foreground: oklch(0.147 0.004 49.25);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.147 0.004 49.25);
@@ -442,15 +499,16 @@ input[type="number"]::-webkit-outer-spin-button {
   --popover-foreground: oklch(0.147 0.004 49.25);
   --brand-accent: #ff5a1f;
   --brand-accent-light: #ff9a70;
-  --brand-action: #d94812;
+  --brand-action: #b9380d;
   --brand-accent-muted: color-mix(in oklab, var(--brand-accent) 12%, transparent);
   --brand-accent-border: color-mix(in oklab, var(--brand-accent) 28%, transparent);
   --focus-ring: var(--brand-accent-light);
   --primary: var(--brand-action);
   --primary-foreground: oklch(0.98 0.016 73.684);
-  /* Brand hover accent: one step lighter than --primary so hovered text and
-     borders brighten instead of muddying (solid buttons keep bg-primary/80). */
-  --primary-hover: var(--brand-accent);
+  /* Action hover brightens one controlled step while keeping AA contrast.
+     The signature accent remains separate because it is too light for 14px
+     text on a solid button. */
+  --primary-hover: #c2410c;
   --secondary: oklch(0.967 0.001 286.375);
   --secondary-foreground: oklch(0.21 0.006 285.885);
   --muted: oklch(0.97 0.001 106.424);
@@ -503,13 +561,13 @@ input[type="number"]::-webkit-outer-spin-button {
 .dark {
   --background: oklch(0.147 0.004 49.25);
   --foreground: oklch(0.985 0.001 106.423);
-  --card: oklch(0.216 0.006 56.043);
+  --card: oklch(0.168 0.004 49.25);
   --card-foreground: oklch(0.985 0.001 106.423);
   --popover: oklch(0.216 0.006 56.043);
   --popover-foreground: oklch(0.985 0.001 106.423);
   --brand-accent: #ff5a1f;
   --brand-accent-light: #ff9a70;
-  --brand-action: #d94812;
+  --brand-action: #b9380d;
   --brand-accent-muted: color-mix(in oklab, var(--brand-accent) 14%, transparent);
   --brand-accent-border: color-mix(in oklab, var(--brand-accent) 30%, transparent);
   --focus-ring: var(--brand-accent-light);
@@ -517,7 +575,7 @@ input[type="number"]::-webkit-outer-spin-button {
   --primary-foreground: oklch(0.98 0.016 73.684);
   /* Dark primary is deliberately deep for button fills Ã¢â‚¬â€ hovered text needs a
      much brighter orange to stay legible on the dark card. */
-  --primary-hover: var(--brand-accent);
+  --primary-hover: #c2410c;
   --secondary: oklch(0.274 0.006 286.033);
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.268 0.007 34.298);
@@ -574,15 +632,11 @@ input[type="number"]::-webkit-outer-spin-button {
   color: var(--primary-hover);
 }
 
-/* Outlined cards (2026-07-30, founder-directed): a card is defined by its
-   contour alone Ã¢â‚¬â€ no fill, so every surface sits on the page background and the
-   only ink on screen is content. The primitive's `ring-1 ring-foreground/10` is
-   what draws that contour; only its `bg-card` is dropped. Unlayered so it beats
-   the layered utility, and here rather than in components/ui/card.tsx (F5).
-   Alerts and the theme swatches keep their own bg-card fill on purpose Ã¢â‚¬â€ they
-   are not cards and need to read as raised against one. */
+/* Cards are the raised working surfaces above the shell. This unlayered rule
+   restores their tokenized fill (the previous transparent override erased the
+   hierarchy even though the primitive carried `bg-card`). */
 [data-slot="card"] {
-  background-color: transparent;
+  background-color: var(--card);
 }
 
 /* ---------------------------------------------------------------------------
@@ -602,6 +656,7 @@ input[type="number"]::-webkit-outer-spin-button {
   max-width: 80rem;
   width: 100%;
   margin-inline: auto;
+  min-width: 0;
   min-height: 0;
   gap: 1.5rem;
 }
@@ -660,6 +715,8 @@ input[type="number"]::-webkit-outer-spin-button {
 .report-viewer-canvas {
   --report-preview-bg: var(--background);
   position: relative;
+  container-type: inline-size;
+  min-width: 0;
   overflow: hidden;
   border: 1px solid var(--border);
   border-radius: var(--radius-xl);
@@ -672,8 +729,9 @@ input[type="number"]::-webkit-outer-spin-button {
 
 /* The white sheet — centered, A4-ish, fluid width, never stretched. */
 .report-viewer-preview {
+  --report-preview-scale: min(1, calc(100cqi / 680px));
   position: relative;
-  width: min(680px, calc(100% - 48px));
+  width: min(680px, 100%);
   min-height: 100%;
   margin: 0 auto;
   overflow: hidden;
@@ -685,11 +743,11 @@ input[type="number"]::-webkit-outer-spin-button {
 /* Render the report HTML with its table layout (the screen default is
    `display: block`, which would stack the sections instead of paginating). */
 .report-preview-document {
-  display: table;
-  width: 100%;
-  border-collapse: collapse;
-  table-layout: fixed;
+  display: block;
+  width: 680px;
   overflow: visible;
+  transform: scale(var(--report-preview-scale));
+  transform-origin: top left;
 }
 
 .report-preview-document .report-print-frame {
@@ -913,6 +971,30 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 
 @media (max-width: 767px) {
+  [data-slot="button"] {
+    min-height: 44px;
+  }
+
+  [data-slot="button"][data-size^="icon"],
+  [data-report-dialog-action] {
+    min-width: 44px;
+  }
+
+  [data-slot="input"],
+  [data-slot="select-trigger"],
+  [data-slot="textarea"] {
+    min-height: 44px;
+  }
+
+  [data-slot="tabs-list"] {
+    height: auto;
+    min-height: 48px;
+  }
+
+  [data-slot="tabs-trigger"] {
+    min-height: 44px;
+  }
+
   .report-viewer-toolbar {
     align-items: flex-start;
     flex-direction: column;
@@ -930,7 +1012,7 @@ input[type="number"]::-webkit-outer-spin-button {
   }
 
   .report-viewer-preview {
-    width: min(680px, calc(100% - 24px));
+    width: min(680px, 100%);
   }
 
   .report-viewer-dialog {

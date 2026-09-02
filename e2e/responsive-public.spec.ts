@@ -30,15 +30,17 @@ for (const colorScheme of ["light", "dark"] as const) {
       await page.goto("/login");
 
       const targets = page.locator(
-        'button:visible, a[href="/auth/recuperar"]:visible, nav a:visible',
+        'button:not([aria-label^="Open Next.js"]):visible, a[href="/auth/recuperar"]:visible, nav a:visible',
       );
       const count = await targets.count();
       expect(count).toBeGreaterThan(0);
 
       for (let index = 0; index < count; index += 1) {
-        const box = await targets.nth(index).boundingBox();
+        const target = targets.nth(index);
+        const box = await target.boundingBox();
+        const layoutHeight = await target.evaluate((node) => (node as HTMLElement).offsetHeight);
         expect(box, `target ${index} has a box`).not.toBeNull();
-        expect(box?.height ?? 0, `target ${index} height`).toBeGreaterThanOrEqual(44);
+        expect(layoutHeight, `target ${index} height`).toBeGreaterThanOrEqual(44);
       }
     });
   });

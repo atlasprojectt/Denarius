@@ -31,7 +31,8 @@ export const homeCopy = {
       `+ ${usd} de API ainda sem câmbio congelado — fora do total até o câmbio ser capturado.`,
     // Pacing bar. The meta row pairs the two figures the bar exists to
     // compare: how much of the budget is gone against how much of the month.
-    periodDay: (day: number, days: number) => `dia ${day} de ${days}`,
+    periodDay: (day: number, days: number, elapsed: string) =>
+      `dia ${day} de ${days} · ${elapsed} do mês`,
     pace: {
       spent: "Gasto",
       projected: "Projeção",
@@ -44,6 +45,7 @@ export const homeCopy = {
 
   composition: {
     title: "Gasto por fonte",
+    infoLabel: "Mais informações sobre gasto por fonte",
     info: "O mesmo gasto do período, agrupado por fonte — o total da empresa é a soma dos times mais o não atribuído. Tokens e modelos ficam em Explorar.",
     empty: "Sem gasto de API convertido ainda neste período.",
     entryValue: (amount: string, pct: string) => `${amount} (${pct})`,
@@ -55,6 +57,7 @@ export const homeCopy = {
 
   monthlyPace: {
     title: "Evolução do mês",
+    infoLabel: "Mais informações sobre evolução do mês",
     info: "Gasto acumulado dia a dia, com projeção de fechamento e referência do orçamento mensal.",
     empty: "Sem gasto registrado neste período ainda.",
     aria: (realized: string, pace: string, projection: string) =>

@@ -52,15 +52,15 @@ export function RankedTickList({
               {row.value}
             </span>
           </div>
-          <div className="relative mt-1.5 h-2 w-full group-hover/row:h-3.5 motion-safe:transition-[height] motion-safe:duration-[180ms] motion-safe:ease-[var(--motion-ease-standard)]">
+          <div className="relative mt-1.5 h-2 w-full">
             <div
               aria-hidden
-              className="absolute inset-0 text-foreground/15 group-hover/row:text-foreground/25 motion-safe:transition-colors motion-safe:duration-[180ms]"
+              className="absolute inset-0 origin-center text-foreground/15 group-hover/row:scale-y-[1.5] group-hover/row:text-foreground/25 motion-safe:transition-[color,transform] motion-safe:duration-(--motion-duration-max) motion-safe:ease-(--motion-ease-standard)"
               style={TICKS}
             />
             <div
               data-reveal-bar
-              className="absolute inset-0 text-brand-accent group-hover/row:brightness-115 motion-safe:transition-[filter] motion-safe:duration-[180ms]"
+              className="absolute inset-0 origin-center text-brand-accent group-hover/row:scale-y-[1.5] group-hover/row:brightness-115 motion-safe:transition-[filter,transform] motion-safe:duration-(--motion-duration-max) motion-safe:ease-(--motion-ease-standard)"
               style={{
                 ...TICKS,
                 clipPath: cut(0, row.share),

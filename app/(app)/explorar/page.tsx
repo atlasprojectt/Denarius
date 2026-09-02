@@ -259,7 +259,9 @@ export default async function ExplorePage() {
               <Card id="por-modelo" className="gap-0 py-0">
                 <CardHeader className="py-4">
                   <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                    <CardTitle>{copy.apiTitle(period.monthLabel)}</CardTitle>
+                    <CardTitle>
+                      <h2>{copy.apiTitle(period.monthLabel)}</h2>
+                    </CardTitle>
                     {lastSyncAt && (
                       <p className="text-[11px] text-muted-foreground tabular-nums">
                         {copy.apiAsOf(syncStamp(lastSyncAt))}
@@ -344,7 +346,9 @@ export default async function ExplorePage() {
             subscriptions.length > 0 ? (
               <Card id="assentos" className="gap-0 py-0">
                 <CardHeader className="py-4">
-                  <CardTitle>{copy.seatsTitle}</CardTitle>
+                  <CardTitle>
+                    <h2>{copy.seatsTitle}</h2>
+                  </CardTitle>
                   <CardDescription>{copy.seatsSub}</CardDescription>
                   <p className="text-[11px] text-muted-foreground tabular-nums">
                     {periodLabel}

@@ -1,4 +1,8 @@
-import { RiArrowDownCircleFill, RiArrowUpCircleFill } from "@remixicon/react";
+import {
+  RiArrowDownCircleFill,
+  RiArrowUpCircleFill,
+  RiWallet3Line,
+} from "@remixicon/react";
 
 import { StateBadge } from "@/components/domain/state-badge";
 import {
@@ -65,7 +69,10 @@ export function Hero({
   return (
     <Card className="min-h-full">
       <CardHeader>
-        <CardTitle className="text-sm font-medium">{c.title}</CardTitle>
+        <CardTitle className="flex items-center gap-2 text-sm font-medium">
+          <RiWallet3Line className="size-4 text-muted-foreground" aria-hidden />
+          {c.title}
+        </CardTitle>
         <p className="flex min-w-0 flex-wrap items-baseline gap-x-2 pt-2 text-[clamp(1.875rem,10vw,3rem)] font-medium tracking-tight tabular-nums [overflow-wrap:anywhere]">
           {money(org.spent, currency)}
           <span className="text-base font-normal tracking-normal text-muted-foreground">

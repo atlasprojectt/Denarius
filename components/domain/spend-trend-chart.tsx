@@ -182,7 +182,7 @@ function FocusScrim() {
         y={py - SCRIM_BLEED}
         width={pw + SCRIM_BLEED * 2}
         height={ph + SCRIM_BLEED}
-        fill="var(--background)"
+        fill="var(--chart-surface, var(--background))"
       />
     </ZIndexLayer>
   );

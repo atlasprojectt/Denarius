@@ -5,6 +5,7 @@ Everything an engineer or agent needs to work on Denarius. Read in this order:
 | Doc | What it holds | Read when |
 |---|---|---|
 | [prd.md](prd.md) | **Source of truth.** Problem, solution, 66 user stories, all product/UX/testing decisions (P1–P16), success metrics, risks, build order | Always first |
+| [product-analysis.md](product-analysis.md) | Complete Portuguese, non-technical product map: problem, roles, end-to-end flows, visible rules, states, gaps, evaluation framework and validation script | When assessing whether the product solves the customer problem |
 | [architecture.md](architecture.md) | System shape: stack, repo layout, multi-tenancy/RLS, browser security boundary, data flow, data model, environments, supply-chain policy | Before touching any code |
 | [backend.md](backend.md) | Module-by-module backend spec: connectors, sync, budget engine formulas, findings rules, notifications, LLM guardrails, auth/RBAC (password rule, recovery, rate limits, audit log, data rights), credential encryption, period snapshot, server logging, env vars | Before any backend work |
 | [frontend.md](frontend.md) | Screens, component contracts, design tokens, interaction patterns, UI states, the responsive contract, the closed-month print layer | Before any frontend work |

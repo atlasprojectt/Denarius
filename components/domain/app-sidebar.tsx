@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect } from "react";
 import {
   RiExpandUpDownLine,
   RiFileChartLine,
@@ -10,6 +11,7 @@ import {
   RiSettings3Line,
   RiHome5Line,
   RiLogoutBoxRLine,
+  RiSearchLine,
   RiTeamLine,
   RiUserLine,
 } from "@remixicon/react";
@@ -33,6 +35,7 @@ import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
+  SidebarGroup,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
@@ -44,6 +47,7 @@ import { Button } from "@/components/ui/button";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { logout } from "@/lib/auth/actions";
 import type { ConnectionFreshness } from "@/lib/engine/freshness";
+import { SEARCH_FOCUS_EVENT } from "@/lib/search/shortcut";
 
 // Shell rebuilt on the shadcn block @efferd/app-shell-3 (2026-08-02,
 // founder-directed): header logo row → labelled NavGroups → footer. The
@@ -58,6 +62,8 @@ const copy = {
   teams: "Times",
   explore: "Explorar",
   reports: "Relatórios",
+  search: "Pesquisa",
+  searchShortcut: "Ctrl P",
   settings: "Ajustes",
   profileMenu: "Perfil",
   profileSettings: "Configurações",
@@ -107,7 +113,34 @@ export function AppSidebar({
   allClear: boolean;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
   const { setOpenMobile } = useSidebar();
+
+  useEffect(() => {
+    function handleSearchShortcut(event: KeyboardEvent) {
+      if (
+        !event.ctrlKey ||
+        event.altKey ||
+        event.shiftKey ||
+        event.key.toLocaleLowerCase("pt-BR") !== "p"
+      ) {
+        return;
+      }
+      event.preventDefault();
+      if (pathname === "/search") {
+        window.dispatchEvent(new Event(SEARCH_FOCUS_EVENT));
+      } else {
+        router.push("/search?focus=1");
+      }
+      setOpenMobile(false);
+    }
+
+    window.addEventListener("keydown", handleSearchShortcut, { capture: true });
+    return () =>
+      window.removeEventListener("keydown", handleSearchShortcut, {
+        capture: true,
+      });
+  }, [pathname, router, setOpenMobile]);
 
   const navGroups: SidebarNavGroup[] = navigation.map((group) => ({
     label: group.label,
@@ -153,6 +186,30 @@ export function AppSidebar({
         </SidebarHeader>
 
         <SidebarContent>
+          <SidebarGroup className="pb-2 pt-2">
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={pathname === "/search"}
+                  tooltip={copy.search}
+                  className="h-11 border border-sidebar-border/70 bg-sidebar-accent/55 px-3 text-sidebar-foreground/70 shadow-none hover:bg-sidebar-accent hover:text-sidebar-accent-foreground data-active:bg-sidebar-accent data-active:text-sidebar-accent-foreground md:h-9 group-data-[collapsible=icon]:border-transparent group-data-[collapsible=icon]:bg-transparent group-data-[collapsible=icon]:px-2"
+                >
+                  <Link
+                    href="/search?focus=1"
+                    onClick={() => setOpenMobile(false)}
+                    aria-label={`${copy.search} (${copy.searchShortcut})`}
+                  >
+                    <RiSearchLine />
+                    <span className="truncate">{copy.search}</span>
+                    <kbd className="ml-auto font-sans text-[10px] leading-none text-sidebar-foreground/55 group-data-[collapsible=icon]:hidden">
+                      {copy.searchShortcut}
+                    </kbd>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroup>
           {navGroups.map((group) => (
             <NavGroup key={group.label} {...group} />
           ))}
@@ -242,7 +299,10 @@ export function AppSidebar({
           </SidebarMenu>
         </SidebarFooter>
 
-        <SidebarRail />
+        <SidebarRail
+          aria-label="Alternar menu lateral"
+          title="Alternar menu lateral"
+        />
       </Sidebar>
     </TooltipProvider>
   );

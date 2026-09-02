@@ -65,16 +65,14 @@ function displayMoney(value: number | null, currency: string): string {
 }
 
 function SectionTitle({
-  id,
   number,
   children,
 }: {
-  id: string;
   number?: number;
   children: React.ReactNode;
 }) {
   return (
-    <h2 id={id} className="report-section-title" data-print-heading>
+    <h2 className="report-section-title" data-print-heading>
       {number !== undefined && (
         <span className="report-section-number" aria-hidden>
           {number}.
@@ -213,14 +211,13 @@ export function ReportSheet({
                     </div>
                   </dl>
                 </header>
-                <main className="report-print-body">
+                <div className="report-print-body">
                   <section
-                    aria-labelledby="report-summary"
                     className="report-section report-summary"
                     data-print-keep
                     data-report-section="summary"
                   >
-                    <SectionTitle id="report-summary">{copy.summaryTitle}</SectionTitle>
+                    <SectionTitle>{copy.summaryTitle}</SectionTitle>
                     <dl className="report-summary-metrics">
                       <Metric
                         label={live ? copy.spentTitleLive : copy.spentTitle}
@@ -264,11 +261,10 @@ export function ReportSheet({
                   </section>
 
                   <section
-                    aria-labelledby="report-overview"
                     className="report-section"
                     data-report-section="overview"
                   >
-                    <SectionTitle id="report-overview" number={1}>
+                    <SectionTitle number={1}>
                       {copy.overviewTitle}
                     </SectionTitle>
                     <p className="report-section-copy">
@@ -288,11 +284,10 @@ export function ReportSheet({
                   </section>
 
                   <section
-                    aria-labelledby="report-providers"
                     className="report-section"
                     data-report-section="providers"
                   >
-                    <SectionTitle id="report-providers" number={2}>
+                    <SectionTitle number={2}>
                       {copy.providersSectionTitle}
                     </SectionTitle>
                     {report.breakdown.providers.length === 0 ? (
@@ -328,11 +323,10 @@ export function ReportSheet({
                   </section>
 
                   <section
-                    aria-labelledby="report-teams"
                     className="report-section"
                     data-report-section="teams"
                   >
-                    <SectionTitle id="report-teams" number={3}>
+                    <SectionTitle number={3}>
                       {copy.teamsSectionTitle}
                     </SectionTitle>
                     {report.breakdown.teams.length === 0 ? (
@@ -385,16 +379,15 @@ export function ReportSheet({
                       </div>
                     )}
                   </section>
-                </main>
+                </div>
               </div>
               <div className="report-page" data-report-page="2">
-                <main className="report-print-body">
+                <div className="report-print-body">
                   <section
-                    aria-labelledby="report-subscriptions"
                     className="report-section"
                     data-report-section="subscriptions"
                   >
-                    <SectionTitle id="report-subscriptions" number={4}>
+                    <SectionTitle number={4}>
                       {copy.subscriptionsTitle}
                     </SectionTitle>
                     {!seats.available ? (
@@ -444,11 +437,10 @@ export function ReportSheet({
                   </section>
 
                   <section
-                    aria-labelledby="report-unattributed"
                     className="report-section"
                     data-report-section="unattributed"
                   >
-                    <SectionTitle id="report-unattributed" number={5}>
+                    <SectionTitle number={5}>
                       {copy.unattributedSectionTitle}
                     </SectionTitle>
                     <div className="report-table-wrap">
@@ -484,11 +476,10 @@ export function ReportSheet({
                   </section>
 
                   <section
-                    aria-labelledby="report-caveats"
                     className="report-section report-caveats"
                     data-report-section="caveats"
                   >
-                    <SectionTitle id="report-caveats" number={6}>
+                    <SectionTitle number={6}>
                       {copy.dataQualityTitle}
                     </SectionTitle>
                     <p className="report-section-copy">
@@ -503,7 +494,7 @@ export function ReportSheet({
                       ))}
                     </ol>
                   </section>
-                </main>
+                </div>
                 <div className="report-brand-footer">
                   <LogoWordmark monochrome className="report-footer-wordmark" />
                 </div>
