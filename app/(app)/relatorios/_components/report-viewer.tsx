@@ -29,6 +29,8 @@ const copy = {
   preparingPdf: "Preparando PDF…",
   documentFormat: "Documento A4",
   downloadError: "Não foi possível baixar o PDF. Tente novamente.",
+  sessionError: "Sua sessão expirou. Entre novamente para baixar o relatório.",
+  unavailableError: "O relatório está temporariamente indisponível. Tente novamente.",
 };
 
 export function ReportViewer({
@@ -58,6 +60,12 @@ export function ReportViewer({
     };
   }, []);
 
+  useEffect(() => {
+    const handleAfterPrint = () => document.documentElement.removeAttribute("data-printing");
+    window.addEventListener("afterprint", handleAfterPrint);
+    return () => window.removeEventListener("afterprint", handleAfterPrint);
+  }, []);
+
   async function loadPdf() {
     if (requestRef.current) return requestRef.current;
     const request = fetch(pdfUrl, {
@@ -65,12 +73,14 @@ export function ReportViewer({
       cache: "no-store",
     })
       .then(async (response) => {
-        if (!response.ok) throw new Error("report-pdf-failed");
+        if (response.status === 401 || response.redirected || response.url.includes("/login")) throw new Error("report-pdf-session");
+        if (!response.ok) throw new Error(response.status === 404 || response.status >= 500 ? "report-pdf-unavailable" : "report-pdf-failed");
         const contentType = response.headers.get("content-type");
         if (!contentType?.toLowerCase().startsWith("application/pdf")) {
           throw new Error("report-pdf-invalid");
         }
         const blob = await response.blob();
+        if (blob.size < 128) throw new Error("report-pdf-invalid");
         blobRef.current = blob;
         return blob;
       })
@@ -104,8 +114,14 @@ export function ReportViewer({
       window.document.body.appendChild(anchor);
       anchor.click();
       anchor.remove();
-    } catch {
-      setActionError(copy.downloadError);
+      window.setTimeout(() => {
+        if (objectUrlRef.current === url) {
+          URL.revokeObjectURL(url);
+          objectUrlRef.current = null;
+        }
+      }, 1000);
+    } catch (error) {
+      setActionError(error instanceof Error && error.message === "report-pdf-session" ? copy.sessionError : error instanceof Error && error.message === "report-pdf-unavailable" ? copy.unavailableError : copy.downloadError);
     } finally {
       setBusyAction(null);
     }
@@ -113,7 +129,10 @@ export function ReportViewer({
 
   function print() {
     setActionError(null);
-    window.print();
+    // Print the canonical page source, not the expanded dialog duplicate.
+    setExpanded(false);
+    document.documentElement.setAttribute("data-printing", "true");
+    window.requestAnimationFrame(() => window.print());
   }
 
   function handleExpand() {

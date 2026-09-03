@@ -209,6 +209,8 @@ describe("report shell and print contract", () => {
     expect(reportViewerSource).not.toContain("pdfjs-dist");
     expect(reportViewerSource).not.toContain("contentWindow?.print");
     expect(reportViewerSource).toContain("window.print()");
+    expect(reportViewerSource).toContain("requestAnimationFrame");
+    expect(reportViewerSource).toContain("setExpanded(false)");
     expect(reportViewerSource).not.toContain("window.open(");
     expect(reportViewerSource).toContain('from "motion/react"');
     expect(reportViewerSource).toContain("useReducedMotion");

@@ -6,6 +6,7 @@
 // LLM narrates it and never computes it (invariant #2).
 
 import type { PeriodProgress } from "./accrual";
+import { forecast, type DailySpendPoint, type ForecastResult } from "./forecast";
 
 /**
  * Run-rate projection is suppressed before this day of the period. Early-month
@@ -40,6 +41,17 @@ export function runRate(spent: number, period: PeriodProgress): number {
 export function projection(spent: number, period: PeriodProgress): number | null {
   if (isCollecting(period.dayOfPeriod)) return null;
   return runRate(spent, period);
+}
+
+export function behaviorAwareProjection(input: {
+  spent: number;
+  period: PeriodProgress;
+  dailySpend?: DailySpendPoint[];
+  history?: DailySpendPoint[];
+}): { projection: number | null; forecast: ForecastResult | null } {
+  if (!input.dailySpend) return { projection: projection(input.spent, input.period), forecast: null };
+  const result = forecast({ dailySpend: input.dailySpend, history: input.history, spent: input.spent, period: input.period });
+  return { projection: result.centralEstimate, forecast: result };
 }
 
 /**
@@ -86,9 +98,13 @@ export function evaluateBudget(input: {
   budget: number;
   spent: number;
   period: PeriodProgress;
+  dailySpend?: DailySpendPoint[];
+  history?: DailySpendPoint[];
 }): BudgetEvaluation {
-  const { budget, spent, period } = input;
-  const proj = projection(spent, period);
+  const { budget, spent, period, dailySpend, history } = input;
+  const proj = dailySpend
+    ? forecast({ dailySpend, history, spent, period, budget }).centralEstimate
+    : projection(spent, period);
   const collecting = isCollecting(period.dayOfPeriod);
 
   return {

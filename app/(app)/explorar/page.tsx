@@ -162,7 +162,7 @@ export default async function ExplorePage() {
     const usd = row.derivedCost ?? 0;
     const display = usdDisplay(usd, currency, fx);
     return {
-      id: row.model,
+      id: `${row.provider}:${row.model}`,
       label: row.model,
       amount: row.uncosted ? null : display.display,
       originalUsd: row.uncosted ? undefined : usd,
@@ -172,6 +172,19 @@ export default async function ExplorePage() {
           ? usd / apiSpend.derivedUsd
           : 0,
       state: row.uncosted ? "unpriced" : "default",
+      comparison: row.uncosted
+        ? undefined
+        : {
+            provider: row.provider,
+            model: row.model,
+            usage: apiSpend.comparisonUsage.filter(
+              (usage) => usage.provider === row.provider && usage.model === row.model,
+            ),
+            prices: apiSpend.modelPrices,
+            budget: budgets.org?.amount ?? null,
+            projectedCost: null,
+            expectedDays: period.dayOfPeriod,
+          },
     };
   });
 

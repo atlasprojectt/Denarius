@@ -26,6 +26,9 @@ import {
 import { cut, TICKS } from "@/lib/bars";
 import { money } from "@/lib/money";
 import { cn } from "@/lib/utils";
+import { ModelComparisonDrawer } from "./model-comparison-drawer";
+import type { ComparisonUsage } from "@/lib/engine/model-comparison";
+import type { ModelPrice } from "@/lib/engine/derive";
 
 export type ExploreRowState = "default" | "unpriced" | "unattributed";
 
@@ -40,6 +43,7 @@ export type ExploreRow = {
   note?: string;
   state?: ExploreRowState;
   actionLabel?: string;
+  comparison?: { provider: string; model: string; usage: ComparisonUsage[]; prices: ModelPrice[]; budget?: number | null; projectedCost?: number | null; expectedDays?: number };
 };
 
 type SortKey = "label" | "amount" | "tokens";
@@ -246,7 +250,7 @@ function DesktopRows({
             <MoneyValue row={row} currency={currency} />
           </TableCell>
           <TableCell className="w-24 text-right">
-            <RowAction row={row} />
+            {row.comparison ? <ModelComparisonDrawer source={row.comparison} usage={row.comparison.usage} prices={row.comparison.prices} budget={row.comparison.budget} projectedCost={row.comparison.projectedCost} expectedDays={row.comparison.expectedDays} /> : <RowAction row={row} />}
           </TableCell>
         </TableRow>
       ))}
@@ -300,6 +304,7 @@ function MobileRows({
               <RowAction row={row} />
             </div>
           )}
+          {row.comparison && <div className="mt-2 flex justify-end"><ModelComparisonDrawer source={row.comparison} usage={row.comparison.usage} prices={row.comparison.prices} budget={row.comparison.budget} projectedCost={row.comparison.projectedCost} expectedDays={row.comparison.expectedDays} /></div>}
         </article>
       ))}
     </div>

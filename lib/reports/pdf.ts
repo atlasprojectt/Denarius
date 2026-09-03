@@ -113,7 +113,7 @@ export async function reportPdf(path: string, filename: string) {
     page.setDefaultTimeout(30_000);
     page.setDefaultNavigationTimeout(30_000);
     const response = await page.goto(`${origin}${path}?mode=pdf`, {
-      waitUntil: "domcontentloaded",
+      waitUntil: "networkidle0",
     });
     if (!response || !response.ok() || page.url().includes("/login")) {
       throw new ReportPdfError(
@@ -121,8 +121,23 @@ export async function reportPdf(path: string, filename: string) {
         response?.status() === 404 ? 404 : 503,
       );
     }
-    await page.evaluate(async () => { await document.fonts.ready; });
     await page.emulateMediaType("print");
+    await page.waitForSelector("[data-report-sheet]", { visible: true });
+    await page.evaluate(async () => {
+      await document.fonts.ready;
+      await Promise.all([...document.images].map((image) => image.complete
+        ? Promise.resolve()
+        : new Promise<void>((resolve) => {
+            image.addEventListener("load", () => resolve(), { once: true });
+            image.addEventListener("error", () => resolve(), { once: true });
+          })));
+      const source = document.querySelector<HTMLElement>(".report-print-source");
+      const sheet = document.querySelector<HTMLElement>("[data-report-sheet]");
+      if (!source || !sheet || sheet.getBoundingClientRect().height <= 0 || sheet.textContent?.trim() === "") {
+        throw new Error("report pdf document rendered empty");
+      }
+      source.style.display = "block";
+    });
     const pdf = await page.pdf({
       format: "A4",
       printBackground: true,
