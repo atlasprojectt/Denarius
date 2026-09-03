@@ -12,7 +12,7 @@ describe("buttonVariants", () => {
     "destructive",
     "outline",
   ] as const)("provides the %s semantic variant", (variant) => {
-    expect(buttonVariants({ variant })).toContain("rounded-lg");
+    expect(buttonVariants({ variant })).toContain("rounded-full");
     expect(buttonVariants({ variant }).length).toBeGreaterThan(100);
   });
 
@@ -31,23 +31,23 @@ describe("buttonVariants", () => {
     expect(buttonVariants({ variant: "destructive" })).toContain("bg-destructive/10");
   });
 
-  it("uses pills only for contextual actions", () => {
-    expect(buttonShapeFor("tertiary", "sm")).toBe("pill");
-    expect(buttonShapeFor("secondary", "sm")).toBe("default");
+  it("uses the full radius for autonomous textual actions", () => {
+    expect(buttonShapeFor("tertiary", "sm")).toBe("full");
+    expect(buttonShapeFor("secondary", "sm")).toBe("full");
     expect(
-      buttonVariants({ variant: "tertiary", size: "sm", shape: "pill" }),
-    ).toContain("rounded-pill");
-    expect(buttonVariants({ variant: "secondary", shape: "pill" })).toContain(
-      "rounded-pill",
+      buttonVariants({ variant: "tertiary", size: "sm", shape: "full" }),
+    ).toContain("rounded-full");
+    expect(buttonVariants({ variant: "secondary", shape: "standard" })).toContain(
+      "rounded-standard",
     );
-    expect(buttonVariants({ variant: "primary" })).not.toContain("rounded-pill");
+    expect(buttonVariants({ variant: "primary" })).not.toContain("rounded-standard");
   });
 
   it.each(["icon", "icon-sm", "icon-xs", "icon-lg"] as const)(
     "keeps %s circular",
     (size) => {
-      expect(buttonShapeFor("ghost", size)).toBe("pill");
-      expect(buttonVariants({ size, shape: "pill" })).toContain("rounded-pill");
+      expect(buttonShapeFor("ghost", size)).toBe("full");
+      expect(buttonVariants({ size, shape: "full" })).toContain("rounded-full");
     },
   );
 

@@ -68,7 +68,7 @@ export function Hero({
 
   return (
     <Card className="min-h-full">
-      <CardHeader>
+      <CardHeader className="border-b border-border/70">
         <CardTitle className="flex items-center gap-2 text-sm font-medium">
           <RiWallet3Line className="size-4 text-muted-foreground" aria-hidden />
           {c.title}

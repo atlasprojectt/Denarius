@@ -131,7 +131,7 @@ function EmployeeRow({
   }
 
   return (
-    <TableRow className="bg-muted/30">
+    <TableRow className="bg-muted">
       <TableCell colSpan={4} className="py-3 whitespace-normal">
         <form action={formAction} noValidate className="flex flex-wrap items-center gap-3">
           <input type="hidden" name="employeeId" value={employee.id} />
@@ -241,7 +241,7 @@ function MobileEmployeeCard({
   }
 
   return (
-    <form action={action} noValidate className="flex flex-col gap-3 rounded-lg border bg-muted/20 p-4">
+    <form action={action} noValidate className="flex flex-col gap-3 rounded-lg border bg-muted p-4">
       <input type="hidden" name="employeeId" value={employee.id} />
       <Input name="name" defaultValue={employee.name} aria-invalid={state.fieldErrors?.name !== undefined} />
       <Input name="email" type="email" defaultValue={employee.email} aria-invalid={state.fieldErrors?.email !== undefined} />

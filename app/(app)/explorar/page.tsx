@@ -271,7 +271,7 @@ export default async function ExplorePage() {
                 </CardHeader>
 
                 <CardContent className="p-0">
-                  <div className="flex flex-col border-y border-border/70 bg-muted/10 md:grid md:grid-cols-[1fr_auto_1fr_auto_1fr]">
+                  <div className="flex flex-col border-y border-border/70 md:grid md:grid-cols-[1fr_auto_1fr_auto_1fr]">
                     <FinancialMetric
                       label={copy.reported}
                       value={usdDisplay(apiSpend.monthUsd, currency, fx)}
@@ -307,7 +307,7 @@ export default async function ExplorePage() {
                       amountHeader={copy.colDerived}
                     />
 
-                    <div className="flex items-start gap-2 rounded-lg border border-border/70 bg-muted/25 px-3 py-2.5 text-xs/relaxed text-muted-foreground">
+                    <div className="flex items-start gap-2 rounded-lg border border-border/70 px-3 py-2.5 text-xs/relaxed text-muted-foreground">
                       <RiInformationLine
                         aria-hidden
                         className="mt-0.5 size-3.5 shrink-0"

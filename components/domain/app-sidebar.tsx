@@ -1,8 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { usePathname } from "next/navigation";
 import {
   RiExpandUpDownLine,
   RiFileChartLine,
@@ -47,7 +46,7 @@ import { Button } from "@/components/ui/button";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { logout } from "@/lib/auth/actions";
 import type { ConnectionFreshness } from "@/lib/engine/freshness";
-import { SEARCH_FOCUS_EVENT } from "@/lib/search/shortcut";
+import { SEARCH_OPEN_EVENT } from "@/lib/search/shortcut";
 
 // Shell rebuilt on the shadcn block @efferd/app-shell-3 (2026-08-02,
 // founder-directed): header logo row → labelled NavGroups → footer. The
@@ -113,34 +112,12 @@ export function AppSidebar({
   allClear: boolean;
 }) {
   const pathname = usePathname();
-  const router = useRouter();
   const { setOpenMobile } = useSidebar();
 
-  useEffect(() => {
-    function handleSearchShortcut(event: KeyboardEvent) {
-      if (
-        !event.ctrlKey ||
-        event.altKey ||
-        event.shiftKey ||
-        event.key.toLocaleLowerCase("pt-BR") !== "p"
-      ) {
-        return;
-      }
-      event.preventDefault();
-      if (pathname === "/search") {
-        window.dispatchEvent(new Event(SEARCH_FOCUS_EVENT));
-      } else {
-        router.push("/search?focus=1");
-      }
-      setOpenMobile(false);
-    }
-
-    window.addEventListener("keydown", handleSearchShortcut, { capture: true });
-    return () =>
-      window.removeEventListener("keydown", handleSearchShortcut, {
-        capture: true,
-      });
-  }, [pathname, router, setOpenMobile]);
+  function openSearch() {
+    setOpenMobile(false);
+    window.dispatchEvent(new Event(SEARCH_OPEN_EVENT));
+  }
 
   const navGroups: SidebarNavGroup[] = navigation.map((group) => ({
     label: group.label,
@@ -191,13 +168,12 @@ export function AppSidebar({
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
-                  isActive={pathname === "/search"}
                   tooltip={copy.search}
-                  className="h-11 border border-sidebar-border/70 bg-sidebar-accent/55 px-3 text-sidebar-foreground/70 shadow-none hover:bg-sidebar-accent hover:text-sidebar-accent-foreground data-active:bg-sidebar-accent data-active:text-sidebar-accent-foreground md:h-9 group-data-[collapsible=icon]:border-transparent group-data-[collapsible=icon]:bg-transparent group-data-[collapsible=icon]:px-2"
+                  className="h-11 rounded-standard border border-sidebar-border/70 bg-surface-control px-3 text-sidebar-foreground/70 shadow-none hover:bg-surface-hover hover:text-sidebar-accent-foreground data-active:bg-surface-selected data-active:text-sidebar-accent-foreground md:h-9 group-data-[collapsible=icon]:border-transparent group-data-[collapsible=icon]:bg-transparent group-data-[collapsible=icon]:px-2"
                 >
-                  <Link
-                    href="/search?focus=1"
-                    onClick={() => setOpenMobile(false)}
+                  <button
+                    type="button"
+                    onClick={openSearch}
                     aria-label={`${copy.search} (${copy.searchShortcut})`}
                   >
                     <RiSearchLine />
@@ -205,7 +181,7 @@ export function AppSidebar({
                     <kbd className="ml-auto font-sans text-[10px] leading-none text-sidebar-foreground/55 group-data-[collapsible=icon]:hidden">
                       {copy.searchShortcut}
                     </kbd>
-                  </Link>
+                  </button>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>

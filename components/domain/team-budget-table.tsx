@@ -143,7 +143,7 @@ export function TeamBudgetTable({
     // scroller below keeps a long roster inside that height instead of pushing
     // past the row into the observations footer.
     <Card className="min-h-full">
-      <CardHeader>
+      <CardHeader className="border-b border-border/70">
         <CardTitle className="flex items-center gap-2 text-sm">
           <RiTeamLine className="size-4 text-muted-foreground" aria-hidden />
           {c.title}
@@ -179,7 +179,7 @@ export function TeamBudgetTable({
                   key={team.teamId}
                   href={`/times/${team.teamId}`}
                   aria-label={c.detail(team.teamName)}
-                  className="group min-h-11 rounded-lg border p-3 outline-none transition-colors hover:border-border hover:bg-muted/30 focus-visible:ring-2 focus-visible:ring-ring/40"
+                  className="group min-h-11 rounded-lg border p-3 outline-none transition-colors hover:border-border hover:bg-surface-hover focus-visible:ring-2 focus-visible:ring-ring/40"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <p className="min-w-0 truncate font-medium">{team.teamName}</p>

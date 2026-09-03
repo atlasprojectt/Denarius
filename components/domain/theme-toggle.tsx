@@ -218,8 +218,8 @@ function ThemeOption({
       className={cn(
         "group relative min-h-32 min-w-0 rounded-lg border p-3 transition-colors",
         selected
-          ? "border-foreground/20 bg-muted/40"
-          : "border-border bg-card hover:bg-muted/25",
+          ? "border-foreground/20 bg-muted"
+          : "border-border bg-card hover:bg-surface-hover",
       )}
     >
       <RadioGroupItem

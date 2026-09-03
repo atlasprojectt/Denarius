@@ -88,7 +88,7 @@ export function PrivacyForm({
         disabled={!isAdmin}
       />
 
-      <p className="flex items-start gap-2 rounded-lg bg-muted/50 p-3 text-xs/relaxed text-muted-foreground">
+      <p className="flex items-start gap-2 rounded-lg bg-muted p-3 text-xs/relaxed text-muted-foreground">
         <RiShieldCheckLine className="mt-0.5 size-4 shrink-0" aria-hidden />
         {copy.neverStored}
       </p>

@@ -35,13 +35,13 @@ function ItemSeparator({
 }
 
 const itemVariants = cva(
-  "group/item flex w-full flex-wrap items-center rounded-md border text-xs/relaxed transition-colors outline-none hover:border-border hover:bg-muted/50 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40 [a]:transition-colors [a]:hover:bg-muted",
+  "group/item flex w-full flex-wrap items-center rounded-standard border text-xs/relaxed transition-colors outline-none hover:border-border hover:bg-surface-hover focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40 [a]:transition-colors [a]:hover:bg-surface-hover",
   {
     variants: {
       variant: {
         default: "border-transparent",
         outline: "border-border",
-        muted: "border-transparent bg-muted/50",
+        muted: "border-transparent bg-muted",
       },
       size: {
         default: "gap-2.5 px-3 py-2.5",

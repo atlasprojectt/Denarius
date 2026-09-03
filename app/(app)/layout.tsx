@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { AppSidebar } from "@/components/domain/app-sidebar";
 import { NotificationsButton } from "@/components/domain/notifications-button";
 import { RevealController } from "@/components/domain/reveal-controller";
+import { SearchDialog } from "@/components/domain/search-dialog";
 import { AppToastProvider } from "@/components/domain/toast-provider";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -124,6 +125,7 @@ export default async function AppLayout({
             {children}
           </div>
           <RevealController />
+          <SearchDialog />
         </SidebarInset>
       </SidebarProvider>
     </AppToastProvider>

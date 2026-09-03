@@ -126,7 +126,7 @@ export function ReportViewer({
     <section className="report-viewer" data-report-viewer>
       <header className="report-viewer-toolbar">
         <div className="report-viewer-title">
-          <Button asChild variant="ghost" size="sm" shape="compact">
+          <Button asChild variant="ghost" size="sm" shape="full">
             <Link href="/relatorios" aria-label={copy.back}>
               <RiArrowLeftLine aria-hidden />
               <span className="max-sm:sr-only">{copy.back}</span>

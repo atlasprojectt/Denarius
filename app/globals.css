@@ -8,6 +8,10 @@
   border-radius: var(--radius-pill);
 }
 
+@utility rounded-standard {
+  border-radius: var(--radius-standard);
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -68,6 +72,13 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  --color-surface-deep: var(--surface-deep);
+  --color-surface-card: var(--surface-card);
+  --color-surface-canvas: var(--surface-canvas);
+  --color-surface-control: var(--surface-control);
+  --color-surface-elevated: var(--surface-elevated);
+  --color-surface-hover: var(--surface-hover);
+  --color-surface-selected: var(--surface-selected);
   --radius-sm: 0.375rem;
   --radius-md: 0.625rem;
   --radius-lg: 0.875rem;
@@ -76,6 +87,7 @@
   --radius-3xl: 1.25rem;
   --radius-4xl: 1.5rem;
   --radius-pill: 9999px;
+  --radius-standard: 0.625rem;
 }
 
 :root {
@@ -491,11 +503,18 @@ input[type="number"]::-webkit-outer-spin-button {
    source of truth across every route.
 --------------------------------------------------------------------------- */
 :root {
-  --background: oklch(0.985 0.001 106.423);
+  --surface-deep: oklch(0.955 0.002 106.423);
+  --surface-card: oklch(0.97 0.001 106.424);
+  --surface-canvas: oklch(0.985 0.001 106.423);
+  --surface-control: oklch(0.965 0.002 106.423);
+  --surface-elevated: oklch(1 0 0);
+  --surface-hover: oklch(0.945 0.003 106.423);
+  --surface-selected: oklch(0.93 0.004 106.423);
+  --background: var(--surface-canvas);
   --foreground: oklch(0.147 0.004 49.25);
-  --card: oklch(1 0 0);
+  --card: var(--surface-card);
   --card-foreground: oklch(0.147 0.004 49.25);
-  --popover: oklch(1 0 0);
+  --popover: var(--surface-elevated);
   --popover-foreground: oklch(0.147 0.004 49.25);
   --brand-accent: #ff5a1f;
   --brand-accent-light: #ff9a70;
@@ -509,11 +528,11 @@ input[type="number"]::-webkit-outer-spin-button {
      The signature accent remains separate because it is too light for 14px
      text on a solid button. */
   --primary-hover: #c2410c;
-  --secondary: oklch(0.967 0.001 286.375);
+  --secondary: var(--surface-control);
   --secondary-foreground: oklch(0.21 0.006 285.885);
-  --muted: oklch(0.97 0.001 106.424);
+  --muted: var(--surface-control);
   --muted-foreground: oklch(0.553 0.013 58.071);
-  --accent: oklch(0.97 0.001 106.424);
+  --accent: var(--surface-hover);
   --accent-foreground: oklch(0.216 0.006 56.043);
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.923 0.003 48.717);
@@ -525,11 +544,11 @@ input[type="number"]::-webkit-outer-spin-button {
   --chart-4: color-mix(in oklab, var(--foreground) 52%, transparent);
   --chart-5: color-mix(in oklab, var(--foreground) 36%, transparent);
   --radius: 0.875rem;
-  --sidebar: oklch(0.985 0.001 106.423);
+  --sidebar: var(--surface-deep);
   --sidebar-foreground: oklch(0.147 0.004 49.25);
   --sidebar-primary: oklch(0.646 0.222 41.116);
   --sidebar-primary-foreground: oklch(0.98 0.016 73.684);
-  --sidebar-accent: oklch(0.97 0.001 106.424);
+  --sidebar-accent: var(--surface-selected);
   --sidebar-accent-foreground: oklch(0.216 0.006 56.043);
   --sidebar-border: oklch(0.923 0.003 48.717);
   --sidebar-ring: var(--focus-ring);
@@ -559,11 +578,18 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 
 .dark {
-  --background: oklch(0.147 0.004 49.25);
+  --surface-deep: oklch(0.11 0.003 49.25);
+  --surface-card: oklch(0.125 0.003 49.25);
+  --surface-canvas: oklch(0.147 0.004 49.25);
+  --surface-control: oklch(0.168 0.004 50);
+  --surface-elevated: oklch(0.19 0.005 52);
+  --surface-hover: oklch(0.21 0.006 52);
+  --surface-selected: oklch(0.23 0.006 52);
+  --background: var(--surface-canvas);
   --foreground: oklch(0.985 0.001 106.423);
-  --card: oklch(0.168 0.004 49.25);
+  --card: var(--surface-card);
   --card-foreground: oklch(0.985 0.001 106.423);
-  --popover: oklch(0.216 0.006 56.043);
+  --popover: var(--surface-elevated);
   --popover-foreground: oklch(0.985 0.001 106.423);
   --brand-accent: #ff5a1f;
   --brand-accent-light: #ff9a70;
@@ -576,11 +602,11 @@ input[type="number"]::-webkit-outer-spin-button {
   /* Dark primary is deliberately deep for button fills Ã¢â‚¬â€ hovered text needs a
      much brighter orange to stay legible on the dark card. */
   --primary-hover: #c2410c;
-  --secondary: oklch(0.274 0.006 286.033);
+  --secondary: var(--surface-control);
   --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.268 0.007 34.298);
+  --muted: var(--surface-control);
   --muted-foreground: oklch(0.709 0.01 56.259);
-  --accent: oklch(0.268 0.007 34.298);
+  --accent: var(--surface-hover);
   --accent-foreground: oklch(0.985 0.001 106.423);
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 10%);
@@ -591,13 +617,13 @@ input[type="number"]::-webkit-outer-spin-button {
   --chart-3: color-mix(in oklab, var(--foreground) 70%, transparent);
   --chart-4: color-mix(in oklab, var(--foreground) 52%, transparent);
   --chart-5: color-mix(in oklab, var(--foreground) 36%, transparent);
-  /* The inset shell needs a real depth step: the rail is the darkest plane,
-     then the app canvas, then transient/card surfaces. */
-  --sidebar: oklch(0.11 0.003 49.25);
+  /* The inset shell keeps the approved order: rail, recessed cards, canvas,
+     controls and transient surfaces. */
+  --sidebar: var(--surface-deep);
   --sidebar-foreground: oklch(0.985 0.001 106.423);
   --sidebar-primary: oklch(0.705 0.213 47.604);
   --sidebar-primary-foreground: oklch(0.98 0.016 73.684);
-  --sidebar-accent: oklch(0.268 0.007 34.298);
+  --sidebar-accent: var(--surface-selected);
   --sidebar-accent-foreground: oklch(0.985 0.001 106.423);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: var(--focus-ring);

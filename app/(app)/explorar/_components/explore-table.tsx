@@ -98,7 +98,7 @@ function SortButton({
       size="xs"
       onClick={() => onSort(field)}
       className={cn(
-        "group/sort h-9 w-full rounded-md px-2 text-[11px] font-medium hover:bg-muted/40",
+        "group/sort h-9 w-full px-2 text-[11px] font-medium hover:bg-surface-hover",
         align === "right" ? "justify-end" : "justify-start",
         active ? "text-foreground" : "text-muted-foreground",
       )}
@@ -192,7 +192,7 @@ function RowAction({ row }: { row: ExploreRow }) {
       asChild
       variant="tertiary"
       size="xs"
-      shape="compact"
+      shape="full"
       motion="forward"
       className="justify-self-end"
     >
@@ -218,10 +218,7 @@ function DesktopRows({
       {rows.map((row, index) => (
         <TableRow
           key={row.id}
-          className={cn(
-            "h-12 border-border/60 hover:bg-muted/25",
-            row.state === "unattributed" && "bg-muted/15",
-          )}
+          className="h-12 border-border/60 hover:bg-background/35"
         >
           <TableCell className="min-w-64 py-2 text-[13px] whitespace-normal">
             <div className="flex items-center gap-2">
@@ -271,7 +268,7 @@ function MobileRows({
       {rows.map((row, index) => (
         <article
           key={row.id}
-          className="rounded-xl border border-border/70 bg-muted/10 p-3 text-[13px]"
+          className="rounded-xl border border-border/70 p-3 text-[13px]"
         >
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">

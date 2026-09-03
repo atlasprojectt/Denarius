@@ -13,15 +13,15 @@ const buttonVariants = cva(
         primary:
           "bg-primary text-primary-foreground hover:bg-primary-hover active:bg-primary/90",
         secondary:
-          "border-border/70 bg-muted/30 text-foreground hover:border-border/90 hover:bg-muted/50 hover:text-foreground active:bg-muted/65",
+          "border-border/70 bg-secondary text-foreground hover:border-border/90 hover:bg-surface-hover hover:text-foreground active:bg-surface-selected",
         tertiary:
-          "border-border/60 bg-muted/10 text-muted-foreground [transition-duration:var(--motion-duration-fast)] hover:border-border/85 hover:bg-muted/40 hover:text-foreground hover:[&_svg]:text-brand-accent-light active:bg-muted/55",
+          "border-border/60 bg-transparent text-muted-foreground [transition-duration:var(--motion-duration-fast)] hover:border-border/85 hover:bg-surface-hover hover:text-foreground hover:[&_svg]:text-brand-accent-light active:bg-surface-selected",
         ghost:
-          "bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground active:bg-muted/80",
+          "bg-transparent text-muted-foreground hover:bg-surface-hover hover:text-foreground active:bg-surface-selected",
         destructive:
           "border-destructive/25 bg-destructive/10 text-destructive hover:bg-destructive/20 active:bg-destructive/25 focus-visible:border-destructive/50 focus-visible:ring-destructive/25 dark:bg-destructive/20 dark:hover:bg-destructive/30",
         outline:
-          "border-border bg-transparent text-foreground hover:bg-muted/50 active:bg-muted/70 dark:bg-input/10",
+          "border-border bg-transparent text-foreground hover:bg-surface-hover active:bg-surface-selected",
         link: "rounded-none text-primary underline-offset-4 hover:underline dark:text-primary-hover",
       },
       size: {
@@ -36,26 +36,23 @@ const buttonVariants = cva(
         "icon-lg": "size-10 p-0 [&_svg:not([class*='size-'])]:size-4",
       },
       shape: {
-        default: "rounded-lg",
-        compact: "rounded-md",
-        pill: "rounded-pill",
+        standard: "rounded-standard",
+        full: "rounded-full",
       },
     },
     defaultVariants: {
       variant: "primary",
       size: "default",
-      shape: "default",
+      shape: "full",
     },
   },
 );
 
 function buttonShapeFor(
-  variant: ButtonProps["variant"],
-  size: ButtonProps["size"],
+  _variant: ButtonProps["variant"],
+  _size: ButtonProps["size"],
 ): NonNullable<ButtonProps["shape"]> {
-  const isContextual = variant === "tertiary";
-  const isIconOnly = typeof size === "string" && size.startsWith("icon");
-  return isContextual || isIconOnly ? "pill" : "default";
+  return "full";
 }
 
 type ButtonProps = ButtonPrimitive.Props &
@@ -129,6 +126,7 @@ function Button({
       data-motion={motion === "none" ? undefined : motion}
       className={cn(
         buttonVariants({ variant, size, shape: resolvedShape, className }),
+        variant === "link" && "rounded-none",
       )}
       render={render}
       nativeButton={render ? render.type === "button" : true}

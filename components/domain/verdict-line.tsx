@@ -58,7 +58,7 @@ export function VerdictLine({
           {verdict.sentence}
         </p>
         {action !== null && (
-          <Button asChild variant="tertiary" size="sm" shape="pill" motion="forward">
+          <Button asChild variant="tertiary" size="sm" shape="full" motion="forward">
             <Link href={action.href}>
               {action.label}
               <RiArrowRightSLine className="size-3.5" data-icon="inline-end" aria-hidden />

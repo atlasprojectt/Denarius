@@ -133,7 +133,7 @@ function SubscriptionRow({
   }
 
   return (
-    <TableRow className="bg-muted/30">
+    <TableRow className="bg-muted">
       <TableCell colSpan={6} className="py-3 whitespace-normal">
         <form
           action={updateAction}
@@ -254,7 +254,7 @@ function MobileSubscriptionCard({
   }
 
   return (
-    <form action={action} noValidate className="flex flex-col gap-3 rounded-lg border bg-muted/20 p-4">
+    <form action={action} noValidate className="flex flex-col gap-3 rounded-lg border bg-muted p-4">
       <input type="hidden" name="subscriptionId" value={subscription.id} />
       <Input name="tool" defaultValue={subscription.tool} aria-invalid={state.fieldErrors?.tool !== undefined} />
       <Input name="seatCount" type="number" min={1} step={1} defaultValue={subscription.seatCount} aria-invalid={state.fieldErrors?.seatCount !== undefined} />

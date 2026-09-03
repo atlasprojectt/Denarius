@@ -506,7 +506,7 @@ function ControlPlanSection({ team }: { team: CockpitTeam }) {
                 {href ? (
                   <Link
                     href={href}
-                    className="group flex items-start gap-3 px-3 py-3 outline-none transition-colors hover:bg-muted/25 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/40"
+                    className="group flex items-start gap-3 px-3 py-3 outline-none transition-colors hover:bg-surface-hover focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/40"
                   >
                     {content}
                   </Link>

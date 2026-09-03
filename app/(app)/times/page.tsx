@@ -113,7 +113,7 @@ export default async function TimesPage({
         meta={copy.asOf(period.monthLabel, period.dayOfPeriod, period.daysInPeriod)}
         actions={
           diagnosis.isAdmin ? (
-          <Button asChild variant="secondary" size="sm" shape="compact">
+          <Button asChild variant="secondary" size="sm" shape="full">
             <Link href="/ajustes/orcamentos">{copy.manage}</Link>
           </Button>
           ) : undefined
@@ -173,7 +173,7 @@ export default async function TimesPage({
                     key={team.id}
                     href={`/times/${team.id}`}
                     aria-label={copy.open(team.name)}
-                    className="group flex min-h-14 items-center gap-4 px-4 py-3 outline-none transition-colors duration-(--motion-duration-standard) ease-(--motion-ease-standard) hover:bg-muted/20 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/40"
+                    className="group flex min-h-14 items-center gap-4 px-4 py-3 outline-none transition-colors duration-(--motion-duration-standard) ease-(--motion-ease-standard) hover:bg-surface-hover focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/40"
                   >
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-[13px] font-medium">{team.name}</p>

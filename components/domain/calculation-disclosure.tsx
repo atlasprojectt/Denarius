@@ -24,7 +24,7 @@ export function CalculationDisclosure({
 
   return (
     <Collapsible open={open} onOpenChange={setOpen}>
-      <CollapsibleTrigger className="group flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left text-xs font-medium text-muted-foreground outline-none transition-colors duration-(--motion-duration-standard) ease-(--motion-ease-standard) hover:bg-muted/35 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/40">
+      <CollapsibleTrigger className="group flex w-full items-center justify-between gap-3 rounded-standard px-3 py-2 text-left text-xs font-medium text-muted-foreground outline-none transition-colors duration-(--motion-duration-standard) ease-(--motion-ease-standard) hover:bg-surface-hover hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/40">
         {title}
         <RiArrowDownSLine
           aria-hidden

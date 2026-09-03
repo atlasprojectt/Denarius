@@ -90,7 +90,7 @@ function TeamRow({
       data-reveal-legend
       style={{ animationDelay: `${70 + index * 55}ms` }}
       className={cn(
-        "group/row relative px-4 py-3.5 transition-colors duration-(--motion-duration-standard) ease-(--motion-ease-standard) hover:bg-muted/20",
+        "group/row relative px-4 py-3.5 transition-colors duration-(--motion-duration-standard) ease-(--motion-ease-standard) hover:bg-surface-hover",
         priority === "attention" && "bg-muted/10",
       )}
     >
@@ -147,7 +147,7 @@ function TeamRow({
                 asChild
                 variant="secondary"
                 size="xs"
-                shape="compact"
+                shape="full"
                 className="h-11 sm:h-6"
               >
                 <Link href={href}>{copy.investigate}</Link>

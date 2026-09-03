@@ -32,8 +32,8 @@ const tones: Record<
   { card: string; hover: string; description: string }
 > = {
   neutral: {
-    card: "bg-sidebar-accent/55",
-    hover: "transition-colors hover:bg-sidebar-accent",
+    card: "bg-sidebar-accent",
+    hover: "transition-colors hover:bg-surface-hover",
     description: "text-sidebar-foreground/65",
   },
   // text-status-green colors the icon through the Alert's `*:[svg]:text-current`;
@@ -126,7 +126,7 @@ export function SidebarNotice({
           <Link
             href={href}
             aria-label={ariaLabel ?? title}
-            className="block rounded-lg outline-hidden ring-sidebar-ring focus-visible:ring-2"
+            className="block rounded-standard outline-hidden ring-sidebar-ring focus-visible:ring-2"
           >
             {card}
           </Link>

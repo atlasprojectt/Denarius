@@ -26,14 +26,15 @@ function TabsList({
     <TabsPrimitive.List
       data-slot="tabs-list"
       className={cn(
-        "relative flex h-9 w-fit items-center gap-0.5 rounded-[10px] border border-border/70 bg-muted/35 p-0.5 text-muted-foreground",
+        "relative flex h-9 w-fit items-center gap-0.5 rounded-full border border-border/70 bg-card p-0.5 text-muted-foreground",
         className,
       )}
       {...props}
     >
       <TabsPrimitive.Indicator
         aria-hidden
-        className="pointer-events-none absolute top-0 left-0 z-0 rounded-lg bg-background shadow-xs [height:var(--active-tab-height)] [transform:translate(var(--active-tab-left),var(--active-tab-top))] [width:var(--active-tab-width)] transition-[transform,width] duration-(--motion-duration-max) ease-(--motion-ease-standard) motion-reduce:transition-none"
+        data-slot="tabs-indicator"
+        className="pointer-events-none absolute top-0 left-0 z-0 rounded-full bg-background [height:var(--active-tab-height)] [transform:translate(var(--active-tab-left),var(--active-tab-top))] [width:var(--active-tab-width)] transition-[transform,width] duration-(--motion-duration-max) ease-(--motion-ease-standard) motion-reduce:transition-none"
       />
       {children}
     </TabsPrimitive.List>
@@ -48,7 +49,7 @@ function TabsTrigger({
     <TabsPrimitive.Tab
       data-slot="tabs-trigger"
       className={cn(
-        "relative z-10 inline-flex h-8 items-center justify-center rounded-lg px-3 text-xs font-medium outline-none transition-colors duration-(--motion-duration-standard) ease-(--motion-ease-standard) focus-visible:ring-2 focus-visible:ring-ring/40 data-active:text-foreground",
+        "relative z-10 inline-flex h-8 items-center justify-center rounded-full px-3 text-xs font-medium outline-none transition-colors duration-(--motion-duration-standard) ease-(--motion-ease-standard) focus-visible:ring-2 focus-visible:ring-ring/40 data-active:text-foreground",
         className,
       )}
       {...props}

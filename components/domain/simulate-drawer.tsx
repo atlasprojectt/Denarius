@@ -106,7 +106,7 @@ export function SimulateDrawer(props: SimulateDrawerProps) {
                 [copy.budget, money(team.budget, currency)],
               ]}
             />
-            <p className="rounded-lg bg-muted/50 p-3 text-xs/relaxed text-muted-foreground">
+            <p className="rounded-lg bg-muted p-3 text-xs/relaxed text-muted-foreground">
               {copy.collecting}
             </p>
           </div>
@@ -211,7 +211,7 @@ function Simulation({
         )}
       </div>
 
-      <div className="rounded-lg border bg-muted/40 p-4">
+      <div className="rounded-lg border bg-muted p-4">
         <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
           {copy.resultTitle}
         </p>

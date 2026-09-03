@@ -86,13 +86,13 @@ export function RosterUpload({ isAdmin = true }: { isAdmin?: boolean }) {
             name="file"
             accept=".csv,text/csv"
             required
-            className="text-sm text-muted-foreground file:mr-3 file:rounded-md file:border file:border-input file:bg-background file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-foreground hover:file:bg-muted"
+            className="text-sm text-muted-foreground file:mr-3 file:rounded-full file:border file:border-input file:bg-background file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-foreground hover:file:bg-surface-hover"
           />
 
           <ActionStatus error={state.error} success={state.success} />
 
           {preview && (
-            <div className="rounded-lg border bg-muted/40 p-4 text-sm">
+            <div className="rounded-lg border bg-muted p-4 text-sm">
               {preview.errors.length > 0 ? (
                 <>
                   <p role="alert" className="font-medium text-destructive">

@@ -66,7 +66,7 @@ export function ProviderComposition({
 
   return (
     <Card size="sm" className="min-h-full">
-      <CardHeader>
+      <CardHeader className="border-b border-border/70">
         <CardTitle className="flex items-center gap-2 text-sm">
           <RiPieChart2Line className="size-4 text-muted-foreground" aria-hidden />
           {c.title}
@@ -111,9 +111,9 @@ export function ProviderComposition({
               asChild
               variant="tertiary"
               size="sm"
-              shape="pill"
+              shape="full"
               motion="forward"
-              className="ml-1 bg-muted/15 text-foreground/75"
+              className="ml-1 text-foreground/75"
             >
               <Link href="/ajustes/atribuicao">
                 {c.mapCta}

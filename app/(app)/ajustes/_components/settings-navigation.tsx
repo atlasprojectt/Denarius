@@ -44,7 +44,7 @@ export function SettingsNavigationItem({
       className={cn(
         "group/item relative grid min-h-[66px] grid-cols-[20px_minmax(0,1fr)_36px] items-center gap-x-3 px-4 py-3.5 outline-none",
         "after:absolute after:right-4 after:bottom-0 after:left-12 after:h-px after:bg-border/60 last:after:hidden",
-        "transition-colors duration-(--motion-duration-standard) ease-(--motion-ease-standard) hover:bg-muted/25 active:bg-muted/15",
+        "transition-colors duration-(--motion-duration-standard) ease-(--motion-ease-standard) hover:bg-surface-hover active:bg-surface-selected",
         "focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/40",
         "motion-reduce:transition-none sm:grid-cols-[20px_minmax(0,1fr)_minmax(140px,auto)_36px] sm:px-5 sm:after:right-5 sm:after:left-13",
       )}

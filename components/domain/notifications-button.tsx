@@ -194,7 +194,7 @@ function NotificationsPanel({
                   <Link
                     href={item.href}
                     onClick={onNavigate}
-                    className="group grid grid-cols-[minmax(0,1fr)_auto] gap-3 px-4 py-3.5 outline-none transition-colors duration-(--motion-duration-standard) ease-(--motion-ease-standard) hover:bg-muted/30 focus-visible:bg-muted/40"
+                    className="group grid grid-cols-[minmax(0,1fr)_auto] gap-3 px-4 py-3.5 outline-none transition-colors duration-(--motion-duration-standard) ease-(--motion-ease-standard) hover:bg-surface-hover focus-visible:bg-surface-hover"
                   >
                     <span className="min-w-0">
                       <StateBadge icon={meta.icon} tone={meta.tone}>
@@ -312,7 +312,7 @@ export function NotificationsButton() {
       aria-controls={panelId}
       aria-busy={loading && items === null}
       title={copy.title}
-      className="size-10 overflow-visible border-border bg-card text-foreground shadow-sm hover:border-border hover:bg-muted/45 aria-expanded:border-border aria-expanded:bg-muted/60 sm:size-9"
+      className="size-10 overflow-visible border-border bg-card text-foreground shadow-sm hover:border-border hover:bg-surface-hover aria-expanded:border-border aria-expanded:bg-surface-selected sm:size-9"
     >
       <RiNotification3Line className="size-[18px]" aria-hidden />
       {count > 0 && (

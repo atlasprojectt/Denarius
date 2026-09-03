@@ -125,10 +125,10 @@ export function AuthForm({ oauthError }: { oauthError?: string }) {
           </div>
 
           <div className="denarius-auth-enter [animation-delay:60ms]">
-            <div className="relative grid grid-cols-2 rounded-lg bg-muted p-1">
+            <div className="relative grid grid-cols-2 rounded-full bg-muted p-1">
               <span
                 aria-hidden
-                className="absolute inset-y-1 left-1 w-[calc(50%-0.25rem)] rounded-md bg-background shadow-sm transition-transform duration-(--motion-duration-max)"
+                className="absolute inset-y-1 left-1 w-[calc(50%-0.25rem)] rounded-full bg-background shadow-sm transition-transform duration-(--motion-duration-max)"
                 style={{
                   transitionTimingFunction: EASE,
                   transform: isSignup ? "translateX(100%)" : "translateX(0)",
@@ -144,6 +144,7 @@ export function AuthForm({ oauthError }: { oauthError?: string }) {
                   key={value}
                   type="button"
                   variant="ghost"
+                  shape="full"
                   aria-pressed={mode === value}
                   onClick={() => setMode(value)}
                   className={`relative z-10 h-11 bg-transparent text-sm font-medium transition-colors duration-(--motion-duration-standard) hover:bg-transparent ${

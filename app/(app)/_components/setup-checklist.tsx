@@ -72,7 +72,7 @@ export function SetupChecklist({
                     href={step.href}
                     aria-label={done ? homeCopy.setup.stepDone(label) : label}
                     className={cn(
-                      "flex items-center gap-1.5 rounded-pill border py-1 pr-2.5 pl-1 text-xs outline-none transition-colors duration-(--motion-duration-fast) ease-(--motion-ease-standard) hover:bg-muted/40 focus-visible:ring-2 focus-visible:ring-ring/40",
+                      "flex items-center gap-1.5 rounded-full border py-1 pr-2.5 pl-1 text-xs outline-none transition-colors duration-(--motion-duration-fast) ease-(--motion-ease-standard) hover:bg-surface-hover focus-visible:ring-2 focus-visible:ring-ring/40",
                       done ? "text-muted-foreground" : "font-medium",
                     )}
                   >
@@ -112,7 +112,7 @@ export function SetupChecklist({
                 <Link
                   href={step.href}
                   aria-label={done ? homeCopy.setup.stepDone(label) : label}
-                  className="flex h-full items-start gap-3 rounded-lg border p-4 outline-none transition-colors duration-(--motion-duration-standard) ease-(--motion-ease-standard) hover:bg-muted/40 focus-visible:ring-2 focus-visible:ring-ring/40"
+                  className="flex h-full items-start gap-3 rounded-lg border p-4 outline-none transition-colors duration-(--motion-duration-standard) ease-(--motion-ease-standard) hover:bg-surface-hover focus-visible:ring-2 focus-visible:ring-ring/40"
                 >
                   <StepMarker done={done} index={index} />
                   <span className="min-w-0">

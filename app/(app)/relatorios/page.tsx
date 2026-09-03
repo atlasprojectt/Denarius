@@ -143,7 +143,7 @@ export default async function ReportsPage() {
                   key={report.periodMonth}
                   href={`/relatorios/${reportPeriodPath(report.periodMonth)}`}
                   aria-label={copy.openMonth(month)}
-                  className="group grid min-h-16 gap-3 px-4 py-3 outline-none transition-colors hover:bg-muted/20 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/40 sm:grid-cols-2 lg:grid-cols-[1.1fr_1fr_1fr_1.2fr_0.8fr_20px] lg:items-center lg:gap-4"
+                  className="group grid min-h-16 gap-3 px-4 py-3 outline-none transition-colors hover:bg-surface-hover focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/40 sm:grid-cols-2 lg:grid-cols-[1.1fr_1fr_1fr_1.2fr_0.8fr_20px] lg:items-center lg:gap-4"
                 >
                   <span className="font-medium">{month}</span>
                   <span className="grid gap-0.5 tabular-nums">

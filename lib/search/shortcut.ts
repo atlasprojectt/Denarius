@@ -1,1 +1,1 @@
-export const SEARCH_FOCUS_EVENT = "denarius:search-focus";
+export const SEARCH_OPEN_EVENT = "denarius:search-open";
