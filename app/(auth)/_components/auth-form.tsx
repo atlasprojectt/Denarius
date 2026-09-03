@@ -105,30 +105,31 @@ export function AuthForm({ oauthError }: { oauthError?: string }) {
     ? undefined
     : (state.error ?? (isSignup ? undefined : oauthError));
 
-  const inputClassName = "h-11 bg-background pl-10 text-[15px]";
+  const inputClassName =
+    "h-11 rounded-[var(--radius-standard)] border-border/70 bg-surface-control pl-10 text-[15px] hover:border-border/90 hover:bg-surface-hover focus-visible:border-ring/70 focus-visible:bg-surface-control focus-visible:ring-1 focus-visible:ring-ring/30";
   const iconClassName = "size-4";
 
   return (
     <>
       <form
         action={isSignup ? signupAction : loginAction}
-        className="flex flex-col gap-6"
+        className="flex flex-col gap-7"
       >
-        <FieldGroup>
-          <div className="denarius-auth-enter flex flex-col gap-2">
-            <h1 className="text-3xl font-semibold tracking-tight text-balance">
+        <FieldGroup className="gap-5">
+          <div className="denarius-auth-enter flex flex-col gap-2.5">
+            <h1 className="max-w-[15ch] text-[2rem]/[1.08] font-semibold tracking-[-0.025em] text-balance sm:text-[2.25rem]/[1.08]">
               {copy.title}
             </h1>
-            <p className="text-sm/relaxed text-balance text-muted-foreground">
+            <p className="max-w-[44ch] text-sm/relaxed text-pretty text-muted-foreground">
               {copy.subtitle}
             </p>
           </div>
 
           <div className="denarius-auth-enter [animation-delay:60ms]">
-            <div className="relative grid grid-cols-2 rounded-full bg-muted p-1">
+            <div className="relative grid grid-cols-2 rounded-[var(--radius-standard)] border border-border/60 bg-surface-control p-1">
               <span
                 aria-hidden
-                className="absolute inset-y-1 left-1 w-[calc(50%-0.25rem)] rounded-full bg-background shadow-sm transition-transform duration-(--motion-duration-max)"
+                className="absolute inset-y-1 left-1 w-[calc(50%-0.25rem)] rounded-full bg-surface-elevated transition-transform duration-(--motion-duration-max)"
                 style={{
                   transitionTimingFunction: EASE,
                   transform: isSignup ? "translateX(100%)" : "translateX(0)",
@@ -270,7 +271,7 @@ export function AuthForm({ oauthError }: { oauthError?: string }) {
           {shownError && (
             <p
               role="alert"
-              className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+              className="rounded-[var(--radius-standard)] border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
             >
               {shownError}
             </p>
@@ -288,7 +289,7 @@ export function AuthForm({ oauthError }: { oauthError?: string }) {
             </Button>
           </Field>
 
-          <FieldSeparator className="denarius-auth-enter [animation-delay:240ms]">
+          <FieldSeparator className="denarius-auth-enter [animation-delay:240ms] [&_[data-slot=field-separator-content]]:bg-surface-card">
             {copy.or}
           </FieldSeparator>
           <Field className="denarius-auth-enter [animation-delay:240ms]">
