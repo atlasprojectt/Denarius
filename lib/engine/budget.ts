@@ -28,6 +28,41 @@ export function isCollecting(dayOfPeriod: number): boolean {
 }
 
 /**
+ * Per-day governed spend points (display currency) for the behavior-aware
+ * forecast: provider-reported API USD per day converted at the frozen FX plus
+ * seats spread evenly across elapsed days. Days without observed API cost are
+ * OMITTED (never zero-filled) so the engine distinguishes "no data" from
+ * "no spend". Returns undefined when no honest series exists — missing FX with
+ * API spend, or nothing elapsed — so callers fall back to linear run-rate
+ * instead of forecasting on a guessed series (invariant #3/#4).
+ */
+export function governedDailySpend(input: {
+  apiByDay: { date: string; usd: number }[];
+  fxRate: number | null;
+  seatAccrued: number;
+  monthStart: string;
+  dayOfPeriod: number;
+}): DailySpendPoint[] | undefined {
+  const { apiByDay, fxRate, seatAccrued, monthStart, dayOfPeriod } = input;
+  if (dayOfPeriod <= 0) return undefined;
+  const start = Date.parse(`${monthStart}T00:00:00Z`);
+  if (Number.isNaN(start)) return undefined;
+  const usdByDate = new Map<string, number>();
+  for (const row of apiByDay) usdByDate.set(row.date, (usdByDate.get(row.date) ?? 0) + row.usd);
+  const hasApi = [...usdByDate.values()].some((usd) => usd > 0);
+  if (hasApi && (fxRate === null || !(fxRate > 0))) return undefined;
+  const seatPerDay = seatAccrued / dayOfPeriod;
+  const points: DailySpendPoint[] = [];
+  for (let day = 1; day <= dayOfPeriod; day++) {
+    const date = new Date(start + (day - 1) * 86_400_000).toISOString().slice(0, 10);
+    const apiUsd = usdByDate.get(date) ?? 0;
+    if (apiUsd === 0 && seatPerDay === 0) continue;
+    points.push({ date, amount: apiUsd * (fxRate ?? 0) + seatPerDay });
+  }
+  return points.length > 0 ? points : undefined;
+}
+
+/**
  * Linear run-rate close for the period: spend ÷ days-elapsed × days-in-period.
  * Raw — the day-5 guard is applied by `projection()` / `evaluateBudget()`.
  */

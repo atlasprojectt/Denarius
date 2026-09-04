@@ -43,7 +43,7 @@ export type ExploreRow = {
   note?: string;
   state?: ExploreRowState;
   actionLabel?: string;
-  comparison?: { provider: string; model: string; usage: ComparisonUsage[]; prices: ModelPrice[]; budget?: number | null; projectedCost?: number | null; expectedDays?: number };
+  comparison?: { provider: string; model: string; usage: ComparisonUsage[]; prices: ModelPrice[]; budgetUsd?: number | null; projectedCostUsd?: number | null; expectedDays?: number; currency: string; fxRate: number | null; fxDate: string | null; lastSyncAt?: string | null; dayOfPeriod?: number; periodLabel: string; economics: { derivedCostUsd: number | null; costPerMillionUsd: number | null; uncosted: boolean; coverage: { start: string | null; end: string | null; observedDays: number; expectedDays: number | null; complete: boolean | null } } };
 };
 
 type SortKey = "label" | "amount" | "tokens";
@@ -250,7 +250,7 @@ function DesktopRows({
             <MoneyValue row={row} currency={currency} />
           </TableCell>
           <TableCell className="w-24 text-right">
-            {row.comparison ? <ModelComparisonDrawer source={row.comparison} usage={row.comparison.usage} prices={row.comparison.prices} budget={row.comparison.budget} projectedCost={row.comparison.projectedCost} expectedDays={row.comparison.expectedDays} /> : <RowAction row={row} />}
+            {row.comparison ? <ModelComparisonDrawer source={row.comparison} usage={row.comparison.usage} prices={row.comparison.prices} budgetUsd={row.comparison.budgetUsd} projectedCostUsd={row.comparison.projectedCostUsd} expectedDays={row.comparison.expectedDays} currency={row.comparison.currency} fxRate={row.comparison.fxRate} fxDate={row.comparison.fxDate} lastSyncAt={row.comparison.lastSyncAt} dayOfPeriod={row.comparison.dayOfPeriod} periodLabel={row.comparison.periodLabel} economics={row.comparison.economics} /> : <RowAction row={row} />}
           </TableCell>
         </TableRow>
       ))}
@@ -304,7 +304,7 @@ function MobileRows({
               <RowAction row={row} />
             </div>
           )}
-          {row.comparison && <div className="mt-2 flex justify-end"><ModelComparisonDrawer source={row.comparison} usage={row.comparison.usage} prices={row.comparison.prices} budget={row.comparison.budget} projectedCost={row.comparison.projectedCost} expectedDays={row.comparison.expectedDays} /></div>}
+          {row.comparison && <div className="mt-2 flex justify-end"><ModelComparisonDrawer source={row.comparison} usage={row.comparison.usage} prices={row.comparison.prices} budgetUsd={row.comparison.budgetUsd} projectedCostUsd={row.comparison.projectedCostUsd} expectedDays={row.comparison.expectedDays} currency={row.comparison.currency} fxRate={row.comparison.fxRate} fxDate={row.comparison.fxDate} lastSyncAt={row.comparison.lastSyncAt} dayOfPeriod={row.comparison.dayOfPeriod} periodLabel={row.comparison.periodLabel} economics={row.comparison.economics} /></div>}
         </article>
       ))}
     </div>

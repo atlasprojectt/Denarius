@@ -69,6 +69,12 @@ export const homeCopy = {
     paceTodayLabel: "Ritmo esperado hoje",
     projectionLabel: "Projeção",
     collectingShort: "coletando ritmo",
+    rangeLabel: "Faixa provável",
+    confidence: (level: string) => `confiança ${level}`,
+    confidenceHigh: "alta",
+    confidenceMedium: "média",
+    confidenceLow: "baixa",
+    rangeRef: (stamp: string) => `ref. ${stamp}`,
     // Series + tooltip labels.
     spent: "Gasto",
     projected: "Projeção",
