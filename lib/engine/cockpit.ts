@@ -9,6 +9,7 @@
 import { buildBudgetThresholdFinding, orderFindings, type BudgetThresholdFinding } from "@/lib/findings/budget-threshold";
 import type { PeriodProgress } from "./accrual";
 import { combinedSpend, evaluateBudget, type BudgetEvaluation } from "./budget";
+import { forecast as forecastClose, type DailySpendPoint, type ForecastResult } from "./forecast";
 import { computeVerdict, type Verdict, type VerdictStatus } from "./verdict";
 
 /** Raw spend parts for one scope, before the seats+API combine. */
@@ -21,6 +22,10 @@ export type ScopeSpend = {
   apiUsd: number;
   /** USD→display frozen at period start; null when capture failed. */
   fxRate: number | null;
+  /** Per-day governed points (display) for the behavior-aware close; undefined
+   *  keeps the linear run-rate. Org scope carries it; team scopes stay linear
+   *  until their daily grain is available (documented in backend.md). */
+  dailySpend?: DailySpendPoint[];
 };
 
 export type CockpitTeamInput = ScopeSpend & {
@@ -85,6 +90,11 @@ export type Cockpit =
       org: BudgetEvaluation;
       /** Org projection as a fraction of budget (1 = on budget), null while collecting. */
       orgPctProjected: number | null;
+      /** Behavior-aware close detail for the org scope (range, confidence,
+       *  breach risk); null when the scope has no daily series (teams) or
+       *  while collecting. Display-only — verdict/thresholds read the
+       *  evaluation, never this. */
+      orgForecast: ForecastResult | null;
       /** Configured org warn threshold (whole percent) — prefills the hero edit modal. */
       orgWarnPct: number;
       /** API USD that couldn't be converted (FX missing) — disclosed, never guessed. */
@@ -114,16 +124,22 @@ function pctProjectedOf(evaluation: BudgetEvaluation): number | null {
 export function evaluateScope(
   scope: ScopeSpend,
   period: PeriodProgress,
-): { evaluation: BudgetEvaluation; unconvertedUsd: number } {
+): { evaluation: BudgetEvaluation; unconvertedUsd: number; forecast: ForecastResult | null } {
   const combined = combinedSpend({
     seatDisplay: scope.seatDisplay,
     apiUsd: scope.apiUsd,
     fxRate: scope.fxRate,
   });
-  return {
-    evaluation: evaluateBudget({ budget: scope.budget, spent: combined.display, period }),
-    unconvertedUsd: combined.unconvertedUsd,
-  };
+  const evaluation = evaluateBudget({
+    budget: scope.budget,
+    spent: combined.display,
+    period,
+    dailySpend: scope.dailySpend,
+  });
+  const forecast = scope.dailySpend
+    ? forecastClose({ dailySpend: scope.dailySpend, spent: combined.display, period, budget: scope.budget })
+    : null;
+  return { evaluation, unconvertedUsd: combined.unconvertedUsd, forecast };
 }
 
 /**
@@ -186,7 +202,7 @@ export function buildCockpit(input: CockpitInput): Cockpit {
   if (input.org === null) return { state: "cold-start" };
 
   const { period, currency, periodEndLabel } = input;
-  const { evaluation: org, unconvertedUsd: orgUnconvertedUsd } = evaluateScope(input.org, period);
+  const { evaluation: org, unconvertedUsd: orgUnconvertedUsd, forecast: orgForecast } = evaluateScope(input.org, period);
 
   const teams: CockpitTeam[] = input.teams.map((t) => {
     const { evaluation } = evaluateScope(t, period);
@@ -235,6 +251,7 @@ export function buildCockpit(input: CockpitInput): Cockpit {
     collecting: org.collecting,
     org,
     orgPctProjected: pctProjectedOf(org),
+    orgForecast,
     orgWarnPct: warnPctFromThresholds(input.org.thresholds),
     orgUnconvertedUsd,
     needsAttention,

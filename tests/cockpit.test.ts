@@ -128,6 +128,34 @@ describe("buildCockpit — the Home view model", () => {
     expect(c.orgWarnPct).toBe(70);
     expect(c.needsAttention[0].warnPct).toBe(90);
   });
+
+  it("carries no forecast detail without a daily series (linear scopes)", () => {
+    const c = buildCockpit(base());
+    if (c.state !== "ready") throw new Error("expected ready");
+    expect(c.orgForecast).toBeNull();
+  });
+
+  it("exposes the behavior-aware range when the org carries a daily series", () => {
+    const c = buildCockpit(
+      base({
+        org: {
+          budget: 10_000,
+          seatDisplay: 540,
+          apiUsd: 0,
+          fxRate: 1,
+          thresholds: [0.8, 1.0],
+          dailySpend: Array.from({ length: 10 }, (_, i) => ({
+            date: `2026-06-${String(i + 1).padStart(2, "0")}`,
+            amount: 54,
+          })),
+        },
+      }),
+    );
+    if (c.state !== "ready") throw new Error("expected ready");
+    expect(c.orgForecast?.status).toBe("ready");
+    expect(c.orgForecast?.centralEstimate).toBeCloseTo(c.org.projection as number);
+    expect(c.orgForecast?.probableRange?.low).toBeLessThanOrEqual(c.orgForecast?.centralEstimate as number);
+  });
 });
 
 describe("warnPctFromThresholds", () => {

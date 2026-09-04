@@ -4,7 +4,7 @@ import { cache } from "react";
 
 import { attributeSeats } from "@/lib/engine/accrual";
 import type { SeatSubscription } from "@/lib/engine/accrual";
-import { combinedSpend } from "@/lib/engine/budget";
+import { combinedSpend, governedDailySpend } from "@/lib/engine/budget";
 import { buildCockpit, type Cockpit } from "@/lib/engine/cockpit";
 import { buildMonthlyPace, type MonthlyPace } from "@/lib/engine/monthly-pace";
 import { oldestActiveSync, type ConnectionStatus } from "@/lib/engine/freshness";
@@ -156,7 +156,7 @@ const assembleCockpit = cache(async function assembleCockpit(): Promise<CockpitA
   const period = currentPeriod();
   const supabase = await createClient();
 
-  const [budgets, { subscriptions }, apiTeams, teams, providers, { data: connectionData }] =
+  const [budgets, { subscriptions }, apiTeams, teams, providers, { data: connectionData }, dailyCosts] =
     await Promise.all([
       listBudgets(),
       listSubscriptions(),
@@ -164,6 +164,7 @@ const assembleCockpit = cache(async function assembleCockpit(): Promise<CockpitA
       listTeams(),
       providerCostToDate(),
       supabase.from("provider_connection").select("provider, status, last_sync_at"),
+      orgDailyCosts(),
     ]);
 
   const seats = attributeSeats(subscriptions, period);
@@ -184,6 +185,16 @@ const assembleCockpit = cache(async function assembleCockpit(): Promise<CockpitA
         apiUsd: reportedUsd,
         fxRate,
         thresholds: budgets.org.thresholds,
+        // Behavior-aware close input (Forecast v2): per-day governed spend in
+        // display currency from the already-read daily costs. Undefined (missing
+        // FX, nothing elapsed) keeps the linear run-rate — never a guess.
+        dailySpend: governedDailySpend({
+          apiByDay: dailyCosts,
+          fxRate,
+          seatAccrued: seats.orgTotal,
+          monthStart: period.monthStart,
+          dayOfPeriod: period.dayOfPeriod,
+        }),
       }
     : null;
 

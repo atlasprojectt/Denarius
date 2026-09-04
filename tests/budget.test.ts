@@ -5,6 +5,7 @@ import {
   PROJECTION_GUARD_DAY,
   combinedSpend,
   evaluateBudget,
+  governedDailySpend,
   isCollecting,
   projection,
   runRate,
@@ -114,5 +115,99 @@ describe("seat accrual is included in tracked spend", () => {
     expect(ev.spent).toBe(1200);
     expect(ev.projection).toBe(3600); // 1200 / 10 * 30
     expect(ev.projectedMargin).toBe(400);
+  });
+});
+
+describe("governedDailySpend — the Forecast v2 input series", () => {
+  const series = (amounts: (number | null)[], start = "2026-01-01") =>
+    amounts.flatMap((amount, index) =>
+      amount === null
+        ? []
+        : [{ date: new Date(Date.parse(`${start}T00:00:00Z`) + index * 86_400_000).toISOString().slice(0, 10), usd: amount }],
+    );
+
+  it("converts API USD at the frozen rate and spreads seats evenly", () => {
+    const points = governedDailySpend({
+      apiByDay: series([10, 20]),
+      fxRate: 5,
+      seatAccrued: 30,
+      monthStart: "2026-01-01",
+      dayOfPeriod: 2,
+    });
+    expect(points).toEqual([
+      { date: "2026-01-01", amount: 65 },
+      { date: "2026-01-02", amount: 115 },
+    ]);
+  });
+
+  it("omits missing days instead of zero-filling them", () => {
+    const points = governedDailySpend({
+      apiByDay: [{ date: "2026-01-02", usd: 10 }],
+      fxRate: 5,
+      seatAccrued: 0,
+      monthStart: "2026-01-01",
+      dayOfPeriod: 2,
+    });
+    expect(points).toEqual([{ date: "2026-01-02", amount: 50 }]);
+  });
+
+  it("refuses a guessed series when FX is missing but API spend exists", () => {
+    expect(
+      governedDailySpend({ apiByDay: series([10]), fxRate: null, seatAccrued: 0, monthStart: "2026-01-01", dayOfPeriod: 1 }),
+    ).toBeUndefined();
+  });
+
+  it("still covers seats-only scopes without FX", () => {
+    expect(
+      governedDailySpend({ apiByDay: [], fxRate: null, seatAccrued: 30, monthStart: "2026-01-01", dayOfPeriod: 2 }),
+    ).toEqual([
+      { date: "2026-01-01", amount: 15 },
+      { date: "2026-01-02", amount: 15 },
+    ]);
+  });
+});
+
+describe("evaluateBudget with a daily series — the behavior-aware close", () => {
+  const points = (amounts: number[], start = "2026-01-01") =>
+    amounts.map((amount, index) => ({
+      date: new Date(Date.parse(`${start}T00:00:00Z`) + index * 86_400_000).toISOString().slice(0, 10),
+      amount,
+    }));
+
+  it("uses the behavior-aware close instead of the linear run-rate", () => {
+    const linear = evaluateBudget({ budget: 10_000, spent: 540, period: period(10, 30) });
+    expect(linear.projection).toBe(1620);
+    const behavior = evaluateBudget({
+      budget: 10_000,
+      spent: 540,
+      period: period(10, 30),
+      dailySpend: points([10, 10, 10, 10, 10, 100, 100, 100, 100, 100]),
+    });
+    expect(behavior.projection).not.toBe(1620);
+    expect(behavior.projection).toBeGreaterThan(1620);
+  });
+
+  it("keeps the day-5 guard with a series present", () => {
+    const ev = evaluateBudget({
+      budget: 1000,
+      spent: 300,
+      period: period(3, 30),
+      dailySpend: points([100, 100, 100]),
+    });
+    expect(ev.collecting).toBe(true);
+    expect(ev.projection).toBeNull();
+    expect(ev.projectedMargin).toBeNull();
+  });
+
+  it("never lets an outlier move realized spend, only the close", () => {
+    const ev = evaluateBudget({
+      budget: 1_000_000,
+      spent: 10_500,
+      period: period(6, 30),
+      dailySpend: points([100, 100, 100, 100, 100, 10_000]),
+    });
+    expect(ev.spent).toBe(10_500);
+    expect(ev.projection).not.toBeNull();
+    expect(ev.projection as number).toBeLessThan(30_000);
   });
 });

@@ -115,10 +115,19 @@ export function MonthlyPaceChart({
   pace,
   currency,
   monthLabel,
+  forecastRange,
+  confidence,
+  refStamp,
 }: {
   pace: MonthlyPace;
   currency: string;
   monthLabel: string;
+  /** Behavior-aware probable close range (display); null while collecting or
+   *  without a daily series — the metric then reads the collecting state. */
+  forecastRange?: { low: number; high: number } | null;
+  confidence?: "low" | "medium" | "high" | "none" | null;
+  /** Freshness stamp for the reference date ("as of" honesty, principle #3). */
+  refStamp?: string | null;
 }) {
   const {
     rows,
@@ -159,6 +168,12 @@ export function MonthlyPaceChart({
   const maxY = Math.max(budget, projection ?? 0, todayValue, 1) * 1.08;
   const projectionText =
     projection === null ? c.collectingShort : money(projection, currency);
+  const rangeText =
+    projection === null || !forecastRange
+      ? c.collectingShort
+      : `${money(forecastRange.low, currency)} – ${money(forecastRange.high, currency)}`;
+  const confidenceText =
+    confidence === "high" ? c.confidenceHigh : confidence === "medium" ? c.confidenceMedium : confidence === "low" ? c.confidenceLow : null;
   const ariaLabel =
     projection === null
       ? c.ariaCollecting(
@@ -192,7 +207,15 @@ export function MonthlyPaceChart({
             value={paceToday === null ? "—" : money(paceToday, currency)}
           />
           <Metric label={c.projectionLabel} value={projectionText} />
+          <Metric label={c.rangeLabel} value={rangeText} />
         </div>
+        {(confidenceText || refStamp) && (
+          <p className="text-[11px] text-muted-foreground tabular-nums">
+            {confidenceText ? c.confidence(confidenceText) : null}
+            {confidenceText && refStamp ? " · " : null}
+            {refStamp ? c.rangeRef(refStamp) : null}
+          </p>
+        )}
       </CardHeader>
       <CardContent className="flex min-h-0 flex-1 flex-col justify-center">
         <div

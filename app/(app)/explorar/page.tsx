@@ -20,6 +20,9 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { listBudgets } from "@/lib/budgets/queries";
 import { attributeSeats } from "@/lib/engine/accrual";
+import { governedDailySpend } from "@/lib/engine/budget";
+import { buildUsageEconomics } from "@/lib/engine/economics";
+import { forecast } from "@/lib/engine/forecast";
 import { oldestActiveSync } from "@/lib/engine/freshness";
 import {
   periodFx,
@@ -113,6 +116,7 @@ export default async function ExplorePage() {
     budgets,
     allTeams,
     { data: connectionData },
+    { data: dailyCostData },
   ] = await Promise.all([
     listSubscriptions(),
     apiSpendMonthToDate(),
@@ -121,6 +125,7 @@ export default async function ExplorePage() {
     supabase
       .from("provider_connection")
       .select("provider, status, last_sync_at"),
+    supabase.from("cost_daily").select("date, amount").gte("date", period.monthStart),
   ]);
   const breakdown = attributeSeats(subscriptions, period);
 
@@ -158,9 +163,65 @@ export default async function ExplorePage() {
       ? copy.fxNote(money(fx.rate, currency), fx.date ?? "—")
       : copy.fxMissingNote;
 
+  // Comparison inputs are USD-native (model prices are USD per 1M tokens) while
+  // budgets are display-currency native — convert the org budget to USD at the
+  // frozen period rate for the engine, and hand the drawer the rate + currency
+  // so it renders display-primary. Without a rate there is no honest budget
+  // comparison: budgetFit stays unknown by passing null (never a guess).
+  const fxRate = fx?.rate ?? null;
+  const fxDate = fx?.date ?? null;
+  const orgBudgetUsd =
+    budgets.org && fxRate !== null && fxRate > 0
+      ? budgets.org.amount / fxRate
+      : null;
+
+  // Forecast v2 close for the drawer budget-fit: the same governed daily series
+  // Home evaluates, re-derived here from this screen's own reads. Display
+  // currency throughout, converted back to USD for the USD-native engine.
+  // Collecting (day <5), missing FX or no series → null → budgetFit unknown.
+  const apiByDay = new Map<string, number>();
+  for (const row of ((dailyCostData ?? []) as { date: string; amount: number }[])) {
+    apiByDay.set(row.date, (apiByDay.get(row.date) ?? 0) + row.amount);
+  }
+  const orgDailySpend = governedDailySpend({
+    apiByDay: [...apiByDay.entries()].map(([date, usd]) => ({ date, usd })),
+    fxRate,
+    seatAccrued: breakdown.orgTotal,
+    monthStart: period.monthStart,
+    dayOfPeriod: period.dayOfPeriod,
+  });
+  const orgSpentDisplay =
+    fxRate !== null && fxRate > 0
+      ? breakdown.orgTotal + apiSpend.monthUsd * fxRate
+      : breakdown.orgTotal;
+  const orgProjectedDisplay = orgDailySpend
+    ? forecast({
+        dailySpend: orgDailySpend,
+        spent: orgSpentDisplay,
+        period: { dayOfPeriod: period.dayOfPeriod, daysInPeriod: period.daysInPeriod, startDate: period.monthStart },
+        budget: budgets.org?.amount,
+      }).centralEstimate
+    : null;
+  const orgProjectedUsd =
+    orgProjectedDisplay !== null && fxRate !== null && fxRate > 0
+      ? orgProjectedDisplay / fxRate
+      : null;
+
   const modelRows: ExploreRow[] = apiSpend.byModel.map((row) => {
     const usd = row.derivedCost ?? 0;
     const display = usdDisplay(usd, currency, fx);
+    const modelUsage = apiSpend.comparisonUsage.filter(
+      (usage) => usage.provider === row.provider && usage.model === row.model,
+    );
+    // Usage Economics (#136) wired at the only grain the reads support
+    // (org → model, current period): coverage, derived cost and cost-per-1M
+    // come from the engine, never recomputed ad hoc. No request counts exist
+    // in usage_daily, so call metrics stay explicitly null; no previous period
+    // is read, so period deltas stay "sem base anterior" (never zero).
+    const economics = buildUsageEconomics({
+      usage: modelUsage.map((usage) => ({ ...usage, teamId: null, calls: undefined })),
+      expectedDays: period.dayOfPeriod,
+    });
     return {
       id: `${row.provider}:${row.model}`,
       label: row.model,
@@ -177,13 +238,23 @@ export default async function ExplorePage() {
         : {
             provider: row.provider,
             model: row.model,
-            usage: apiSpend.comparisonUsage.filter(
-              (usage) => usage.provider === row.provider && usage.model === row.model,
-            ),
+            usage: modelUsage,
             prices: apiSpend.modelPrices,
-            budget: budgets.org?.amount ?? null,
-            projectedCost: null,
+            budgetUsd: orgBudgetUsd,
+            projectedCostUsd: orgProjectedUsd,
             expectedDays: period.dayOfPeriod,
+            currency,
+            fxRate,
+            fxDate,
+            lastSyncAt: lastSyncAt ? syncStamp(lastSyncAt) : null,
+            dayOfPeriod: period.dayOfPeriod,
+            periodLabel: period.monthLabel,
+            economics: {
+              derivedCostUsd: economics.totals.derivedCostUsd,
+              costPerMillionUsd: economics.totals.costPerMillionTokensUsd,
+              uncosted: economics.totals.uncosted,
+              coverage: economics.coverage,
+            },
           },
     };
   });

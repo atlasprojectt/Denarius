@@ -148,6 +148,9 @@ export default async function HomePage() {
               pace={pace}
               currency={currency}
               monthLabel={period.monthLabel}
+              forecastRange={cockpit.orgForecast?.probableRange ?? null}
+              confidence={cockpit.orgForecast?.confidence ?? null}
+              refStamp={lastSyncAt !== null ? syncStamp(lastSyncAt) : null}
             />
           )}
         </div>
