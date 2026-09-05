@@ -1,0 +1,72 @@
+
+> denarius@0.1.0 dev
+> next dev
+
+▲ Next.js 16.3.0 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.0.4:3000
+- Environments: .env.local
+✓ Ready in 6.2s
+✓ Running next.config.ts took 457ms
+- Experiments (use with caution):
+  · serverActions
+
+ GET /login 200 in 2.4s (next.js: 1464ms, proxy.ts: 11ms, application-code: 964ms)
+ GET /login 200 in 134ms (next.js: 13ms, proxy.ts: 9ms, application-code: 112ms)
+ GET /relatorios/agora 200 in 2.4s (next.js: 226ms, proxy.ts: 342ms, application-code: 1818ms)
+ POST /relatorios/agora 200 in 329ms (next.js: 14ms, proxy.ts: 81ms, application-code: 234ms)
+  └─ ƒ fetchBudgetNotifications() in 143ms lib/home/actions.ts
+ POST /relatorios/agora 200 in 219ms (next.js: 13ms, proxy.ts: 69ms, application-code: 136ms)
+  └─ ƒ fetchBudgetNotifications() in 117ms lib/home/actions.ts
+ GET /relatorios/agora?pdf=1 200 in 939ms (next.js: 10ms, proxy.ts: 168ms, application-code: 761ms)
+ POST /relatorios/agora?pdf=1 200 in 347ms (next.js: 19ms, proxy.ts: 113ms, application-code: 215ms)
+  └─ ƒ fetchBudgetNotifications() in 178ms lib/home/actions.ts
+ POST /relatorios/agora?pdf=1 200 in 306ms (next.js: 16ms, proxy.ts: 126ms, application-code: 164ms)
+  └─ ƒ fetchBudgetNotifications() in 148ms lib/home/actions.ts
+ GET /api/relatorios/agora/pdf 200 in 5.6s (next.js: 187ms, proxy.ts: 61ms, application-code: 5.4s)
+ GET /login 200 in 147ms (next.js: 32ms, proxy.ts: 8ms, application-code: 108ms)
+ GET /login 200 in 172ms (next.js: 11ms, proxy.ts: 9ms, application-code: 153ms)
+ GET / 200 in 4.8s (next.js: 852ms, proxy.ts: 1646ms, application-code: 2.3s)
+ POST / 200 in 349ms (next.js: 23ms, proxy.ts: 119ms, application-code: 206ms)
+  └─ ƒ fetchBudgetNotifications() in 178ms lib/home/actions.ts
+ POST / 200 in 211ms (next.js: 12ms, proxy.ts: 81ms, application-code: 119ms)
+  └─ ƒ fetchBudgetNotifications() in 108ms lib/home/actions.ts
+ POST / 200 in 358ms (next.js: 10ms, proxy.ts: 154ms, application-code: 195ms)
+  └─ ƒ fetchBudgetNotifications() in 181ms lib/home/actions.ts
+ GET /relatorios 200 in 839ms (next.js: 248ms, proxy.ts: 165ms, application-code: 426ms)
+ GET /relatorios/agora 200 in 433ms (next.js: 19ms, proxy.ts: 89ms, application-code: 325ms)
+ GET /relatorios/agora?pdf=1 200 in 844ms (next.js: 10ms, proxy.ts: 114ms, application-code: 720ms)
+ GET /api/relatorios/agora/pdf 200 in 3.7s (next.js: 12ms, proxy.ts: 102ms, application-code: 3.5s)
+ GET / 200 in 719ms (next.js: 11ms, proxy.ts: 183ms, application-code: 525ms)
+ GET / 200 in 3.6s (next.js: 124ms, proxy.ts: 1599ms, application-code: 1834ms)
+ POST / 200 in 370ms (next.js: 20ms, proxy.ts: 136ms, application-code: 214ms)
+  └─ ƒ fetchBudgetNotifications() in 163ms lib/home/actions.ts
+ POST / 200 in 240ms (next.js: 14ms, proxy.ts: 83ms, application-code: 143ms)
+  └─ ƒ fetchBudgetNotifications() in 125ms lib/home/actions.ts
+ POST / 200 in 3.8s (next.js: 16ms, proxy.ts: 2.1s, application-code: 1648ms)
+  └─ ƒ fetchBudgetNotifications() in 1599ms lib/home/actions.ts
+ GET /relatorios 200 in 1317ms (next.js: 25ms, proxy.ts: 439ms, application-code: 853ms)
+ GET /relatorios/agora 200 in 383ms (next.js: 26ms, proxy.ts: 64ms, application-code: 294ms)
+ GET /relatorios 200 in 2.4s (next.js: 1585ms, proxy.ts: 76ms, application-code: 779ms)
+ GET /relatorios/agora 200 in 1985ms (next.js: 1019ms, proxy.ts: 199ms, application-code: 767ms)
+ GET /relatorios/agora?pdf=1 200 in 2.8s (next.js: 281ms, proxy.ts: 56ms, application-code: 2.5s)
+ GET /relatorios/agora?pdf=1 200 in 1584ms (next.js: 19ms, proxy.ts: 453ms, application-code: 1112ms)
+ POST /relatorios/agora?pdf=1 200 in 472ms (next.js: 34ms, proxy.ts: 232ms, application-code: 206ms)
+  └─ ƒ fetchBudgetNotifications() in 154ms lib/home/actions.ts
+ POST /relatorios/agora?pdf=1 200 in 290ms (next.js: 22ms, proxy.ts: 105ms, application-code: 163ms)
+  └─ ƒ fetchBudgetNotifications() in 124ms lib/home/actions.ts
+ POST /relatorios/agora?pdf=1 200 in 304ms (next.js: 13ms, proxy.ts: 84ms, application-code: 207ms)
+  └─ ƒ fetchBudgetNotifications() in 178ms lib/home/actions.ts
+ GET /api/relatorios/agora/pdf 200 in 15.0s (next.js: 11ms, proxy.ts: 83ms, application-code: 14.9s)
+ POST /relatorios/agora?pdf=1 200 in 264ms (next.js: 22ms, proxy.ts: 73ms, application-code: 169ms)
+  └─ ƒ fetchBudgetNotifications() in 138ms lib/home/actions.ts
+ GET /api/relatorios/agora/pdf 200 in 7.0s (next.js: 86ms, proxy.ts: 66ms, application-code: 6.9s)
+ GET / 200 in 4.6s (next.js: 405ms, proxy.ts: 1699ms, application-code: 2.5s)
+ POST / 200 in 964ms (next.js: 30ms, proxy.ts: 643ms, application-code: 292ms)
+  └─ ƒ fetchBudgetNotifications() in 234ms lib/home/actions.ts
+ GET /relatorios 200 in 1837ms (next.js: 255ms, proxy.ts: 578ms, application-code: 1004ms)
+ POST /relatorios 200 in 225ms (next.js: 13ms, proxy.ts: 88ms, application-code: 124ms)
+  └─ ƒ fetchBudgetNotifications() in 107ms lib/home/actions.ts
+ GET /relatorios/agora 200 in 1036ms (next.js: 190ms, proxy.ts: 256ms, application-code: 590ms)
+ GET /relatorios/agora?pdf=1 200 in 1140ms (next.js: 12ms, proxy.ts: 87ms, application-code: 1041ms)
+ GET /api/relatorios/agora/pdf 200 in 4.6s (next.js: 29ms, proxy.ts: 77ms, application-code: 4.5s)

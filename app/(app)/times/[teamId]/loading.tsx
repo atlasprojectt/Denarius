@@ -41,7 +41,7 @@ export default function TeamDetailLoading() {
             <Skeleton className="h-2 flex-1" />
             <Skeleton className="h-3 w-12 shrink-0" />
           </div>
-          <Skeleton className="h-4 w-3/4 border-t border-border/60 pt-3" />
+          <Skeleton className="h-4 w-3/4 border-t border-border pt-3" />
         </div>
 
         <div className="flex flex-col gap-4 rounded-xl border p-6">
@@ -62,7 +62,7 @@ export default function TeamDetailLoading() {
             <Skeleton className="h-4 w-32" />
             <Skeleton className="h-4 w-72 max-w-full" />
           </div>
-          <div className="divide-y divide-border/60 rounded-md border border-border/70">
+          <div className="divide-y divide-border rounded-md border border-border">
             {Array.from({ length: 3 }).map((_, index) => (
               <div key={index} className="flex items-center gap-3 px-3 py-3">
                 <Skeleton className="size-5 shrink-0 rounded-full" />

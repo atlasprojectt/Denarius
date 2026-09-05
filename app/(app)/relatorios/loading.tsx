@@ -10,7 +10,7 @@ export default function ReportsLoading() {
         <Skeleton className="h-4 w-3/4 max-w-xl" />
       </div>
       <Card>
-        <CardHeader className="border-b border-border/60">
+        <CardHeader className="border-b border-border">
           <Skeleton className="h-4 w-32" />
           <Skeleton className="h-4 w-52" />
         </CardHeader>
@@ -28,7 +28,7 @@ export default function ReportsLoading() {
         <Skeleton className="h-4 w-80 max-w-full" />
       </div>
       <Card className="gap-0 py-0">
-        <div className="hidden gap-4 border-b border-border/60 px-4 py-2 lg:grid lg:grid-cols-[1.1fr_1fr_1fr_1.2fr_0.8fr_20px]">
+        <div className="hidden gap-4 border-b border-border px-4 py-2 lg:grid lg:grid-cols-[1.1fr_1fr_1fr_1.2fr_0.8fr_20px]">
           {Array.from({ length: 5 }, (_, index) => (
             <Skeleton key={index} className="h-3 w-16" />
           ))}
@@ -36,7 +36,7 @@ export default function ReportsLoading() {
         {Array.from({ length: 3 }, (_, index) => (
           <div
             key={index}
-            className="grid min-h-16 gap-3 border-b border-border/60 px-4 py-3 last:border-b-0 sm:grid-cols-2 lg:grid-cols-[1.1fr_1fr_1fr_1.2fr_0.8fr_20px] lg:items-center lg:gap-4"
+            className="grid min-h-16 gap-3 border-b border-border px-4 py-3 last:border-b-0 sm:grid-cols-2 lg:grid-cols-[1.1fr_1fr_1fr_1.2fr_0.8fr_20px] lg:items-center lg:gap-4"
           >
             {Array.from({ length: 5 }, (_, cell) => (
               <Skeleton key={cell} className="h-4 w-24" />

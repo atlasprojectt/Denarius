@@ -222,7 +222,7 @@ function DesktopRows({
       {rows.map((row, index) => (
         <TableRow
           key={row.id}
-          className="h-12 border-border/60 hover:bg-background/35"
+          className="h-12 border-border hover:bg-surface-hover"
         >
           <TableCell className="min-w-64 py-2 text-[13px] whitespace-normal">
             <div className="flex items-center gap-2">
@@ -272,7 +272,7 @@ function MobileRows({
       {rows.map((row, index) => (
         <article
           key={row.id}
-          className="rounded-xl border border-border/70 p-3 text-[13px]"
+          className="rounded-xl border border-border p-3 text-[13px]"
         >
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
@@ -394,7 +394,7 @@ export function ExploreTable({
               <div className="hidden md:block">
                 <Table className="table-fixed">
                   <TableHeader>
-                    <TableRow className="border-border/60 hover:bg-transparent">
+                    <TableRow className="border-border hover:bg-transparent">
                       <TableHead aria-sort={ariaSort("label")} className="h-9 p-0">
                         <SortButton field="label" sort={sort} onSort={changeSort}>
                           {labelHeader}

@@ -22,6 +22,10 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Installed agent tooling is vendored support code, not application code.
+    ".agents/**",
+    ".codex/**",
+    ".impeccable/**",
   ]),
 ]);
 

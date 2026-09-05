@@ -1,5 +1,9 @@
 # Denarius — Architecture
 
+## Product data flow
+
+The product's canonical flow is **Spend Visibility → Budget → Forecast → Model Comparison → Usage Economics → Executive Digest → Reports**. Connectors provide observed usage and provider-reported USD; pure engine modules derive forecasts, budget risk, equivalent model costs, and efficiency metrics. The narration layer receives those facts as inputs and may only condense them. No component infers business outcomes or makes an operational decision.
+
 > Derives from [prd.md](prd.md) (source of truth). This doc organizes the *system shape* for whoever builds it.
 
 ## 1. System overview

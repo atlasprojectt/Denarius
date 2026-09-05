@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { RiCheckboxCircleLine, RiDownloadLine } from "@remixicon/react";
 
 import { ActionStatus } from "@/components/domain/action-status";
@@ -42,6 +42,10 @@ export function RosterUpload({ isAdmin = true }: { isAdmin?: boolean }) {
     importRoster,
     initialState,
   );
+  // Both submits share one form action, so `pending` alone would light up
+  // both buttons. The submitter's intent (captured on submit) scopes the
+  // spinner to the button that was actually pressed.
+  const [intent, setIntent] = useState<"preview" | "commit">("preview");
 
   if (!isAdmin) {
     return (
@@ -80,7 +84,16 @@ export function RosterUpload({ isAdmin = true }: { isAdmin?: boolean }) {
         </CardAction>
       </CardHeader>
       <CardContent>
-        <form action={formAction} className="flex flex-col gap-4">
+        <form
+          action={formAction}
+          onSubmit={(event) => {
+            const submitter = (event.nativeEvent as SubmitEvent)
+              .submitter as HTMLButtonElement | null;
+            if (submitter?.value === "commit") setIntent("commit");
+            else setIntent("preview");
+          }}
+          className="flex flex-col gap-4"
+        >
           <input
             type="file"
             name="file"
@@ -131,7 +144,7 @@ export function RosterUpload({ isAdmin = true }: { isAdmin?: boolean }) {
               name="intent"
               value="preview"
               variant="outline"
-              loading={pending}
+              loading={pending && intent === "preview"}
               loadingText={copy.validating}
             >
               {copy.preview}
@@ -141,7 +154,7 @@ export function RosterUpload({ isAdmin = true }: { isAdmin?: boolean }) {
                 type="submit"
                 name="intent"
                 value="commit"
-                loading={pending}
+                loading={pending && intent === "commit"}
                 loadingText={copy.importing}
               >
                 {copy.commit(preview!.validCount)}

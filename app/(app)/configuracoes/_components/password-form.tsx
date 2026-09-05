@@ -20,7 +20,7 @@ const copy = {
   showPassword: "Mostrar senhas",
   hidePassword: "Ocultar senhas",
   save: "Alterar senha",
-  saving: "Alterando...",
+  saving: "Alterando…",
 };
 
 const initialState: AuthFormState = {};

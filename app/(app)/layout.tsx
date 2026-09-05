@@ -97,7 +97,7 @@ export default async function AppLayout({
           staleConnections={staleConnections}
           allClear={allClear}
         />
-        <SidebarInset className="min-w-0 md:border md:border-border/60">
+        <SidebarInset className="min-w-0 shadow-none md:border md:border-border md:peer-data-[variant=inset]:shadow-none">
           <header data-app-header className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2.5 border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/80 md:rounded-t-xl">
             <SidebarTrigger
               aria-label="Alternar menu lateral"

@@ -13,9 +13,9 @@ const buttonVariants = cva(
         primary:
           "bg-primary text-primary-foreground hover:bg-primary-hover active:bg-primary/90",
         secondary:
-          "border-border/70 bg-secondary text-foreground hover:border-border/90 hover:bg-surface-hover hover:text-foreground active:bg-surface-selected",
+          "border-border bg-secondary text-foreground hover:border-border hover:bg-surface-hover hover:text-foreground active:bg-surface-selected",
         tertiary:
-          "border-border/60 bg-transparent text-muted-foreground [transition-duration:var(--motion-duration-fast)] hover:border-border/85 hover:bg-surface-hover hover:text-foreground hover:[&_svg]:text-brand-accent-light active:bg-surface-selected",
+          "border-border bg-transparent text-muted-foreground [transition-duration:var(--motion-duration-fast)] hover:border-border hover:bg-surface-hover hover:text-foreground hover:[&_svg]:text-brand-accent-light active:bg-surface-selected",
         ghost:
           "bg-transparent text-muted-foreground hover:bg-surface-hover hover:text-foreground active:bg-surface-selected",
         destructive:
@@ -25,13 +25,13 @@ const buttonVariants = cva(
         link: "rounded-none text-primary underline-offset-4 hover:underline dark:text-primary-hover",
       },
       size: {
-        sm: "h-7 gap-1.5 px-3 text-xs [&_svg:not([class*='size-'])]:size-3.5",
-        default: "h-9 gap-2 px-4 text-sm [&_svg:not([class*='size-'])]:size-4",
-        lg: "h-10 gap-2 px-5 text-sm [&_svg:not([class*='size-'])]:size-4",
+        sm: "h-7 min-w-20 gap-1.5 px-3 text-xs [&_svg:not([class*='size-'])]:size-3.5",
+        default: "h-9 min-w-24 gap-2 px-4 text-sm [&_svg:not([class*='size-'])]:size-4",
+        lg: "h-10 min-w-28 gap-2 px-5 text-sm [&_svg:not([class*='size-'])]:size-4",
         icon: "size-9 p-0 [&_svg:not([class*='size-'])]:size-4",
         "icon-sm": "size-7 p-0 [&_svg:not([class*='size-'])]:size-3.5",
         // Kept for compact primitive integrations that predate this system.
-        xs: "h-6 gap-1 px-2 text-xs [&_svg:not([class*='size-'])]:size-3.5",
+        xs: "h-6 min-w-16 gap-1 px-2 text-xs [&_svg:not([class*='size-'])]:size-3.5",
         "icon-xs": "size-6 p-0 [&_svg:not([class*='size-'])]:size-3.5",
         "icon-lg": "size-10 p-0 [&_svg:not([class*='size-'])]:size-4",
       },
@@ -77,6 +77,15 @@ function Button({
   ...props
 }: ButtonProps) {
   const resolvedShape = shape ?? buttonShapeFor(variant, size);
+  // The spinner mirrors the size's native icon scale so compact controls
+  // (sm/xs) don't render an oversized 16px mark in a 28px/24px frame.
+  const spinnerClassName =
+    size === "sm" ||
+    size === "xs" ||
+    size === "icon-sm" ||
+    size === "icon-xs"
+      ? "size-3.5"
+      : "size-4";
   const renderElement =
     asChild && React.isValidElement<{ children?: React.ReactNode }>(children)
       ? children
@@ -98,12 +107,15 @@ function Button({
         data-button-loading
         aria-hidden={!loading || undefined}
         className={cn(
-          "pointer-events-none absolute inset-0 flex items-center justify-center gap-[inherit] opacity-0 transition-opacity [transition-duration:var(--motion-duration-fast)] [transition-timing-function:var(--motion-ease-standard)]",
+          "pointer-events-none absolute inset-0 flex max-w-full items-center justify-center gap-[inherit] overflow-hidden px-2 whitespace-nowrap opacity-0 transition-opacity [transition-duration:var(--motion-duration-fast)] [transition-timing-function:var(--motion-ease-standard)]",
           loading && "opacity-100",
         )}
       >
-        <Spokes className="size-4 motion-reduce:[animation:none]" aria-hidden />
-        {loadingText ? <span>{loadingText}</span> : null}
+        <Spokes
+          className={cn(spinnerClassName, "shrink-0 motion-reduce:[animation:none]")}
+          aria-hidden
+        />
+        {loadingText ? <span className="min-w-0 truncate">{loadingText}</span> : null}
       </span>
     </>
   );
@@ -126,7 +138,7 @@ function Button({
       data-motion={motion === "none" ? undefined : motion}
       className={cn(
         buttonVariants({ variant, size, shape: resolvedShape, className }),
-        variant === "link" && "rounded-none",
+        variant === "link" && "min-w-0 rounded-none",
       )}
       render={render}
       nativeButton={render ? render.type === "button" : true}

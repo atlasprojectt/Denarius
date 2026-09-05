@@ -34,7 +34,11 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { fetchBudgetNotifications } from "@/lib/home/actions";
 import {
   compactNotificationCount,
+  filterUnseen,
   notificationTriggerTone,
+  parseSeenIds,
+  seenStorageKeyForDate,
+  serializeSeenIds,
   type BudgetNotification,
 } from "@/lib/home/notifications";
 
@@ -186,7 +190,7 @@ function NotificationsPanel({
             </Button>
           </div>
         ) : items && items.length > 0 ? (
-          <ul className="divide-y divide-border/70">
+          <ul className="divide-y divide-border">
             {items.map((item) => {
               const meta = levelMeta[item.level];
               return (
@@ -208,7 +212,7 @@ function NotificationsPanel({
                       </span>
                     </span>
                     <RiArrowRightSLine
-                      className="mt-1 size-4 shrink-0 self-center text-muted-foreground/55 transition-transform duration-(--motion-duration-fast) group-hover:translate-x-0.5"
+                      className="mt-1 size-4 shrink-0 self-center text-muted-foreground transition-transform duration-(--motion-duration-fast) group-hover:translate-x-0.5"
                       aria-hidden
                     />
                   </Link>
@@ -240,6 +244,43 @@ export function NotificationsButton() {
   const [items, setItems] = useState<BudgetNotification[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [failed, setFailed] = useState(false);
+  // Local-only "seen" hint for the count badge. Findings stay stateless on
+  // the server; this never leaves the browser and never marks alerts read.
+  const storageKey = seenStorageKeyForDate(new Date());
+  const [seenIds, setSeenIds] = useState<ReadonlySet<string>>(() => {
+    if (typeof window === "undefined") return new Set<string>();
+    try {
+      return new Set(parseSeenIds(window.localStorage.getItem(storageKey)));
+    } catch {
+      return new Set<string>();
+    }
+  });
+
+  function markSeen(nextItems: BudgetNotification[]) {
+    if (nextItems.length === 0 || typeof window === "undefined") return;
+    let stored: Set<string>;
+    try {
+      stored = new Set(parseSeenIds(window.localStorage.getItem(storageKey)));
+    } catch {
+      stored = new Set(seenIds);
+    }
+    let changed = false;
+    for (const item of nextItems) {
+      if (!stored.has(item.id)) {
+        stored.add(item.id);
+        changed = true;
+      }
+    }
+    if (!changed) return;
+    try {
+      window.localStorage.setItem(storageKey, serializeSeenIds(stored));
+    } catch {
+      // Storage blocked or full: the badge just won't persist as seen.
+    }
+    setSeenIds(stored);
+  }
+
+  const openRef = useRef(false);
 
   async function load() {
     const pendingRequest = requestRef.current;
@@ -247,7 +288,9 @@ export function NotificationsButton() {
       setLoading(true);
       setFailed(false);
       try {
-        setItems(await pendingRequest);
+        const fetched = await pendingRequest;
+        setItems(fetched);
+        if (openRef.current) markSeen(fetched);
       } catch {
         setFailed(true);
       } finally {
@@ -261,7 +304,9 @@ export function NotificationsButton() {
     const request = fetchBudgetNotifications();
     requestRef.current = request;
     try {
-      setItems(await request);
+      const fetched = await request;
+      setItems(fetched);
+      if (openRef.current) markSeen(fetched);
     } catch {
       setFailed(true);
     } finally {
@@ -293,38 +338,49 @@ export function NotificationsButton() {
     };
   }, []);
 
-  const count = items?.length ?? 0;
-  const triggerTone = notificationTriggerTone(items ?? []);
+  const unseen = items ? filterUnseen(items, seenIds) : [];
+  const unseenCount = unseen.length;
+  const triggerTone = notificationTriggerTone(unseen);
   const countTone =
     triggerTone === "destructive"
       ? "bg-badge-destructive text-background"
       : "bg-badge-amber text-background";
   const handleOpenChange = (next: boolean) => {
+    openRef.current = next;
     setOpen(next);
-    if (next) void load();
+    if (next) {
+      // Items already on screen are seen immediately; the refresh below
+      // marks the fresh payload on arrival (only if still open).
+      if (items) markSeen(items);
+      void load();
+    }
   };
   const trigger = (
     <Button
       variant="secondary"
       size="icon"
-      aria-label={count > 0 ? copy.badgeAria(count) : copy.title}
+      aria-label={unseenCount > 0 ? copy.badgeAria(unseenCount) : copy.title}
       aria-expanded={open}
       aria-controls={panelId}
       aria-busy={loading && items === null}
       title={copy.title}
-      className="size-10 overflow-visible border-border bg-card text-foreground shadow-sm hover:border-border hover:bg-surface-hover aria-expanded:border-border aria-expanded:bg-surface-selected sm:size-9"
+      className="size-10 overflow-visible border-border bg-card text-foreground hover:border-border hover:bg-surface-hover aria-expanded:border-border aria-expanded:bg-surface-selected sm:size-9"
     >
       <RiNotification3Line className="size-[18px]" aria-hidden />
-      {count > 0 && (
+      {unseenCount > 0 && (
         <Badge
           aria-hidden
           className={`absolute -top-1 -right-1 h-5 min-w-5 border-0 px-1 py-0 text-[10px] font-bold leading-none shadow-sm ring-2 ring-background tabular-nums ${countTone}`}
         >
-          {compactNotificationCount(count)}
+          {compactNotificationCount(unseenCount)}
         </Badge>
       )}
     </Button>
   );
+  const handleClose = () => {
+    openRef.current = false;
+    setOpen(false);
+  };
   const panel = (
     <NotificationsPanel
       panelId={panelId}
@@ -332,7 +388,7 @@ export function NotificationsButton() {
       items={items}
       loading={loading}
       failed={failed}
-      onNavigate={() => setOpen(false)}
+      onNavigate={handleClose}
       onRetry={() => void load()}
     />
   );

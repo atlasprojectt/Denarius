@@ -142,7 +142,7 @@ function ExecutiveSummary({
             <Metric label={copy.spent} value={currentSpend} />
             <Metric label={copy.budget} value="—" />
           </dl>
-          <p className="mt-4 border-t border-border/60 pt-3 text-sm text-muted-foreground">
+          <p className="mt-4 border-t border-border pt-3 text-sm text-muted-foreground">
             {copy.noBudget}
           </p>
         </CardContent>
@@ -189,7 +189,7 @@ function ExecutiveSummary({
             {copy.consumption(percent(evaluation.pctSpent))}
           </span>
         </div>
-        <p className="mt-4 border-t border-border/60 pt-3 text-sm/relaxed">
+        <p className="mt-4 border-t border-border pt-3 text-sm/relaxed">
           {conclusion(team, currency)}
         </p>
       </CardContent>
@@ -382,12 +382,12 @@ function ContributorsSection({
         ) : (
           <>
             <div className="hidden md:block">
-              <div className="grid grid-cols-[minmax(0,1fr)_100px_132px] gap-4 border-b border-border/60 pb-2 text-[11px] font-medium text-muted-foreground">
+              <div className="grid grid-cols-[minmax(0,1fr)_100px_132px] gap-4 border-b border-border pb-2 text-[11px] font-medium text-muted-foreground">
                 <span>{copy.person}</span>
                 <span className="text-right">{copy.tokens}</span>
                 <span className="text-right">{copy.derived}</span>
               </div>
-              <div className="divide-y divide-border/60">
+              <div className="divide-y divide-border">
                 {persons.map((person) => (
                   <div
                     key={person.userId || "__shared__"}
@@ -416,7 +416,7 @@ function ContributorsSection({
                 ))}
               </div>
             </div>
-            <div className="flex flex-col divide-y divide-border/60 md:hidden">
+            <div className="flex flex-col divide-y divide-border md:hidden">
               {persons.map((person) => (
                 <div key={person.userId || "__shared__"} className="py-3 first:pt-0">
                   <div className="flex items-start justify-between gap-4">
@@ -440,7 +440,7 @@ function ContributorsSection({
                 </div>
               ))}
             </div>
-            <div className="mt-2 flex items-center justify-between gap-4 border-t border-border/60 pt-3">
+            <div className="mt-2 flex items-center justify-between gap-4 border-t border-border pt-3">
               <div>
                 <p className="text-xs font-medium">{copy.total}</p>
                 <p className="mt-0.5 text-[11px] text-muted-foreground tabular-nums">
@@ -482,7 +482,7 @@ function ControlPlanSection({ team }: { team: CockpitTeam }) {
         <CardDescription>{copy.planSub}</CardDescription>
       </CardHeader>
       <CardContent>
-        <ol className="divide-y divide-border/60 rounded-md border border-border/70">
+        <ol className="divide-y divide-border rounded-md border border-border">
           {team.finding.controlPlan.map((action, index) => {
             const href = controlPlanHref(action.id, action.href, team.teamId);
             const content = (

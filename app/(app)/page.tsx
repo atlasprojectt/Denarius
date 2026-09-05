@@ -105,7 +105,7 @@ export default async function HomePage() {
             day-of-month meta left this corner (de-noise 2026-07-17): it now
             lives at the hero bar's "hoje" marker, its one canonical home. */}
         {lastSyncAt !== null && (
-          <p className="mt-1 shrink-0 text-xs text-muted-foreground/70 tabular-nums">
+          <p className="mt-1 shrink-0 text-xs text-muted-foreground tabular-nums">
             {homeCopy.dataAsOf(syncStamp(lastSyncAt))}
           </p>
         )}

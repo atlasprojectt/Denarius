@@ -46,7 +46,7 @@ export default async function ReportsPage() {
       {/* Rendered before and independently of the frozen list: the on-demand
           report is available from day one, including before the first close. */}
       <Card>
-        <CardHeader className="border-b border-border/60">
+        <CardHeader className="border-b border-border">
           <CardTitle className="text-sm">{copy.liveCardTitle}</CardTitle>
           <CardDescription>
             {current.ok
@@ -127,7 +127,7 @@ export default async function ReportsPage() {
         />
       ) : (
         <Card className="gap-0 py-0">
-          <div className="hidden grid-cols-[1.1fr_1fr_1fr_1.2fr_0.8fr_20px] gap-4 border-b border-border/60 px-4 py-2 text-[11px] font-medium text-muted-foreground lg:grid">
+          <div className="hidden grid-cols-[1.1fr_1fr_1fr_1.2fr_0.8fr_20px] gap-4 border-b border-border px-4 py-2 text-[11px] font-medium text-muted-foreground lg:grid">
             <span>{copy.month}</span>
             <span>{copy.spend}</span>
             <span>{copy.budget}</span>
@@ -135,7 +135,7 @@ export default async function ReportsPage() {
             <span>{copy.caveats}</span>
             <span aria-hidden />
           </div>
-          <div className="divide-y divide-border/60">
+          <div className="divide-y divide-border">
             {read.reports.map((report) => {
               const month = reportMonth(report.periodMonth);
               return (

@@ -170,11 +170,12 @@ export function ReportViewer({
           <Button
             type="button"
             size="sm"
-            disabled={actionBusy}
+            loading={busyAction === "download"}
+            loadingText={copy.preparingPdf}
             onClick={() => void download()}
           >
             <RiDownloadLine aria-hidden />
-            <span>{busyAction === "download" ? copy.preparingPdf : copy.download}</span>
+            <span>{copy.download}</span>
           </Button>
         </div>
       </header>
@@ -249,11 +250,12 @@ export function ReportViewer({
                 size="sm"
                 aria-label={copy.download}
                 data-report-dialog-action
-                disabled={actionBusy}
+                loading={busyAction === "download"}
+                loadingText={copy.preparingPdf}
                 onClick={() => void download()}
               >
                 <RiDownloadLine aria-hidden />
-                <span>{busyAction === "download" ? copy.preparingPdf : copy.download}</span>
+                <span>{copy.download}</span>
               </Button>
             </div>
           </header>

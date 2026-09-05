@@ -1,7 +1,7 @@
 # PRD — Denarius (v1)
 
 > **Status:** ready to build (greenfield)
-> **Positioning:** AI-spend governance for tech companies. Denarius connects a company's AI APIs (OpenAI + Anthropic), attributes **token spend in money** by team/person, tracks it **against a budget**, and answers *"am I in control?"* in one line — a **verdict** — backed by **projected margin**, **early warnings**, and **contextual what-if simulation**. An executive cockpit for the CEO/CTO who needs to *keep AI cost under control*, not just look at it.
+> **Positioning:** observability and financial intelligence for AI spend. Denarius connects AI APIs (OpenAI + Anthropic), turns consumption into money, and transforms real data into **budgets, forecasts, deterministic model comparisons, usage economics, and a concise Executive Digest**. **The system calculates and compares; AI condenses; the user decides.** It is an executive cockpit for fast, defensible budget decisions—not an agent that manages the company.
 > **Exit thesis:** traction (1–3 paying customers) → sale to a strategic acquirer.
 > **Revision note:** this version integrates the founder's focus realignment and the founder-approved 2026-07-11 UI/UX audit. Decision P16 supersedes earlier UI details where they conflict.
 > **Status of the build (2026-08-07):** the v1 build order below (slices 2–12, issues #12–#23) is **complete**. What followed is a pre-launch hardening track — stories 60–66, all shipped — covering the credential self-service, the audit trail, LGPD self-service, closed-month reports and the public legal pages, plus non-story infrastructure work (security headers, rate limiting, credential-key rotation, supply-chain gate, RLS in CI, server-side logging, responsive pass). Everything still open is **HITL**: infrastructure and provider access only a human can provision (issues #11, #56, #59, #63, #64, #65, #66, #67).
@@ -25,7 +25,9 @@ The core pain is **control**, not accounting. The product answers three question
 
 ## Solution
 
-**Denarius** is a B2B web app that turns scattered AI **token spend into a governed budget**.
+The product loop is **Spend Visibility → Budget → Forecast → Model Comparison → Usage Economics → Executive Digest → Reports**. Forecast, comparison, and efficiency outputs are decision-support artifacts: they never claim technical equivalence between models, infer unavailable business context, or make decisions for the customer.
+
+**Denarius** is a B2B web app that turns scattered AI consumption into **comparable, projected and budget-governed financial information**.
 
 From the user's perspective:
 

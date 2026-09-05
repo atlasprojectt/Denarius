@@ -169,7 +169,7 @@ export function AppSidebar({
                 <SidebarMenuButton
                   asChild
                   tooltip={copy.search}
-                  className="h-11 rounded-standard border border-sidebar-border/70 bg-surface-control px-3 text-sidebar-foreground/70 shadow-none hover:bg-surface-hover hover:text-sidebar-accent-foreground data-active:bg-surface-selected data-active:text-sidebar-accent-foreground md:h-9 group-data-[collapsible=icon]:border-transparent group-data-[collapsible=icon]:bg-transparent group-data-[collapsible=icon]:px-2"
+                  className="h-11 rounded-standard border border-sidebar-border bg-surface-control px-3 text-sidebar-foreground/65 shadow-none hover:bg-surface-hover hover:text-sidebar-accent-foreground data-active:bg-surface-selected data-active:text-sidebar-accent-foreground md:h-9 group-data-[collapsible=icon]:border-transparent group-data-[collapsible=icon]:bg-transparent group-data-[collapsible=icon]:px-2"
                 >
                   <button
                     type="button"
@@ -178,7 +178,7 @@ export function AppSidebar({
                   >
                     <RiSearchLine />
                     <span className="truncate">{copy.search}</span>
-                    <kbd className="ml-auto font-sans text-[10px] leading-none text-sidebar-foreground/55 group-data-[collapsible=icon]:hidden">
+                    <kbd className="ml-auto font-sans text-[10px] leading-none text-sidebar-foreground/65 group-data-[collapsible=icon]:hidden">
                       {copy.searchShortcut}
                     </kbd>
                   </button>
@@ -216,12 +216,12 @@ export function AppSidebar({
                   <span className="grid min-w-0 flex-1 text-left leading-tight">
                     <span className="truncate font-medium">{userLabel}</span>
                     {userLabel !== userEmail && (
-                      <span className="truncate text-xs text-sidebar-foreground/60">
+                      <span className="truncate text-xs text-sidebar-foreground/65">
                         {userEmail}
                       </span>
                     )}
                   </span>
-                  <RiExpandUpDownLine className="ml-auto text-sidebar-foreground/60" />
+                  <RiExpandUpDownLine className="ml-auto text-sidebar-foreground/65" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
                   side="right"
