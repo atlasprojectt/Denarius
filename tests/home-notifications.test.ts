@@ -7,7 +7,11 @@ import {
 import {
   buildBudgetNotifications,
   compactNotificationCount,
+  filterUnseen,
   notificationTriggerTone,
+  parseSeenIds,
+  seenStorageKeyForDate,
+  serializeSeenIds,
   type BudgetNotification,
 } from "@/lib/home/notifications";
 
@@ -117,5 +121,52 @@ describe("notification trigger presentation", () => {
     expect(
       notificationTriggerTone([item("warning"), item("breach")]),
     ).toBe("destructive");
+  });
+});
+
+describe("notification seen hint (local-only badge)", () => {
+  const item = (id: string): BudgetNotification => ({
+    id,
+    title: "Alerta",
+    detail: "Detalhe",
+    href: "/",
+    level: "warning",
+  });
+
+  it("scopes the storage key to the calendar month", () => {
+    expect(seenStorageKeyForDate(new Date(2026, 7, 15))).toBe(
+      "denarius:notifications:seen:2026-08",
+    );
+    expect(seenStorageKeyForDate(new Date(2026, 8, 1))).not.toBe(
+      seenStorageKeyForDate(new Date(2026, 7, 31)),
+    );
+  });
+
+  it("round-trips seen ids and rejects malformed payloads", () => {
+    expect(parseSeenIds(serializeSeenIds(["a", "b"]))).toEqual(["a", "b"]);
+    expect(parseSeenIds(null)).toEqual([]);
+    expect(parseSeenIds("not-json")).toEqual([]);
+    expect(parseSeenIds(JSON.stringify({ a: 1 }))).toEqual([]);
+    expect(parseSeenIds(JSON.stringify(["a", 1, null]))).toEqual(["a"]);
+  });
+
+  it("keeps only unseen alerts for the badge", () => {
+    const items = [item("a"), item("b")];
+    expect(filterUnseen(items, new Set())).toHaveLength(2);
+    expect(filterUnseen(items, new Set(["a"])).map((i) => i.id)).toEqual([
+      "b",
+    ]);
+    expect(filterUnseen(items, new Set(["a", "b"]))).toEqual([]);
+  });
+
+  it("surfaces a newly arrived alert after others were seen", () => {
+    const seen = new Set(["budget:org:warning"]);
+    const items = [
+      item("budget:org:warning"),
+      item("budget:team-1:breach"),
+    ];
+    expect(filterUnseen(items, seen).map((i) => i.id)).toEqual([
+      "budget:team-1:breach",
+    ]);
   });
 });

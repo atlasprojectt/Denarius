@@ -2,6 +2,16 @@
 
 Everything an engineer or agent needs to work on Denarius. Read in this order:
 
+## Current product direction
+
+Denarius is an **observability and financial-intelligence platform for AI spend**. Its core loop is
+**Spend Visibility → Budget → Forecast → Model Comparison → Usage Economics → Executive Digest → Reports**.
+The system calculates and compares using real, deterministic data; AI only condenses those results
+into a short executive reading; the user decides. It is read-only governance, not an agent for running
+the business. The next feature issues are [#134](https://github.com/atlasprojectt/Denarius/issues/134),
+[#135](https://github.com/atlasprojectt/Denarius/issues/135), [#136](https://github.com/atlasprojectt/Denarius/issues/136),
+and [#137](https://github.com/atlasprojectt/Denarius/issues/137), in that dependency order.
+
 | Doc | What it holds | Read when |
 |---|---|---|
 | [prd.md](prd.md) | **Source of truth.** Problem, solution, 66 user stories, all product/UX/testing decisions (P1–P16), success metrics, risks, build order | Always first |

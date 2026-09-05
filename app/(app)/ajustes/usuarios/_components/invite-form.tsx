@@ -111,7 +111,12 @@ export function InviteForm() {
           </Select>
         </div>
 
-        <Button type="submit" loading={pending} loadingText={copy.submitting}>
+        <Button
+          type="submit"
+          loading={pending}
+          loadingText={copy.submitting}
+          className="min-w-28"
+        >
           {copy.submit}
         </Button>
       </div>

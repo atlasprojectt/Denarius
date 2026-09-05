@@ -35,7 +35,7 @@ export function CalculationDisclosure({
         />
       </CollapsibleTrigger>
       <CollapsibleContent>
-        <div className="mx-3 border-t border-border/70 pt-3 pb-1 text-xs/relaxed text-muted-foreground">
+        <div className="mx-3 border-t border-border pt-3 pb-1 text-xs/relaxed text-muted-foreground">
           {children}
         </div>
       </CollapsibleContent>

@@ -86,8 +86,8 @@ export default function ButtonShowcasePage() {
         <CardContent className="flex flex-wrap items-center gap-3">
           <Button>Disponível</Button>
           <Button disabled>Desabilitado</Button>
-          <Button loading loadingText="Salvando...">Salvar</Button>
-          <Button variant="destructive" loading loadingText="Excluindo...">
+          <Button loading loadingText="Salvando…">Salvar</Button>
+          <Button variant="destructive" loading loadingText="Excluindo…">
             <RiDeleteBinLine />
             Excluir
           </Button>

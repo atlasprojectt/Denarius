@@ -150,7 +150,7 @@ export default async function TimesPage({
             </p>
           </div>
           <Card className="gap-0 py-0">
-            <div className="divide-y divide-border/60">
+            <div className="divide-y divide-border">
               {withoutBudget.map((team) => {
                 const combined = data.combinedByTeam?.get(team.id);
                 const seat = data.seatByTeam.get(team.id) ?? 0;

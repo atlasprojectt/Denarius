@@ -49,7 +49,7 @@ const sharedCopy = {
   neverSynced: "Nunca sincronizado",
   keyLabel: "Admin Key (somente leitura)",
   connect: "Conectar e sincronizar",
-  connecting: "Testando e sincronizando…",
+  connecting: "Conectando…",
   rotate: "Trocar chave",
   cancelRotate: "Cancelar",
   syncNow: "Sincronizar agora",

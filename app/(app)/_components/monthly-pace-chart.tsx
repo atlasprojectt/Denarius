@@ -144,7 +144,7 @@ export function MonthlyPaceChart({
   if (todayValue <= 0) {
     return (
       <Card data-monthly-pace className="min-h-full [--chart-surface:var(--card)]">
-        <CardHeader className="border-b border-border/70">
+        <CardHeader className="border-b border-border">
           <div className="flex items-center gap-2">
             <CardTitle className="flex items-center gap-2 text-sm font-medium">
               <RiLineChartLine className="size-4 text-muted-foreground" aria-hidden />
@@ -192,7 +192,7 @@ export function MonthlyPaceChart({
 
   return (
     <Card data-monthly-pace className="min-h-full [--chart-surface:var(--card)]">
-      <CardHeader className="gap-2.5 border-b border-border/70">
+      <CardHeader className="gap-2.5 border-b border-border">
         <div className="flex items-center gap-2">
           <CardTitle className="flex items-center gap-2 text-sm font-medium">
             <RiLineChartLine className="size-4 text-muted-foreground" aria-hidden />

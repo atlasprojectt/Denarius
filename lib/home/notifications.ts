@@ -18,6 +18,39 @@ export type BudgetNotification = {
 
 export type NotificationTriggerTone = "amber" | "destructive" | null;
 
+/** Local-only "seen" hint for the header count badge. Findings stay stateless
+ * on the server; this key scopes the browser memory to the calendar month
+ * because notification ids (`budget:<target>:<level>`) do not carry a period. */
+export const NOTIFICATION_SEEN_PREFIX = "denarius:notifications:seen:";
+
+export function seenStorageKeyForDate(date: Date = new Date()): string {
+  const month = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+  return `${NOTIFICATION_SEEN_PREFIX}${month}`;
+}
+
+export function parseSeenIds(raw: string | null): string[] {
+  if (!raw) return [];
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((id): id is string => typeof id === "string");
+  } catch {
+    return [];
+  }
+}
+
+export function serializeSeenIds(ids: Iterable<string>): string {
+  return JSON.stringify([...ids]);
+}
+
+/** Presentation-only filter: which active alerts the badge still counts. */
+export function filterUnseen(
+  items: BudgetNotification[],
+  seenIds: ReadonlySet<string>,
+): BudgetNotification[] {
+  return items.filter((item) => !seenIds.has(item.id));
+}
+
 /** Compact visual count for the icon-only header trigger; aria copy keeps the
  * exact number, so this cap is presentation only. */
 export function compactNotificationCount(count: number): string {

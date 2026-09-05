@@ -103,12 +103,7 @@ function EmployeeRow({
               </Button>
               <ConfirmationDialog
                 trigger={
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="text-destructive hover:text-destructive"
-                  >
+                  <Button type="button" variant="destructive" size="sm">
                     {copy.remove}
                   </Button>
                 }

@@ -37,7 +37,7 @@ export default async function LoginPage({
         </div>
         {/* The legal pages are public and have to be reachable from the only
             screen a stranger sees (issue #57). */}
-        <nav className="flex items-center justify-center gap-2 border-t border-border/50 pt-3 text-xs text-muted-foreground">
+        <nav className="flex items-center justify-center gap-2 border-t border-border pt-3 text-xs text-muted-foreground">
           <Link
             href="/privacidade"
             className="inline-flex min-h-11 items-center underline-offset-4 hover:text-foreground hover:underline"

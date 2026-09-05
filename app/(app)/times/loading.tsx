@@ -19,7 +19,7 @@ export default function TimesLoading() {
               {Array.from({ length: rows }, (_, index) => (
                 <div
                   key={index}
-                  className="flex h-[74px] items-center gap-4 border-t border-border/60 px-4"
+                  className="flex h-[74px] items-center gap-4 border-t border-border px-4"
                 >
                   <Skeleton className="h-4 w-36" />
                   <Skeleton className="ml-auto h-4 w-20" />

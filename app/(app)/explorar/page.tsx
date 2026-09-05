@@ -355,7 +355,7 @@ export default async function ExplorePage() {
                 </CardHeader>
 
                 <CardContent className="p-0">
-                  <div className="flex flex-col border-y border-border/70 md:grid md:grid-cols-[1fr_auto_1fr_auto_1fr]">
+                  <div className="flex flex-col border-y border-border md:grid md:grid-cols-[1fr_auto_1fr_auto_1fr]">
                     <FinancialMetric
                       label={copy.reported}
                       value={usdDisplay(apiSpend.monthUsd, currency, fx)}
@@ -391,7 +391,7 @@ export default async function ExplorePage() {
                       amountHeader={copy.colDerived}
                     />
 
-                    <div className="flex items-start gap-2 rounded-lg border border-border/70 px-3 py-2.5 text-xs/relaxed text-muted-foreground">
+                    <div className="flex items-start gap-2 rounded-lg border border-border px-3 py-2.5 text-xs/relaxed text-muted-foreground">
                       <RiInformationLine
                         aria-hidden
                         className="mt-0.5 size-3.5 shrink-0"
@@ -438,7 +438,7 @@ export default async function ExplorePage() {
                     {periodLabel}
                   </p>
                 </CardHeader>
-                <CardContent className="border-t border-border/70 p-4">
+                <CardContent className="border-t border-border p-4">
                   <ExploreTable
                     rows={seatRows}
                     currency={currency}
@@ -446,7 +446,7 @@ export default async function ExplorePage() {
                     amountHeader={copy.colSpend}
                   />
                 </CardContent>
-                <CardFooter className="border-t border-border/70 py-3 text-xs text-muted-foreground">
+                <CardFooter className="border-t border-border py-3 text-xs text-muted-foreground">
                   <RiCheckboxCircleLine
                     aria-hidden
                     className="mr-2 size-3.5 shrink-0"

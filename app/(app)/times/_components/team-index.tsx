@@ -91,7 +91,7 @@ function TeamRow({
       style={{ animationDelay: `${70 + index * 55}ms` }}
       className={cn(
         "group/row relative px-4 py-3.5 transition-colors duration-(--motion-duration-standard) ease-(--motion-ease-standard) hover:bg-surface-hover",
-        priority === "attention" && "bg-muted/10",
+        priority === "attention" && "bg-muted",
       )}
     >
       <Link
@@ -205,7 +205,7 @@ export function TeamIndex({
         suppressHydrationWarning
         className="team-index-card gap-0 py-0"
       >
-        <div className="team-index-header hidden gap-4 border-b border-border/60 px-4 py-2 text-[11px] font-medium text-muted-foreground">
+        <div className="team-index-header hidden gap-4 border-b border-border px-4 py-2 text-[11px] font-medium text-muted-foreground">
           <span>{copy.team}</span>
           <span>{copy.status}</span>
           <span>{copy.spent}</span>
@@ -215,7 +215,7 @@ export function TeamIndex({
           <span>{copy.progress}</span>
           <span className="text-right">{copy.actions}</span>
         </div>
-        <div className="divide-y divide-border/60">
+        <div className="divide-y divide-border">
           {teams.map((team, index) => (
             <TeamRow
               key={team.teamId}

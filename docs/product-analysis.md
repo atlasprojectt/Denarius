@@ -8,19 +8,27 @@
 
 ## 1. Resumo executivo
 
-O Denarius é um cockpit de governança de gastos com inteligência artificial para CEOs e CTOs de empresas de tecnologia com aproximadamente 20 a 200 pessoas. Seu trabalho central é responder, em cerca de dez segundos:
+O Denarius é uma plataforma de observabilidade e inteligência financeira para gastos com inteligência artificial, voltada a CEOs e CTOs de empresas de tecnologia com aproximadamente 20 a 200 pessoas. Seu trabalho central é transformar dados em comparação, entendimento e decisão — respondendo, em cerca de dez segundos:
 
 > **“O gasto da empresa com IA está sob controle?”**
 
-O produto reúne custos variáveis de OpenAI e Anthropic com custos fixos de assinaturas por assento, organiza esse gasto por empresa, time, provedor e modelo, compara o total com orçamentos mensais e transforma os números em uma conclusão objetiva. Quando há risco, mostra onde investigar, estima onde o mês deve fechar e permite simular uma mudança de ritmo antes de a liderança decidir o que fazer.
+O produto reúne custos variáveis de OpenAI e Anthropic com custos fixos de assinaturas por assento, organiza esse gasto por empresa, time, provedor e modelo, compara o total com orçamentos mensais, projeta o fechamento, mede eficiência e transforma os resultados em uma conclusão objetiva. O Forecast, as comparações de modelos e a camada de Usage Economics mostram para onde o consumo está caminhando e quais alternativas financeiras existem. A IA atua como síntese do que foi calculado; não inventa contexto nem decide pela liderança.
 
 O Denarius não é um sistema de bloqueio, procurement ou contabilidade. Ele não impede uso, não aplica limites nos provedores e não substitui a fatura oficial. Sua proposta é dar visibilidade, guardrails, aviso antecipado e contexto para decisão.
 
 ### A promessa do produto em uma frase
 
-Transformar gastos dispersos e tardios com IA em um orçamento governado, com uma resposta diária, antecipada e defensável sobre o risco do mês.
+Transformar gastos dispersos e tardios com IA em informação financeira comparável e projetada, com uma resposta diária, antecipada e defensável sobre o risco do mês.
+
+### O princípio operacional
+
+**O Denarius calcula e compara. A IA condensa. O usuário decide.** O produto não administra a empresa,
+não afirma equivalência técnica entre modelos e não usa métricas de negócio que suas integrações não
+observam de forma confiável.
 
 ### O ciclo de valor esperado
+
+O fluxo de inteligência do produto é: **Spend Visibility → Budget → Forecast → Model Comparison → Usage Economics → Executive Digest → Reports**.
 
 1. A empresa informa quem são seus times e quais assinaturas por assento paga.
 2. Conecta suas fontes de consumo de OpenAI e Anthropic em modo somente leitura.

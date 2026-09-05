@@ -20,7 +20,7 @@ export default function ExploreLoading() {
           <Skeleton className="h-4 w-56" />
           <Skeleton className="h-3 w-32" />
         </div>
-        <div className="grid border-y border-border/70 p-4 md:grid-cols-3 md:gap-8">
+        <div className="grid border-y border-border p-4 md:grid-cols-3 md:gap-8">
           {Array.from({ length: 3 }).map((_, index) => (
             <div key={index} className="flex flex-col gap-2 py-2">
               <Skeleton className="h-3 w-28" />
@@ -31,7 +31,7 @@ export default function ExploreLoading() {
         </div>
         <div className="grid gap-1 p-4">
           {Array.from({ length: 5 }).map((_, index) => (
-            <div key={index} className="grid h-12 grid-cols-[1fr_7rem] items-center gap-6 border-b border-border/60 last:border-0">
+            <div key={index} className="grid h-12 grid-cols-[1fr_7rem] items-center gap-6 border-b border-border last:border-0">
               <div className="grid gap-2">
                 <Skeleton className="h-3 w-36" />
                 <Skeleton className="h-1 w-full" />

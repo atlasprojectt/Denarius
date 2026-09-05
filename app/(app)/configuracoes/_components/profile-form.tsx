@@ -16,7 +16,7 @@ const copy = {
   hint: "Este nome será exibido dentro do Denarius.",
   emailNote: "O e-mail é definido pela sua conta de acesso.",
   save: "Salvar perfil",
-  saving: "Salvando...",
+  saving: "Salvando…",
 };
 
 const initialState: SettingsFormState = {};

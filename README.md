@@ -3,9 +3,9 @@
 </p>
 
 <p align="center">
-  <strong>Governança de gasto com IA.</strong><br />
-  Transforma consumo de tokens em dinheiro, compara com o orçamento<br />
-  e responde <em>“estou no controle?”</em> em 10 segundos.
+  <strong>Observabilidade e inteligência financeira para gastos com IA.</strong><br />
+  Transforma dados de consumo em comparações, projeções e uma leitura executiva<br />
+  para decisões de orçamento em 10 segundos.
 </p>
 
 <p align="center">
@@ -25,18 +25,22 @@
 
 Denarius conecta as **Admin APIs da OpenAI e da Anthropic** (somente leitura), soma o consumo
 de tokens ao custo de assentos, converte tudo em **dinheiro**, acompanha esse valor contra
-**orçamentos** por organização e por time, e entrega:
+**orçamentos** por organização e por time, e transforma os dados em:
 
 - um **veredito determinístico** (verde / âmbar / vermelho) com uma frase que se justifica;
 - **avisos antecipados** por e-mail, com regras anti-fadiga (um alerta por time, nível e período);
 - **simulação contextual** de cenários — mexe apenas no gasto que ainda não aconteceu;
-- **apontamentos calmos** que observam padrões (concentração, aceleração, não atribuído) sem alarmar.
+- **forecast**, comparações de modelos, métricas de eficiência e um **Executive Digest** conciso.
+
+O fluxo central é **Spend Visibility → Budget → Forecast → Model Comparison → Usage Economics →
+Executive Digest → Reports**. O princípio é simples: **o Denarius calcula e compara; a IA
+condensa; o usuário decide**.
 
 **Público:** o CEO/CTO de uma empresa de tecnologia de 20–200 pessoas — um executivo, não um
 engenheiro, que dedica ~10 segundos por visita.
 
-> **Read-only por design.** Denarius observa, avisa e recomenda — **nunca bloqueia nem limita** o uso.
-> O sistema aponta; o CEO decide.
+> **Read-only por design.** Denarius observa e apoia decisões — **nunca bloqueia nem limita** o uso,
+> não administra a empresa e não infere contexto de negócio que não possui.
 
 ## Princípios que o código respeita
 

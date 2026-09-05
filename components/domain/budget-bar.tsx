@@ -38,7 +38,7 @@ export function BudgetBar({
       {/* Run-rate ghost: neutral ticks from spend to the projected close. */}
       {g.ghostStart !== null && g.ghostEnd !== null && (
         <div
-          className="absolute inset-0 text-foreground/35"
+          className="absolute inset-0 text-foreground/15"
           style={{ ...TICKS, clipPath: cut(g.ghostStart, g.ghostEnd) }}
         />
       )}
@@ -52,7 +52,7 @@ export function BudgetBar({
       {g.marker < 1 && (
         <div
           aria-hidden
-          className="absolute inset-y-0 w-px bg-foreground/70"
+          className="absolute inset-y-0 w-px bg-foreground/80"
           style={{ left: pct(g.marker) }}
         />
       )}

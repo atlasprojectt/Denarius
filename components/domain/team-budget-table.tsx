@@ -143,7 +143,7 @@ export function TeamBudgetTable({
     // scroller below keeps a long roster inside that height instead of pushing
     // past the row into the observations footer.
     <Card className="min-h-full">
-      <CardHeader className="border-b border-border/70">
+      <CardHeader className="border-b border-border">
         <CardTitle className="flex items-center gap-2 text-sm">
           <RiTeamLine className="size-4 text-muted-foreground" aria-hidden />
           {c.title}
@@ -245,7 +245,7 @@ export function TeamBudgetTable({
                     role="link"
                     tabIndex={0}
                     aria-label={c.detail(team.teamName)}
-                    className="group cursor-pointer border-border/60 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/40"
+                    className="group cursor-pointer border-border outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/40"
                     onClick={() => router.push(`/times/${team.teamId}`)}
                     onKeyDown={(event) => {
                       if (event.key === "Enter" || event.key === " ") {
