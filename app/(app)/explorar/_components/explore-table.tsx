@@ -180,7 +180,7 @@ function MoneyValue({
     <div className="text-right tabular-nums">
       <p className="text-[13px] font-medium text-foreground">{primary}</p>
       {row.amount !== null && row.originalUsd !== undefined && (
-        <p className="mt-0.5 text-[11px] text-muted-foreground">
+        <p className="mt-0.5 text-[11px] font-light text-muted-foreground">
           {money(row.originalUsd, "USD")}
         </p>
       )}
@@ -238,11 +238,11 @@ function DesktopRows({
               <RankBar row={row} index={index} />
             )}
             {row.note && (
-              <p className="mt-1 text-[11px] text-muted-foreground">{row.note}</p>
+              <p className="mt-1 text-[11px] font-light text-muted-foreground">{row.note}</p>
             )}
           </TableCell>
           {showTokens && (
-            <TableCell className="w-32 text-right text-xs text-muted-foreground tabular-nums">
+            <TableCell className="w-32 text-right text-xs font-light text-muted-foreground tabular-nums">
               {compact.format(row.tokens ?? 0)}
             </TableCell>
           )}
@@ -286,7 +286,7 @@ function MobileRows({
                 <h3 className="truncate font-medium text-foreground">{row.label}</h3>
               </div>
               {showTokens && (
-                <p className="mt-1 text-[11px] text-muted-foreground tabular-nums">
+                <p className="mt-1 text-[11px] font-light text-muted-foreground tabular-nums">
                   {compact.format(row.tokens ?? 0)} tokens
                 </p>
               )}
@@ -297,7 +297,7 @@ function MobileRows({
             <RankBar row={row} index={index} />
           )}
           {row.note && (
-            <p className="mt-2 text-[11px] text-muted-foreground">{row.note}</p>
+            <p className="mt-2 text-[11px] font-light text-muted-foreground">{row.note}</p>
           )}
           {row.href && row.actionLabel && (
             <div className="mt-2 flex justify-end">

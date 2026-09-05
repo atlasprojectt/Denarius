@@ -7,7 +7,6 @@ const authenticatedRoutes = [
   "/times",
   "/explorar",
   "/relatorios",
-  "/relatorios/agora",
   "/ajustes",
   "/configuracoes",
 ] as const;
@@ -301,9 +300,9 @@ test("Explore exposes the current tab contract and semantic panel heading", asyn
   await expectNoPageOverflow(page);
 });
 
-test("primary action text keeps AA contrast at rest and on hover", async ({ page }) => {
+test("report action text keeps AA contrast at rest and on hover", async ({ page }) => {
   await page.goto("/relatorios");
-  const action = page.getByRole("link", { name: "Visualizar relatório" });
+  const action = page.getByRole("button", { name: "Gerar agora" });
   await expect(action).toBeVisible();
 
   const colors = async () =>
@@ -319,8 +318,8 @@ test("primary action text keeps AA contrast at rest and on hover", async ({ page
   expect(contrastRatio(hovered.foreground, hovered.background)).toBeGreaterThanOrEqual(4.5);
 });
 
-test("report keeps one main landmark, unique ids, and a fitted preview", async ({ page }) => {
-  await page.goto("/relatorios/agora");
+test("report keeps one main landmark, unique ids, and a dialog preview", async ({ page }) => {
+  await page.goto("/relatorios");
   await expect(page.locator("main")).toHaveCount(1);
 
   const duplicateIds = await page.evaluate(() => {
@@ -332,16 +331,13 @@ test("report keeps one main landmark, unique ids, and a fitted preview", async (
   });
   expect(duplicateIds).toEqual([]);
 
-  const preview = page.locator(".report-viewer-preview");
-  await expect(preview).toBeVisible();
-  await expect
-    .poll(async () => {
-      const documentBox = await preview.locator(".report-preview-document").boundingBox();
-      const previewBox = await preview.boundingBox();
-      if (!documentBox || !previewBox) return false;
-      return documentBox.x + documentBox.width <= previewBox.x + previewBox.width + 1;
-    })
-    .toBe(true);
+  // Files preview over the list: the URL never leaves /relatorios.
+  await page.getByRole("button", { name: "Gerar agora", exact: true }).click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog.locator("[data-report-sheet]")).toBeVisible();
+  expect(page.url()).toContain("/relatorios");
+  await page.keyboard.press("Escape");
+  await expect(dialog).toBeHidden();
 });
 
 test("mobile controls keep touch-sized targets", async ({ page }) => {

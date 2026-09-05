@@ -178,7 +178,7 @@ export default async function TimesPage({
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-[13px] font-medium">{team.name}</p>
                       {note && (
-                        <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
+                        <p className="mt-0.5 truncate text-[11px] font-light text-muted-foreground">
                           {note}
                         </p>
                       )}
@@ -187,7 +187,7 @@ export default async function TimesPage({
                       <p className="text-[11px] text-muted-foreground">{copy.spent}</p>
                       <p className="text-[13px] font-medium tabular-nums">{spend}</p>
                     </div>
-                    <span className="hidden text-[11px] text-muted-foreground sm:block">
+                    <span className="hidden text-[11px] font-light text-muted-foreground sm:block">
                       {copy.defineBudget}
                     </span>
                     <RiArrowRightSLine className="size-4 shrink-0 text-muted-foreground transition-transform duration-(--motion-duration-fast) ease-(--motion-ease-standard) group-hover:translate-x-0.5" />

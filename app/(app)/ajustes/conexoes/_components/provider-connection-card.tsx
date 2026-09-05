@@ -253,7 +253,7 @@ export function ProviderConnectionCard({
           <ProviderIcon provider={provider} className="size-4 shrink-0" />
           {providerCopy[provider].title}
         </CardTitle>
-        <CardDescription className="tabular-nums">
+        <CardDescription className="font-light tabular-nums">
           {stamp ? sharedCopy.lastSync(stamp) : sharedCopy.neverSynced}
         </CardDescription>
         <CardAction>

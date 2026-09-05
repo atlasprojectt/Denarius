@@ -137,7 +137,7 @@ export function ProjectMapForm({
                 <span className="font-medium">{project.projectId}</span>
                 <ProviderBadge provider={project.provider} />
               </div>
-              <p className="mt-2 text-xs text-muted-foreground tabular-nums">
+              <p className="mt-2 text-xs font-light text-muted-foreground tabular-nums">
                 {project.uncosted ? copy.uncosted : <UsdValue value={usdDisplay(project.derivedUsd, currency, fx)} />}
               </p>
               <div className="mt-3">
@@ -173,7 +173,7 @@ export function ProjectMapForm({
                 </TableCell>
                 <TableCell className="text-right tabular-nums">
                   {project.uncosted ? (
-                    <span className="text-muted-foreground">{copy.uncosted}</span>
+                    <span className="font-light text-muted-foreground">{copy.uncosted}</span>
                   ) : (
                     <UsdValue value={usdDisplay(project.derivedUsd, currency, fx)} />
                   )}
@@ -204,7 +204,7 @@ export function ProjectMapForm({
         >
           {copy.submit}
         </Button>
-        <p className="text-xs text-muted-foreground" role="status">
+        <p className="text-xs font-light text-muted-foreground" role="status">
           {dirty ? copy.dirty : copy.unchanged}
         </p>
       </div>

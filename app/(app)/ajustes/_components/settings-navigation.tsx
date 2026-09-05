@@ -13,7 +13,7 @@ export function SettingsItemStatus({
   indicator?: boolean;
 }) {
   return (
-    <span className="inline-flex items-center gap-2 whitespace-nowrap text-xs text-muted-foreground tabular-nums">
+    <span className="inline-flex items-center gap-2 text-xs font-light whitespace-nowrap text-muted-foreground tabular-nums">
       {indicator && (
         <span
           aria-hidden

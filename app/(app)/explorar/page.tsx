@@ -347,7 +347,7 @@ export default async function ExplorePage() {
                       <h2>{copy.apiTitle(period.monthLabel)}</h2>
                     </CardTitle>
                     {lastSyncAt && (
-                      <p className="text-[11px] text-muted-foreground tabular-nums">
+                      <p className="text-[11px] font-light text-muted-foreground tabular-nums">
                         {copy.apiAsOf(syncStamp(lastSyncAt))}
                       </p>
                     )}
@@ -355,7 +355,7 @@ export default async function ExplorePage() {
                 </CardHeader>
 
                 <CardContent className="p-0">
-                  <div className="flex flex-col border-y border-border/70 md:grid md:grid-cols-[1fr_auto_1fr_auto_1fr]">
+                  <div className="flex flex-col border-y border-border md:grid md:grid-cols-[1fr_auto_1fr_auto_1fr]">
                     <FinancialMetric
                       label={copy.reported}
                       value={usdDisplay(apiSpend.monthUsd, currency, fx)}
@@ -391,7 +391,7 @@ export default async function ExplorePage() {
                       amountHeader={copy.colDerived}
                     />
 
-                    <div className="flex items-start gap-2 rounded-lg border border-border/70 px-3 py-2.5 text-xs/relaxed text-muted-foreground">
+                    <div className="flex items-start gap-2 rounded-lg border border-border px-3 py-2.5 text-xs/relaxed font-light text-muted-foreground">
                       <RiInformationLine
                         aria-hidden
                         className="mt-0.5 size-3.5 shrink-0"
@@ -434,11 +434,11 @@ export default async function ExplorePage() {
                     <h2>{copy.seatsTitle}</h2>
                   </CardTitle>
                   <CardDescription>{copy.seatsSub}</CardDescription>
-                  <p className="text-[11px] text-muted-foreground tabular-nums">
+                  <p className="text-[11px] font-light text-muted-foreground tabular-nums">
                     {periodLabel}
                   </p>
                 </CardHeader>
-                <CardContent className="border-t border-border/70 p-4">
+                <CardContent className="border-t border-border p-4">
                   <ExploreTable
                     rows={seatRows}
                     currency={currency}
@@ -446,7 +446,7 @@ export default async function ExplorePage() {
                     amountHeader={copy.colSpend}
                   />
                 </CardContent>
-                <CardFooter className="border-t border-border/70 py-3 text-xs text-muted-foreground">
+                <CardFooter className="border-t border-border py-3 text-xs font-light text-muted-foreground">
                   <RiCheckboxCircleLine
                     aria-hidden
                     className="mr-2 size-3.5 shrink-0"
@@ -494,12 +494,12 @@ function FinancialMetric({
         {primaryMoney(value)}
       </p>
       {value.display !== null && (
-        <p className="mt-0.5 text-[11px] text-muted-foreground tabular-nums">
+        <p className="mt-0.5 text-[11px] font-light text-muted-foreground tabular-nums">
           {money(value.usd, "USD")}
         </p>
       )}
       {detail && (
-        <p className="mt-1 text-[11px] text-muted-foreground">{detail}</p>
+        <p className="mt-1 text-[11px] font-light text-muted-foreground">{detail}</p>
       )}
     </div>
   );

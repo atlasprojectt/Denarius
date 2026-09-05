@@ -118,6 +118,21 @@ export type ReportListRead =
   | { ok: true; reports: ReportSummary[] }
   | { ok: false; reports: [] };
 
+/** Newest frozen month as a "yyyy-mm" path, or null. The sidebar's discreet
+ *  "new report" dot reads this — one indexed row, snapshot data only, so it
+ *  is safe beside the frozen report surfaces too. */
+export async function latestClosedPeriodPath(): Promise<string | null> {
+  const client = await createClient();
+  const { data, error } = await client
+    .from("period_snapshot")
+    .select("period_month")
+    .order("period_month", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error || !data) return null;
+  return (data as { period_month: string }).period_month.slice(0, 7);
+}
+
 /** The list has one data source: the immutable period_snapshot table. */
 export async function listMonthlyReports(): Promise<ReportListRead> {
   const client = await createClient();

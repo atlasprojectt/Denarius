@@ -21,7 +21,7 @@ export function UsdValue({
   return (
     <span className={className}>
       {money(value.display, value.currency)}
-      <span className="ml-1 text-xs font-normal text-muted-foreground">
+      <span className="ml-1 text-xs font-light text-muted-foreground">
         ({money(value.usd, "USD")})
       </span>
     </span>

@@ -48,7 +48,7 @@ export default function LegalLayout({ children }: { children: ReactNode }) {
       </main>
 
       <footer className="border-t border-border">
-        <div className="mx-auto flex w-full max-w-3xl flex-wrap items-center justify-between gap-x-6 gap-y-2 px-6 py-6 text-xs text-muted-foreground">
+        <div className="mx-auto flex w-full max-w-3xl flex-wrap items-center justify-between gap-x-6 gap-y-2 px-6 py-6 text-xs font-light text-muted-foreground">
           <p>
             {legalChrome.contactPrefix}{" "}
             <a

@@ -117,7 +117,7 @@ export default async function BudgetsPage() {
           )}
         </CardContent>
         {org && org.currency !== "USD" && org.frozenFxRate !== null && (
-          <CardFooter className="text-xs/relaxed text-muted-foreground">
+          <CardFooter className="text-xs/relaxed font-light text-muted-foreground">
             <p>
               {copy.fxDisclosure(money(org.frozenFxRate, org.currency), org.fxRateSource ?? "—", org.fxRateDate ?? "—")}
             </p>

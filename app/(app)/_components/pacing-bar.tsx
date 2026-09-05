@@ -58,7 +58,7 @@ export function PacingBar({
       </p>
 
       <div className="mb-1 flex items-baseline justify-between gap-3 text-xs">
-        <span className="text-muted-foreground tabular-nums">
+        <span className="font-light text-muted-foreground tabular-nums">
           {c.periodDay(dayOfPeriod, daysInPeriod, percent(pctElapsed))}
         </span>
         <span className="font-medium tabular-nums">{percent(pctSpent)}</span>
@@ -99,7 +99,7 @@ export function PacingBar({
       <div className="relative mt-1.5 h-4">
         <div
           aria-hidden
-          className="absolute inset-0 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground opacity-0 group-hover/bar:opacity-100 motion-safe:transition-opacity motion-safe:duration-[180ms]"
+          className="absolute inset-0 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-light text-muted-foreground opacity-0 group-hover/bar:opacity-100 motion-safe:transition-opacity motion-safe:duration-[180ms]"
         >
           <LegendItem swatch={`${SWATCH} ${swatchTone}`} label={c.pace.spent} />
           <LegendItem

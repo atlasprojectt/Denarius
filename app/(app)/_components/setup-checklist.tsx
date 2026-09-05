@@ -58,7 +58,7 @@ export function SetupChecklist({
         <CardContent className="flex flex-wrap items-center gap-x-5 gap-y-2.5 px-4">
           <div className="min-w-0">
             <p className="text-[13px] font-medium">{homeCopy.setup.title}</p>
-            <p className="mt-0.5 text-[11px] text-muted-foreground tabular-nums">
+            <p className="mt-0.5 text-[11px] font-light text-muted-foreground tabular-nums">
               {homeCopy.setup.progress(doneCount, steps.length)}
             </p>
           </div>
@@ -97,7 +97,7 @@ export function SetupChecklist({
         <CardTitle>{homeCopy.setup.title}</CardTitle>
         <CardDescription>{homeCopy.setup.subtitle}</CardDescription>
         <CardAction>
-          <p className="text-xs text-muted-foreground tabular-nums">
+          <p className="text-xs font-light text-muted-foreground tabular-nums">
             {homeCopy.setup.progress(doneCount, steps.length)}
           </p>
         </CardAction>
@@ -124,7 +124,7 @@ export function SetupChecklist({
                     >
                       {label}
                     </span>
-                    <span className="mt-0.5 block text-xs/relaxed text-muted-foreground">
+                    <span className="mt-0.5 block text-xs/relaxed font-light text-muted-foreground">
                       {homeCopy.setup[`${step.key}Detail`]}
                     </span>
                   </span>

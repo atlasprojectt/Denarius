@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import {
   RiExpandUpDownLine,
   RiFileChartLine,
@@ -46,6 +47,13 @@ import { Button } from "@/components/ui/button";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { logout } from "@/lib/auth/actions";
 import type { ConnectionFreshness } from "@/lib/engine/freshness";
+import { closingCardState } from "@/lib/reports/closing";
+import {
+  newestUnseenPeriod,
+  parseSeenPeriods,
+  REPORTS_SEEN_EVENT,
+  REPORTS_SEEN_KEY,
+} from "@/lib/reports/seen";
 import { SEARCH_OPEN_EVENT } from "@/lib/search/shortcut";
 
 // Shell rebuilt on the shadcn block @efferd/app-shell-3 (2026-08-02,
@@ -61,6 +69,7 @@ const copy = {
   teams: "Times",
   explore: "Explorar",
   reports: "Relatórios",
+  reportsNew: "Novo relatório de fechamento disponível",
   search: "Pesquisa",
   searchShortcut: "Ctrl P",
   settings: "Ajustes",
@@ -98,21 +107,58 @@ function isActivePath(pathname: string, href: string): boolean {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
+// Browser-only "new closing" hint: the server hands over the newest frozen
+// month and the client shows the dot only while that month is still featured
+// (the five-day spotlight) and unseen — nothing renders until after mount,
+// so there is no hydration mismatch.
+function useNewReportBadge(latestPeriodPath: string | null): boolean {
+  const [unseen, setUnseen] = useState<string | null>(null);
+  const [featured, setFeatured] = useState(false);
+  useEffect(() => {
+    function refresh() {
+      const state = closingCardState(
+        new Date(),
+        latestPeriodPath ? [`${latestPeriodPath}-01`] : [],
+      );
+      setFeatured(
+        state.mode === "featured" && state.periodPath === latestPeriodPath,
+      );
+      setUnseen(
+        newestUnseenPeriod(
+          latestPeriodPath,
+          parseSeenPeriods(window.localStorage.getItem(REPORTS_SEEN_KEY)),
+        ),
+      );
+    }
+    refresh();
+    window.addEventListener(REPORTS_SEEN_EVENT, refresh);
+    window.addEventListener("storage", refresh);
+    return () => {
+      window.removeEventListener(REPORTS_SEEN_EVENT, refresh);
+      window.removeEventListener("storage", refresh);
+    };
+  }, [latestPeriodPath]);
+  return featured && unseen !== null;
+}
+
 export function AppSidebar({
   userEmail,
   userInitials,
   userLabel,
   staleConnections,
   allClear,
+  latestReportPeriod,
 }: {
   userEmail: string;
   userInitials: string;
   userLabel: string;
   staleConnections: ConnectionFreshness[];
   allClear: boolean;
+  latestReportPeriod: string | null;
 }) {
   const pathname = usePathname();
   const { setOpenMobile } = useSidebar();
+  const hasNewReport = useNewReportBadge(latestReportPeriod);
 
   function openSearch() {
     setOpenMobile(false);
@@ -124,6 +170,8 @@ export function AppSidebar({
     items: group.items.map((item) => ({
       ...item,
       isActive: isActivePath(pathname, item.path),
+      badge: item.path === "/relatorios" && hasNewReport,
+      badgeLabel: item.path === "/relatorios" ? copy.reportsNew : undefined,
     })),
   }));
 
@@ -243,7 +291,7 @@ export function AppSidebar({
                         {userLabel}
                       </span>
                       {userLabel !== userEmail && (
-                        <span className="break-all text-xs font-normal text-muted-foreground">
+                        <span className="break-all text-xs font-light text-muted-foreground">
                           {userEmail}
                         </span>
                       )}

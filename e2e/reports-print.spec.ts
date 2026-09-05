@@ -31,29 +31,32 @@ test("reports stay legible in both screen themes", async ({ page }) => {
   }
 });
 
-test("the report viewer exposes direct print, download, and expand actions", async ({ page }) => {
-  await page.goto("/relatorios/agora");
-  await expect(page.getByRole("button", { name: "Imprimir" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Baixar PDF" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Expandir" })).toBeVisible();
-  await expect(page.getByRole("dialog")).toHaveCount(0);
-  await page.getByRole("button", { name: "Expandir" }).click();
-  await expect(page.getByRole("dialog")).toBeVisible();
+test("the preview dialog exposes close, print, and download over the list", async ({
+  page,
+}) => {
+  await page.goto("/relatorios");
+  await page.getByRole("button", { name: "Gerar agora", exact: true }).click();
+
+  const dialog = page.getByRole("dialog");
+  await expect(dialog).toBeVisible();
   await expect(
-    page.getByRole("dialog").locator(".report-viewer-dialog-header"),
+    dialog.getByRole("button", { name: "Fechar", exact: true }),
   ).toBeVisible();
-  const pageRatios = await page
-    .getByRole("dialog")
-    .locator(".report-page")
-    .evaluateAll((pages) =>
-      pages.map((item) => getComputedStyle(item).aspectRatio),
-    );
-  expect(pageRatios).toEqual(["210 / 297", "210 / 297"]);
+  await expect(
+    dialog.getByRole("button", { name: "Imprimir", exact: true }),
+  ).toBeVisible();
+  await expect(
+    dialog.getByRole("button", { name: "Baixar PDF", exact: true }),
+  ).toBeVisible();
+  // The list stays the page: opening a file never navigates away.
+  expect(page.url()).toContain("/relatorios");
+
   await page.keyboard.press("Escape");
-  await expect(page.getByRole("dialog")).toBeHidden();
+  await expect(dialog).toBeHidden();
+  expect(page.url()).toContain("/relatorios");
 });
 
-test("the print action stays on the report and invokes print", async ({
+test("the print action closes the preview and invokes print", async ({
   page,
 }) => {
   await page.addInitScript(() => {
@@ -61,26 +64,27 @@ test("the print action stays on the report and invokes print", async ({
       document.documentElement.dataset.printInvoked = "true";
     };
   });
-  await page.goto("/relatorios/agora");
-  const reportUrl = page.url();
+  await page.goto("/relatorios");
+  const indexUrl = page.url();
+  await page.getByRole("button", { name: "Gerar agora", exact: true }).click();
+  await expect(page.getByRole("dialog")).toBeVisible();
 
-  await page.getByRole("button", { name: "Imprimir" }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Imprimir" }).click();
   await expect(page.locator("html")).toHaveAttribute("data-print-invoked", "true");
-  expect(page.url()).toBe(reportUrl);
+  await expect(page.getByRole("dialog")).toBeHidden();
+  expect(page.url()).toBe(indexUrl);
 });
 
-test("the on-demand report prints as the shared executive document", async ({
+test("the on-demand preview shows the shared executive document", async ({
   page,
 }) => {
   await page.goto("/relatorios");
-  await page.getByRole("link", { name: "Visualizar relatÃ³rio" }).click();
-  await page.waitForURL("**/relatorios/agora");
-  await page.goto("/relatorios/agora?mode=pdf");
-  await page.emulateMedia({ media: "print" });
-  await expect(page.locator("[data-report-sheet]")).toBeVisible();
+  await page.getByRole("button", { name: "Gerar agora", exact: true }).click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog.locator("[data-report-sheet]")).toBeVisible();
 
   // One editorial structure serves both the live and frozen reports.
-  const order = await page
+  const order = await dialog
     .locator("[data-report-section]")
     .evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-report-section")));
   expect(order).toEqual([
@@ -93,6 +97,14 @@ test("the on-demand report prints as the shared executive document", async ({
     "unattributed",
     "caveats",
   ]);
+});
+
+test("the render endpoint prints as the shared executive document", async ({
+  page,
+}) => {
+  await page.goto("/relatorios/agora?mode=pdf");
+  await page.emulateMedia({ media: "print" });
+  await expect(page.locator("[data-report-sheet]")).toBeVisible();
 
   await page.evaluate(() => document.documentElement.classList.add("dark"));
   await page.emulateMedia({ media: "print" });
@@ -127,19 +139,21 @@ test("the on-demand report prints as the shared executive document", async ({
   expect(printStyles.background).toBe("rgb(255, 255, 255)");
 });
 
-test("the frozen template keeps order and print drops app chrome", async ({ page }) => {
+test("a history file opens the same preview without navigating", async ({ page }) => {
   await page.goto("/relatorios");
-  const reportLink = page.locator('a[href^="/relatorios/20"]').first();
+  const historyRow = page.locator('[data-file-row="history"]').first();
   test.skip(
-    (await reportLink.count()) === 0,
-    "A migration de period_snapshot ainda nÃ£o tem um mÃªs fechado para imprimir.",
+    (await historyRow.count()) === 0,
+    "A migration de period_snapshot ainda nÃ£o tem um mÃªs fechado para visualizar.",
   );
-  await reportLink.click();
-  await page.goto(`${page.url()}?mode=pdf`);
-  await page.emulateMedia({ media: "print" });
-  await expect(page.locator("[data-report-sheet]")).toBeVisible();
+  const indexUrl = page.url();
+  await historyRow.click();
 
-  const order = await page
+  const dialog = page.getByRole("dialog");
+  await expect(dialog.locator("[data-report-sheet]")).toBeVisible();
+  expect(page.url()).toBe(indexUrl);
+
+  const order = await dialog
     .locator("[data-report-section]")
     .evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-report-section")));
   expect(order).toEqual([
@@ -152,36 +166,8 @@ test("the frozen template keeps order and print drops app chrome", async ({ page
     "unattributed",
     "caveats",
   ]);
-
-  await page.evaluate(() => document.documentElement.classList.add("dark"));
-  await page.emulateMedia({ media: "print" });
-  const printStyles = await page.evaluate(() => ({
-    sidebar: getComputedStyle(
-      document.querySelector('[data-slot="sidebar-container"]')!,
-    ).display,
-    appHeader: getComputedStyle(document.querySelector("[data-app-header]")!).display,
-    documentHeader: getComputedStyle(
-      document.querySelector(".report-document-header")!,
-    ).display,
-    footer: getComputedStyle(
-      document.querySelector(".report-brand-footer")!,
-    ).display,
-    background: getComputedStyle(document.documentElement).backgroundColor,
-    documentBackground: getComputedStyle(
-      document.querySelector(".report-print-frame")!,
-    ).backgroundColor,
-    documentShadow: getComputedStyle(
-      document.querySelector(".report-print-frame")!,
-    ).boxShadow,
-  }));
-
-  expect(printStyles.sidebar).toBe("none");
-  expect(printStyles.appHeader).toBe("none");
-  expect(printStyles.documentHeader).toBe("block");
-  expect(printStyles.footer).toBe("block");
-  expect(printStyles.background).toBe("rgb(255, 255, 255)");
-  expect(printStyles.documentBackground).toBe("rgb(255, 255, 255)");
-  expect(printStyles.documentShadow).toBe("none");
+  await page.keyboard.press("Escape");
+  await expect(dialog).toBeHidden();
 });
 
 test("Chromium produces a real A4 PDF from the shared report", async ({
@@ -189,7 +175,6 @@ test("Chromium produces a real A4 PDF from the shared report", async ({
   browserName,
 }, testInfo) => {
   test.skip(browserName !== "chromium", "page.pdf is a Chromium capability.");
-  await page.goto("/relatorios/agora");
   await page.goto("/relatorios/agora?mode=pdf");
   await page.emulateMedia({ media: "print" });
   await expect(page.locator("[data-report-sheet]")).toBeVisible();

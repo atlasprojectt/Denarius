@@ -105,7 +105,7 @@ function TeamRow({
           <h3 className="truncate text-[13px] font-medium text-foreground">
             {team.teamName}
           </h3>
-          <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
+          <p className="mt-0.5 truncate text-[11px] font-light text-muted-foreground">
             {contextLine(team, currency)}
           </p>
         </div>
@@ -135,7 +135,7 @@ function TeamRow({
             pctProjected={team.pctProjected}
             status={team.status}
           />
-          <span className="w-10 shrink-0 text-right text-[11px] text-muted-foreground tabular-nums">
+          <span className="w-10 shrink-0 text-right text-[11px] font-light text-muted-foreground tabular-nums">
             {percent(evaluation.pctSpent)}
           </span>
         </div>
@@ -195,7 +195,7 @@ export function TeamIndex({
         <h2 id={`team-group-${priority}`} className="text-sm font-medium">
           {title}
         </h2>
-        <span className="text-[11px] text-muted-foreground tabular-nums">
+        <span className="text-[11px] font-light text-muted-foreground tabular-nums">
           {teams.length}
         </span>
       </div>

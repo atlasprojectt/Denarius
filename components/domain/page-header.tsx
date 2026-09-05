@@ -50,7 +50,7 @@ export function PageHeader({
             </div>
           )}
           {meta && (
-            <p className="text-xs text-muted-foreground tabular-nums">{meta}</p>
+            <p className="text-xs font-light text-muted-foreground tabular-nums">{meta}</p>
           )}
         </div>
       )}

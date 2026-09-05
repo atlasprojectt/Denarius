@@ -39,3 +39,14 @@ export function reportDate(iso: string): string {
 export function reportDateTime(iso: string): string {
   return DATE_TIME.format(new Date(iso));
 }
+
+const TIME = new Intl.DateTimeFormat("pt-BR", {
+  hour: "2-digit",
+  minute: "2-digit",
+  timeZone: "America/Sao_Paulo",
+});
+
+/** "05/09/2026 · 16:28" — the file-row stamp. */
+export function reportFileDateTime(iso: string): string {
+  return `${reportDate(iso)} · ${TIME.format(new Date(iso))}`;
+}

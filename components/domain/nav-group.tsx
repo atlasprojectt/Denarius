@@ -32,6 +32,9 @@ export type SidebarNavItem = {
   path?: string;
   icon?: ReactNode;
   isActive?: boolean;
+  /** Discreet "something new here" dot — never a count, never semaphore. */
+  badge?: boolean;
+  badgeLabel?: string;
   subItems?: SidebarNavItem[];
 };
 
@@ -114,8 +117,20 @@ export function NavGroup({ label, items }: SidebarNavGroup) {
                 >
                   {item.icon}
                   <span>{item.title}</span>
+                  {item.badge && item.badgeLabel && (
+                    <span className="sr-only">{item.badgeLabel}</span>
+                  )}
                 </Link>
               </SidebarMenuButton>
+              {/* Absolute on the (relative) item so the dot survives the
+                  collapsed rail, where the button clips to its icon. */}
+              {item.badge && (
+                <span
+                  aria-hidden
+                  data-sidebar-badge
+                  className="absolute top-2 right-2 z-10 size-1.5 rounded-full bg-brand-accent"
+                />
+              )}
             </SidebarMenuItem>
           ),
         )}

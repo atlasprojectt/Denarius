@@ -94,7 +94,7 @@ export function UsersTable({
                 <ItemTitle>
                   {u.email}
                   {isSelf && (
-                    <span className="text-xs font-normal text-muted-foreground">
+                    <span className="text-xs font-light text-muted-foreground">
                       ({copy.you})
                     </span>
                   )}

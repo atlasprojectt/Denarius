@@ -18,6 +18,7 @@ import {
 } from "@/lib/engine/freshness";
 import { getCockpitData } from "@/lib/home/queries";
 import { isReportPath } from "@/lib/reports/path";
+import { latestClosedPeriodPath } from "@/lib/reports/queries";
 import { profileInitials, profileLabel } from "@/lib/settings/account";
 import { createClient } from "@/lib/supabase/server";
 
@@ -46,18 +47,21 @@ export default async function AppLayout({
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const [{ data }, { data: connectionData }] = await Promise.all([
-    supabase
-      .from("app_user")
-      .select("email, display_name, tenant:tenant_id(name)")
-      .eq("id", user.id)
-      .maybeSingle(),
-    renderingReport
-      ? Promise.resolve({ data: [] as ConnectionRow[] })
-      : supabase
-          .from("provider_connection")
-          .select("provider, status, last_sync_at"),
-  ]);
+  const [{ data }, { data: connectionData }, latestReportPeriod] =
+    await Promise.all([
+      supabase
+        .from("app_user")
+        .select("email, display_name, tenant:tenant_id(name)")
+        .eq("id", user.id)
+        .maybeSingle(),
+      renderingReport
+        ? Promise.resolve({ data: [] as ConnectionRow[] })
+        : supabase
+            .from("provider_connection")
+            .select("provider, status, last_sync_at"),
+      // Snapshot data, not live state — safe beside the frozen surfaces.
+      latestClosedPeriodPath().catch(() => null),
+    ]);
   const appUser = data as AppUserRow | null;
 
   // Signed in but no tenant yet (e.g. first Google login) → bootstrap.
@@ -96,6 +100,7 @@ export default async function AppLayout({
           })}
           staleConnections={staleConnections}
           allClear={allClear}
+          latestReportPeriod={latestReportPeriod}
         />
         <SidebarInset className="min-w-0 md:border md:border-border/60">
           <header data-app-header className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2.5 border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/80 md:rounded-t-xl">

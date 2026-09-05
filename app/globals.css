@@ -666,172 +666,14 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 
 /* ---------------------------------------------------------------------------
-   Monthly reports — inline preview (#95 follow-up). The frozen report is
-   documentation, so the preview shows the SAME semantic HTML the PDF is built
-   from — never a PDF canvas/reader. Height is deliberately contained so the
-   page chrome, title and actions stay visible; a soft gradient at the bottom
-   of the viewport dissolves the sheet into the dark surface, signalling more
-   report continues below without a reader-style control bar. The expanded
-   viewer renders the same semantic document in a focused full-screen surface.
+   Monthly reports — preview dialog. Every file on /relatorios opens over the
+   page in one fullscreen dialog (no preview route): a floating header with
+   the close control, the document meta and the Imprimir/Baixar PDF actions,
+   over a scrolling column of A4 paper leaves (single source of truth with
+   print and the headless PDF). The dialog closes before printing, so the
+   shared print layer applies untouched through the host's print-only copy.
 --------------------------------------------------------------------------- */
-.report-viewer {
-  display: flex;
-  flex-direction: column;
-  /* Match the shared PageContainer width so the report aligns with the rest of
-     the app instead of stretching under the sidebar. */
-  max-width: 80rem;
-  width: 100%;
-  margin-inline: auto;
-  min-width: 0;
-  min-height: 0;
-  gap: 1.5rem;
-}
-
-.report-viewer-toolbar,
-.report-viewer-title,
-.report-viewer-actions,
-.report-viewer-dialog-header,
-.report-viewer-dialog-actions {
-  display: flex;
-  align-items: center;
-}
-
-.report-viewer-toolbar {
-  justify-content: space-between;
-  gap: 1rem;
-}
-
-.report-viewer-title {
-  min-width: 0;
-  gap: 0.5rem;
-}
-
-.report-viewer-title h1 {
-  font-family: var(--font-heading);
-  font-size: 0.95rem;
-  font-weight: 600;
-}
-
-.report-viewer-title p,
-.report-viewer-dialog-header p {
-  color: var(--muted-foreground);
-  font-size: 0.75rem;
-}
-
-.report-viewer-actions,
-.report-viewer-dialog-actions {
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 0.35rem;
-}
-
-.report-viewer-feedback {
-  display: flex;
-  min-height: 2rem;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.25rem;
-  margin-top: -0.75rem;
-}
-
-/* The preview viewport — a contained, deliberately short surface. It sits on
-   the app canvas (`--background`) and is set apart only by the shared
-   `--border` contour, matching the outlined-card language used across the app
-   (Explorar, settings panels) rather than reading as a separate gray block. */
-.report-viewer-canvas {
-  --report-preview-bg: var(--background);
-  position: relative;
-  container-type: inline-size;
-  min-width: 0;
-  overflow: hidden;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-xl);
-  background: var(--report-preview-bg);
-  padding: clamp(1rem, 2.5vw, 2.25rem);
-  /* Contained height: leaves room for header, title, actions and breathing
-     space below even on a 1366×768 notebook. */
-  height: clamp(460px, 61vh, 640px);
-}
-
-/* The white sheet — centered, A4-ish, fluid width, never stretched. */
-.report-viewer-preview {
-  --report-preview-scale: min(1, calc(100cqi / 680px));
-  position: relative;
-  width: min(680px, 100%);
-  min-height: 100%;
-  margin: 0 auto;
-  overflow: hidden;
-  border-radius: 2px;
-  background: #ffffff;
-  box-shadow: 0 0.5rem 1.25rem rgb(0 0 0 / 0.1);
-}
-
-/* Render the report HTML with its table layout (the screen default is
-   `display: block`, which would stack the sections instead of paginating). */
-.report-preview-document {
-  display: block;
-  width: 680px;
-  overflow: visible;
-  transform: scale(var(--report-preview-scale));
-  transform-origin: top left;
-}
-
-.report-preview-document .report-print-frame {
-  display: table;
-  border: 0;
-}
-
-.report-preview-document .report-print-frame > tbody {
-  display: table-row-group;
-}
-
-.report-preview-document .report-print-frame > tbody > tr {
-  display: table-row;
-}
-
-.report-preview-document .report-print-frame > tbody > tr > td {
-  display: table-cell;
-}
-
-/* Bottom fade — belongs to the viewport, not the sheet. It dissolves the lower
-   portion of the report into the dark surface: transparent at the top, ending
-   exactly at the container background, so the cut reads as intentional. Kept
-   short (20%) so it hints "more below" without hiding real content. */
-.report-viewer-canvas::after {
-  content: "";
-  position: absolute;
-  inset: auto 0 0 0;
-  height: 20%;
-  pointer-events: none;
-  z-index: 1;
-  background: linear-gradient(
-    to bottom,
-    transparent 30%,
-    color-mix(in oklab, var(--report-preview-bg) 45%, transparent) 60%,
-    var(--report-preview-bg) 100%
-  );
-}
-
-/* Floating metadata — discrete, bottom-left, never a toolbar. */
-.report-preview-page-count {
-  position: absolute;
-  left: clamp(0.75rem, 2vw, 1.25rem);
-  bottom: clamp(0.75rem, 2vw, 1.25rem);
-  z-index: 2;
-  color: var(--muted-foreground);
-  font-size: 0.7rem;
-  letter-spacing: 0.01em;
-}
-
-/* Floating expand control — bottom-right, the only in-preview action. */
-.report-preview-expand {
-  position: absolute;
-  right: clamp(0.75rem, 2vw, 1.25rem);
-  bottom: clamp(0.75rem, 2vw, 1.25rem);
-  z-index: 2;
-}
-
-.report-viewer-dialog {
+.report-preview-dialog {
   position: fixed;
   inset: 0;
   width: 100vw;
@@ -856,7 +698,7 @@ input[type="number"]::-webkit-outer-spin-button {
   flex-direction: column;
 }
 
-.report-viewer-dialog-header {
+.report-preview-dialog-header {
   position: absolute;
   z-index: 10;
   top: 1rem;
@@ -864,6 +706,7 @@ input[type="number"]::-webkit-outer-spin-button {
   width: min(46rem, calc(100vw - 2rem));
   min-height: 3.5rem;
   translate: -50% 0;
+  display: flex;
   align-items: center;
   gap: 0.75rem;
   padding: 0.5rem;
@@ -876,35 +719,76 @@ input[type="number"]::-webkit-outer-spin-button {
   backdrop-filter: blur(14px);
 }
 
-.report-viewer-dialog-close {
+.report-preview-dialog-close {
   flex: 0 0 auto;
 }
 
-.report-viewer-dialog-meta {
+.report-preview-dialog-meta {
   display: flex;
   flex: 1 1 auto;
   flex-direction: column;
   min-width: 0;
 }
 
-.report-viewer-dialog-meta [data-slot="dialog-title"],
-.report-viewer-dialog-meta [data-slot="dialog-description"] {
+.report-preview-dialog-meta [data-slot="dialog-title"],
+.report-preview-dialog-meta [data-slot="dialog-description"] {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.report-viewer-dialog-header p {
+.report-preview-dialog-header p {
   margin-top: 0.15rem;
 }
 
-.report-viewer-dialog-actions {
+.report-preview-dialog-actions {
+  display: flex;
   flex: 0 0 auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.35rem;
   padding-left: 0.5rem;
   border-left: 1px solid color-mix(in oklab, var(--foreground) 10%, transparent);
 }
 
-.report-viewer-expanded-scroll {
+/* Download/print errors sit under the floating header, above the paper. */
+.report-preview-feedback {
+  position: absolute;
+  z-index: 11;
+  top: 5.25rem;
+  left: 50%;
+  translate: -50% 0;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  max-width: min(46rem, calc(100vw - 2rem));
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--background);
+  box-shadow:
+    0 1px 2px rgb(0 0 0 / 0.08),
+    0 0.75rem 2.5rem rgb(0 0 0 / 0.14);
+}
+
+/* Loading state: centered spinner + line in the paper column. */
+.report-preview-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  margin: auto;
+  color: var(--muted-foreground);
+  font-size: 0.875rem;
+}
+
+.report-preview-state svg {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.report-preview-scroll {
   flex: 1 1 auto;
   min-height: 0;
   display: flex;
@@ -921,12 +805,12 @@ input[type="number"]::-webkit-outer-spin-button {
   overflow-x: hidden;
 }
 
-/* The expanded paper is a centering column; each `.report-page` is its own
-   white sheet (single source of truth with the preview + print), separated by
+/* The preview paper is a centering column; each `.report-page` is its own
+   white sheet (single source of truth with print), separated by
    a 24px gap so the two pages read as distinct leaves, not one infinite sheet.
-   The width matches the 210mm print scale so opening the modal does not change
+   The width matches the 210mm print scale so opening the preview does not change
    the document's width or scale, only the surrounding chrome. */
-.report-viewer-expanded-paper {
+.report-preview-paper {
   width: min(100%, 210mm);
   margin-inline: auto;
   padding: 0;
@@ -936,21 +820,21 @@ input[type="number"]::-webkit-outer-spin-button {
   box-shadow: none;
 }
 
-.report-viewer-expanded-paper .report-print-frame,
-.report-viewer-expanded-paper .report-print-frame > tbody,
-.report-viewer-expanded-paper .report-print-frame > tbody > tr,
-.report-viewer-expanded-paper .report-print-frame > tbody > tr > td {
+.report-preview-paper .report-print-frame,
+.report-preview-paper .report-print-frame > tbody,
+.report-preview-paper .report-print-frame > tbody > tr,
+.report-preview-paper .report-print-frame > tbody > tr > td {
   display: block;
   width: 100%;
 }
 
-.report-viewer-expanded-paper .report-print-frame > tbody > tr > td {
+.report-preview-paper .report-print-frame > tbody > tr > td {
   display: flex;
   flex-direction: column;
   gap: 24px;
 }
 
-.report-viewer-expanded-paper .report-page {
+.report-preview-paper .report-page {
   width: 100%;
   aspect-ratio: 210 / 297;
   box-sizing: border-box;
@@ -964,36 +848,17 @@ input[type="number"]::-webkit-outer-spin-button {
 /* The report HTML paints its own white sections; inside the expanded sheet we
    let the `.report-page` own the border + shadow so the page reads as a single
    bounded leaf. */
-.report-viewer-expanded-paper .report-print-frame {
+.report-preview-paper .report-print-frame {
   border: 0;
   background: transparent;
 }
 
-.report-viewer-expanded-paper .report-print-body {
+.report-preview-paper .report-print-body {
   background: transparent;
 }
 
 .report-print-source {
   display: none;
-}
-
-/* Discreet fallback shown when the live report data cannot be assembled
-   (provider/RLS failure, transient sync error). Mirrors the preview viewport
-   so the empty state never reads as a broken or missing panel. */
-.report-unavailable {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 1rem;
-  min-height: clamp(460px, 61vh, 640px);
-  padding: 2rem;
-  text-align: center;
-  color: var(--muted-foreground);
-  font-size: 0.875rem;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-xl);
-  background: var(--background);
 }
 
 @media (max-width: 767px) {
@@ -1021,27 +886,7 @@ input[type="number"]::-webkit-outer-spin-button {
     min-height: 44px;
   }
 
-  .report-viewer-toolbar {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-
-  .report-viewer-actions {
-    width: 100%;
-    justify-content: flex-start;
-  }
-
-  .report-viewer-canvas {
-    height: clamp(440px, 64vh, 560px);
-    margin-inline: -0.25rem;
-    padding: 0.75rem;
-  }
-
-  .report-viewer-preview {
-    width: min(680px, 100%);
-  }
-
-  .report-viewer-dialog {
+  .report-preview-dialog {
     position: fixed;
     inset: 0;
     width: 100vw;
@@ -1050,7 +895,7 @@ input[type="number"]::-webkit-outer-spin-button {
     padding: 0;
   }
 
-  .report-viewer-dialog-header {
+  .report-preview-dialog-header {
     top: 0.5rem;
     width: calc(100vw - 1rem);
     min-height: 3rem;
@@ -1059,27 +904,27 @@ input[type="number"]::-webkit-outer-spin-button {
     border-radius: var(--radius-lg);
   }
 
-  .report-viewer-dialog-actions {
+  .report-preview-dialog-actions {
     width: auto;
     flex-wrap: nowrap;
     gap: 0.125rem;
     padding-left: 0.35rem;
   }
 
-  .report-viewer-dialog-actions [data-report-dialog-action] {
+  .report-preview-dialog-actions [data-report-dialog-action] {
     width: 2.25rem;
     padding-inline: 0;
   }
 
-  .report-viewer-dialog-actions [data-report-dialog-action] span {
+  .report-preview-dialog-actions [data-report-dialog-action] span {
     display: none;
   }
 
-  .report-viewer-dialog-meta [data-slot="dialog-description"] {
+  .report-preview-dialog-meta [data-slot="dialog-description"] {
     display: none;
   }
 
-  .report-viewer-expanded-scroll {
+  .report-preview-scroll {
     padding-top: 4.75rem;
   }
 }
@@ -1437,8 +1282,7 @@ input[type="number"]::-webkit-outer-spin-button {
   [data-slot="sidebar-container"],
   [data-app-header],
   [data-slot="dialog-overlay"],
-  [data-print-control],
-  [data-report-viewer] {
+  [data-print-control] {
     display: none !important;
   }
 

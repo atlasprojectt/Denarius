@@ -64,14 +64,14 @@ function Block({ block }: { block: LegalBlock }) {
                 <span className="text-sm font-medium text-foreground">
                   {item.name}
                 </span>
-                <span className="text-xs text-muted-foreground">
+                <span className="text-xs font-light text-muted-foreground">
                   {item.purpose}
                 </span>
               </div>
               <p className="text-sm/relaxed text-muted-foreground">
                 {item.receives}
               </p>
-              <p className="text-xs text-muted-foreground">{item.location}</p>
+              <p className="text-xs font-light text-muted-foreground">{item.location}</p>
             </li>
           ))}
         </ul>
@@ -91,7 +91,7 @@ export function LegalDocument({ doc }: { doc: LegalDocumentCopy }) {
         <p className="text-sm/relaxed text-pretty text-muted-foreground">
           {doc.lead}
         </p>
-        <p className="text-xs text-muted-foreground">
+        <p className="text-xs font-light text-muted-foreground">
           {legalChrome.updatedPrefix} {LEGAL_UPDATED_AT}
         </p>
       </header>

@@ -210,7 +210,7 @@ export function MonthlyPaceChart({
           <Metric label={c.rangeLabel} value={rangeText} />
         </div>
         {(confidenceText || refStamp) && (
-          <p className="text-[11px] text-muted-foreground tabular-nums">
+          <p className="text-[11px] font-light text-muted-foreground tabular-nums">
             {confidenceText ? c.confidence(confidenceText) : null}
             {confidenceText && refStamp ? " · " : null}
             {refStamp ? c.rangeRef(refStamp) : null}

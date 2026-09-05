@@ -352,7 +352,7 @@ function ResultRow({
         )}
       </span>
       {result.metadata && (
-        <span className="hidden text-xs text-muted-foreground tabular-nums sm:block">
+        <span className="hidden text-xs font-light text-muted-foreground tabular-nums sm:block">
           {result.metadata}
         </span>
       )}

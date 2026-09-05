@@ -212,7 +212,7 @@ export function TeamBudgetTable({
                       pctProjected={team.pctProjected}
                       status={team.status}
                     />
-                    <span className="text-xs tabular-nums text-muted-foreground">
+                    <span className="text-xs font-light tabular-nums text-muted-foreground">
                       {percent(ev.pctSpent)}
                     </span>
                     <RiArrowRightSLine className="size-4 text-muted-foreground transition-transform duration-(--motion-duration-fast) ease-(--motion-ease-standard) group-hover:translate-x-0.5" />
@@ -276,7 +276,7 @@ export function TeamBudgetTable({
                           pctProjected={team.pctProjected}
                           status={team.status}
                         />
-                        <span className="w-10 shrink-0 text-right text-xs tabular-nums text-muted-foreground">
+                        <span className="w-10 shrink-0 text-right text-xs font-light tabular-nums text-muted-foreground">
                           {percent(ev.pctSpent)}
                         </span>
                       </div>

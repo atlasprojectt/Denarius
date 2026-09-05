@@ -248,7 +248,7 @@ function ThemeOption({
           <span className="block text-sm font-semibold">{label}</span>
           <span
             id={descriptionId}
-            className="mt-0.5 block text-xs/relaxed text-muted-foreground"
+            className="mt-0.5 block text-xs/relaxed font-light text-muted-foreground"
           >
             {hint}
           </span>

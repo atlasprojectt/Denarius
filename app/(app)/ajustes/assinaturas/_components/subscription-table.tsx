@@ -226,13 +226,13 @@ function MobileSubscriptionCard({
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="font-medium">{subscription.tool}</p>
-            <p className="mt-1 text-xs text-muted-foreground">
+            <p className="mt-1 text-xs font-light text-muted-foreground">
               {subscription.seatCount} {copy.seats.toLocaleLowerCase("pt-BR")} · {subscription.teamName ?? copy.shared}
             </p>
           </div>
           <p className="text-sm font-medium tabular-nums">{subscription.monthly}</p>
         </div>
-        <p className="mt-2 text-xs text-muted-foreground tabular-nums">{copy.accrued}: {subscription.accrued}</p>
+        <p className="mt-2 text-xs font-light text-muted-foreground tabular-nums">{copy.accrued}: {subscription.accrued}</p>
         <div className="mt-4 flex gap-2">
           <Button type="button" variant="outline" size="sm" onClick={() => setEditing(true)}>{copy.edit}</Button>
           <ConfirmationDialog

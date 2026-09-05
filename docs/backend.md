@@ -253,9 +253,7 @@ Tests: `tests/crypto.test.ts` (round-trip per key, the rotation window, cross-ro
 - **On-demand read (#96)** — `currentReport()` in `lib/reports/current.ts`, the live sibling of `lib/reports/queries.ts`. It runs under **RLS** (`createClient`, not the admin client: the closing job is the deliberate cross-tenant path, a user asking about their own tenant is not), writes nothing and needs no table. Its input is `getReportParts()` (`lib/home/queries.ts`) — a projection of the same `cache()`-memoized `assembleCockpit()` Home reads, extended to expose `providers`, `derivedUsd`, `hasUncosted`, `connections` and `budgets`, all already fetched. **No new query**, and no way for the report to disagree with the cockpit. `provider` was added to the `provider_connection` selects on both paths so the connection rows satisfy `ConnectionStatus`.
 - **Deployment:** migration `20260807120000_period_snapshot.sql` must be applied on Supabase before the report screens (#95) deploy. It was applied to the hosted project on 2026-08-07; new environments still receive it through the migration chain. The on-demand report (#96) adds **no migration** — it stores nothing.
 
-- **Report render/PDF contract (2026-08-22).** `ReportRenderMode` normalizes
-  `screen | pdf` (with `?pdf=1` read only as a compatibility alias).
-  Browser printing uses a print-only copy of the same document on the current
+- **Report render/PDF contract (2026-08-22; dialog flow 2026-09-05).** One `ReportDocument` feeds the preview dialog, browser print and the headless PDF. There are no preview routes: files open in the dialog over `/relatorios`, whose data arrives through the `getLivePreview()` / `getClosedPreview()` server actions. Browser printing uses a print-only copy of the same document on the current
   authenticated page; PDF
   download uses `GET /api/relatorios/agora/pdf` or
   `GET /api/relatorios/[yyyy-mm]/pdf`, and Puppeteer loads that same document

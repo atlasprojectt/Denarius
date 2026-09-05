@@ -144,7 +144,7 @@ export function OtpDialog({
               {cooldown > 0 ? copy.resendIn(cooldown) : copy.resend}
             </Button>
           </form>
-          <p className="text-center text-xs text-muted-foreground">
+          <p className="text-center text-xs font-light text-muted-foreground">
             {copy.dismissHint}
           </p>
         </div>

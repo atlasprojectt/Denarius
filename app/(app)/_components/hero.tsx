@@ -103,7 +103,7 @@ export function Hero({
         </dl>
 
         {unconvertedUsd > 0 && (
-          <p className="text-xs/relaxed text-muted-foreground">
+          <p className="text-xs/relaxed font-light text-muted-foreground">
             {c.unconverted(money(unconvertedUsd, "USD"))}
           </p>
         )}

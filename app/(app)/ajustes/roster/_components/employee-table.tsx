@@ -344,7 +344,7 @@ export function EmployeeTable({
 
       {totalPages > 1 && (
         <div className="flex items-center justify-between gap-3 border-t pt-4">
-          <p className="text-xs text-muted-foreground tabular-nums">{copy.page(safePage, totalPages)}</p>
+          <p className="text-xs font-light text-muted-foreground tabular-nums">{copy.page(safePage, totalPages)}</p>
           <div className="flex gap-2">
             <Button type="button" variant="outline" size="sm" disabled={safePage === 1} onClick={() => setPage((value) => Math.max(1, value - 1))}>
               {copy.previous}

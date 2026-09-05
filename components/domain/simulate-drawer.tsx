@@ -207,7 +207,7 @@ function Simulation({
           </Button>
         </div>
         {breakEvenPct === null && (
-          <p className="text-xs text-muted-foreground">{copy.breakEvenUnreachable}</p>
+          <p className="text-xs font-light text-muted-foreground">{copy.breakEvenUnreachable}</p>
         )}
       </div>
 
@@ -233,7 +233,7 @@ function Simulation({
         </dl>
       </div>
 
-      <p className="text-xs/relaxed text-muted-foreground">{copy.disclaimer}</p>
+      <p className="text-xs/relaxed font-light text-muted-foreground">{copy.disclaimer}</p>
     </div>
   );
 }
@@ -261,7 +261,7 @@ function OutcomeRow({
           {money(outcome.close, currency)}
         </dd>
       </div>
-      <p className="text-right text-xs/relaxed text-muted-foreground tabular-nums">
+      <p className="text-right text-xs/relaxed font-light text-muted-foreground tabular-nums">
         {outcome.withinBudget
           ? under(money(outcome.margin, currency))
           : over(money(-outcome.margin, currency))}

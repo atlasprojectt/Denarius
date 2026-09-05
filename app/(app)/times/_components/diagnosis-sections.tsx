@@ -185,7 +185,7 @@ function ExecutiveSummary({
             pctProjected={team.pctProjected}
             status={team.status}
           />
-          <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
+          <span className="shrink-0 text-xs font-light text-muted-foreground tabular-nums">
             {copy.consumption(percent(evaluation.pctSpent))}
           </span>
         </div>
@@ -273,7 +273,7 @@ function MixSection({
                 <li key={row.key}>
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex min-w-0 items-center gap-2">
-                      <span className="w-4 shrink-0 text-[11px] text-muted-foreground tabular-nums">
+                      <span className="w-4 shrink-0 text-[11px] font-light text-muted-foreground tabular-nums">
                         {index + 1}
                       </span>
                       {row.icon && (
@@ -401,7 +401,7 @@ function ContributorsSection({
                         <StateBadge icon={RiKey2Line}>{copy.sharedKey}</StateBadge>
                       )}
                     </div>
-                    <span className="text-right text-xs text-muted-foreground tabular-nums">
+                    <span className="text-right text-xs font-light text-muted-foreground tabular-nums">
                       {compactTokens.format(person.inputTokens + person.outputTokens)}
                     </span>
                     <span className="text-right text-sm font-medium tabular-nums">
@@ -424,7 +424,7 @@ function ContributorsSection({
                       <p className="truncate text-sm font-medium">
                         {person.isShared ? copy.sharedKey : person.userId}
                       </p>
-                      <p className="mt-0.5 text-[11px] text-muted-foreground tabular-nums">
+                      <p className="mt-0.5 text-[11px] font-light text-muted-foreground tabular-nums">
                         {compactTokens.format(person.inputTokens + person.outputTokens)} {copy.tokens.toLocaleLowerCase("pt-BR")}
                       </p>
                     </div>
@@ -443,7 +443,7 @@ function ContributorsSection({
             <div className="mt-2 flex items-center justify-between gap-4 border-t border-border/60 pt-3">
               <div>
                 <p className="text-xs font-medium">{copy.total}</p>
-                <p className="mt-0.5 text-[11px] text-muted-foreground tabular-nums">
+                <p className="mt-0.5 text-[11px] font-light text-muted-foreground tabular-nums">
                   {copy.asOf(period.monthLabel, period.dayOfPeriod, period.daysInPeriod)}
                 </p>
               </div>
@@ -452,7 +452,7 @@ function ContributorsSection({
               </span>
             </div>
             {namesHidden && persons.some((person) => !person.isShared) && (
-              <p className="mt-3 text-[11px]/relaxed text-muted-foreground">
+              <p className="mt-3 text-[11px]/relaxed font-light text-muted-foreground">
                 {copy.namesHiddenNote}
               </p>
             )}
@@ -492,7 +492,7 @@ function ControlPlanSection({ team }: { team: CockpitTeam }) {
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block text-sm font-medium">{action.title}</span>
-                  <span className="mt-0.5 block text-xs/relaxed text-muted-foreground">
+                  <span className="mt-0.5 block text-xs/relaxed font-light text-muted-foreground">
                     {action.detail}
                   </span>
                 </span>
@@ -596,7 +596,7 @@ export function DiagnosisBody({
             emptyLabel={copy.chartEmpty}
           />
           {evaluation !== null && evaluation.projection === null && (
-            <p className="mt-2 text-xs/relaxed text-muted-foreground">
+            <p className="mt-2 text-xs/relaxed font-light text-muted-foreground">
               {copy.collectingNote}
             </p>
           )}

@@ -104,7 +104,7 @@ export function ProviderComposition({
         )}
       </CardContent>
       {unattributedLine !== null && (
-        <CardFooter className="text-xs/relaxed text-muted-foreground">
+        <CardFooter className="text-xs/relaxed font-light text-muted-foreground">
           <p className="tabular-nums">
             {unattributedLine} —{" "}
             <Button

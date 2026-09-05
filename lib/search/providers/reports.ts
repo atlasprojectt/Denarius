@@ -22,7 +22,7 @@ export const reportsSearchProvider: SearchProvider = {
           type: "report" as const,
           title: reportMonth(row.period_month),
           subtitle: `Fechado em ${reportDate(row.closed_at)}`,
-          href: `/relatorios/${period}`,
+          href: "/relatorios",
           metadata: period,
           updatedAt: row.closed_at,
         };
