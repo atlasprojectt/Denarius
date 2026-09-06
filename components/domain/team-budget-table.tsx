@@ -141,8 +141,9 @@ export function TeamBudgetTable({
     // `min-h-full` makes the card fill its grid cell so it ends on the same line
     // as the pace chart beside it (Home's 2x2 cockpit stretches its row); the
     // scroller below keeps a long roster inside that height instead of pushing
-    // past the row into the observations footer.
-    <Card className="min-h-full">
+    // past the row into the observations footer. `xl:h-full` locks it to the
+    // constrained grid track so the page stays fixed and only this list scrolls.
+    <Card className="min-h-full xl:h-full">
       <CardHeader className="border-b border-border/70">
         <CardTitle className="flex items-center gap-2 text-sm">
           <RiTeamLine className="size-4 text-muted-foreground" aria-hidden />

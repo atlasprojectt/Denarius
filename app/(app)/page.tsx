@@ -85,10 +85,10 @@ export default async function HomePage() {
     Math.round(unattributed.display * 100) > 0 || unattributed.unconvertedUsd > 0;
 
   return (
-    <PageContainer variant="full" className="flex-1 gap-4">
+    <PageContainer variant="full" className="flex-1 gap-3 xl:min-h-0">
       <h1 className="sr-only">{homeCopy.question}</h1>
 
-      <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-2">
+      <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-1.5">
         <VerdictLine
           verdict={cockpit.verdict}
           action={
@@ -119,12 +119,12 @@ export default async function HomePage() {
       {/* The 2x2 grid. min-w-0 wrappers matter: grid children default to
           min-width auto, and the table + long tabular-nums strings would
           otherwise push the track past the viewport (horizontal overflow).
-          Row 1 hugs its content (the dense hero sets the height) and row 2
-          takes every leftover pixel — the pace chart grows with it, so the
-          viewport is filled by the chart, not by voids inside the top cards
-          (proportion pass, 2026-07-14). */}
-      <div className="home-cockpit grid flex-1 items-stretch gap-4 xl:grid-cols-2 xl:grid-rows-[auto_minmax(0,1fr)]">
-        <div className="min-w-0">
+          min-h-0 on the cells lets row 2 shrink into the viewport instead of
+          pushing the page into a scroll — the pace chart compacts and the
+          teams table scrolls internally. Row 1 hugs its content (the dense
+          hero sets the height) and row 2 takes every leftover pixel. */}
+      <div className="home-cockpit grid flex-1 items-stretch gap-3 xl:min-h-0 xl:grid-cols-2 xl:grid-rows-[auto_minmax(0,1fr)]">
+        <div className="min-w-0 min-h-0">
           <Hero
             org={org}
             pctProjected={cockpit.orgPctProjected}
@@ -135,14 +135,14 @@ export default async function HomePage() {
             weekPct={orgWeekPct}
           />
         </div>
-        <div className="min-w-0">
+        <div className="min-w-0 min-h-0">
           <ProviderComposition
             entries={cockpit.composition}
             currency={currency}
             unattributed={showUnattributed ? unattributed : null}
           />
         </div>
-        <div className="min-w-0">
+        <div className="min-w-0 min-h-0">
           {pace && (
             <MonthlyPaceChart
               pace={pace}
@@ -154,7 +154,7 @@ export default async function HomePage() {
             />
           )}
         </div>
-        <div className="min-w-0">
+        <div className="min-w-0 min-h-0">
           <TeamBudgetTable
             teams={allTeams}
             attentionCount={cockpit.needsAttention.length}

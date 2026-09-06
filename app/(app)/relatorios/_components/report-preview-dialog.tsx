@@ -58,13 +58,16 @@ export function ReportPreviewDialog({
     target?.downloadFilename ?? "",
   );
 
-  function print() {
+  async function print() {
     clearError();
     // Print the host's print-only copy, not the dialog — then the shared
-    // `@media print` layer applies untouched.
+    // `@media print` layer applies untouched. The dialog unmounts
+    // asynchronously (Radix exit), so wait a tick before capturing; without
+    // it the paper and the index list overlapped in the print preview.
     onClose();
     document.documentElement.setAttribute("data-printing", "true");
-    window.requestAnimationFrame(() => window.print());
+    await new Promise((resolve) => setTimeout(resolve, 150));
+    window.print();
   }
 
   const busy = downloading || status === "loading";
@@ -99,7 +102,7 @@ export function ReportPreviewDialog({
               size="sm"
               data-report-dialog-action
               disabled={busy}
-              onClick={print}
+              onClick={() => void print()}
             >
               <RiPrinterLine aria-hidden />
               <span>{copy.print}</span>

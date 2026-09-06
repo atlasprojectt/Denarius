@@ -192,7 +192,7 @@ export function MonthlyPaceChart({
 
   return (
     <Card data-monthly-pace className="min-h-full [--chart-surface:var(--card)]">
-      <CardHeader className="gap-2.5 border-b border-border/70">
+      <CardHeader className="gap-2 border-b border-border/70">
         <div className="flex items-center gap-2">
           <CardTitle className="flex items-center gap-2 text-sm font-medium">
             <RiLineChartLine className="size-4 text-muted-foreground" aria-hidden />
@@ -200,7 +200,7 @@ export function MonthlyPaceChart({
           </CardTitle>
           <InfoTip label={c.infoLabel}>{c.info}</InfoTip>
         </div>
-        <div className="flex flex-wrap gap-x-6 gap-y-2">
+        <div className="flex flex-wrap gap-x-5 gap-y-1.5">
           <Metric label={c.realizedLabel} value={money(todayValue, currency)} />
           <Metric
             label={c.paceTodayLabel}
@@ -221,7 +221,7 @@ export function MonthlyPaceChart({
         <div
           data-reveal="monthly-pace"
           suppressHydrationWarning
-          className="flex min-h-[240px] flex-1 flex-col sm:min-h-[280px] xl:min-h-[360px]"
+          className="flex min-h-[200px] flex-1 flex-col sm:min-h-[220px] xl:min-h-[200px]"
         >
           <p className="sr-only">{ariaLabel}</p>
           <SpendTrendChart

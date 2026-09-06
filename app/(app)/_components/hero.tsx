@@ -73,7 +73,7 @@ export function Hero({
           <RiWallet3Line className="size-4 text-muted-foreground" aria-hidden />
           {c.title}
         </CardTitle>
-        <p className="flex min-w-0 flex-wrap items-baseline gap-x-2 pt-2 text-[clamp(1.875rem,10vw,3rem)] font-medium tracking-tight tabular-nums [overflow-wrap:anywhere]">
+        <p className="flex min-w-0 flex-wrap items-baseline gap-x-2 pt-1.5 text-[clamp(1.625rem,4vw,2.5rem)] font-medium tracking-tight tabular-nums [overflow-wrap:anywhere]">
           {money(org.spent, currency)}
           <span className="text-base font-normal tracking-normal text-muted-foreground">
             {c.ofBudget(money(org.budget, currency))}
@@ -82,7 +82,7 @@ export function Hero({
         <WeekDelta pct={weekPct} />
       </CardHeader>
 
-      <CardContent className="flex flex-1 flex-col gap-4">
+      <CardContent className="flex flex-1 flex-col gap-3">
 
         <PacingBar
           pctSpent={org.pctSpent}
@@ -95,7 +95,7 @@ export function Hero({
         {/* ONE KPI (de-noise): the projection is the decision number left in
             this card — the projected margin moved into the verdict sentence,
             and the old callout repeated it in words. Neutral ink (principle #5). */}
-        <dl className="border-t pt-4">
+        <dl className="border-t pt-3">
           <div className="min-w-0">
             <dt className="truncate text-xs text-muted-foreground">{c.kpiProjection}</dt>
             <dd className="mt-0.5 text-base font-semibold tabular-nums">{projectionValue}</dd>

@@ -226,7 +226,8 @@ describe("report shell and print contract", () => {
       expect(source).not.toContain("window.open(");
     }
     expect(previewDialogSource).toContain("window.print()");
-    expect(previewDialogSource).toContain("requestAnimationFrame");
+    expect(previewDialogSource).toContain("data-printing");
+    expect(previewDialogSource).toContain("setTimeout");
     expect(previewDialogSource).toContain("onClose");
     expect(previewDialogSource).toContain('from "motion/react"');
     expect(previewDialogSource).toContain("useReducedMotion");
@@ -300,6 +301,17 @@ describe("file-centre flow (agora / fechamento / history)", () => {
     expect(hostSource).toContain("printDoc");
     expect(hostSource).toContain("afterprint");
     expect(previewDialogSource).toContain("data-printing");
+  });
+
+  it("prints only the document: the file list stays off the paper", () => {
+    const css = readFileSync(path.join(process.cwd(), "app/globals.css"), "utf8");
+    expect(css).toContain("html[data-printing]");
+    expect(css).toContain("[data-report-preview]");
+    // The background hide must spare the document itself: it renders its
+    // own header/sections, so a bare `header`/`section` selector prints a
+    // blank page with only the footer.
+    expect(css).toContain("header:not(.report-document-header)");
+    expect(css).toContain("section:not([data-report-section])");
   });
 
   it("flags the sidebar destination with a dot, never a counter or semaphore", () => {

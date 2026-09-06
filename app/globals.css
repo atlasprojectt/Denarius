@@ -1282,8 +1282,31 @@ input[type="number"]::-webkit-outer-spin-button {
   [data-slot="sidebar-container"],
   [data-app-header],
   [data-slot="dialog-overlay"],
+  [data-report-preview],
+  [data-slot="dialog-content"],
   [data-print-control] {
     display: none !important;
+  }
+
+  /* Imprimir no relatório: só o documento vai para o papel. Sem isto a
+     lista de fundo (Agora/Fechamento/Histórico + cabeçalho) imprimia
+     empilhada com a cópia de impressão — o "quebrado" do print. O
+     `data-printing` é ligado pelo diálogo antes de `window.print()`; sem
+     ele (Ctrl+P no índice) a lista imprime normalmente. O `:not()` abaixo
+     é load-bearing: o documento usa ele mesmo `header`/`section`, então
+     sem a exclusão a regra apagaria o próprio relatório e só o rodapé
+     (uma `div`) sairia no papel. */
+  html[data-printing] [data-app-content] header:not(.report-document-header),
+  html[data-printing] [data-app-content] section:not([data-report-section]) {
+    display: none !important;
+  }
+
+  html[data-printing] [data-app-content] [data-page-container] {
+    gap: 0 !important;
+  }
+
+  html[data-printing] [data-app-content] .grid {
+    gap: 0 !important;
   }
 
   [data-slot="sidebar-inset"] {
@@ -1301,6 +1324,14 @@ input[type="number"]::-webkit-outer-spin-button {
 
   .report-print-source {
     display: block !important;
+  }
+
+  .report-print-source .report-page {
+    aspect-ratio: auto;
+    overflow: visible;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
   }
 
   .report-sheet {

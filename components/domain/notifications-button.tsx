@@ -37,6 +37,13 @@ import {
   notificationTriggerTone,
   type BudgetNotification,
 } from "@/lib/home/notifications";
+import {
+  NOTIFICATIONS_SEEN_EVENT,
+  NOTIFICATIONS_SEEN_KEY,
+  parseSeenNotificationIds,
+  serializeSeenNotificationIds,
+  unseenNotificationIds,
+} from "@/lib/home/notifications-seen";
 
 const copy = {
   title: "Notificações",
@@ -232,14 +239,49 @@ function NotificationsPanel({
   );
 }
 
+function readSeen(): string[] {
+  try {
+    return parseSeenNotificationIds(
+      window.localStorage.getItem(NOTIFICATIONS_SEEN_KEY),
+    );
+  } catch {
+    return [];
+  }
+}
+
 export function NotificationsButton() {
   const isMobile = useIsMobile();
   const panelId = useId();
   const requestRef = useRef<Promise<BudgetNotification[]> | null>(null);
+  const openRef = useRef(false);
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<BudgetNotification[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [failed, setFailed] = useState(false);
+  const [seen, setSeen] = useState<string[]>([]);
+
+  function markSeen(ids: readonly string[]) {
+    if (ids.length === 0) return;
+    try {
+      const next = new Set(readSeen());
+      let changed = false;
+      for (const id of ids) {
+        if (!next.has(id)) {
+          next.add(id);
+          changed = true;
+        }
+      }
+      if (!changed) return;
+      window.localStorage.setItem(
+        NOTIFICATIONS_SEEN_KEY,
+        serializeSeenNotificationIds(next),
+      );
+      window.dispatchEvent(new Event(NOTIFICATIONS_SEEN_EVENT));
+      setSeen([...next]);
+    } catch {
+      // A blocked storage must never break the notification center.
+    }
+  }
 
   async function load() {
     const pendingRequest = requestRef.current;
@@ -247,7 +289,12 @@ export function NotificationsButton() {
       setLoading(true);
       setFailed(false);
       try {
-        setItems(await pendingRequest);
+        const nextItems = await pendingRequest;
+        setItems(nextItems);
+        // A fetch resolving while the panel is open was just read.
+        if (openRef.current && nextItems.length > 0) {
+          markSeen(nextItems.map((item) => item.id));
+        }
       } catch {
         setFailed(true);
       } finally {
@@ -261,7 +308,11 @@ export function NotificationsButton() {
     const request = fetchBudgetNotifications();
     requestRef.current = request;
     try {
-      setItems(await request);
+      const nextItems = await request;
+      setItems(nextItems);
+      if (openRef.current && nextItems.length > 0) {
+        markSeen(nextItems.map((item) => item.id));
+      }
     } catch {
       setFailed(true);
     } finally {
@@ -293,15 +344,38 @@ export function NotificationsButton() {
     };
   }, []);
 
-  const count = items?.length ?? 0;
-  const triggerTone = notificationTriggerTone(items ?? []);
+  useEffect(() => {
+    const refresh = () => setSeen(readSeen());
+    refresh();
+    window.addEventListener(NOTIFICATIONS_SEEN_EVENT, refresh);
+    window.addEventListener("storage", refresh);
+    return () => {
+      window.removeEventListener(NOTIFICATIONS_SEEN_EVENT, refresh);
+      window.removeEventListener("storage", refresh);
+    };
+  }, []);
+
+  // Opening the panel reads as "lido": the badge counts only unseen active
+  // alerts, while the panel itself keeps listing every active alert. Marking
+  // happens in the open handler (and in load() for a fetch resolving while
+  // open), never as a synchronous setState inside an effect.
+  const activeIds = (items ?? []).map((item) => item.id);
+  const unseenIds = unseenNotificationIds(activeIds, seen);
+  const unseenIdSet = new Set(unseenIds);
+  const unseenItems = (items ?? []).filter((item) => unseenIdSet.has(item.id));
+  const count = unseenIds.length;
+  const triggerTone = notificationTriggerTone(unseenItems);
   const countTone =
     triggerTone === "destructive"
       ? "bg-badge-destructive text-background"
       : "bg-badge-amber text-background";
   const handleOpenChange = (next: boolean) => {
+    openRef.current = next;
     setOpen(next);
-    if (next) void load();
+    if (next) {
+      if (items && items.length > 0) markSeen(items.map((item) => item.id));
+      void load();
+    }
   };
   const trigger = (
     <Button
