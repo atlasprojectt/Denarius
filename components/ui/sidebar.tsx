@@ -327,7 +327,7 @@ function SidebarInput({
       data-slot="sidebar-input"
       data-sidebar="input"
       className={cn(
-        "h-8 w-full border-input bg-muted/20 dark:bg-muted/30",
+        "h-8 w-full border-input bg-input/20 dark:bg-input/30",
         className
       )}
       {...props}
@@ -409,7 +409,7 @@ function SidebarGroupLabel({
     props: mergeProps<"div">(
       {
         className: cn(
-          "flex h-8 shrink-0 items-center rounded-md px-2 text-xs text-sidebar-foreground/70 ring-sidebar-ring outline-hidden transition-[margin,opacity] duration-200 ease-linear group-data-[collapsible=icon]:-mt-8 group-data-[collapsible=icon]:opacity-0 focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0",
+          "flex h-8 shrink-0 items-center rounded-md px-2 text-xs text-sidebar-foreground/65 ring-sidebar-ring outline-hidden transition-[margin,opacity] duration-200 ease-linear group-data-[collapsible=icon]:-mt-8 group-data-[collapsible=icon]:opacity-0 focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0",
           className
         ),
       },

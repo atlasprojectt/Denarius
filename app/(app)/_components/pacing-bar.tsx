@@ -67,7 +67,7 @@ export function PacingBar({
       {/* Taller than the app's other bars (founder-directed): this is the
           hero's own bar and carries the month's headline. */}
       <div className="relative h-8 w-full">
-        <div aria-hidden className="absolute inset-0 text-foreground/12" style={TICKS_BOLD} />
+        <div aria-hidden className="absolute inset-0 text-foreground/15" style={TICKS_BOLD} />
         {g.ghostStart !== null && g.ghostEnd !== null && (
           <div
             data-reveal-bar

@@ -26,6 +26,7 @@ const copy = {
   submit: "Confirmar",
   submitting: "Confirmando…",
   resend: "Reenviar código",
+  resending: "Reenviando…",
   resendIn: (s: number) => `Reenviar em ${s}s`,
   dismissHint: "Você também pode confirmar depois pelo link do e-mail.",
 };
@@ -126,10 +127,11 @@ export function OtpDialog({
           )}
           <Button
             type="submit"
-            disabled={verifying}
+            loading={verifying}
+            loadingText={copy.submitting}
             className="h-11 w-full text-sm"
           >
-            {verifying ? copy.submitting : copy.submit}
+            {copy.submit}
           </Button>
         </form>
         <div className="flex flex-col items-center gap-1">
@@ -138,7 +140,9 @@ export function OtpDialog({
             <Button
               type="submit"
               variant="ghost"
-              disabled={resending || cooldown > 0}
+              loading={resending}
+              loadingText={copy.resending}
+              disabled={cooldown > 0}
               className="h-11 text-sm"
             >
               {cooldown > 0 ? copy.resendIn(cooldown) : copy.resend}

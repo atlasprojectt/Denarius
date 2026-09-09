@@ -37,7 +37,7 @@ export function TeamProgress({
       {geometry.ghostStart !== null && geometry.ghostEnd !== null && (
         <div
           data-reveal-bar
-          className="absolute inset-0 text-foreground/35"
+          className="absolute inset-0 text-foreground/15"
           style={{
             ...TICKS,
             clipPath: cut(geometry.ghostStart, geometry.ghostEnd),
@@ -53,7 +53,7 @@ export function TeamProgress({
       {geometry.marker < 1 && (
         <span
           aria-hidden
-          className="absolute inset-y-[-2px] w-px bg-foreground/70"
+          className="absolute inset-y-[-2px] w-px bg-foreground/80"
           style={{ left: pct(geometry.marker) }}
         />
       )}

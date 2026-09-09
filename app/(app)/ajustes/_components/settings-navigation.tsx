@@ -17,7 +17,7 @@ export function SettingsItemStatus({
       {indicator && (
         <span
           aria-hidden
-          className="size-1.5 shrink-0 rounded-full bg-muted-foreground/65"
+          className="size-1.5 shrink-0 rounded-full bg-muted-foreground"
         />
       )}
       {children}
@@ -43,18 +43,18 @@ export function SettingsNavigationItem({
       href={href}
       className={cn(
         "group/item relative grid min-h-[66px] grid-cols-[20px_minmax(0,1fr)_36px] items-center gap-x-3 px-4 py-3.5 outline-none",
-        "after:absolute after:right-4 after:bottom-0 after:left-12 after:h-px after:bg-border/60 last:after:hidden",
+        "after:absolute after:right-4 after:bottom-0 after:left-12 after:h-px after:bg-border last:after:hidden",
         "transition-colors duration-(--motion-duration-standard) ease-(--motion-ease-standard) hover:bg-surface-hover active:bg-surface-selected",
         "focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/40",
         "motion-reduce:transition-none sm:grid-cols-[20px_minmax(0,1fr)_minmax(140px,auto)_36px] sm:px-5 sm:after:right-5 sm:after:left-13",
       )}
     >
-      <span className="col-start-1 row-start-1 mt-0.5 flex size-5 shrink-0 items-center justify-center self-start text-muted-foreground/80 transition-colors duration-(--motion-duration-standard) ease-(--motion-ease-standard) group-hover/item:text-muted-foreground motion-reduce:transition-none sm:mt-0 sm:self-center [&>svg]:size-4">
+      <span className="col-start-1 row-start-1 mt-0.5 flex size-5 shrink-0 items-center justify-center self-start text-muted-foreground transition-colors duration-(--motion-duration-standard) ease-(--motion-ease-standard) group-hover/item:text-muted-foreground motion-reduce:transition-none sm:mt-0 sm:self-center [&>svg]:size-4">
         {icon}
       </span>
 
       <span className="col-start-2 row-start-1 min-w-0">
-        <span className="block text-[13px] font-medium text-foreground/90 transition-colors duration-(--motion-duration-standard) ease-(--motion-ease-standard) group-hover/item:text-foreground motion-reduce:transition-none">
+        <span className="block text-[13px] font-medium text-foreground transition-colors duration-(--motion-duration-standard) ease-(--motion-ease-standard) group-hover/item:text-foreground motion-reduce:transition-none">
           {title}
         </span>
         <span className="mt-0.5 block text-xs/relaxed text-muted-foreground">

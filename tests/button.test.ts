@@ -88,7 +88,7 @@ describe("Button interaction state", () => {
     const button = Button({
       children: "Salvar",
       loading: true,
-      loadingText: "Salvando...",
+      loadingText: "Salvando…",
     });
     const layers = button.props.children.props.children;
 
@@ -97,6 +97,33 @@ describe("Button interaction state", () => {
     expect(button.props["data-loading"]).toBe("true");
     expect(layers[0].props.className).toContain("opacity-0");
     expect(layers[1].props.className).toContain("opacity-100");
+    expect(layers[1].props.className).toContain("whitespace-nowrap");
+    // A longer loadingText must clip inside the resting width, never push layout.
+    expect(layers[1].props.className).toContain("overflow-hidden");
+    expect(layers[1].props.children[1].props.className).toContain("truncate");
+  });
+
+  it("reserves a minimum width per textual size so loading never widens the control", () => {
+    expect(buttonVariants({ size: "sm" })).toContain("min-w-20");
+    expect(buttonVariants({ size: "default" })).toContain("min-w-24");
+    expect(buttonVariants({ size: "lg" })).toContain("min-w-28");
+    expect(buttonVariants({ size: "xs" })).toContain("min-w-16");
+    expect(buttonVariants({ size: "icon" })).not.toContain("min-w-");
+    expect(buttonVariants({ size: "icon-sm" })).not.toContain("min-w-");
+  });
+
+  it("scales the spinner to the size's native icon", () => {
+    const compact = Button({ children: "Salvar", size: "sm", loading: true });
+    const compactLayers = compact.props.children.props.children;
+    expect(compactLayers[1].props.children[0].props.className).toContain(
+      "size-3.5",
+    );
+
+    const regular = Button({ children: "Salvar", loading: true });
+    const regularLayers = regular.props.children.props.children;
+    expect(regularLayers[1].props.children[0].props.className).toContain(
+      "size-4",
+    );
   });
 
   it("preserves asChild links while composing the motion layers", () => {

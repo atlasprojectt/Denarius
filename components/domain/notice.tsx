@@ -17,7 +17,7 @@ import { cn } from "@/lib/utils";
 export type NoticeTone = "neutral" | "amber" | "destructive";
 
 const toneClasses: Record<NoticeTone, string> = {
-  neutral: "border-border/70 bg-muted",
+  neutral: "border-border bg-muted",
   amber:
     "border-status-amber/25 bg-status-amber-soft text-status-amber-fg *:data-[slot=alert-description]:text-status-amber-fg/85",
   destructive:

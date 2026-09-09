@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import {
-  RiCheckLine,
   RiComputerLine,
   RiMoonLine,
   RiSunLine,
@@ -12,7 +11,6 @@ import {
 import { Button } from "@/components/ui/button";
 import {
   RadioGroup,
-  RadioGroupIndicator,
   RadioGroupItem,
 } from "@/components/ui/radio-group";
 import { cn } from "@/lib/utils";
@@ -145,21 +143,57 @@ export function ThemeToggle({ className }: { className?: string }) {
   );
 }
 
+// Quiet window miniature (the reference look): a soft shell — the one
+// contrast anchor — holding a lifted window with a narrow rail and four
+// equal content blocks. One interior tone only; hierarchy comes from the
+// shell/window step, never from competing grays. Palettes are FIXED per
+// variant (warm Stone ramps, never semantic tokens) so each option shows its
+// own appearance under any active theme. No OS chrome: no traffic-light
+// dots, so the preview reads on every operating system.
+function WindowPreview({ dark }: { dark: boolean }) {
+  const shell = dark ? "bg-black" : "bg-stone-200";
+  const pane = dark ? "bg-stone-900" : "bg-white";
+  const shape = dark ? "bg-stone-700" : "bg-stone-200";
+
+  return (
+    <span aria-hidden className={cn("flex h-full min-h-0 flex-1 p-2", shell)}>
+      <span
+        className={cn(
+          "flex min-h-0 min-w-0 flex-1 gap-2 rounded-[5px] p-2",
+          pane,
+        )}
+      >
+        <span className="flex w-1/4 shrink-0 flex-col gap-1.5">
+          <span className={cn("h-1 w-full rounded-full", shape)} />
+          <span className={cn("h-1 w-full rounded-full", shape)} />
+          <span className={cn("h-1 w-2/3 rounded-full", shape)} />
+        </span>
+        <span className="grid min-h-0 min-w-0 flex-1 grid-cols-2 grid-rows-2 gap-1.5">
+          <span className={cn("min-h-0 rounded-[3px]", shape)} />
+          <span className={cn("min-h-0 rounded-[3px]", shape)} />
+          <span className={cn("min-h-0 rounded-[3px]", shape)} />
+          <span className={cn("min-h-0 rounded-[3px]", shape)} />
+        </span>
+      </span>
+    </span>
+  );
+}
+
 function ThemePreview({ variant }: { variant: ThemePreference }) {
   if (variant === "system") {
-    // A diagonal split hints "follows the OS" — half light, half dark.
+    // Follows the OS: one full window per half, edge to edge — the shell
+    // step between them is the divider, so neither side squeezes.
     return (
       <span
         aria-hidden
-        className="relative flex h-14 overflow-hidden rounded-md border border-zinc-300 dark:border-zinc-700"
+        className="grid h-24 grid-cols-2 overflow-hidden rounded-md border border-stone-300"
       >
-        <span className="flex-1 bg-zinc-50" />
-        <span
-          className="absolute inset-0 bg-zinc-950"
-          style={{ clipPath: "polygon(100% 0, 100% 100%, 0 100%)" }}
-        />
-        <span className="absolute top-2 left-2 h-2 w-10 rounded-full bg-zinc-300" />
-        <span className="absolute right-2 bottom-2 h-2 w-10 rounded-full bg-orange-500/80" />
+        <span className="flex min-h-0 min-w-0">
+          <WindowPreview dark={false} />
+        </span>
+        <span className="flex min-h-0 min-w-0">
+          <WindowPreview dark />
+        </span>
       </span>
     );
   }
@@ -169,31 +203,11 @@ function ThemePreview({ variant }: { variant: ThemePreference }) {
     <span
       aria-hidden
       className={cn(
-        "flex h-14 rounded-md border p-2",
-        dark ? "border-zinc-700 bg-zinc-950" : "border-zinc-200 bg-zinc-50",
+        "flex h-24 overflow-hidden rounded-md border",
+        dark ? "border-stone-800" : "border-stone-300",
       )}
     >
-      <span
-        className={cn(
-          "mr-2 h-full w-5 rounded-md",
-          dark ? "bg-zinc-800" : "bg-white",
-        )}
-      />
-      <span className="flex flex-1 flex-col gap-1.5">
-        <span
-          className={cn(
-            "h-2 w-16 rounded-full",
-            dark ? "bg-zinc-500" : "bg-zinc-300",
-          )}
-        />
-        <span className={cn("h-5 rounded-md", dark ? "bg-zinc-800" : "bg-white")} />
-        <span
-          className={cn(
-            "h-2 w-20 rounded-full",
-            dark ? "bg-orange-500/80" : "bg-orange-500",
-          )}
-        />
-      </span>
+      <WindowPreview dark={dark} />
     </span>
   );
 }
@@ -216,10 +230,10 @@ function ThemeOption({
   return (
     <div
       className={cn(
-        "group relative min-h-32 min-w-0 rounded-lg border p-3 transition-colors",
+        "group relative min-h-32 min-w-0 rounded-lg border p-3 transition-[border-color,background-color] duration-(--motion-duration-standard) ease-(--motion-ease-standard)",
         selected
-          ? "border-foreground/20 bg-muted"
-          : "border-border bg-card hover:bg-surface-hover",
+          ? "border-brand-accent/50 bg-brand-accent-muted"
+          : "border-border bg-card hover:border-border hover:bg-surface-hover",
       )}
     >
       <RadioGroupItem
@@ -227,11 +241,7 @@ function ThemeOption({
         aria-label={label}
         aria-describedby={descriptionId}
         className="absolute inset-0 z-10 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-      >
-        <RadioGroupIndicator className="absolute top-2 right-2 flex size-5 items-center justify-center rounded-full border border-brand-accent bg-card text-brand-accent">
-          <RiCheckLine className="size-3.5" aria-hidden />
-        </RadioGroupIndicator>
-      </RadioGroupItem>
+      />
 
       <div className="flex flex-col gap-3">
         <ThemePreview variant={variant} />

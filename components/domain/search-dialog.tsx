@@ -16,6 +16,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Spokes } from "@/components/loading-ui/spokes";
 import {
   Dialog,
   DialogClose,
@@ -40,7 +41,7 @@ const copy = {
   description: "Encontre recursos do workspace e abra o destino diretamente.",
   label: "Buscar no Denarius",
   placeholder: "Buscar no Denarius...",
-  searching: "Pesquisando...",
+  searching: "Pesquisando…",
   partial: "Algumas categorias não puderam ser pesquisadas agora.",
   error: "Não foi possível pesquisar agora.",
   errorHint: "Tente novamente em alguns instantes.",
@@ -182,6 +183,7 @@ export function SearchDialog() {
       <DialogContent
         showCloseButton={false}
         className="max-h-[calc(100dvh-2rem)] max-w-3xl gap-0 overflow-hidden p-0 sm:max-w-3xl"
+        overlayClassName="bg-black/80 supports-backdrop-filter:!backdrop-blur-[2px]"
       >
         <DialogHeader className="sr-only">
           <DialogTitle>{copy.title}</DialogTitle>
@@ -191,7 +193,7 @@ export function SearchDialog() {
         <div
           className={cn(
             "relative p-4 pr-12 transition-colors duration-(--motion-duration-standard) ease-(--motion-ease-standard)",
-            showResults && "border-b border-border/70",
+            showResults && "border-b border-border",
           )}
         >
           <DialogClose
@@ -228,10 +230,18 @@ export function SearchDialog() {
             className="h-12 rounded-xl bg-card pr-28 pl-10 text-sm shadow-none focus-visible:border-ring/30 focus-visible:ring-1 focus-visible:ring-ring/10 md:text-sm"
           />
           <span
-            className="absolute top-1/2 right-16 -translate-y-1/2 text-xs text-muted-foreground"
+            className="absolute top-1/2 right-16 flex -translate-y-1/2 items-center gap-1.5 text-xs text-muted-foreground"
             aria-live="polite"
           >
-            {loading ? copy.searching : ""}
+            {loading ? (
+              <>
+                <Spokes
+                  className="size-3.5 shrink-0 motion-reduce:[animation:none]"
+                  aria-hidden
+                />
+                {copy.searching}
+              </>
+            ) : null}
           </span>
         </div>
 
@@ -258,7 +268,13 @@ export function SearchDialog() {
               >
                 {response.status === "error" ? (
                   <QuietState title={copy.error} description={copy.errorHint}>
-                    <Button variant="outline" size="sm" onClick={() => void runSearch(query)}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      loading={loading}
+                      loadingText={copy.retry}
+                      onClick={() => void runSearch(query)}
+                    >
                       {copy.retry}
                     </Button>
                   </QuietState>
@@ -280,7 +296,7 @@ export function SearchDialog() {
                           {group.label}
                         </h2>
                         <Card className="gap-0 overflow-hidden py-0">
-                          <div className="divide-y divide-border/60">
+                          <div className="divide-y divide-border">
                             {group.results.map((result) => {
                               const index = results.findIndex(
                                 (candidate) =>
@@ -371,7 +387,7 @@ function QuietState({
   children?: React.ReactNode;
 }) {
   return (
-    <div className="flex min-h-52 flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border/70 px-6 text-center">
+    <div className="flex min-h-52 flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border px-6 text-center">
       <div>
         <p className="text-sm font-medium">{title}</p>
         <p className="mt-1 max-w-lg text-sm text-muted-foreground">{description}</p>

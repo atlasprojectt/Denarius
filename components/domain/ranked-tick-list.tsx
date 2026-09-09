@@ -55,7 +55,7 @@ export function RankedTickList({
           <div className="relative mt-1.5 h-2 w-full">
             <div
               aria-hidden
-              className="absolute inset-0 origin-center text-foreground/15 group-hover/row:scale-y-[1.5] group-hover/row:text-foreground/25 motion-safe:transition-[color,transform] motion-safe:duration-(--motion-duration-max) motion-safe:ease-(--motion-ease-standard)"
+              className="absolute inset-0 origin-center text-foreground/15 group-hover/row:scale-y-[1.5] group-hover/row:text-foreground/15 motion-safe:transition-[color,transform] motion-safe:duration-(--motion-duration-max) motion-safe:ease-(--motion-ease-standard)"
               style={TICKS}
             />
             <div
