@@ -503,9 +503,12 @@ input[type="number"]::-webkit-outer-spin-button {
    source of truth across every route.
 --------------------------------------------------------------------------- */
 :root {
-  --surface-deep: oklch(0.955 0.002 106.423);
+  /* Light-mode inversion (founder-directed): the app shell (canvas) is the
+     darkest of the three main planes, while the sidebar (deep) and cards sit
+     lighter above it. Dark theme keeps the original order (rail deepest). */
+  --surface-deep: oklch(0.985 0.001 106.423);
   --surface-card: oklch(0.97 0.001 106.424);
-  --surface-canvas: oklch(0.985 0.001 106.423);
+  --surface-canvas: oklch(0.955 0.002 106.423);
   --surface-control: oklch(0.965 0.002 106.423);
   --surface-elevated: oklch(1 0 0);
   --surface-hover: oklch(0.945 0.003 106.423);
@@ -516,9 +519,12 @@ input[type="number"]::-webkit-outer-spin-button {
   --card-foreground: oklch(0.147 0.004 49.25);
   --popover: var(--surface-elevated);
   --popover-foreground: oklch(0.147 0.004 49.25);
-  --brand-accent: #ff5a1f;
+  --brand-accent: #ff6524;
   --brand-accent-light: #ff9a70;
-  --brand-action: #b9380d;
+  /* Action is the most vivid orange that still holds white-text AA (base 4.78,
+     hover 4.58 — both pass). The signature accent stays out of solid button
+     fills behind text (white ~3.0). */
+  --brand-action: #c7480d;
   --brand-accent-muted: color-mix(in oklab, var(--brand-accent) 12%, transparent);
   --brand-accent-border: color-mix(in oklab, var(--brand-accent) 28%, transparent);
   --focus-ring: var(--brand-accent-light);
@@ -527,7 +533,7 @@ input[type="number"]::-webkit-outer-spin-button {
   /* Action hover brightens one controlled step while keeping AA contrast.
      The signature accent remains separate because it is too light for 14px
      text on a solid button. */
-  --primary-hover: #c2410c;
+  --primary-hover: #cc4a0a;
   --secondary: var(--surface-control);
   --secondary-foreground: oklch(0.21 0.006 285.885);
   --muted: var(--surface-control);
@@ -553,15 +559,17 @@ input[type="number"]::-webkit-outer-spin-button {
   --sidebar-border: oklch(0.923 0.003 48.717);
   --sidebar-ring: var(--focus-ring);
 
-  /* Semaphore Ã¢â‚¬â€ budget status only. Strong = bar fills & dots; soft = pill and
-     callout backgrounds; fg = text sitting on a soft background. */
-  --status-green: #16a34a;
+  /* Semaphore Ã¢â‚¬â€ budget status only. Strong = bar fills, dots & chart strokes (graphic ink, no running text:
+     identical across themes so light fills read as vivid as dark); soft = pill
+     and callout backgrounds; fg = text on a soft background (kept darker in
+     light mode so 12px labels hold AA). */
+  --status-green: #22c55e;
   --status-green-soft: #f0faf3;
   --status-green-fg: #166534;
-  --status-amber: #d97706;
+  --status-amber: #f59e0b;
   --status-amber-soft: #fdf6ec;
   --status-amber-fg: #92400e;
-  --status-red: #dc2626;
+  --status-red: #ef4444;
   --status-red-soft: #fdf1f1;
   --status-red-fg: #991b1b;
 
@@ -591,17 +599,17 @@ input[type="number"]::-webkit-outer-spin-button {
   --card-foreground: oklch(0.985 0.001 106.423);
   --popover: var(--surface-elevated);
   --popover-foreground: oklch(0.985 0.001 106.423);
-  --brand-accent: #ff5a1f;
+  --brand-accent: #ff6524;
   --brand-accent-light: #ff9a70;
-  --brand-action: #b9380d;
+  --brand-action: #c7480d;
   --brand-accent-muted: color-mix(in oklab, var(--brand-accent) 14%, transparent);
   --brand-accent-border: color-mix(in oklab, var(--brand-accent) 30%, transparent);
   --focus-ring: var(--brand-accent-light);
   --primary: var(--brand-action);
   --primary-foreground: oklch(0.98 0.016 73.684);
-  /* Dark primary is deliberately deep for button fills Ã¢â‚¬â€ hovered text needs a
-     much brighter orange to stay legible on the dark card. */
-  --primary-hover: #c2410c;
+  /* Action matches light (identical across themes); hover brightens one step
+     while keeping white-text AA. */
+  --primary-hover: #cc4a0a;
   --secondary: var(--surface-control);
   --secondary-foreground: oklch(0.985 0 0);
   --muted: var(--surface-control);

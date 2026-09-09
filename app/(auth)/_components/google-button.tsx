@@ -1,10 +1,13 @@
 "use client";
 
+import { useState } from "react";
+
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
 
 const copy = {
   label: "Continuar com Google",
+  connecting: "Conectando…",
 };
 
 function GoogleIcon() {
@@ -31,12 +34,22 @@ function GoogleIcon() {
 }
 
 export function GoogleButton({ className }: { className?: string }) {
+  const [pending, setPending] = useState(false);
+
   async function handleClick() {
-    const supabase = createClient();
-    await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
-    });
+    if (pending) return;
+    setPending(true);
+    try {
+      const supabase = createClient();
+      await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: `${window.location.origin}/auth/callback` },
+      });
+    } finally {
+      // OAuth navigates away on success; reset only if still mounted so a
+      // failure leaves a usable button instead of a stuck spinner.
+      setPending(false);
+    }
   }
 
   return (
@@ -45,6 +58,8 @@ export function GoogleButton({ className }: { className?: string }) {
       size="lg"
       type="button"
       onClick={handleClick}
+      loading={pending}
+      loadingText={copy.connecting}
       className={className}
     >
       <GoogleIcon />

@@ -106,7 +106,7 @@ export function AuthForm({ oauthError }: { oauthError?: string }) {
     : (state.error ?? (isSignup ? undefined : oauthError));
 
   const inputClassName =
-    "h-11 rounded-[var(--radius-standard)] border-border/70 bg-surface-control pl-10 text-[15px] hover:border-border/90 hover:bg-surface-hover focus-visible:border-ring/70 focus-visible:bg-surface-control focus-visible:ring-1 focus-visible:ring-ring/30";
+    "h-11 rounded-[var(--radius-standard)] border-border bg-surface-control pl-10 text-[15px] hover:border-border hover:bg-surface-hover focus-visible:border-ring focus-visible:bg-surface-control focus-visible:ring-1 focus-visible:ring-ring/40";
   const iconClassName = "size-4";
 
   return (
@@ -126,7 +126,7 @@ export function AuthForm({ oauthError }: { oauthError?: string }) {
           </div>
 
           <div className="denarius-auth-enter [animation-delay:60ms]">
-            <div className="relative grid grid-cols-2 rounded-[var(--radius-standard)] border border-border/60 bg-surface-control p-1">
+            <div className="relative grid grid-cols-2 rounded-[var(--radius-standard)] border border-border bg-surface-control p-1">
               <span
                 aria-hidden
                 className="absolute inset-y-1 left-1 w-[calc(50%-0.25rem)] rounded-full bg-surface-elevated transition-transform duration-(--motion-duration-max)"

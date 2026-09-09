@@ -17,7 +17,7 @@ const copy = {
     "Enviado às sextas-feiras para administradores, com os principais números do período.",
   note: "Alertas de orçamento não são afetados.",
   save: "Salvar notificações",
-  saving: "Salvando...",
+  saving: "Salvando…",
 };
 
 const initialState: SettingsFormState = {};
