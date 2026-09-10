@@ -541,8 +541,8 @@ input[type="number"]::-webkit-outer-spin-button {
   --accent: var(--surface-hover);
   --accent-foreground: oklch(0.216 0.006 56.043);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.923 0.003 48.717);
-  --input: oklch(0.923 0.003 48.717);
+  --border: oklch(0.941 0.002 48.717);
+  --input: oklch(0.941 0.002 48.717);
   --ring: var(--focus-ring);
   --chart-1: var(--brand-accent);
   --chart-2: var(--brand-accent-light);
@@ -556,7 +556,7 @@ input[type="number"]::-webkit-outer-spin-button {
   --sidebar-primary-foreground: oklch(0.98 0.016 73.684);
   --sidebar-accent: var(--surface-selected);
   --sidebar-accent-foreground: oklch(0.216 0.006 56.043);
-  --sidebar-border: oklch(0.923 0.003 48.717);
+  --sidebar-border: oklch(0.941 0.002 48.717);
   --sidebar-ring: var(--focus-ring);
 
   /* Semaphore Ã¢â‚¬â€ budget status only. Strong = bar fills, dots & chart strokes (graphic ink, no running text:
@@ -617,8 +617,8 @@ input[type="number"]::-webkit-outer-spin-button {
   --accent: var(--surface-hover);
   --accent-foreground: oklch(0.985 0.001 106.423);
   --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
+  --border: oklch(1 0 0 / 7%);
+  --input: oklch(1 0 0 / 11%);
   --ring: var(--focus-ring);
   --chart-1: var(--brand-accent);
   --chart-2: var(--brand-accent-light);
@@ -633,7 +633,7 @@ input[type="number"]::-webkit-outer-spin-button {
   --sidebar-primary-foreground: oklch(0.98 0.016 73.684);
   --sidebar-accent: var(--surface-selected);
   --sidebar-accent-foreground: oklch(0.985 0.001 106.423);
-  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-border: oklch(1 0 0 / 7%);
   --sidebar-ring: var(--focus-ring);
 
   --status-green: #22c55e;
@@ -668,9 +668,11 @@ input[type="number"]::-webkit-outer-spin-button {
 
 /* Cards are the raised working surfaces above the shell. This unlayered rule
    restores their tokenized fill (the previous transparent override erased the
-   hierarchy even though the primitive carried `bg-card`). */
+   hierarchy even though the primitive carried `bg-card`). The contour stays a
+   soft ring, one step quieter than the structural borders. */
 [data-slot="card"] {
   background-color: var(--card);
+  --tw-ring-color: color-mix(in oklab, var(--foreground) 6%, transparent);
 }
 
 /* ---------------------------------------------------------------------------
