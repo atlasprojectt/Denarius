@@ -1,5 +1,11 @@
 import Link from "next/link";
-import { RiCheckLine, RiDashboard3Line } from "@remixicon/react";
+import {
+  RiCheckLine,
+  RiDashboard3Line,
+  RiPieChartLine,
+  RiScales3Line,
+  RiShieldCheckLine,
+} from "@remixicon/react";
 
 import { VerdictLine } from "@/components/domain/verdict-line";
 import { PageContainer } from "@/components/domain/page-container";
@@ -47,16 +53,27 @@ export default async function HomePage() {
           <p className="mt-1.5 max-w-xl text-sm/relaxed text-muted-foreground">
             {homeCopy.coldStart.body}
           </p>
-          <ul className="mt-5 flex flex-col gap-2">
-            {homeCopy.coldStart.unlocks.map((item) => (
-              <li
-                key={item}
-                className="flex items-center gap-2.5 text-sm text-muted-foreground"
-              >
-                <RiCheckLine className="size-4 shrink-0 text-muted-foreground" aria-hidden />
-                {item}
-              </li>
-            ))}
+          <ul className="mt-5 grid gap-3 sm:grid-cols-3">
+            {homeCopy.coldStart.unlocks.map((item, index) => {
+              // Index-coupled to the unlocks copy above: verdict, projection,
+              // early warnings — in that order. The fallback keeps the row
+              // illustrated if copy ever gains a fourth item.
+              const Icon =
+                [RiScales3Line, RiPieChartLine, RiShieldCheckLine][index] ??
+                RiCheckLine;
+              return (
+                <li
+                  key={item}
+                  className="flex items-start gap-2.5 text-sm text-muted-foreground"
+                >
+                  <Icon
+                    className="mt-0.5 size-5 shrink-0 text-brand-accent-light"
+                    aria-hidden
+                  />
+                  {item}
+                </li>
+              );
+            })}
           </ul>
           <div className="mt-7 flex flex-wrap gap-2.5">
             <Button asChild>

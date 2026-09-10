@@ -12,6 +12,7 @@ export const homeCopy = {
     subtitle: "Três passos deixam o Denarius pronto para responder se o gasto está sob controle.",
     progress: (done: number, total: number) => `${done} de ${total} concluídos`,
     stepDone: (label: string) => `${label} — concluído`,
+    stepDoneBadge: "Concluído",
     connected: "Conectar um provedor",
     connectedDetail: "OpenAI ou Anthropic, com uma Admin Key somente leitura.",
     hasRoster: "Importar o roster",
