@@ -71,7 +71,7 @@ export function ExecutiveDigestCard({
   return (
     <Card
       size="sm"
-      className="self-start lg:aspect-[1.16/1] lg:min-h-0 lg:max-w-[24rem]"
+      className="w-full min-w-0 lg:self-stretch xl:aspect-[1.16/1] xl:min-h-0 xl:max-w-[24rem] xl:self-start"
       aria-labelledby="home-digest-title"
     >
       <CardHeader className="border-b border-border px-4">

@@ -15,7 +15,7 @@ export default function AppLoading() {
       </div>
 
       <div className="grid items-stretch gap-3 lg:grid-cols-2 xl:grid-cols-[minmax(0,1.55fr)_minmax(18rem,1fr)_minmax(0,1.45fr)]">
-        <div className="flex flex-col gap-5 rounded-xl border p-6">
+        <div className="flex flex-col gap-5 rounded-xl border p-6 lg:col-span-2 xl:col-span-1">
           <div className="flex flex-col gap-2">
             <Skeleton className="h-4 w-28" />
             <Skeleton className="h-10 w-64" />
@@ -27,7 +27,7 @@ export default function AppLoading() {
             <Skeleton className="h-10" />
           </div>
         </div>
-        <div className="flex flex-col gap-4 rounded-xl border p-6">
+        <div className="flex flex-col gap-4 rounded-xl border p-6 lg:self-stretch xl:aspect-[1.16/1] xl:max-w-[24rem] xl:self-start">
           <Skeleton className="h-4 w-40" />
           <Skeleton className="h-7 w-32" />
           <Skeleton className="h-2 w-full" />
