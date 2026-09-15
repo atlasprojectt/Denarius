@@ -35,6 +35,7 @@ export type CockpitData = {
 };
 
 export type HomeData = CockpitData & {
+  user: { displayName: string | null; email: string };
   /** Org week-over-week API cost change (reported USD — same source and math
    *  as the digest, so screen and email can never disagree). Neutral display
    *  only (principle #5); null when the previous week has no spend. */
@@ -86,6 +87,23 @@ async function orgDailyCosts(): Promise<{ date: string; usd: number }[]> {
     byDate.set(row.date, (byDate.get(row.date) ?? 0) + row.amount);
   }
   return [...byDate.entries()].map(([date, usd]) => ({ date, usd }));
+}
+
+async function currentUserProfile(): Promise<{ displayName: string | null; email: string }> {
+  const supabase = await createClient();
+  const { data: auth } = await supabase.auth.getUser();
+  if (!auth.user) return { displayName: null, email: "" };
+
+  const { data } = await supabase
+    .from("app_user")
+    .select("display_name, email")
+    .eq("id", auth.user.id)
+    .maybeSingle();
+
+  return {
+    displayName: data?.display_name ?? null,
+    email: data?.email ?? auth.user.email ?? "",
+  };
 }
 
 /** Month-to-date provider-reported cost (USD, the headline truth), by provider. */
@@ -359,11 +377,12 @@ export async function getHomeData(): Promise<HomeData> {
   const now = new Date();
   // The supplementary Home reads do not depend on the cockpit — one parallel
   // batch. Roster remains the setup-checklist source of truth.
-  const [assembly, roster, weekCosts, dailyCosts] = await Promise.all([
+  const [assembly, roster, weekCosts, dailyCosts, user] = await Promise.all([
     assembleCockpit(),
     rosterHeadcount(),
     orgWeekCosts(now),
     orgDailyCosts(),
+    currentUserProfile(),
   ]);
 
   const rosterTotal = [...roster.values()].reduce((sum, n) => sum + n, 0);
@@ -385,6 +404,7 @@ export async function getHomeData(): Promise<HomeData> {
     : null;
 
   return {
+    user,
     cockpit: assembly.cockpit,
     period: assembly.period,
     fx: assembly.fx,

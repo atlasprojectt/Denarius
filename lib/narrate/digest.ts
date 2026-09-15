@@ -5,7 +5,7 @@
 // any output containing a number that was not injected, and the caller falls
 // back to digestTemplate() — so a hallucinated figure can never reach email.
 
-import type { Verdict } from "@/lib/engine/verdict";
+import type { Verdict, VerdictStatus } from "@/lib/engine/verdict";
 import type { Driver } from "@/lib/engine/drivers";
 import type { WeekChange } from "@/lib/engine/week-change";
 import { percent } from "@/lib/format";
@@ -23,6 +23,32 @@ const copy = {
   driverLine: (label: string, value: string, share: string) =>
     `${label} — ${value} (${share})`,
 };
+
+const homeDigestCopy = {
+  collecting: "Ritmo ainda em coleta.",
+  collectingDetail: "Projeção disponível a partir do dia 5.",
+  greenIntroPrefix: "O ritmo segue com ",
+  greenIntroHighlight: "folga",
+  spendPrefix: "O gasto está em ",
+  budgetPhrase: ", de um orçamento de ",
+  projectionPrefix: "O fechamento está calculado para ",
+  greenMarginPrefix: ", com folga de ",
+  projectionUnavailable: "O fechamento ainda não está disponível.",
+  greenNoTeam: "Times dentro do ritmo.",
+  amberIntroPrefix: "O ritmo pede ",
+  amberIntroHighlight: "atenção",
+  amberOveragePrefix: ", ",
+  amberOverageSuffix: " acima do orçamento.",
+  amberProjectionUnavailable: "O fechamento projetado está acima do orçamento.",
+  amberNoTeam: "Atenção no orçamento da empresa.",
+  redIntroPrefix: "O orçamento já foi ",
+  redIntroHighlight: "ultrapassado",
+  redProjectionSuffix: ", e o limite já foi superado.",
+  redProjectionUnavailable: "O limite do período já foi superado.",
+  redNoTeam: "Estouro no orçamento da empresa.",
+  attentionPrefix: "Veja os detalhes de ",
+  attentionSuffix: ".",
+} as const;
 
 export type DigestFacts = {
   verdictSentence: string;
@@ -114,6 +140,114 @@ export function digestTemplate(facts: DigestFacts): string {
 }
 
 export type NarrationRequest = { system: string; prompt: string };
+
+export type DigestSegment =
+  | { type: "text"; value: string; emphasis?: boolean }
+  | { type: "link"; value: string; href: string; emphasis?: boolean };
+
+export type DigestLine = DigestSegment[];
+
+export type HomeDigestFacts = Pick<
+  DigestFacts,
+  "currency" | "spent" | "budget" | "projection" | "projectedMargin"
+> & {
+  status: VerdictStatus;
+  collecting: boolean;
+  attentionTeam: { id: string; name: string } | null;
+};
+
+/**
+ * Short, deterministic Home digest. Each inner array is one semantic line;
+ * complete states use four lines and may link only the aggregated team
+ * reference supplied by the cockpit.
+ */
+export function buildHomeDigest(facts: HomeDigestFacts): DigestLine[] {
+  const lines: DigestLine[] = [];
+  const strong = (value: string): DigestSegment => ({ type: "text", value, emphasis: true });
+  const plain = (value: string): DigestSegment => ({ type: "text", value });
+
+  if (facts.collecting || facts.status === "collecting") {
+    lines.push([plain(homeDigestCopy.collecting)]);
+    lines.push([plain(homeDigestCopy.collectingDetail)]);
+    return lines;
+  }
+
+  const spent = money(facts.spent, facts.currency);
+  const budget = money(facts.budget, facts.currency);
+  lines.push([
+    plain(homeDigestCopy.spendPrefix),
+    strong(spent),
+    plain(homeDigestCopy.budgetPhrase),
+    strong(budget),
+    plain("."),
+  ]);
+
+  if (facts.status === "green") {
+    lines.unshift([
+      plain(homeDigestCopy.greenIntroPrefix),
+      strong(homeDigestCopy.greenIntroHighlight),
+      plain("."),
+    ]);
+    if (facts.projection !== null && facts.projectedMargin !== null) {
+      lines.push([
+        plain(homeDigestCopy.projectionPrefix),
+        strong(money(facts.projection, facts.currency)),
+        plain(homeDigestCopy.greenMarginPrefix),
+        strong(money(facts.projectedMargin, facts.currency)),
+        plain("."),
+      ]);
+    } else {
+      lines.push([plain(homeDigestCopy.projectionUnavailable)]);
+    }
+  } else if (facts.status === "amber") {
+    lines.unshift([
+      plain(homeDigestCopy.amberIntroPrefix),
+      strong(homeDigestCopy.amberIntroHighlight),
+      plain("."),
+    ]);
+    if (facts.projection !== null && facts.projectedMargin !== null) {
+      lines.push([
+        plain(homeDigestCopy.projectionPrefix),
+        strong(money(facts.projection, facts.currency)),
+        plain(homeDigestCopy.amberOveragePrefix),
+        strong(money(-facts.projectedMargin, facts.currency)),
+        plain(homeDigestCopy.amberOverageSuffix),
+      ]);
+    } else {
+      lines.push([plain(homeDigestCopy.amberProjectionUnavailable)]);
+    }
+  } else {
+    lines.unshift([
+      plain(homeDigestCopy.redIntroPrefix),
+      strong(homeDigestCopy.redIntroHighlight),
+      plain("."),
+    ]);
+    if (facts.projection !== null) {
+      lines.push([
+        plain(homeDigestCopy.projectionPrefix),
+        strong(money(facts.projection, facts.currency)),
+        plain(homeDigestCopy.redProjectionSuffix),
+      ]);
+    } else {
+      lines.push([plain(homeDigestCopy.redProjectionUnavailable)]);
+    }
+  }
+
+  if (facts.attentionTeam !== null) {
+    lines.push([
+      plain(homeDigestCopy.attentionPrefix),
+      { type: "link", value: facts.attentionTeam.name, href: `/times/${facts.attentionTeam.id}`, emphasis: true },
+      plain(homeDigestCopy.attentionSuffix),
+    ]);
+  } else if (facts.status === "green") {
+    lines.push([plain(homeDigestCopy.greenNoTeam)]);
+  } else if (facts.status === "amber") {
+    lines.push([plain(homeDigestCopy.amberNoTeam)]);
+  } else {
+    lines.push([plain(homeDigestCopy.redNoTeam)]);
+  }
+  return lines;
+}
 
 /** Prompt asking the LLM to REPHRASE the template — never to compute. */
 export function digestPrompt(facts: DigestFacts): NarrationRequest {
