@@ -235,6 +235,38 @@ input[type="number"]::-webkit-outer-spin-button {
   animation: denarius-page-enter var(--motion-duration-max) var(--motion-ease-standard) backwards;
 }
 
+@keyframes denarius-digest-line-enter {
+  0% {
+    clip-path: inset(0 100% 0 0);
+    opacity: 0;
+    transform: translateY(2px);
+  }
+  55% {
+    opacity: 1;
+  }
+  100% {
+    clip-path: inset(0 0 0 0);
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  [data-digest-lines] .digest-line {
+    animation: denarius-digest-line-enter 260ms var(--motion-ease-expressive) both;
+    will-change: clip-path, opacity, transform;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-digest-lines] .digest-line {
+    animation: none;
+    clip-path: none;
+    opacity: 1;
+    transform: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .page-transition {
     animation: none;

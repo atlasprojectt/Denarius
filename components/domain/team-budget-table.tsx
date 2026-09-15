@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { RiArrowRightSLine, RiTeamLine } from "@remixicon/react";
 
 import { BudgetBar } from "@/components/domain/budget-bar";
@@ -19,16 +18,11 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableCaption,
   TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import type { CockpitTeam } from "@/lib/engine/cockpit";
 import { percent } from "@/lib/format";
 import { money } from "@/lib/money";
@@ -94,31 +88,13 @@ function warningLine(team: CockpitTeam, currency: string): string | null {
   return c.warnThreshold(percent(ev.pctSpent));
 }
 
-// The status pill; for at-risk teams it carries the full reason in a tooltip
-// (de-noise 2026-07-17): the chip is the resting signal, the sentence is one
-// hover/focus away, so the same detail no longer sits permanently under every
-// team name. When there is no finding the pill renders bare.
 function TeamStatus({ team, currency }: { team: CockpitTeam; currency: string }) {
   const reason = warningLine(team, currency);
-  if (reason === null) return <StatusPill status={team.status} />;
   return (
-    <TooltipProvider delayDuration={150}>
-      <Tooltip>
-        <TooltipTrigger
-          type="button"
-          aria-label={reason}
-          className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
-          // The row is itself a link; stop the pill's click from navigating so
-          // a tap on the chip reveals the reason instead of leaving the page.
-          onClick={(event) => event.stopPropagation()}
-        >
-          <StatusPill status={team.status} />
-        </TooltipTrigger>
-        <TooltipContent side="top" className="max-w-xs text-xs/relaxed">
-          {reason}
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+    <span className="inline-flex flex-wrap items-center gap-2">
+      <StatusPill status={team.status} />
+      {reason !== null && <span className="text-xs text-muted-foreground">{reason}</span>}
+    </span>
   );
 }
 
@@ -132,7 +108,6 @@ export function TeamBudgetTable({
   attentionCount: number;
   currency: string;
 }) {
-  const router = useRouter();
   const optionalColHead = "hidden text-right @2xl:table-cell";
   const optionalColCell =
     "hidden text-right tabular-nums text-muted-foreground @2xl:table-cell";
@@ -145,7 +120,7 @@ export function TeamBudgetTable({
     // constrained grid track so the page stays fixed and only this list scrolls.
     <Card className="min-h-full xl:h-full">
       <CardHeader className="border-b border-border">
-        <CardTitle className="flex items-center gap-2 text-sm">
+        <CardTitle as="h2" id="team-budget-title" className="flex items-center gap-2 text-sm">
           <RiTeamLine className="size-4 text-muted-foreground" aria-hidden />
           {c.title}
         </CardTitle>
@@ -170,7 +145,7 @@ export function TeamBudgetTable({
         </CardAction>
       </CardHeader>
       {teams.length > 0 && (
-        <CardContent className="@container flex min-h-0 flex-1 flex-col">
+      <CardContent className="@container flex min-h-0 flex-1 flex-col">
           <div className="min-h-0 flex-1 overflow-y-auto">
           <div className="grid gap-2 @2xl:hidden">
             {teams.map((team) => {
@@ -223,7 +198,8 @@ export function TeamBudgetTable({
             })}
           </div>
           <div className="hidden @2xl:block">
-          <Table className="[&_th]:text-muted-foreground">
+          <Table aria-labelledby="team-budget-title" className="[&_th]:text-muted-foreground">
+            <TableCaption className="sr-only">Orçamentos, gasto, situação e projeção de cada time.</TableCaption>
             <TableHeader>
               <TableRow>
                 <TableHead>{c.colTeam}</TableHead>
@@ -243,22 +219,16 @@ export function TeamBudgetTable({
                 return (
                   <TableRow
                     key={team.teamId}
-                    role="link"
-                    tabIndex={0}
-                    aria-label={c.detail(team.teamName)}
-                    className="group cursor-pointer border-border outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/40"
-                    onClick={() => router.push(`/times/${team.teamId}`)}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter" || event.key === " ") {
-                        event.preventDefault();
-                        router.push(`/times/${team.teamId}`);
-                      }
-                    }}
+                    className="group border-border"
                   >
                     <TableCell className="max-w-64">
-                      <span className="block truncate font-medium transition-colors group-hover:text-foreground">
+                      <Link
+                        href={`/times/${team.teamId}`}
+                        aria-label={c.detail(team.teamName)}
+                        className="relative z-10 block truncate font-medium outline-none after:absolute after:inset-0 after:z-[-1] after:w-[calc(100vw-2rem)] after:max-w-[calc(100%+1000px)] after:rounded-md after:transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/40"
+                      >
                         {team.teamName}
-                      </span>
+                      </Link>
                     </TableCell>
                     <TableCell>
                       <TeamStatus team={team} currency={currency} />

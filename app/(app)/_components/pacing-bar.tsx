@@ -93,13 +93,12 @@ export function PacingBar({
         )}
       </div>
 
-      {/* Legend on hover (founder-directed). Absolute, so revealing it costs no
-          reflow; the sr-only sentence above carries the same content for
-          assistive tech, which must never depend on a pointer. */}
-      <div className="relative mt-1.5 h-4">
+      <p className="mt-1.5 text-xs font-light text-muted-foreground md:hidden">
+        {c.pace.legend}
+      </p>
+      <div className="relative mt-1.5 hidden h-4 md:block">
         <div
-          aria-hidden
-          className="absolute inset-0 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-light text-muted-foreground opacity-0 group-hover/bar:opacity-100 motion-safe:transition-opacity motion-safe:duration-[180ms]"
+          className="absolute inset-0 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-light text-muted-foreground opacity-70 transition-opacity group-hover/bar:opacity-100 group-focus-within/bar:opacity-100"
         >
           <LegendItem swatch={`${SWATCH} ${swatchTone}`} label={c.pace.spent} />
           <LegendItem

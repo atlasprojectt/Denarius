@@ -2,19 +2,19 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { PageContainer } from "@/components/domain/page-container";
 
 // Route-group loading state (F1: RSC streaming + skeletons, no client
-// spinners). Mirrors the cockpit rhythm — verdict line over the 2x2 card grid
-// (hero + composition bars, pace chart + teams table) — so every screen in the
-// group settles without layout jumps.
+// spinners). Mirrors the cockpit rhythm — greeting/status over a three-card
+// top row, then the unchanged pace chart + teams table row — so the screen
+// settles without a layout jump.
 
 export default function AppLoading() {
   return (
-    <PageContainer variant="wide" className="gap-6" aria-busy>
-      <div className="flex items-center gap-3">
-        <Skeleton className="size-4 rounded-full" />
-        <Skeleton className="h-6 w-2/3 max-w-md" />
+    <PageContainer variant="full" className="gap-3" aria-busy>
+      <div className="flex flex-wrap items-baseline gap-3">
+        <Skeleton className="h-6 w-52" />
+        <Skeleton className="h-4 w-32" />
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-2">
+      <div className="grid items-stretch gap-3 lg:grid-cols-2 xl:grid-cols-[minmax(0,1.55fr)_minmax(18rem,1fr)_minmax(0,1.45fr)]">
         <div className="flex flex-col gap-5 rounded-xl border p-6">
           <div className="flex flex-col gap-2">
             <Skeleton className="h-4 w-28" />
@@ -34,7 +34,19 @@ export default function AppLoading() {
           <Skeleton className="h-2 w-full" />
           <Skeleton className="h-2 w-full" />
         </div>
-        <div className="flex flex-col gap-4 rounded-xl border p-6">
+        <div className="flex min-h-full flex-col gap-4 rounded-xl border p-6">
+          <Skeleton className="h-4 w-32" />
+          <div className="flex flex-1 flex-col justify-center gap-2.5">
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-5/6" />
+            <Skeleton className="h-4 w-4/6" />
+            <Skeleton className="h-4 w-3/5" />
+          </div>
+        </div>
+      </div>
+
+      <div className="grid flex-1 items-stretch gap-3 lg:grid-cols-2">
+        <div className="flex min-h-[220px] flex-col gap-4 rounded-xl border p-6">
           <Skeleton className="h-4 w-32" />
           <Skeleton className="h-44 w-full" />
         </div>

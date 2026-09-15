@@ -7,7 +7,6 @@ import {
   RiShieldCheckLine,
 } from "@remixicon/react";
 
-import { VerdictLine } from "@/components/domain/verdict-line";
 import { PageContainer } from "@/components/domain/page-container";
 import { Button } from "@/components/ui/button";
 import { budgetedTeams } from "@/lib/engine/cockpit";
@@ -19,11 +18,14 @@ import { ProviderComposition } from "./_components/provider-composition";
 import { TeamBudgetTable } from "@/components/domain/team-budget-table";
 import { SetupChecklist } from "./_components/setup-checklist";
 import { homeCopy } from "./_components/copy";
+import { ExecutiveDigestCard } from "./_components/executive-digest-card";
+import { HomeGreeting } from "./_components/home-greeting";
+import { profileLabel } from "@/lib/settings/account";
 
 // The Home cockpit (#19, redesigned 2026-07): a stable, read-mostly overview —
-// the verdict line (the answer) over a 2x2 card grid: hero (the money
-// headline) + composition (where it goes) on top, monthly pace + the teams
-// table (drill-down entry) below. Nothing
+// a local-time greeting/status header over a three-card top row (hero,
+// composition and executive digest), then monthly pace + the teams table.
+// Nothing
 // on this screen expands, opens drawers or edits; simulation and control plans
 // live in /times/[id], budget editing in /ajustes/orcamentos. No arithmetic
 // here; buildCockpit already did it (architecture §9).
@@ -32,6 +34,7 @@ export default async function HomePage() {
   const {
     cockpit,
     period,
+    user,
     orgWeekPct,
     setup,
     unattributed,
@@ -42,9 +45,11 @@ export default async function HomePage() {
   if (cockpit.state === "cold-start") {
     return (
       <PageContainer variant="full" className="gap-6">
-        <h1 className="text-2xl font-semibold tracking-tight">
-          {homeCopy.question}
-        </h1>
+        <HomeGreeting name={profileLabel(user)} status={null} />
+        <p className="text-2xl font-semibold tracking-tight">{homeCopy.question}</p>
+        <div className="max-w-xl">
+          <ExecutiveDigestCard cockpit={cockpit} currency="BRL" />
+        </div>
         <div className="rounded-xl border p-6 md:p-8">
           <RiDashboard3Line className="size-8 text-muted-foreground" aria-hidden />
           <h2 className="mt-4 text-lg font-semibold tracking-tight">
@@ -103,20 +108,8 @@ export default async function HomePage() {
 
   return (
     <PageContainer variant="full" className="flex-1 gap-3 xl:min-h-0">
-      <h1 className="sr-only">{homeCopy.question}</h1>
-
-      <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-1.5">
-        <VerdictLine
-          verdict={cockpit.verdict}
-          action={
-            cockpit.verdict.teamId !== null
-              ? {
-                  label: homeCopy.verdictAction,
-                  href: `/times/${cockpit.verdict.teamId}`,
-                }
-              : null
-          }
-        />
+      <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-2">
+        <HomeGreeting name={profileLabel(user)} status={cockpit.verdict.status} />
         {/* Freshness stamp (principle #3): same rule and format as Explore
             (oldest active sync + syncStamp) — one mechanism, two screens. The
             day-of-month meta left this corner (de-noise 2026-07-17): it now
@@ -133,15 +126,15 @@ export default async function HomePage() {
           compact strip until all three are done. Renders null when complete. */}
       <SetupChecklist state={setup} variant="compact" />
 
-      {/* The 2x2 grid. min-w-0 wrappers matter: grid children default to
+      {/* The cockpit grid. min-w-0 wrappers matter: grid children default to
           min-width auto, and the table + long tabular-nums strings would
           otherwise push the track past the viewport (horizontal overflow).
           min-h-0 on the cells lets row 2 shrink into the viewport instead of
           pushing the page into a scroll — the pace chart compacts and the
           teams table scrolls internally. Row 1 hugs its content (the dense
           hero sets the height) and row 2 takes every leftover pixel. */}
-      <div className="home-cockpit grid flex-1 items-stretch gap-3 xl:min-h-0 xl:grid-cols-2 xl:grid-rows-[auto_minmax(0,1fr)]">
-        <div className="min-w-0 min-h-0">
+      <div className="home-cockpit grid items-stretch gap-3 lg:grid-cols-2 xl:grid-cols-[minmax(0,1.55fr)_minmax(18rem,1fr)_minmax(0,1.45fr)]">
+        <div className="min-w-0 min-h-0 lg:col-span-2 xl:col-span-1">
           <Hero
             org={org}
             pctProjected={cockpit.orgPctProjected}
@@ -153,12 +146,18 @@ export default async function HomePage() {
           />
         </div>
         <div className="min-w-0 min-h-0">
+          <ExecutiveDigestCard cockpit={cockpit} currency={currency} />
+        </div>
+        <div className="min-w-0 min-h-0">
           <ProviderComposition
             entries={cockpit.composition}
             currency={currency}
             unattributed={showUnattributed ? unattributed : null}
           />
         </div>
+      </div>
+
+      <div className="home-cockpit grid flex-1 items-stretch gap-3 lg:grid-cols-2 xl:min-h-0 xl:grid-rows-[minmax(0,1fr)]">
         <div className="min-w-0 min-h-0">
           {pace && (
             <MonthlyPaceChart

@@ -45,9 +45,9 @@ const chartConfig = {
 
 const trendLines = [{ key: "projected", dash: "6 6", width: 1.8 }];
 
-function Metric({ label, value }: { label: string; value: string }) {
+function Metric({ label, value, className = "" }: { label: string; value: string; className?: string }) {
   return (
-    <div className="flex min-w-28 flex-col gap-0.5">
+    <div className={`flex min-w-28 flex-col gap-0.5 ${className}`}>
       <span className="text-xs text-muted-foreground">{label}</span>
       <span className="text-sm font-medium text-foreground tabular-nums">
         {value}
@@ -143,10 +143,10 @@ export function MonthlyPaceChart({
 
   if (todayValue <= 0) {
     return (
-      <Card data-monthly-pace className="min-h-full [--chart-surface:var(--card)]">
+      <Card data-monthly-pace className="min-h-full [--chart-surface:var(--card)]" aria-labelledby="home-pace-title-empty">
         <CardHeader className="border-b border-border">
           <div className="flex items-center gap-2">
-            <CardTitle className="flex items-center gap-2 text-sm font-medium">
+            <CardTitle as="h2" id="home-pace-title-empty" className="flex items-center gap-2 text-sm font-medium">
               <RiLineChartLine className="size-4 text-muted-foreground" aria-hidden />
               {c.title}
             </CardTitle>
@@ -191,10 +191,10 @@ export function MonthlyPaceChart({
       : c.projectionValue(compactMoney(projection, currency, 2));
 
   return (
-    <Card data-monthly-pace className="min-h-full [--chart-surface:var(--card)]">
+    <Card data-monthly-pace className="min-h-full [--chart-surface:var(--card)]" aria-labelledby="home-pace-title">
       <CardHeader className="gap-2 border-b border-border">
         <div className="flex items-center gap-2">
-          <CardTitle className="flex items-center gap-2 text-sm font-medium">
+          <CardTitle as="h2" id="home-pace-title" className="flex items-center gap-2 text-sm font-medium">
             <RiLineChartLine className="size-4 text-muted-foreground" aria-hidden />
             {c.title}
           </CardTitle>
@@ -207,7 +207,7 @@ export function MonthlyPaceChart({
             value={paceToday === null ? "—" : money(paceToday, currency)}
           />
           <Metric label={c.projectionLabel} value={projectionText} />
-          <Metric label={c.rangeLabel} value={rangeText} />
+          <Metric label={c.rangeLabel} value={rangeText} className="hidden sm:flex" />
         </div>
         {(confidenceText || refStamp) && (
           <p className="text-[11px] font-light text-muted-foreground tabular-nums">

@@ -67,15 +67,15 @@ export function Hero({
     : money(org.projection ?? 0, currency);
 
   return (
-    <Card className="min-h-full">
+    <Card className="min-h-full" aria-labelledby="home-hero-title">
       <CardHeader className="border-b border-border">
-        <CardTitle className="flex items-center gap-2 text-sm font-medium">
+        <CardTitle as="h2" id="home-hero-title" className="flex items-center gap-2 text-sm font-medium">
           <RiWallet3Line className="size-4 text-muted-foreground" aria-hidden />
           {c.title}
         </CardTitle>
-        <p className="flex min-w-0 flex-wrap items-baseline gap-x-2 pt-1.5 text-[clamp(1.625rem,4vw,2.5rem)] font-medium tracking-tight tabular-nums [overflow-wrap:anywhere]">
+        <p className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1 pt-1.5 text-[clamp(2rem,4vw,2.5rem)] font-medium tracking-tight tabular-nums [overflow-wrap:anywhere]">
           {money(org.spent, currency)}
-          <span className="text-base font-normal tracking-normal text-muted-foreground">
+          <span className="basis-full text-base font-normal tracking-normal text-muted-foreground sm:basis-auto">
             {c.ofBudget(money(org.budget, currency))}
           </span>
         </p>

@@ -65,15 +65,16 @@ export function ProviderComposition({
         : c.unattributed(money(unattributed.display, currency));
 
   return (
-    <Card size="sm" className="min-h-full">
+    <Card size="sm" className="min-h-full" aria-labelledby="home-composition-title">
       <CardHeader className="border-b border-border">
-        <CardTitle className="flex items-center gap-2 text-sm">
+        <CardTitle as="h2" id="home-composition-title" className="flex items-center gap-2 text-sm">
           <RiPieChart2Line className="size-4 text-muted-foreground" aria-hidden />
           {c.title}
           <span className="-ml-0.5">
             <InfoTip label={c.infoLabel}>{c.info}</InfoTip>
           </span>
         </CardTitle>
+        <p className="text-xs text-muted-foreground">O total combina provedores e assentos no câmbio congelado do período.</p>
       </CardHeader>
       <CardContent className="flex flex-1 flex-col">
         {entries.length === 0 ? (

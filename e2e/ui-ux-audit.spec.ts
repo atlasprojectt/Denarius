@@ -107,6 +107,10 @@ test("Home keeps the verdict visible and team rows predictable", async ({ page }
   }
   const firstTeam = page.getByRole("link", { name: /Ver detalhe de/ }).first();
   if (await firstTeam.count()) await expect(firstTeam).toBeVisible();
+  await expect(page.locator("tr[role=link]")).toHaveCount(0);
+  await expect(page.locator("table caption")).toHaveCount(1);
+  await expect(page.getByRole("heading", { name: "Gasto do mês" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Digest executivo" })).toBeVisible();
   await expectNoPageOverflow(page);
 });
 

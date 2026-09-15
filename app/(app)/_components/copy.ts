@@ -4,7 +4,22 @@
 
 export const homeCopy = {
   question: "Você está no controle do gasto com IA?",
-  verdictAction: "Ver time",
+  greeting: {
+    fallback: "Olá",
+    morning: "Bom dia",
+    afternoon: "Boa tarde",
+    evening: "Boa noite",
+    status: {
+      green: "Tudo sob controle",
+      amber: "Atenção",
+      red: "Orçamento estourado",
+      collecting: "Coletando ritmo",
+    },
+  },
+  digest: {
+    title: "Digest executivo",
+    coldStart: "Defina um orçamento e conecte uma fonte para começar.",
+  },
   dataAsOf: (stamp: string) => `Atualizado ${stamp}`,
 
   setup: {
@@ -38,6 +53,7 @@ export const homeCopy = {
       spent: "Gasto",
       projected: "Projeção",
       budget: "Orçamento",
+      legend: "Gasto, projeção de fechamento e orçamento mensal.",
       /** Always present for assistive tech — the visual legend is hover-only. */
       description: (spent: string, elapsed: string) =>
         `Barra de ritmo: ${spent} do orçamento gasto, com ${elapsed} do mês decorrido. A parte cheia é o gasto, a parte clara é a projeção de fechamento e a linha marca o orçamento.`,
@@ -75,7 +91,7 @@ export const homeCopy = {
     confidenceHigh: "alta",
     confidenceMedium: "média",
     confidenceLow: "baixa",
-    rangeRef: (stamp: string) => `ref. ${stamp}`,
+    rangeRef: (stamp: string) => `referência: ${stamp}`,
     // Series + tooltip labels.
     spent: "Gasto",
     projected: "Projeção",
