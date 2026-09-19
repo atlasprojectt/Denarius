@@ -2,10 +2,6 @@ import "server-only";
 
 import { activeLevels, type ThresholdLevel } from "@/lib/engine/thresholds";
 import { monthStartUtc } from "@/lib/engine/period";
-import {
-  findNotificationLogLevels,
-  insertNotificationLogIfAbsent,
-} from "@/lib/db/admin";
 import { buildBudgetThresholdFinding } from "@/lib/findings/budget-threshold";
 import { dbFailure, logFailure, logSkipped } from "@/lib/logging/server-log";
 
@@ -14,6 +10,7 @@ import { planAlert } from "./plan";
 import { alertRecipients } from "./recipients";
 import { appBaseUrl, renderAlertEmail } from "./render";
 import { ORG_TARGET, tenantSnapshot } from "./snapshot";
+import { findNotificationLogLevels, insertNotificationLogIfAbsent } from "./supabase";
 
 // Event alerts for ONE tenant (issue #20): evaluate every budgeted scope,
 // apply the once-per-(target, level, period) dedup via notification_log, and
@@ -40,7 +37,19 @@ export async function sendBudgetAlerts(
   now: Date = new Date(),
 ): Promise<AlertRunResult> {
   const result: AlertRunResult = { tenantId, sent: 0, failed: 0, undeliverable: 0 };
-  const snapshot = await tenantSnapshot(tenantId, now);
+  let snapshot: Awaited<ReturnType<typeof tenantSnapshot>>;
+  try {
+    snapshot = await tenantSnapshot(tenantId, now);
+  } catch (cause) {
+    logFailure("notify.alert", tenantId, {
+      step: "snapshot",
+      ...dbFailure({
+        code: ((cause as { code?: unknown } | null)?.code as string | undefined) ?? null,
+      }),
+    });
+    result.failed = 1;
+    return result;
+  }
   if (snapshot.scopes.length === 0) return result;
 
   const periodMonth = monthStartUtc(now);
@@ -80,8 +89,8 @@ export async function sendBudgetAlerts(
     // A crossing exists but there is no way to deliver it: do NOT record the
     // log — the alert must fire on the first run after email is configured.
     if (channel === null || recipients.length === 0) {
-      // Recorded, because "no alert was sent" and "no threshold was crossed"
-      // look identical from the outside, and only one of them is a problem.
+      // Do not record it: the crossing must retry after delivery is configured
+      // or an Admin is added to the tenant.
       logSkipped("notify.alert", tenantId, {
         scope: scope.scope,
         level: plan.emailLevel,

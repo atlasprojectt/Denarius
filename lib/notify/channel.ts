@@ -51,8 +51,13 @@ export class ResendChannel implements NotificationChannel {
         return { ok: false, error: `resend responded ${response.status}` };
       }
       return { ok: true };
-    } catch {
-      return { ok: false, error: "resend request failed" };
+    } catch (error) {
+      // The cause is what turns "não funcionou" into something actionable
+      // (DNS, refused connection, a pasted key with a stray newline breaking
+      // the header…). A fetch failure never echoes header values or the body,
+      // and this reason still passes through the log redaction — no secret.
+      const cause = error instanceof Error ? error.message : "unknown";
+      return { ok: false, error: `resend request failed (${cause})` };
     }
   }
 }
