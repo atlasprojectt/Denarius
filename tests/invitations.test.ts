@@ -101,6 +101,7 @@ describe("invitation email", () => {
     expect(mail.subject).toContain("Acme");
     expect(mail.text).toContain(input.inviteUrl);
     expect(mail.html).toContain(input.inviteUrl);
+    expect(mail.html).toContain('src="https://denarius.app/brand/denarius-avatar.png"');
   });
 
   it("states the role it grants — the invitee learns what they are getting", () => {

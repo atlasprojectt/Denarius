@@ -37,8 +37,10 @@ const copy = {
 
 /** Minimal single-column HTML shell — legible on a phone, no CSS framework. */
 function htmlShell(title: string, bodyHtml: string, appUrl: string): string {
+  const logoUrl = new URL("/brand/denarius-avatar.png", appUrl).toString();
   return `<div style="max-width:480px;margin:0 auto;padding:24px 16px;font-family:system-ui,-apple-system,sans-serif;color:#1a1a1a">
-<p style="font-weight:700;font-size:14px;letter-spacing:0.02em">Denarius</p>
+<p style="margin:0 0 16px"><img src="${escapeHtml(logoUrl)}" width="48" height="48" alt="Denarius" style="display:block;width:48px;height:48px;border:0;border-radius:12px"></p>
+<p style="font-weight:700;font-size:14px;letter-spacing:0.02em;margin:0">Denarius</p>
 <h1 style="font-size:18px;line-height:1.4;margin:16px 0">${title}</h1>
 ${bodyHtml}
 <p style="margin:24px 0"><a href="${appUrl}" style="display:inline-block;background:#1a1a1a;color:#ffffff;text-decoration:none;padding:10px 20px;border-radius:8px;font-size:14px">${copy.open}</a></p>

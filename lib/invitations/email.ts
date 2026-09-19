@@ -48,6 +48,7 @@ export function renderInvite({
   const roleLabel = copy.roleLabel[role] ?? role;
   const roleNote = role === "admin" ? copy.adminNote : copy.viewerNote;
   const company = escapeHtml(companyName);
+  const logoUrl = new URL("/brand/denarius-avatar.png", inviteUrl).toString();
 
   const text = [
     copy.title(companyName),
@@ -62,7 +63,8 @@ export function renderInvite({
   ].join("\n");
 
   const html = `<div style="max-width:480px;margin:0 auto;padding:24px 16px;font-family:system-ui,-apple-system,sans-serif;color:#1a1a1a">
-<p style="font-weight:700;font-size:14px;letter-spacing:0.02em">Denarius</p>
+<p style="margin:0 0 16px"><img src="${escapeHtml(logoUrl)}" width="48" height="48" alt="Denarius" style="display:block;width:48px;height:48px;border:0;border-radius:12px"></p>
+<p style="font-weight:700;font-size:14px;letter-spacing:0.02em;margin:0">Denarius</p>
 <h1 style="font-size:18px;line-height:1.4;margin:16px 0">${copy.title(company)}</h1>
 <p style="font-size:14px;line-height:1.6">${escapeHtml(copy.body(roleLabel))}</p>
 <p style="font-size:14px;line-height:1.6;color:#6b7280">${escapeHtml(roleNote)}</p>
