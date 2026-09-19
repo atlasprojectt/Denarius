@@ -3,13 +3,13 @@ import "server-only";
 import { NextResponse } from "next/server";
 
 import { monthStartUtc } from "@/lib/engine/period";
-import {
-  listActiveProviderConnections,
-  listBudgetTenantIds,
-} from "@/lib/db/admin";
 import { dbFailure, logFailure, logOk } from "@/lib/logging/server-log";
 import { sendBudgetAlerts } from "@/lib/notify/alerts";
 import { emailChannel } from "@/lib/notify/channel";
+import {
+  listActiveProviderConnections,
+  listBudgetTenantIds,
+} from "@/lib/notify/supabase";
 import { closePeriods } from "@/lib/snapshot/close";
 import { runProviderSync, type ProviderName } from "@/lib/sync/provider-sync";
 

@@ -16,14 +16,14 @@ import { isoDaysAgo } from "@/lib/engine/week-change";
 import {
   findNotifiableUsers,
   findNotificationBudgets,
+  findNotificationDisplayCurrency,
   findNotificationProjectMap,
   findNotificationRecentCosts,
   findNotificationSubscriptions,
   findNotificationTeams,
   findNotificationUsage,
-  findTenantDisplayCurrency,
   type NotificationBudgetRow,
-} from "@/lib/db/admin";
+} from "./supabase";
 
 import type { NotifiableUser } from "./recipients";
 
@@ -74,9 +74,9 @@ export async function tenantSnapshot(
   const costSince =
     isoDaysAgo(now, 14) < monthStart ? isoDaysAgo(now, 14) : monthStart;
 
-  // The PostgREST path never checked these reads' `error` fields: a failed
-  // query arrived as null/[] and the snapshot degraded to its defaults
-  // (currency "BRL", no scopes). Each catch below replicates exactly that.
+  // Every read propagates its database error. The caller records a failed
+  // tenant run rather than turning a broken query into a false "no budget"
+  // or "no recipients" result.
   const [
     currencyOrNull,
     budgets,
@@ -87,14 +87,14 @@ export async function tenantSnapshot(
     costs,
     users,
   ] = await Promise.all([
-    findTenantDisplayCurrency(tenantId).catch(() => null),
-    findNotificationBudgets(tenantId, monthStart).catch(() => []),
-    findNotificationSubscriptions(tenantId).catch(() => []),
-    findNotificationTeams(tenantId).catch(() => []),
-    findNotificationUsage(tenantId, monthStart).catch(() => []),
-    findNotificationProjectMap(tenantId).catch(() => []),
-    findNotificationRecentCosts(tenantId, costSince).catch(() => []),
-    findNotifiableUsers(tenantId).catch(() => []),
+    findNotificationDisplayCurrency(tenantId),
+    findNotificationBudgets(tenantId, monthStart),
+    findNotificationSubscriptions(tenantId),
+    findNotificationTeams(tenantId),
+    findNotificationUsage(tenantId, monthStart),
+    findNotificationProjectMap(tenantId),
+    findNotificationRecentCosts(tenantId, costSince),
+    findNotifiableUsers(tenantId),
   ]);
 
   const currency = currencyOrNull ?? "BRL";

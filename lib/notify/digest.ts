@@ -2,7 +2,7 @@ import "server-only";
 
 import { weekOverWeek } from "@/lib/engine/week-change";
 import { topDrivers } from "@/lib/engine/drivers";
-import { logFailure, logSkipped } from "@/lib/logging/server-log";
+import { dbFailure, logFailure, logSkipped } from "@/lib/logging/server-log";
 import type { Narrator } from "@/lib/narrate/client";
 import {
   buildDigestFacts,
@@ -34,7 +34,18 @@ export async function sendWeeklyDigest(
   narrator: Narrator | null,
   now: Date = new Date(),
 ): Promise<DigestRunResult> {
-  const snapshot = await tenantSnapshot(tenantId, now);
+  let snapshot: Awaited<ReturnType<typeof tenantSnapshot>>;
+  try {
+    snapshot = await tenantSnapshot(tenantId, now);
+  } catch (cause) {
+    logFailure("notify.digest", tenantId, {
+      step: "snapshot",
+      ...dbFailure({
+        code: ((cause as { code?: unknown } | null)?.code as string | undefined) ?? null,
+      }),
+    });
+    return { tenantId, outcome: "failed", narrated: false };
+  }
 
   // No org budget → cold start; there is no verdict to summarize yet.
   if (snapshot.cockpit.state !== "ready") {

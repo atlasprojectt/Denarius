@@ -3,11 +3,11 @@ import "server-only";
 import { NextResponse } from "next/server";
 
 import { monthStartUtc } from "@/lib/engine/period";
-import { listDigestTenantIds } from "@/lib/db/admin";
 import { dbFailure, logFailure, logOk } from "@/lib/logging/server-log";
 import { anthropicNarrator } from "@/lib/narrate/client";
 import { emailChannel } from "@/lib/notify/channel";
 import { sendWeeklyDigest } from "@/lib/notify/digest";
+import { listDigestTenantIds } from "@/lib/notify/supabase";
 
 // Weekly executive digest (issue #20) — Vercel Cron, Fridays (vercel.json).
 // Cross-tenant like the sync cron and guarded the same way: bearer

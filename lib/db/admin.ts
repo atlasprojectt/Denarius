@@ -829,10 +829,12 @@ export async function insertNotificationLogIfAbsent(
 }
 
 // ---------------------------------------------------------------------------
-// Digest cron + notification snapshot (stage 7) — app/api/cron/digest/route.ts
-// and lib/notify/snapshot.ts. All per-tenant reads mirror the columns and
-// filters the PostgREST path used; NUMERIC columns arrive as wire strings and
-// are converted here where callers expect numbers.
+// Privileged SQL helpers for backend reads that still use the Neon migration
+// path (including closed snapshots). The notification cron deliberately does
+// not use these helpers: its source-of-truth adapter lives in
+// lib/notify/supabase.ts so it reads the same database as authenticated pages.
+// NUMERIC columns arrive as wire strings and are converted where callers
+// expect numbers.
 // ---------------------------------------------------------------------------
 
 /** Tenants with an org budget this period — the digest audience. Duplicates
@@ -1227,7 +1229,9 @@ export async function findInvitationByTokenHash(
 }
 
 // ---------------------------------------------------------------------------
-// Daily cron listing (stage 2) — app/api/cron/sync/route.ts.
+// Legacy Neon cron listing helpers. The notification cron uses the explicit
+// Supabase adapter in lib/notify/supabase.ts while the database migration is
+// still split.
 // ---------------------------------------------------------------------------
 
 export type ActiveConnection = { tenant_id: string; provider: string };
