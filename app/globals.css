@@ -12,6 +12,10 @@
   border-radius: var(--radius-standard);
 }
 
+@utility rounded-control {
+  border-radius: var(--radius-control);
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -55,6 +59,8 @@
   --color-chart-3: var(--chart-3);
   --color-chart-2: var(--chart-2);
   --color-chart-1: var(--chart-1);
+  --color-bar-track: var(--bar-track);
+  --color-bar-ghost: var(--bar-ghost);
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-border: var(--border);
@@ -79,6 +85,7 @@
   --color-surface-elevated: var(--surface-elevated);
   --color-surface-hover: var(--surface-hover);
   --color-surface-selected: var(--surface-selected);
+  --color-content-supporting: var(--content-supporting);
   --radius-sm: 0.375rem;
   --radius-md: 0.625rem;
   --radius-lg: 0.875rem;
@@ -87,7 +94,8 @@
   --radius-3xl: 1.25rem;
   --radius-4xl: 1.5rem;
   --radius-pill: 9999px;
-  --radius-standard: 0.625rem;
+  --radius-standard: 0.5rem;
+  --radius-control: 0.375rem;
 }
 
 :root {
@@ -289,6 +297,20 @@ input[type="number"]::-webkit-outer-spin-button {
   }
 }
 
+@keyframes denarius-reveal-bar-build-vertical {
+  0% {
+    opacity: 0;
+    transform: scaleY(0);
+  }
+  18% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+    transform: scaleY(1);
+  }
+}
+
 @keyframes denarius-reveal-wipe {
   0% {
     clip-path: inset(0 100% 0 0);
@@ -317,6 +339,16 @@ input[type="number"]::-webkit-outer-spin-button {
   transform-origin: left center;
 }
 
+/* A vertical bar must reveal along its height, not collapse its width. The
+   axis marker is intentionally opt-in so existing horizontal bars keep the
+   same origin and timing. */
+[data-reveal-state="idle"] [data-reveal-bar][data-bar-orientation="vertical"],
+[data-reveal-state="idle"][data-bar-orientation="vertical"] [data-reveal-bar],
+[data-reveal-state="idle"] [data-bar-orientation="vertical"] [data-reveal-bar] {
+  transform: scaleY(0);
+  transform-origin: center bottom;
+}
+
 [data-reveal-state="idle"] [data-reveal-wipe] {
   clip-path: inset(0 100% 0 0);
   opacity: 0.35;
@@ -332,6 +364,13 @@ input[type="number"]::-webkit-outer-spin-button {
     animation: denarius-reveal-bar-build 1150ms var(--motion-ease-expressive) both;
     transform-origin: left center;
     will-change: transform, opacity;
+  }
+
+  [data-reveal-state="running"] [data-reveal-bar][data-bar-orientation="vertical"],
+  [data-reveal-state="running"][data-bar-orientation="vertical"] [data-reveal-bar],
+  [data-reveal-state="running"] [data-bar-orientation="vertical"] [data-reveal-bar] {
+    animation-name: denarius-reveal-bar-build-vertical;
+    transform-origin: center bottom;
   }
 
   [data-reveal-state="running"] [data-reveal-wipe] {
@@ -535,16 +574,16 @@ input[type="number"]::-webkit-outer-spin-button {
    source of truth across every route.
 --------------------------------------------------------------------------- */
 :root {
-  /* Light-mode inversion (founder-directed): the app shell (canvas) is the
-     darkest of the three main planes, while the sidebar (deep) and cards sit
-     lighter above it. Dark theme keeps the original order (rail deepest). */
-  --surface-deep: oklch(0.985 0.001 106.423);
-  --surface-card: oklch(0.97 0.001 106.424);
-  --surface-canvas: oklch(0.955 0.002 106.423);
-  --surface-control: oklch(0.965 0.002 106.423);
+  /* Shell/sidebar hierarchy: the app shell (canvas) is paper-white, while
+     the sidebar (deep) sits one step darker below it. The light ladder keeps
+     enough distance between planes for the cockpit to scan without seams. */
+  --surface-deep: oklch(0.925 0.004 80);
+  --surface-card: oklch(0.955 0.003 80);
+  --surface-canvas: oklch(0.985 0.001 106.423);
+  --surface-control: oklch(0.95 0.003 80);
   --surface-elevated: oklch(1 0 0);
-  --surface-hover: oklch(0.945 0.003 106.423);
-  --surface-selected: oklch(0.93 0.004 106.423);
+  --surface-hover: oklch(0.935 0.004 80);
+  --surface-selected: oklch(0.91 0.005 80);
   --background: var(--surface-canvas);
   --foreground: oklch(0.147 0.004 49.25);
   --card: var(--surface-card);
@@ -570,17 +609,23 @@ input[type="number"]::-webkit-outer-spin-button {
   --secondary-foreground: oklch(0.21 0.006 285.885);
   --muted: var(--surface-control);
   --muted-foreground: oklch(0.553 0.013 58.071);
+  /* Supporting copy is quieter than the normal muted tier without relying on
+     opacity, so it remains readable in both themes. */
+  --content-supporting: oklch(0.575 0.012 58.071);
   --accent: var(--surface-hover);
   --accent-foreground: oklch(0.216 0.006 56.043);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.941 0.002 48.717);
-  --input: oklch(0.941 0.002 48.717);
+  --border: oklch(0.89 0.009 58);
+  --input: oklch(0.89 0.009 58);
   --ring: var(--focus-ring);
   --chart-1: var(--brand-accent);
   --chart-2: var(--brand-accent-light);
   --chart-3: color-mix(in oklab, var(--foreground) 70%, transparent);
   --chart-4: color-mix(in oklab, var(--foreground) 52%, transparent);
   --chart-5: color-mix(in oklab, var(--foreground) 36%, transparent);
+  --chart-grid: color-mix(in oklab, var(--foreground) 9%, transparent);
+  --bar-track: color-mix(in oklab, var(--foreground) 15%, transparent);
+  --bar-ghost: color-mix(in oklab, var(--foreground) 25%, transparent);
   --radius: 0.875rem;
   --sidebar: var(--surface-deep);
   --sidebar-foreground: oklch(0.147 0.004 49.25);
@@ -588,7 +633,7 @@ input[type="number"]::-webkit-outer-spin-button {
   --sidebar-primary-foreground: oklch(0.98 0.016 73.684);
   --sidebar-accent: var(--surface-selected);
   --sidebar-accent-foreground: oklch(0.216 0.006 56.043);
-  --sidebar-border: oklch(0.941 0.002 48.717);
+  --sidebar-border: oklch(0.89 0.009 58);
   --sidebar-ring: var(--focus-ring);
 
   /* Semaphore Ã¢â‚¬â€ budget status only. Strong = bar fills, dots & chart strokes (graphic ink, no running text:
@@ -618,19 +663,26 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 
 .dark {
-  --surface-deep: oklch(0.11 0.003 49.25);
-  --surface-card: oklch(0.125 0.003 49.25);
-  --surface-canvas: oklch(0.147 0.004 49.25);
-  --surface-control: oklch(0.168 0.004 50);
-  --surface-elevated: oklch(0.19 0.005 52);
-  --surface-hover: oklch(0.21 0.006 52);
-  --surface-selected: oklch(0.23 0.006 52);
+  /* Same ladder as light mode (founder-directed 2026-09-20): shell lightest,
+     rail darker below it, with the selected destination lifted so it reads
+     clearly against the dark rail.
+     Structural borders use a restrained 3.5–4% white line. The previous 7%
+     token, combined with the frame's foreground mix, read as a bright seam
+     against the dark canvas. Interactive planes stay close to the canvas so
+     hover and selected states feel calm rather than high-contrast. */
+  --surface-deep: oklch(0.115 0.004 49.25);
+  --surface-card: oklch(0.135 0.005 52);
+  --surface-canvas: oklch(0.15 0.006 52);
+  --surface-control: oklch(0.14 0.005 52);
+  --surface-elevated: oklch(0.18 0.006 52);
+  --surface-hover: oklch(0.125 0.005 52);
+  --surface-selected: oklch(0.17 0.006 52);
   --background: var(--surface-canvas);
-  --foreground: oklch(0.985 0.001 106.423);
+  --foreground: oklch(0.86 0.01 75);
   --card: var(--surface-card);
-  --card-foreground: oklch(0.985 0.001 106.423);
+  --card-foreground: oklch(0.86 0.01 75);
   --popover: var(--surface-elevated);
-  --popover-foreground: oklch(0.985 0.001 106.423);
+  --popover-foreground: oklch(0.86 0.01 75);
   --brand-accent: #ff6524;
   --brand-accent-light: #ff9a70;
   --brand-action: #c7480d;
@@ -643,39 +695,45 @@ input[type="number"]::-webkit-outer-spin-button {
      while keeping white-text AA. */
   --primary-hover: #cc4a0a;
   --secondary: var(--surface-control);
-  --secondary-foreground: oklch(0.985 0 0);
+  --secondary-foreground: oklch(0.86 0.01 75);
   --muted: var(--surface-control);
-  --muted-foreground: oklch(0.709 0.01 56.259);
+  --muted-foreground: oklch(0.64 0.01 56.259);
+  --content-supporting: oklch(0.60 0.01 56.259);
   --accent: var(--surface-hover);
-  --accent-foreground: oklch(0.985 0.001 106.423);
+  --accent-foreground: oklch(0.86 0.01 75);
   --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 7%);
-  --input: oklch(1 0 0 / 11%);
+  --border: oklch(1 0 0 / 4%);
+  --input: oklch(1 0 0 / 6%);
   --ring: var(--focus-ring);
   --chart-1: var(--brand-accent);
   --chart-2: var(--brand-accent-light);
   --chart-3: color-mix(in oklab, var(--foreground) 70%, transparent);
   --chart-4: color-mix(in oklab, var(--foreground) 52%, transparent);
   --chart-5: color-mix(in oklab, var(--foreground) 36%, transparent);
-  /* The inset shell keeps the approved order: rail, recessed cards, canvas,
-     controls and transient surfaces. */
+  --chart-grid: var(--border);
+  /* Empty bar slots stay recessed against the dark surfaces while keeping
+     enough contrast to reveal the bar's full horizontal extent. */
+  --bar-track: color-mix(in oklab, var(--surface-deep) 60%, var(--surface-card));
+  --bar-ghost: color-mix(in oklab, var(--surface-deep) 42%, var(--surface-card));
+  /* The inset shell follows the swap: canvas lightest, recessed cards,
+     rail, controls, transient surfaces, interactive states darkest. */
   --sidebar: var(--surface-deep);
-  --sidebar-foreground: oklch(0.985 0.001 106.423);
+  --sidebar-foreground: oklch(0.86 0.01 75);
   --sidebar-primary: oklch(0.705 0.213 47.604);
   --sidebar-primary-foreground: oklch(0.98 0.016 73.684);
   --sidebar-accent: var(--surface-selected);
-  --sidebar-accent-foreground: oklch(0.985 0.001 106.423);
-  --sidebar-border: oklch(1 0 0 / 7%);
+  --sidebar-accent-foreground: oklch(0.88 0.01 75);
+  --sidebar-border: oklch(1 0 0 / 3.5%);
   --sidebar-ring: var(--focus-ring);
 
   --status-green: #22c55e;
-  --status-green-soft: #10231787;
+  --status-green-soft: #10231766;
   --status-green-fg: #86efac;
   --status-amber: #f59e0b;
-  --status-amber-soft: #2a200e87;
+  --status-amber-soft: #2a200e66;
   --status-amber-fg: #fcd34d;
   --status-red: #ef4444;
-  --status-red-soft: #2c131387;
+  --status-red-soft: #2c131366;
   --status-red-fg: #fca5a5;
 
   --badge-neutral: #a8a29e;
@@ -704,7 +762,39 @@ input[type="number"]::-webkit-outer-spin-button {
    soft ring, one step quieter than the structural borders. */
 [data-slot="card"] {
   background-color: var(--card);
-  --tw-ring-color: color-mix(in oklab, var(--foreground) 6%, transparent);
+  --tw-ring-color: color-mix(in oklab, var(--foreground) 9%, transparent);
+}
+
+.dark [data-slot="card"] {
+  /* The dark canvas already supplies depth; the card ring should whisper
+     separation instead of drawing a second border around every panel. */
+  --tw-ring-color: color-mix(in oklab, var(--foreground) 3.5%, transparent);
+}
+
+/* Cockpit frame: the content frame and the shell contour share one structural
+   border level. Dark mode uses the lower-alpha token directly; mixing it with
+   foreground made the frame read as a bright inner seam. Unlayered, so this
+   wins over the `border` utility. */
+[data-slot="cockpit-card-frame"] {
+  border-color: color-mix(in oklab, var(--sidebar-border) 96%, var(--foreground));
+}
+
+.dark [data-slot="cockpit-card-frame"] {
+  /* The dark content frame and shell contour are the same structural edge. */
+  border-color: var(--sidebar-border);
+}
+
+/* SpendTrendChart owns its hover ruler and tooltip. Recharts can still mount
+   one of several cursor shapes in some pointer paths; the default shape reads
+   as a stray colored block, so keep every internal cursor variant invisible. */
+[data-slot="chart"] .recharts-tooltip-cursor,
+[data-slot="chart"] .recharts-rectangle.recharts-tooltip-cursor,
+[data-slot="chart"] .recharts-curve.recharts-tooltip-cursor {
+  display: none !important;
+  fill: transparent !important;
+  stroke: transparent !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
 }
 
 /* ---------------------------------------------------------------------------

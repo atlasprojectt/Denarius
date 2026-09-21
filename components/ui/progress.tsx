@@ -4,33 +4,67 @@ import { Progress as ProgressPrimitive } from "@base-ui/react/progress"
 
 import { cn } from "@/lib/utils"
 
+type ProgressOrientation = "horizontal" | "vertical"
+
+type ProgressProps = ProgressPrimitive.Root.Props & {
+  orientation?: ProgressOrientation
+}
+
 function Progress({
   className,
   children,
   value,
+  min = 0,
+  max = 100,
+  orientation = "horizontal",
   ...props
-}: ProgressPrimitive.Root.Props) {
+}: ProgressProps) {
+  const percentage =
+    value === null || !Number.isFinite(value) || max <= min
+      ? null
+      : Math.min(1, Math.max(0, (value - min) / (max - min)))
+
   return (
     <ProgressPrimitive.Root
       value={value}
+      min={min}
+      max={max}
       data-slot="progress"
-      className={cn("flex flex-wrap gap-3", className)}
+      data-orientation={orientation}
+      data-bar-orientation={orientation}
+      aria-orientation={orientation}
+      className={cn(
+        "group/progress flex gap-3",
+        orientation === "vertical" ? "flex-col" : "flex-row flex-wrap",
+        className,
+      )}
       {...props}
     >
       {children}
-      <ProgressTrack>
-        <ProgressIndicator />
+      <ProgressTrack orientation={orientation}>
+        <ProgressIndicator orientation={orientation} percentage={percentage} />
       </ProgressTrack>
     </ProgressPrimitive.Root>
   )
 }
 
-function ProgressTrack({ className, ...props }: ProgressPrimitive.Track.Props) {
+type ProgressTrackProps = ProgressPrimitive.Track.Props & {
+  orientation?: ProgressOrientation
+}
+
+function ProgressTrack({
+  className,
+  orientation = "horizontal",
+  ...props
+}: ProgressTrackProps) {
   return (
     <ProgressPrimitive.Track
       className={cn(
-        "relative flex h-1 w-full items-center overflow-x-hidden rounded-md bg-muted",
-        className
+        "relative flex items-center overflow-hidden rounded-md bg-muted",
+        orientation === "vertical"
+          ? "h-full w-1 flex-1 flex-col"
+          : "h-1 w-full",
+        className,
       )}
       data-slot="progress-track"
       {...props}
@@ -40,15 +74,39 @@ function ProgressTrack({ className, ...props }: ProgressPrimitive.Track.Props) {
 
 function ProgressIndicator({
   className,
+  orientation = "horizontal",
+  percentage = null,
+  style,
   ...props
-}: ProgressPrimitive.Indicator.Props) {
+}: ProgressPrimitive.Indicator.Props & {
+  orientation?: ProgressOrientation
+  percentage?: number | null
+}) {
+  const verticalValues = {
+    width: "100%",
+    height: percentage === null ? "35%" : `${percentage * 100}%`,
+    insetInlineStart: "auto",
+    insetBlockEnd: 0,
+  }
+  const verticalStyle =
+    orientation === "vertical"
+      ? typeof style === "function"
+        ? (state: ProgressPrimitive.Indicator.State) => ({
+            ...style(state),
+            ...verticalValues,
+          })
+        : { ...style, ...verticalValues }
+      : style
+
   return (
     <ProgressPrimitive.Indicator
       data-slot="progress-indicator"
       className={cn(
-        "h-full bg-primary transition-[width] duration-(--motion-duration-standard) ease-(--motion-ease-standard)",
-        className
+        "bg-primary transition-[width,height] duration-(--motion-duration-standard) ease-(--motion-ease-standard)",
+        orientation === "vertical" ? "w-full" : "h-full",
+        className,
       )}
+      style={verticalStyle}
       {...props}
     />
   )

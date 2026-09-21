@@ -16,45 +16,53 @@ import type { CSSProperties } from "react";
 // ends. A mask carries alpha only, so the color still comes from each layer's
 // `color` exactly as before, and filters like `brightness-115` keep working.
 
-/** One tick tile: a rounded bar of `width` on a `step` period. `mask-size`
- *  stretches the tile to the bar's height, which stretches the corner radius
- *  with it — so `authoredHeight` should track the heights the variant is used
- *  at, or a tall bar ends up with pill-shaped caps. `fill='black'` is opaque,
- *  which is all an alpha mask reads. */
+/** One tick tile: a compact segment of `width` on a `step` period. The
+ *  authored SVG is scaled to the rendered bar height by `mask-size`; the cap
+ *  radius is explicit so compact bars can stay crisp while the hero variant
+ *  can become a full vertical pill. `fill` is opaque, which is all an alpha
+ *  mask reads. */
 const tickMask = (
   width: number,
   step: number,
   authoredHeight: number,
+  tickHeight = authoredHeight,
+  capRadius = 1.5,
 ): CSSProperties => {
   const h = authoredHeight;
-  const svg = `%3Csvg xmlns='http://www.w3.org/2000/svg' width='${step}' height='${h}'%3E%3Crect width='${width}' height='${h}' rx='1.5' fill='black'/%3E%3C/svg%3E`;
-  const image = `url("data:image/svg+xml,${svg}")`;
-  const size = `${step}px 100%`;
+  const y = (h - tickHeight) / 2;
+  const radius = Math.min(capRadius, width / 2, tickHeight / 2);
+  const svg = `%3Csvg xmlns='http://www.w3.org/2000/svg' width='${step}' height='${h}'%3E%3Crect x='0' y='${y}' width='${width}' height='${tickHeight}' rx='${radius}' ry='${radius}' fill='black'/%3E%3C/svg%3E`;
+  const tickImage = `url("data:image/svg+xml,${svg}")`;
   return {
     backgroundColor: "currentColor",
-    maskImage: image,
-    maskSize: size,
+    // Keep one mask layer per tile. A separate edge strip makes the first
+    // and last pills partly square, which is especially visible on the hero
+    // bar at small widths.
+    maskImage: tickImage,
+    maskSize: `${step}px 100%`,
     maskRepeat: "repeat-x",
     // Inline styles are never autoprefixed; without this Safari < 15.4 drops
     // the mask and paints a solid bar instead of ticks.
-    WebkitMaskImage: image,
-    WebkitMaskSize: size,
+    WebkitMaskImage: tickImage,
+    WebkitMaskSize: `${step}px 100%`,
     WebkitMaskRepeat: "repeat-x",
   };
 };
 
-/** Standard tick texture: 4.5px rounded tick on a 7px grid, in currentColor.
- *  Authored at 12px for the ~8–14px bars it paints. */
-export const TICKS: CSSProperties = tickMask(4.5, 7, 12);
+/** Standard compact texture: horizontal segments on a 13px grid. The 10px
+ *  authored tick leaves a deliberate 3px seam, keeping short bars legible
+ *  instead of letting neighboring segments melt together. */
+export const TICKS: CSSProperties = tickMask(10, 13, 12, 10);
 
 /** Bold variant for the hero "Gasto do mês" bar, which is also the tallest —
- *  a fat tick on a wide period, so it reads as chunky WITHOUT closing the gap
- *  (founder-directed: the period grew with the tick, holding the air at 4px).
- *  Authored at its own 32px so the caps stay 1.5px instead of stretching into
- *  pills. Its own period is safe because the alignment invariant is per-bar:
+ *  a fat vertical pill on a wide period, so it reads as chunky WITHOUT
+ *  closing the gap (the period grew with the tick, holding the air at 4px).
+ *  Its own period is safe because the alignment invariant is per-bar:
  *  PacingBar paints track, ghost and fill all with THIS variant, and no
  *  standard-grid bar is stacked under it. */
-export const TICKS_BOLD: CSSProperties = tickMask(7.5, 11.5, 32);
+// The hero's tall segments are full vertical pills: the top and base stay
+// rounded at every fill percentage, including the leading clipped segment.
+export const TICKS_BOLD: CSSProperties = tickMask(7.5, 11.5, 32, 32, 3.75);
 
 /** clip-path inset cutting a full-width layer to the [from..to] fraction. */
 export const cut = (from: number, to: number): string =>
