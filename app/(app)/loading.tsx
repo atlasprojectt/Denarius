@@ -14,9 +14,9 @@ export default function AppLoading() {
         <Skeleton className="h-4 w-32" />
       </div>
 
-      <div className="grid items-stretch gap-3 lg:grid-cols-2 xl:grid-cols-[minmax(0,1.55fr)_minmax(18rem,24rem)_minmax(0,1.45fr)]">
+      <div className="grid items-stretch gap-3 lg:grid-cols-2 xl:grid-cols-[minmax(18rem,1.45fr)_minmax(19rem,1.25fr)_minmax(18rem,1.3fr)]">
         <div className="flex flex-col gap-1 rounded-xl bg-card p-1 lg:col-span-2 xl:col-span-1">
-          <div className="px-3 py-1.5">
+          <div className="min-h-9 px-3 py-1.5">
             <Skeleton className="h-4 w-28" />
           </div>
           <div className="flex flex-col gap-5 rounded-lg bg-surface-elevated p-5 ring-1 ring-foreground/10">
@@ -29,8 +29,8 @@ export default function AppLoading() {
             </div>
           </div>
         </div>
-        <div className="flex flex-col gap-1 rounded-xl bg-card p-1 lg:self-stretch xl:aspect-[1.16/1] xl:max-w-[24rem] xl:self-start">
-          <div className="px-3 py-1.5"><Skeleton className="h-4 w-40" /></div>
+        <div className="flex h-full flex-col gap-1 rounded-xl bg-card p-1">
+          <div className="min-h-9 px-3 py-1.5"><Skeleton className="h-4 w-40" /></div>
           <div className="flex flex-1 flex-col gap-4 rounded-lg bg-surface-elevated p-5 ring-1 ring-foreground/10">
           <Skeleton className="h-7 w-32" />
           <Skeleton className="h-2 w-full" />
@@ -39,7 +39,7 @@ export default function AppLoading() {
           </div>
         </div>
         <div className="flex min-h-full flex-col gap-1 rounded-xl bg-card p-1">
-          <div className="px-3 py-1.5"><Skeleton className="h-4 w-32" /></div>
+          <div className="min-h-9 px-3 py-1.5"><Skeleton className="h-4 w-32" /></div>
           <div className="flex flex-1 flex-col gap-4 rounded-lg bg-surface-elevated p-5 ring-1 ring-foreground/10">
           <div className="flex flex-1 flex-col justify-center gap-2.5">
             <Skeleton className="h-4 w-full" />
@@ -53,13 +53,13 @@ export default function AppLoading() {
 
       <div className="grid flex-1 items-stretch gap-3 lg:grid-cols-2">
         <div className="flex min-h-[220px] flex-col gap-1 rounded-xl bg-card p-1">
-          <div className="px-3 py-1.5"><Skeleton className="h-4 w-32" /></div>
+          <div className="min-h-10 px-3 py-1.5"><Skeleton className="h-4 w-32" /></div>
           <div className="flex flex-1 flex-col gap-4 rounded-lg bg-surface-elevated p-5 ring-1 ring-foreground/10">
           <Skeleton className="h-44 w-full" />
           </div>
         </div>
         <div className="flex flex-col gap-1 rounded-xl bg-card p-1">
-          <div className="px-3 py-1.5"><Skeleton className="h-4 w-44" /></div>
+          <div className="min-h-10 px-3 py-1.5"><Skeleton className="h-4 w-44" /></div>
           <div className="flex flex-1 flex-col gap-3 rounded-lg bg-surface-elevated p-5 ring-1 ring-foreground/10">
           <Skeleton className="h-4 w-full" />
           <Skeleton className="h-10 w-full" />

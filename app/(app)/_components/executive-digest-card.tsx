@@ -76,17 +76,17 @@ export function ExecutiveDigestCard({
 
   return (
     <CockpitCard
-      className="w-full min-w-0 lg:self-stretch xl:aspect-[1.16/1] xl:min-h-0 xl:max-w-[24rem] xl:self-start"
+      className="h-full w-full min-w-0"
       aria-labelledby="home-digest-title"
     >
-      <CockpitCardHeader>
+      <CockpitCardHeader className="min-h-9">
         <CockpitCardTitle id="home-digest-title" className="flex items-center gap-2">
           <RiSparkling2Line className="size-4 text-muted-foreground" aria-hidden />
           {homeCopy.digest.title}
         </CockpitCardTitle>
       </CockpitCardHeader>
       <CockpitCardFrame>
-      <CockpitCardContent className="flex min-h-[10rem] flex-1 flex-col justify-center px-8 py-4 text-[17px]/[1.6] font-medium text-muted-foreground sm:px-10">
+      <CockpitCardContent className="flex min-h-[10rem] flex-1 flex-col justify-center px-6 py-4 text-[17px]/[1.6] font-medium text-muted-foreground sm:px-8">
         {cockpit.state === "cold-start" && (
           <p
             data-digest-lines

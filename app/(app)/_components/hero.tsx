@@ -69,7 +69,7 @@ export function Hero({
 
   return (
     <CockpitCard className="min-h-full" aria-labelledby="home-hero-title">
-      <CockpitCardHeader>
+      <CockpitCardHeader className="min-h-9">
         <CockpitCardTitle id="home-hero-title" className="flex items-center gap-2">
           <RiWallet3Line className="size-4 text-muted-foreground" aria-hidden />
           {c.title}

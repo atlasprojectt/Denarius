@@ -245,7 +245,7 @@ export function AppSidebar({
               affirmative state of the budget. Both are silent when they have
               nothing to say. */}
           <StaleBanner items={staleConnections} />
-          {allClear && <AllClear />}
+          {allClear && staleConnections.length === 0 && <AllClear />}
           <SidebarMenu>
             <SidebarMenuItem>
               <DropdownMenu>

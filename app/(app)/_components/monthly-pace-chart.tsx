@@ -145,7 +145,7 @@ export function MonthlyPaceChart({
   if (todayValue <= 0) {
     return (
       <CockpitCard data-monthly-pace className="min-h-full [--chart-surface:var(--surface-elevated)]" aria-labelledby="home-pace-title-empty">
-        <CockpitCardHeader>
+        <CockpitCardHeader className="min-h-10">
           <div className="flex items-center gap-2">
             <CockpitCardTitle id="home-pace-title-empty" className="flex items-center gap-2">
               <RiLineChartLine className="size-4 text-muted-foreground" aria-hidden />
@@ -195,7 +195,7 @@ export function MonthlyPaceChart({
 
   return (
     <CockpitCard data-monthly-pace className="min-h-full [--chart-surface:var(--surface-elevated)]" aria-labelledby="home-pace-title">
-      <CockpitCardHeader>
+      <CockpitCardHeader className="min-h-10">
         <div className="flex items-center gap-2">
           <CockpitCardTitle id="home-pace-title" className="flex items-center gap-2">
             <RiLineChartLine className="size-4 text-muted-foreground" aria-hidden />
@@ -206,7 +206,7 @@ export function MonthlyPaceChart({
       </CockpitCardHeader>
       <CockpitCardFrame>
       <CockpitCardContent className="flex min-h-0 flex-1 flex-col justify-center">
-        <div className="flex flex-wrap gap-x-5 gap-y-1.5">
+        <div className="flex flex-wrap gap-x-10 gap-y-1.5">
           <Metric label={c.realizedLabel} value={money(todayValue, currency)} />
           <Metric
             label={c.paceTodayLabel}

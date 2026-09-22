@@ -67,7 +67,7 @@ export function ProviderComposition({
 
   return (
     <CockpitCard className="min-h-full" aria-labelledby="home-composition-title">
-      <CockpitCardHeader className="flex-col items-start gap-1">
+      <CockpitCardHeader className="min-h-9">
         <CockpitCardTitle id="home-composition-title" className="flex items-center gap-2">
           <RiPieChart2Line className="size-4 text-muted-foreground" aria-hidden />
           {c.title}
@@ -75,10 +75,10 @@ export function ProviderComposition({
             <InfoTip label={c.infoLabel}>{c.info}</InfoTip>
           </span>
         </CockpitCardTitle>
-        <p className="text-xs text-content-supporting">O total combina provedores e assentos no câmbio congelado do período.</p>
       </CockpitCardHeader>
       <CockpitCardFrame>
       <CockpitCardContent className="flex flex-1 flex-col">
+        <p className="mb-3 text-xs text-content-supporting">O total combina provedores e assentos no câmbio congelado do período.</p>
         {entries.length === 0 ? (
           <p className="text-sm text-muted-foreground">{c.empty}</p>
         ) : (

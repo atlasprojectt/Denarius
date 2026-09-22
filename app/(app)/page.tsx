@@ -133,7 +133,7 @@ export default async function HomePage() {
           pushing the page into a scroll — the pace chart compacts and the
           teams table scrolls internally. Row 1 hugs its content (the dense
           hero sets the height) and row 2 takes every leftover pixel. */}
-      <div className="home-cockpit grid items-stretch gap-3 lg:grid-cols-2 xl:grid-cols-[minmax(0,1.55fr)_minmax(18rem,24rem)_minmax(0,1.45fr)]">
+      <div className="home-cockpit grid items-stretch gap-3 lg:grid-cols-2 xl:grid-cols-[minmax(18rem,1.45fr)_minmax(19rem,1.25fr)_minmax(18rem,1.3fr)]">
         <div className="min-w-0 min-h-0 lg:col-span-2 xl:col-span-1">
           <Hero
             org={org}

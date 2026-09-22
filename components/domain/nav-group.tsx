@@ -52,7 +52,7 @@ export function NavGroup({ label, items }: SidebarNavGroup) {
           opacity-0` but leaves it in flow, hovering OVER the first menu item
           and swallowing its clicks and tooltip hovers (2026-07-11 audit). */}
       {label && (
-        <SidebarGroupLabel className="text-sidebar-foreground/55 group-data-[collapsible=icon]:pointer-events-none">
+        <SidebarGroupLabel className="h-6 text-sidebar-foreground/55 group-data-[collapsible=icon]:-mt-6 group-data-[collapsible=icon]:pointer-events-none">
           {label}
         </SidebarGroupLabel>
       )}

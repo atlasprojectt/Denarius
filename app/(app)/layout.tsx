@@ -126,7 +126,7 @@ export default async function AppLayout({
               RevealController persists across navigations and replays them.
               flex column so a page can opt into filling the viewport height
               (Home's cockpit grid) with flex-1. */}
-          <div data-app-content data-reveal-root className="flex flex-1 flex-col px-4 py-8 md:px-8">
+          <div data-app-content data-reveal-root className="flex flex-1 flex-col px-4 py-6 md:px-8 md:py-8">
             {children}
           </div>
           <RevealController />

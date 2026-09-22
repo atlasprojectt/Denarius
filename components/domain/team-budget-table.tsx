@@ -114,24 +114,17 @@ export function TeamBudgetTable({
 
   return (
     // `min-h-full` makes the card fill its grid cell so it ends on the same line
-    // as the pace chart beside it (Home's 2x2 cockpit stretches its row); the
+    // as the pace chart beside it (Home's responsive cockpit stretches its row); the
     // scroller below keeps a long roster inside that height instead of pushing
     // past the row into the observations footer. `xl:h-full` locks it to the
     // constrained grid track so the page stays fixed and only this list scrolls.
     <CockpitCard className="min-h-full xl:h-full">
-      <CockpitCardHeader className="flex-col items-start gap-2 sm:flex-row sm:justify-between">
+      <CockpitCardHeader className="min-h-10 justify-between gap-2">
         <div className="min-w-0">
           <CockpitCardTitle id="team-budget-title" className="flex items-center gap-2">
             <RiTeamLine className="size-4 text-muted-foreground" aria-hidden />
             {c.title}
           </CockpitCardTitle>
-          <CardDescription className="text-content-supporting">
-            {teams.length === 0
-              ? c.emptyBody
-              : attentionCount > 0
-                ? c.subtitleAttention(attentionCount, teams.length)
-                : c.subtitleAllOk(teams.length)}
-          </CardDescription>
         </div>
         <Button
           variant="secondary"
@@ -145,8 +138,15 @@ export function TeamBudgetTable({
         </Button>
       </CockpitCardHeader>
       <CockpitCardFrame>
-      {teams.length > 0 && (
       <CockpitCardContent className="@container flex min-h-0 flex-1 flex-col">
+          <CardDescription className="mb-3 text-xs text-content-supporting">
+            {teams.length === 0
+              ? c.emptyBody
+              : attentionCount > 0
+                ? c.subtitleAttention(attentionCount, teams.length)
+                : c.subtitleAllOk(teams.length)}
+          </CardDescription>
+        {teams.length > 0 && (
           <div className="min-h-0 flex-1 overflow-y-auto">
           <div className="grid gap-2 @2xl:hidden">
             {teams.map((team) => {
@@ -268,8 +268,8 @@ export function TeamBudgetTable({
           </Table>
           </div>
           </div>
+        )}
         </CockpitCardContent>
-      )}
       </CockpitCardFrame>
     </CockpitCard>
   );
