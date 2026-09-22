@@ -212,7 +212,7 @@ function Simulation({
       </div>
 
       <div className="rounded-lg border bg-muted p-4">
-        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+        <p className="text-xs font-semibold text-muted-foreground">
           {copy.resultTitle}
         </p>
         <dl className="mt-3 flex flex-col gap-4 text-sm">
@@ -273,7 +273,7 @@ function OutcomeRow({
 function Facts({ rows }: { rows: [string, string][] }) {
   return (
     <div>
-      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+      <p className="text-xs font-semibold text-muted-foreground">
         {copy.currentPace}
       </p>
       <dl className="mt-2 flex flex-col gap-2 text-sm">

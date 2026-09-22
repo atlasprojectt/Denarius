@@ -37,7 +37,7 @@ export function OnboardingForm({
     <form action={formAction} className="flex flex-col gap-6">
       <FieldGroup>
         <div className="flex flex-col gap-1">
-          <h1 className="text-2xl font-bold">{copy.title}</h1>
+          <h1 className="text-2xl font-semibold">{copy.title}</h1>
           <p className="text-sm text-muted-foreground">{copy.subtitle}</p>
         </div>
         <Field>

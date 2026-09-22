@@ -37,7 +37,7 @@ export function NewPasswordForm({ email }: { email: string }) {
   const [state, formAction, pending] = useActionState(resetPassword, initialState);
   const [showPassword, setShowPassword] = useState(false);
 
-  const inputClassName = "h-11 bg-background pl-10 text-[15px]";
+  const inputClassName = "h-11 bg-background pl-10 text-base";
 
   return (
     <form action={formAction} className="flex flex-col gap-6">

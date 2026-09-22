@@ -35,7 +35,7 @@ export function DigestForm({ receiveDigest }: { receiveDigest: boolean }) {
     <form action={formAction} className="flex w-full flex-col gap-5">
       <div className="flex min-h-11 items-start justify-between gap-5">
         <div className="min-w-0 flex-1">
-          <Label htmlFor="receiveDigest" className="cursor-pointer text-[13px]">
+          <Label htmlFor="receiveDigest" className="cursor-pointer text-sm">
             {copy.label}
           </Label>
           <p

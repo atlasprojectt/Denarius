@@ -52,7 +52,7 @@ export function NavGroup({ label, items }: SidebarNavGroup) {
           opacity-0` but leaves it in flow, hovering OVER the first menu item
           and swallowing its clicks and tooltip hovers (2026-07-11 audit). */}
       {label && (
-        <SidebarGroupLabel className="group-data-[collapsible=icon]:pointer-events-none">
+        <SidebarGroupLabel className="text-sidebar-foreground/55 group-data-[collapsible=icon]:pointer-events-none">
           {label}
         </SidebarGroupLabel>
       )}
@@ -76,7 +76,9 @@ export function NavGroup({ label, items }: SidebarNavGroup) {
                   <SidebarMenuButton
                     isActive={item.isActive}
                     tooltip={item.title}
-                    className="h-11 text-sidebar-foreground/65 hover:text-sidebar-accent-foreground data-active:text-sidebar-accent-foreground md:h-8"
+                    // The selected destination drops its border while hovered
+                    // (founder-directed) — the resting active border stays.
+                    className="h-11 text-sidebar-foreground/65 hover:text-sidebar-accent-foreground data-active:text-sidebar-accent-foreground data-active:hover:border-transparent md:h-8"
                   />
                 }
               >
@@ -92,6 +94,7 @@ export function NavGroup({ label, items }: SidebarNavGroup) {
                         <Link
                           href={subItem.path ?? "#"}
                           onClick={() => setOpenMobile(false)}
+                          aria-current={subItem.isActive ? "page" : undefined}
                           className="min-h-11 md:min-h-0"
                         >
                           {subItem.icon}
@@ -109,11 +112,12 @@ export function NavGroup({ label, items }: SidebarNavGroup) {
                 asChild
                 isActive={item.isActive}
                 tooltip={item.title}
-                className="h-11 text-sidebar-foreground/65 hover:text-sidebar-accent-foreground data-active:text-sidebar-accent-foreground md:h-8"
+                className="h-11 text-sidebar-foreground/65 hover:text-sidebar-accent-foreground data-active:text-sidebar-accent-foreground data-active:hover:border-transparent md:h-8"
               >
                 <Link
                   href={item.path ?? "#"}
                   onClick={() => setOpenMobile(false)}
+                  aria-current={item.isActive ? "page" : undefined}
                 >
                   {item.icon}
                   <span>{item.title}</span>

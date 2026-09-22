@@ -59,12 +59,15 @@ Read docs → Plan → Implement (small vertical slice) → Test → Self-review
 
 Work = GitHub issues **#11–#23**, dependency-ordered. Don't start an issue whose blockers aren't closed. #11 is HITL (founder provisions infra/keys).
 
+Local agent skills in `.agents/skills/` (catalog + when-to-use in [docs/skills.md](docs/skills.md)) support the flow — they never replace it. Match ceremony to task size: small changes use no skill; medium ones orient with `how` / build with `tdd`; large ones split with `to-tickets` first. Never commit skills (gitignored, local-only).
+
 ### 6. Checklist — before implementing
 
 - [ ] Is there documentation for this? (docs/)
 - [ ] Is it inside PRD scope? (the Out of Scope list is a contract)
 - [ ] Is there an existing pattern, component, or service to reuse?
 - [ ] Which issue does this belong to, and are its blockers closed?
+- [ ] Does this task earn a skill? ([docs/skills.md](docs/skills.md) proportionality rule — default is none for small changes)
 
 ### 7. Checklist — before considering a task done / merging
 

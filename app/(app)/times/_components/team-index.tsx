@@ -61,8 +61,8 @@ function marginLabel(team: CockpitTeam, currency: string): string {
 function Metric({ label, value }: { label: string; value: string }) {
   return (
     <div className="min-w-0">
-      <dt className="team-index-metric-label text-[11px] text-muted-foreground">{label}</dt>
-      <dd className="team-index-metric-value mt-0.5 truncate text-[13px] font-medium tabular-nums">
+      <dt className="team-index-metric-label text-xs text-muted-foreground">{label}</dt>
+      <dd className="team-index-metric-value mt-0.5 truncate text-sm font-medium tabular-nums">
         {value}
       </dd>
     </div>
@@ -102,10 +102,10 @@ function TeamRow({
 
       <div className="team-index-row-grid relative pointer-events-none grid gap-3">
         <div className="min-w-0">
-          <h3 className="truncate text-[13px] font-medium text-foreground">
+          <h3 className="truncate text-sm font-medium text-foreground">
             {team.teamName}
           </h3>
-          <p className="mt-0.5 truncate text-[11px] font-light text-muted-foreground">
+          <p className="mt-0.5 truncate text-xs text-muted-foreground">
             {contextLine(team, currency)}
           </p>
         </div>
@@ -135,7 +135,7 @@ function TeamRow({
             pctProjected={team.pctProjected}
             status={team.status}
           />
-          <span className="w-10 shrink-0 text-right text-[11px] font-light text-muted-foreground tabular-nums">
+          <span className="w-10 shrink-0 text-right text-xs text-muted-foreground tabular-nums">
             {percent(evaluation.pctSpent)}
           </span>
         </div>
@@ -195,7 +195,7 @@ export function TeamIndex({
         <h2 id={`team-group-${priority}`} className="text-sm font-medium">
           {title}
         </h2>
-        <span className="text-[11px] font-light text-muted-foreground tabular-nums">
+        <span className="text-xs text-muted-foreground tabular-nums">
           {teams.length}
         </span>
       </div>
@@ -205,7 +205,7 @@ export function TeamIndex({
         suppressHydrationWarning
         className="team-index-card gap-0 py-0"
       >
-        <div className="team-index-header hidden gap-4 border-b border-border px-4 py-2 text-[11px] font-medium text-muted-foreground">
+        <div className="team-index-header hidden gap-4 border-b border-border px-4 py-2 text-xs font-medium text-muted-foreground">
           <span>{copy.team}</span>
           <span>{copy.status}</span>
           <span>{copy.spent}</span>

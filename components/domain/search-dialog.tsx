@@ -227,7 +227,7 @@ export function SearchDialog() {
             }
             onChange={(event) => setQuery(event.target.value)}
             onKeyDown={handleKeyDown}
-            className="h-12 rounded-xl bg-card pr-28 pl-10 text-sm shadow-none focus-visible:border-ring/30 focus-visible:ring-1 focus-visible:ring-ring/10 md:text-sm"
+            className="h-12 rounded-control bg-card pr-28 pl-10 text-sm shadow-none focus-visible:border-ring/30 focus-visible:ring-1 focus-visible:ring-ring/10 md:text-sm"
           />
           <span
             className="absolute top-1/2 right-16 flex -translate-y-1/2 items-center gap-1.5 text-xs text-muted-foreground"
@@ -291,7 +291,7 @@ export function SearchDialog() {
                       <section key={group.type} aria-labelledby={`search-dialog-group-${group.type}`}>
                         <h2
                           id={`search-dialog-group-${group.type}`}
-                          className="mb-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase"
+                          className="mb-2 text-xs font-semibold text-muted-foreground"
                         >
                           {group.label}
                         </h2>

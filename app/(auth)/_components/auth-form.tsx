@@ -106,7 +106,7 @@ export function AuthForm({ oauthError }: { oauthError?: string }) {
     : (state.error ?? (isSignup ? undefined : oauthError));
 
   const inputClassName =
-    "h-11 rounded-[var(--radius-standard)] border-border bg-surface-control pl-10 text-[15px] hover:border-border hover:bg-surface-hover focus-visible:border-ring focus-visible:bg-surface-control focus-visible:ring-1 focus-visible:ring-ring/40";
+    "h-11 rounded-[var(--radius-standard)] border-border bg-surface-control pl-10 text-base hover:border-border hover:bg-surface-hover focus-visible:border-ring focus-visible:bg-surface-control focus-visible:ring-1 focus-visible:ring-ring/40";
   const iconClassName = "size-4";
 
   return (

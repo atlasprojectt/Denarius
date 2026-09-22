@@ -77,8 +77,8 @@ export function SetupChecklist({
       <Card className="py-3">
         <CardContent className="flex flex-wrap items-center gap-x-5 gap-y-2.5 px-4">
           <div className="min-w-0">
-            <p className="text-[13px] font-medium">{homeCopy.setup.title}</p>
-            <p className="mt-0.5 text-[11px] font-light text-muted-foreground tabular-nums">
+            <p className="text-sm font-medium">{homeCopy.setup.title}</p>
+            <p className="mt-0.5 text-xs text-muted-foreground tabular-nums">
               {homeCopy.setup.progress(doneCount, steps.length)}
             </p>
           </div>
@@ -125,7 +125,7 @@ export function SetupChecklist({
     <Card>
       <CardHeader>
         <CardTitle>{homeCopy.setup.title}</CardTitle>
-        <CardDescription>{homeCopy.setup.subtitle}</CardDescription>
+        <CardDescription className="text-content-supporting">{homeCopy.setup.subtitle}</CardDescription>
         <CardAction>
           <p className="text-xs font-light text-muted-foreground tabular-nums">
             {homeCopy.setup.progress(doneCount, steps.length)}

@@ -101,7 +101,7 @@ const compactTokens = new Intl.NumberFormat("pt-BR", {
 function Metric({ label, value }: { label: string; value: string }) {
   return (
     <div className="min-w-0">
-      <dt className="text-[11px] text-muted-foreground">{label}</dt>
+      <dt className="text-xs text-muted-foreground">{label}</dt>
       <dd className="mt-1 truncate text-base font-medium tabular-nums">{value}</dd>
     </div>
   );
@@ -273,7 +273,7 @@ function MixSection({
                 <li key={row.key}>
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex min-w-0 items-center gap-2">
-                      <span className="w-4 shrink-0 text-[11px] font-light text-muted-foreground tabular-nums">
+                      <span className="w-4 shrink-0 text-xs text-muted-foreground tabular-nums">
                         {index + 1}
                       </span>
                       {row.icon && (
@@ -289,7 +289,7 @@ function MixSection({
                     <div className="relative ml-6 mt-2 h-2 w-[calc(100%-1.5rem)]">
                       <div
                         aria-hidden
-                        className="absolute inset-0 text-foreground/15"
+                        className="absolute inset-0 text-bar-track"
                         style={TICKS}
                       />
                       <div
@@ -382,7 +382,7 @@ function ContributorsSection({
         ) : (
           <>
             <div className="hidden md:block">
-              <div className="grid grid-cols-[minmax(0,1fr)_100px_132px] gap-4 border-b border-border pb-2 text-[11px] font-medium text-muted-foreground">
+              <div className="grid grid-cols-[minmax(0,1fr)_100px_132px] gap-4 border-b border-border pb-2 text-xs font-medium text-muted-foreground">
                 <span>{copy.person}</span>
                 <span className="text-right">{copy.tokens}</span>
                 <span className="text-right">{copy.derived}</span>
@@ -424,7 +424,7 @@ function ContributorsSection({
                       <p className="truncate text-sm font-medium">
                         {person.isShared ? copy.sharedKey : person.userId}
                       </p>
-                      <p className="mt-0.5 text-[11px] font-light text-muted-foreground tabular-nums">
+                      <p className="mt-0.5 text-xs text-muted-foreground tabular-nums">
                         {compactTokens.format(person.inputTokens + person.outputTokens)} {copy.tokens.toLocaleLowerCase("pt-BR")}
                       </p>
                     </div>
@@ -443,7 +443,7 @@ function ContributorsSection({
             <div className="mt-2 flex items-center justify-between gap-4 border-t border-border pt-3">
               <div>
                 <p className="text-xs font-medium">{copy.total}</p>
-                <p className="mt-0.5 text-[11px] font-light text-muted-foreground tabular-nums">
+                <p className="mt-0.5 text-xs text-muted-foreground tabular-nums">
                   {copy.asOf(period.monthLabel, period.dayOfPeriod, period.daysInPeriod)}
                 </p>
               </div>
@@ -452,7 +452,7 @@ function ContributorsSection({
               </span>
             </div>
             {namesHidden && persons.some((person) => !person.isShared) && (
-              <p className="mt-3 text-[11px]/relaxed font-light text-muted-foreground">
+              <p className="mt-3 text-xs/relaxed text-muted-foreground">
                 {copy.namesHiddenNote}
               </p>
             )}

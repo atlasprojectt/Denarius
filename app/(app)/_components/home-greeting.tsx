@@ -70,11 +70,10 @@ export function HomeGreeting({
     <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-2">
       <h1 className="text-xl font-semibold leading-7 tracking-[-0.02em]">{greeting}, {name}</h1>
       {status !== null && (
-        <span className="inline-flex items-center gap-3 text-sm font-medium">
-          <span aria-hidden className="h-5 w-px bg-border" />
+        <span className="inline-flex items-center gap-2 text-xs font-medium text-content-supporting">
           <span
             role="status"
-            className="inline-flex min-h-8 items-center gap-2 rounded-full border border-border bg-surface-control px-2.5 py-1 text-foreground"
+            className="inline-flex items-center gap-2"
             aria-label={`Situação: ${statusCopy[status]}`}
           >
             <span aria-hidden className={`relative flex size-4 items-center justify-center rounded-full ${indicator?.halo}`}>

@@ -102,7 +102,7 @@ function SortButton({
       size="xs"
       onClick={() => onSort(field)}
       className={cn(
-        "group/sort h-9 w-full px-2 text-[11px] font-medium hover:bg-surface-hover",
+        "group/sort h-9 w-full px-2 text-xs font-medium hover:bg-surface-hover",
         align === "right" ? "justify-end" : "justify-start",
         active ? "text-foreground" : "text-muted-foreground",
       )}
@@ -135,7 +135,7 @@ function RankBar({ row, index }: { row: ExploreRow; index: number }) {
     >
       <div
         aria-hidden
-        className="absolute inset-0 text-foreground/15"
+        className="absolute inset-0 text-bar-track"
         style={TICKS}
       />
       <div
@@ -178,9 +178,9 @@ function MoneyValue({
 
   return (
     <div className="text-right tabular-nums">
-      <p className="text-[13px] font-medium text-foreground">{primary}</p>
+      <p className="text-sm font-medium text-foreground">{primary}</p>
       {row.amount !== null && row.originalUsd !== undefined && (
-        <p className="mt-0.5 text-[11px] font-light text-muted-foreground">
+        <p className="mt-0.5 text-xs text-muted-foreground">
           {money(row.originalUsd, "USD")}
         </p>
       )}
@@ -224,7 +224,7 @@ function DesktopRows({
           key={row.id}
           className="h-12 border-border hover:bg-surface-hover"
         >
-          <TableCell className="min-w-64 py-2 text-[13px] whitespace-normal">
+          <TableCell className="min-w-64 py-2 text-sm whitespace-normal">
             <div className="flex items-center gap-2">
               {row.state === "unattributed" && (
                 <span
@@ -238,7 +238,7 @@ function DesktopRows({
               <RankBar row={row} index={index} />
             )}
             {row.note && (
-              <p className="mt-1 text-[11px] font-light text-muted-foreground">{row.note}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{row.note}</p>
             )}
           </TableCell>
           {showTokens && (
@@ -272,7 +272,7 @@ function MobileRows({
       {rows.map((row, index) => (
         <article
           key={row.id}
-          className="rounded-xl border border-border p-3 text-[13px]"
+          className="rounded-xl border border-border p-3 text-sm"
         >
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
@@ -286,7 +286,7 @@ function MobileRows({
                 <h3 className="truncate font-medium text-foreground">{row.label}</h3>
               </div>
               {showTokens && (
-                <p className="mt-1 text-[11px] font-light text-muted-foreground tabular-nums">
+                <p className="mt-1 text-xs text-muted-foreground tabular-nums">
                   {compact.format(row.tokens ?? 0)} tokens
                 </p>
               )}
@@ -297,7 +297,7 @@ function MobileRows({
             <RankBar row={row} index={index} />
           )}
           {row.note && (
-            <p className="mt-2 text-[11px] font-light text-muted-foreground">{row.note}</p>
+            <p className="mt-2 text-xs text-muted-foreground">{row.note}</p>
           )}
           {row.href && row.actionLabel && (
             <div className="mt-2 flex justify-end">

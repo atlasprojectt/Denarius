@@ -15,7 +15,7 @@ const buttonVariants = cva(
         secondary:
           "border-border bg-secondary text-foreground hover:border-border hover:bg-surface-hover hover:text-foreground active:bg-surface-selected",
         tertiary:
-          "border-border bg-transparent text-muted-foreground [transition-duration:var(--motion-duration-fast)] hover:border-border hover:bg-surface-hover hover:text-foreground hover:[&_svg]:text-brand-accent-light active:bg-surface-selected",
+          "bg-transparent text-muted-foreground [transition-duration:var(--motion-duration-fast)] hover:bg-surface-hover hover:text-foreground hover:[&_svg]:text-brand-accent-light active:bg-surface-selected",
         ghost:
           "bg-transparent text-muted-foreground hover:bg-surface-hover hover:text-foreground active:bg-surface-selected",
         destructive:
@@ -43,16 +43,18 @@ const buttonVariants = cva(
     defaultVariants: {
       variant: "primary",
       size: "default",
-      shape: "full",
+      shape: "standard",
     },
   },
 );
 
 function buttonShapeFor(
-  _variant: ButtonProps["variant"],
-  _size: ButtonProps["size"],
+  variant: ButtonProps["variant"],
+  size: ButtonProps["size"],
 ): NonNullable<ButtonProps["shape"]> {
-  return "full";
+  if (size?.startsWith("icon")) return "full";
+  if (variant === "primary" || variant === "destructive") return "full";
+  return "standard";
 }
 
 type ButtonProps = ButtonPrimitive.Props &

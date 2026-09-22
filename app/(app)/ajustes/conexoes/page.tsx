@@ -93,7 +93,7 @@ export default async function ConnectionsPage() {
       })}
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-xs font-medium tracking-wider text-muted-foreground uppercase">
+        <h2 className="text-xs font-semibold text-muted-foreground">
           {copy.comingSoonTitle}
         </h2>
         {copy.comingSoon.map((item) => (

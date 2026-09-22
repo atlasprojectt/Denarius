@@ -50,7 +50,7 @@ export function AcceptForm({
       <input type="hidden" name="token" value={token} />
       <FieldGroup>
         <div className="flex flex-col items-center gap-1 text-center">
-          <h1 className="text-2xl font-bold text-balance">{copy.title(companyName)}</h1>
+          <h1 className="text-2xl font-semibold text-balance">{copy.title(companyName)}</h1>
           <p className="text-sm text-balance text-muted-foreground">
             {copy.subtitle}
           </p>

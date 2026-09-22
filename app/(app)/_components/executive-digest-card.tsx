@@ -1,7 +1,13 @@
 import Link from "next/link";
 import { RiSparkling2Line } from "@remixicon/react";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  CockpitCard,
+  CockpitCardContent,
+  CockpitCardFrame,
+  CockpitCardHeader,
+  CockpitCardTitle,
+} from "@/components/domain/cockpit-card";
 import type { Cockpit } from "@/lib/engine/cockpit";
 import { buildHomeDigest, type DigestSegment } from "@/lib/narrate/digest";
 import { homeCopy } from "./copy";
@@ -69,18 +75,18 @@ export function ExecutiveDigestCard({
   );
 
   return (
-    <Card
-      size="sm"
+    <CockpitCard
       className="w-full min-w-0 lg:self-stretch xl:aspect-[1.16/1] xl:min-h-0 xl:max-w-[24rem] xl:self-start"
       aria-labelledby="home-digest-title"
     >
-      <CardHeader className="border-b border-border px-4">
-        <CardTitle as="h2" id="home-digest-title" className="flex items-center gap-2 text-sm">
+      <CockpitCardHeader>
+        <CockpitCardTitle id="home-digest-title" className="flex items-center gap-2">
           <RiSparkling2Line className="size-4 text-muted-foreground" aria-hidden />
           {homeCopy.digest.title}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="flex min-h-[10rem] flex-1 flex-col justify-center px-8 py-4 text-[17px]/[1.6] font-medium text-muted-foreground sm:px-10">
+        </CockpitCardTitle>
+      </CockpitCardHeader>
+      <CockpitCardFrame>
+      <CockpitCardContent className="flex min-h-[10rem] flex-1 flex-col justify-center px-8 py-4 text-[17px]/[1.6] font-medium text-muted-foreground sm:px-10">
         {cockpit.state === "cold-start" && (
           <p
             data-digest-lines
@@ -103,7 +109,8 @@ export function ExecutiveDigestCard({
             ))}
           </p>
         )}
-      </CardContent>
-    </Card>
+      </CockpitCardContent>
+      </CockpitCardFrame>
+    </CockpitCard>
   );
 }

@@ -17,7 +17,11 @@ describe("interactive geometry contract", () => {
 
   it("uses the standard radius for structural navigation", () => {
     expect(source("components/ui/sidebar.tsx")).toContain("rounded-standard");
-    expect(source("components/domain/app-sidebar.tsx")).toContain("rounded-standard");
+  });
+
+  it("uses the compact radius for sidebar search", () => {
+    expect(source("components/domain/app-sidebar.tsx")).toContain("rounded-control");
+    expect(source("components/domain/search-dialog.tsx")).toContain("rounded-control");
   });
 
   it("exposes only standard and full button shapes", () => {
@@ -25,8 +29,6 @@ describe("interactive geometry contract", () => {
 
     expect(button).toContain('standard: "rounded-standard"');
     expect(button).toContain('full: "rounded-full"');
-    expect(button).not.toContain('control: "');
-    expect(button).not.toContain('compact: "');
     expect(button).not.toContain('pill: "');
   });
 });
@@ -74,7 +76,6 @@ describe("helper/footer weight contract", () => {
     const allowed = new Set(
       [
         "app/(app)/_components/hero.tsx",
-        "app/(app)/_components/monthly-pace-chart.tsx",
         "app/(app)/_components/pacing-bar.tsx",
         "app/(app)/_components/provider-composition.tsx",
         "app/(app)/_components/setup-checklist.tsx",
@@ -92,8 +93,6 @@ describe("helper/footer weight contract", () => {
         "app/(app)/explorar/page.tsx",
         "app/(app)/page.tsx",
         "app/(app)/times/_components/diagnosis-sections.tsx",
-        "app/(app)/times/_components/team-index.tsx",
-        "app/(app)/times/page.tsx",
         "app/(auth)/_components/otp-dialog.tsx",
         "app/(auth)/login/page.tsx",
         "app/(legal)/_components/legal-document.tsx",

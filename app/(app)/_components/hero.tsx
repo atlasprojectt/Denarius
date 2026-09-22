@@ -6,11 +6,12 @@ import {
 
 import { StateBadge } from "@/components/domain/state-badge";
 import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+  CockpitCard,
+  CockpitCardContent,
+  CockpitCardFrame,
+  CockpitCardHeader,
+  CockpitCardTitle,
+} from "@/components/domain/cockpit-card";
 import type { BudgetEvaluation } from "@/lib/engine/budget";
 import { percent } from "@/lib/format";
 import { money } from "@/lib/money";
@@ -67,12 +68,16 @@ export function Hero({
     : money(org.projection ?? 0, currency);
 
   return (
-    <Card className="min-h-full" aria-labelledby="home-hero-title">
-      <CardHeader className="border-b border-border">
-        <CardTitle as="h2" id="home-hero-title" className="flex items-center gap-2 text-sm font-medium">
+    <CockpitCard className="min-h-full" aria-labelledby="home-hero-title">
+      <CockpitCardHeader>
+        <CockpitCardTitle id="home-hero-title" className="flex items-center gap-2">
           <RiWallet3Line className="size-4 text-muted-foreground" aria-hidden />
           {c.title}
-        </CardTitle>
+        </CockpitCardTitle>
+      </CockpitCardHeader>
+
+      <CockpitCardFrame>
+      <CockpitCardContent className="flex flex-1 flex-col gap-3">
         <p className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1 pt-1.5 text-[clamp(2rem,4vw,2.5rem)] font-medium tracking-tight tabular-nums [overflow-wrap:anywhere]">
           {money(org.spent, currency)}
           <span className="basis-full text-base font-normal tracking-normal text-muted-foreground sm:basis-auto">
@@ -80,9 +85,6 @@ export function Hero({
           </span>
         </p>
         <WeekDelta pct={weekPct} />
-      </CardHeader>
-
-      <CardContent className="flex flex-1 flex-col gap-3">
 
         <PacingBar
           pctSpent={org.pctSpent}
@@ -103,11 +105,12 @@ export function Hero({
         </dl>
 
         {unconvertedUsd > 0 && (
-          <p className="text-xs/relaxed font-light text-muted-foreground">
+          <p className="text-xs/relaxed font-light text-content-supporting">
             {c.unconverted(money(unconvertedUsd, "USD"))}
           </p>
         )}
-      </CardContent>
-    </Card>
+      </CockpitCardContent>
+      </CockpitCardFrame>
+    </CockpitCard>
   );
 }

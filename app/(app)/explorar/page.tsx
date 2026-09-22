@@ -347,7 +347,7 @@ export default async function ExplorePage() {
                       <h2>{copy.apiTitle(period.monthLabel)}</h2>
                     </CardTitle>
                     {lastSyncAt && (
-                      <p className="text-[11px] font-light text-muted-foreground tabular-nums">
+                      <p className="text-xs text-muted-foreground tabular-nums">
                         {copy.apiAsOf(syncStamp(lastSyncAt))}
                       </p>
                     )}
@@ -434,7 +434,7 @@ export default async function ExplorePage() {
                     <h2>{copy.seatsTitle}</h2>
                   </CardTitle>
                   <CardDescription>{copy.seatsSub}</CardDescription>
-                  <p className="text-[11px] font-light text-muted-foreground tabular-nums">
+                  <p className="text-xs text-muted-foreground tabular-nums">
                     {periodLabel}
                   </p>
                 </CardHeader>
@@ -483,7 +483,7 @@ function FinancialMetric({
 }) {
   return (
     <div className="min-w-0 px-4 py-4">
-      <p className="text-[11px] font-medium text-muted-foreground">{label}</p>
+      <p className="text-xs font-medium text-muted-foreground">{label}</p>
       <p
         className={
           primary
@@ -494,12 +494,12 @@ function FinancialMetric({
         {primaryMoney(value)}
       </p>
       {value.display !== null && (
-        <p className="mt-0.5 text-[11px] font-light text-muted-foreground tabular-nums">
+        <p className="mt-0.5 text-xs text-muted-foreground tabular-nums">
           {money(value.usd, "USD")}
         </p>
       )}
       {detail && (
-        <p className="mt-1 text-[11px] font-light text-muted-foreground">{detail}</p>
+        <p className="mt-1 text-xs text-muted-foreground">{detail}</p>
       )}
     </div>
   );

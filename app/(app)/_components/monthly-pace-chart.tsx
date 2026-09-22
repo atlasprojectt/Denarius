@@ -6,11 +6,12 @@ import {
   SpendTrendChart,
 } from "@/components/domain/spend-trend-chart";
 import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+  CockpitCard,
+  CockpitCardContent,
+  CockpitCardFrame,
+  CockpitCardHeader,
+  CockpitCardTitle,
+} from "@/components/domain/cockpit-card";
 import type { ChartConfig } from "@/components/ui/chart";
 import type { MonthlyPace, MonthlyPaceRow } from "@/lib/engine/monthly-pace";
 import { percent } from "@/lib/format";
@@ -143,22 +144,24 @@ export function MonthlyPaceChart({
 
   if (todayValue <= 0) {
     return (
-      <Card data-monthly-pace className="min-h-full [--chart-surface:var(--card)]" aria-labelledby="home-pace-title-empty">
-        <CardHeader className="border-b border-border">
+      <CockpitCard data-monthly-pace className="min-h-full [--chart-surface:var(--surface-elevated)]" aria-labelledby="home-pace-title-empty">
+        <CockpitCardHeader>
           <div className="flex items-center gap-2">
-            <CardTitle as="h2" id="home-pace-title-empty" className="flex items-center gap-2 text-sm font-medium">
+            <CockpitCardTitle id="home-pace-title-empty" className="flex items-center gap-2">
               <RiLineChartLine className="size-4 text-muted-foreground" aria-hidden />
               {c.title}
-            </CardTitle>
+            </CockpitCardTitle>
             <InfoTip label={c.infoLabel}>{c.info}</InfoTip>
           </div>
-        </CardHeader>
-        <CardContent className="flex flex-1 items-center justify-center">
+        </CockpitCardHeader>
+        <CockpitCardFrame>
+        <CockpitCardContent className="flex flex-1 items-center justify-center">
           <p className="py-8 text-center text-sm text-muted-foreground">
             {c.empty}
           </p>
-        </CardContent>
-      </Card>
+        </CockpitCardContent>
+        </CockpitCardFrame>
+      </CockpitCard>
     );
   }
 
@@ -191,15 +194,18 @@ export function MonthlyPaceChart({
       : c.projectionValue(compactMoney(projection, currency, 2));
 
   return (
-    <Card data-monthly-pace className="min-h-full [--chart-surface:var(--card)]" aria-labelledby="home-pace-title">
-      <CardHeader className="gap-2 border-b border-border">
+    <CockpitCard data-monthly-pace className="min-h-full [--chart-surface:var(--surface-elevated)]" aria-labelledby="home-pace-title">
+      <CockpitCardHeader>
         <div className="flex items-center gap-2">
-          <CardTitle as="h2" id="home-pace-title" className="flex items-center gap-2 text-sm font-medium">
+          <CockpitCardTitle id="home-pace-title" className="flex items-center gap-2">
             <RiLineChartLine className="size-4 text-muted-foreground" aria-hidden />
             {c.title}
-          </CardTitle>
+          </CockpitCardTitle>
           <InfoTip label={c.infoLabel}>{c.info}</InfoTip>
         </div>
+      </CockpitCardHeader>
+      <CockpitCardFrame>
+      <CockpitCardContent className="flex min-h-0 flex-1 flex-col justify-center">
         <div className="flex flex-wrap gap-x-5 gap-y-1.5">
           <Metric label={c.realizedLabel} value={money(todayValue, currency)} />
           <Metric
@@ -210,14 +216,12 @@ export function MonthlyPaceChart({
           <Metric label={c.rangeLabel} value={rangeText} className="hidden sm:flex" />
         </div>
         {(confidenceText || refStamp) && (
-          <p className="text-[11px] font-light text-muted-foreground tabular-nums">
+          <p className="mb-3 text-xs text-muted-foreground tabular-nums">
             {confidenceText ? c.confidence(confidenceText) : null}
             {confidenceText && refStamp ? " · " : null}
             {refStamp ? c.rangeRef(refStamp) : null}
           </p>
         )}
-      </CardHeader>
-      <CardContent className="flex min-h-0 flex-1 flex-col justify-center">
         <div
           data-reveal="monthly-pace"
           suppressHydrationWarning
@@ -301,8 +305,9 @@ export function MonthlyPaceChart({
             )}
           </SpendTrendChart>
         </div>
-      </CardContent>
-    </Card>
+      </CockpitCardContent>
+      </CockpitCardFrame>
+    </CockpitCard>
   );
 }
 

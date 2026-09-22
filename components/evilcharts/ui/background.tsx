@@ -35,10 +35,9 @@ const DotsPattern = ({ id }: PatternProps) => (
 const GridPattern = ({ id }: PatternProps) => (
   <pattern id={id} x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
     <path
-      className="text-border dark:text-border"
       d="M 20 0 L 0 0 0 20"
       fill="none"
-      stroke="currentColor"
+      stroke="var(--chart-grid)"
       strokeWidth="0.5"
     />
   </pattern>

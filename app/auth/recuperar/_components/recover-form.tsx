@@ -66,7 +66,7 @@ export function RecoverForm() {
               autoComplete="email"
               required
               aria-invalid={state.fieldErrors?.email !== undefined}
-              className="h-11 bg-background pl-10 text-[15px]"
+              className="h-11 bg-background pl-10 text-base"
             />
           </div>
           {state.fieldErrors?.email && (

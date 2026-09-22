@@ -26,3 +26,17 @@ playwright-report/
 
 # Local development server output
 .denarius-dev.*.log
+
+# Local agent skills — vendored, never commit (see docs/skills.md).
+# Skills live in .agents/skills/ (project scope) and stay on this machine.
+.agents/skills/how/
+.agents/skills/blast-radius/
+.agents/skills/typescript-best-practices/
+.agents/skills/improve-codebase-architecture/
+.agents/skills/to-tickets/
+.agents/skills/tdd/
+.agents/skills/code-review/
+.agents/skills/handoff/
+
+# Local ticket files published by the to-tickets skill
+.scratch/

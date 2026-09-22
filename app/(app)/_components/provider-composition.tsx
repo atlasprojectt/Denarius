@@ -7,12 +7,13 @@ import {
 } from "@remixicon/react";
 
 import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+  CockpitCard,
+  CockpitCardContent,
+  CockpitCardFooter,
+  CockpitCardFrame,
+  CockpitCardHeader,
+  CockpitCardTitle,
+} from "@/components/domain/cockpit-card";
 import { ProviderIcon } from "@/components/domain/provider-icon";
 import { RankedTickList } from "@/components/domain/ranked-tick-list";
 import { Button } from "@/components/ui/button";
@@ -65,18 +66,19 @@ export function ProviderComposition({
         : c.unattributed(money(unattributed.display, currency));
 
   return (
-    <Card size="sm" className="min-h-full" aria-labelledby="home-composition-title">
-      <CardHeader className="border-b border-border">
-        <CardTitle as="h2" id="home-composition-title" className="flex items-center gap-2 text-sm">
+    <CockpitCard className="min-h-full" aria-labelledby="home-composition-title">
+      <CockpitCardHeader className="flex-col items-start gap-1">
+        <CockpitCardTitle id="home-composition-title" className="flex items-center gap-2">
           <RiPieChart2Line className="size-4 text-muted-foreground" aria-hidden />
           {c.title}
           <span className="-ml-0.5">
             <InfoTip label={c.infoLabel}>{c.info}</InfoTip>
           </span>
-        </CardTitle>
-        <p className="text-xs text-muted-foreground">O total combina provedores e assentos no câmbio congelado do período.</p>
-      </CardHeader>
-      <CardContent className="flex flex-1 flex-col">
+        </CockpitCardTitle>
+        <p className="text-xs text-content-supporting">O total combina provedores e assentos no câmbio congelado do período.</p>
+      </CockpitCardHeader>
+      <CockpitCardFrame>
+      <CockpitCardContent className="flex flex-1 flex-col">
         {entries.length === 0 ? (
           <p className="text-sm text-muted-foreground">{c.empty}</p>
         ) : (
@@ -103,16 +105,15 @@ export function ProviderComposition({
             />
           </div>
         )}
-      </CardContent>
+      </CockpitCardContent>
       {unattributedLine !== null && (
-        <CardFooter className="text-xs/relaxed font-light text-muted-foreground">
+        <CockpitCardFooter className="text-xs/relaxed font-light text-content-supporting">
           <p className="tabular-nums">
             {unattributedLine} —{" "}
             <Button
               asChild
               variant="tertiary"
               size="sm"
-              shape="full"
               motion="forward"
               className="ml-1 text-foreground/80"
             >
@@ -122,8 +123,9 @@ export function ProviderComposition({
               </Link>
             </Button>
           </p>
-        </CardFooter>
+        </CockpitCardFooter>
       )}
-    </Card>
+      </CockpitCardFrame>
+    </CockpitCard>
   );
 }

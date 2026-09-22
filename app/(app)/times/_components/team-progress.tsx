@@ -33,11 +33,11 @@ export function TeamProgress({
       aria-label={copy.label}
       className={cn("relative h-2 w-full overflow-visible", className)}
     >
-      <div aria-hidden className="absolute inset-0 text-foreground/15" style={TICKS} />
+      <div aria-hidden className="absolute inset-0 text-bar-track" style={TICKS} />
       {geometry.ghostStart !== null && geometry.ghostEnd !== null && (
         <div
           data-reveal-bar
-          className="absolute inset-0 text-foreground/15"
+          className="absolute inset-0 text-bar-ghost"
           style={{
             ...TICKS,
             clipPath: cut(geometry.ghostStart, geometry.ghostEnd),

@@ -12,7 +12,7 @@ describe("buttonVariants", () => {
     "destructive",
     "outline",
   ] as const)("provides the %s semantic variant", (variant) => {
-    expect(buttonVariants({ variant })).toContain("rounded-full");
+    expect(buttonVariants({ variant })).toContain("rounded-standard");
     expect(buttonVariants({ variant }).length).toBeGreaterThan(100);
   });
 
@@ -31,16 +31,23 @@ describe("buttonVariants", () => {
     expect(buttonVariants({ variant: "destructive" })).toContain("bg-destructive/10");
   });
 
-  it("uses the full radius for autonomous textual actions", () => {
-    expect(buttonShapeFor("tertiary", "sm")).toBe("full");
-    expect(buttonShapeFor("secondary", "sm")).toBe("full");
+  it("keeps tertiary actions borderless", () => {
+    expect(buttonVariants({ variant: "tertiary" })).not.toContain("border-border");
+  });
+
+  it("uses structural radii for secondary actions and full radius for autonomous actions", () => {
+    expect(buttonShapeFor("tertiary", "sm")).toBe("standard");
+    expect(buttonShapeFor("secondary", "sm")).toBe("standard");
+    expect(buttonShapeFor("outline", "sm")).toBe("standard");
+    expect(buttonShapeFor("primary", "sm")).toBe("full");
+    expect(buttonShapeFor("destructive", "sm")).toBe("full");
     expect(
       buttonVariants({ variant: "tertiary", size: "sm", shape: "full" }),
     ).toContain("rounded-full");
     expect(buttonVariants({ variant: "secondary", shape: "standard" })).toContain(
       "rounded-standard",
     );
-    expect(buttonVariants({ variant: "primary" })).not.toContain("rounded-standard");
+    expect(buttonVariants({ variant: "primary" })).toContain("rounded-standard");
   });
 
   it.each(["icon", "icon-sm", "icon-xs", "icon-lg"] as const)(

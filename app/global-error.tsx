@@ -1,6 +1,6 @@
 "use client";
 
-import { DM_Sans, Geist, Geist_Mono } from "next/font/google";
+import { DM_Sans, Geist_Mono } from "next/font/google";
 import Link from "next/link";
 import { RiErrorWarningLine } from "@remixicon/react";
 
@@ -20,7 +20,6 @@ import { cn } from "@/lib/utils";
 // identical source (issue #60).
 
 const dmSans = DM_Sans({ subsets: ["latin"], variable: "--font-dm-sans" });
-const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
@@ -55,7 +54,6 @@ export default function GlobalError({
       suppressHydrationWarning
       className={cn(
         "h-full antialiased",
-        geistSans.variable,
         geistMono.variable,
         dmSans.variable,
       )}

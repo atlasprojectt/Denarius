@@ -9,6 +9,7 @@ Everything an engineer or agent needs to work on Denarius. Read in this order:
 | [architecture.md](architecture.md) | System shape: stack, repo layout, multi-tenancy/RLS, browser security boundary, data flow, data model, environments, supply-chain policy | Before touching any code |
 | [backend.md](backend.md) | Module-by-module backend spec: connectors, sync, budget engine formulas, findings rules, notifications, LLM guardrails, auth/RBAC (password rule, recovery, rate limits, audit log, data rights), credential encryption, period snapshot, server logging, env vars | Before any backend work |
 | [frontend.md](frontend.md) | Screens, component contracts, design tokens, interaction patterns, UI states, the responsive contract, the closed-month print layer | Before any frontend work |
+| [skills.md](skills.md) | Local agent skills catalog: what is installed in `.agents/skills/`, when to use each, proportionality rule, known limitations | Before invoking a skill; when unsure how much process a task needs |
 
 Fixed conventions:
 

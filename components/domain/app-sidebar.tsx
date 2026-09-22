@@ -217,7 +217,7 @@ export function AppSidebar({
                 <SidebarMenuButton
                   asChild
                   tooltip={copy.search}
-                  className="h-11 rounded-standard border border-sidebar-border bg-surface-control px-3 text-sidebar-foreground/65 shadow-none hover:bg-surface-hover hover:text-sidebar-accent-foreground data-active:bg-surface-selected data-active:text-sidebar-accent-foreground md:h-9 group-data-[collapsible=icon]:border-transparent group-data-[collapsible=icon]:bg-transparent group-data-[collapsible=icon]:px-2"
+                  className="h-11 rounded-control border border-sidebar-border bg-surface-control px-3 text-sidebar-foreground/65 shadow-none hover:bg-surface-hover hover:text-sidebar-accent-foreground data-active:bg-surface-selected data-active:text-sidebar-accent-foreground md:h-9 group-data-[collapsible=icon]:border-transparent group-data-[collapsible=icon]:bg-transparent group-data-[collapsible=icon]:px-2"
                 >
                   <button
                     type="button"

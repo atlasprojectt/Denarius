@@ -15,7 +15,7 @@ function Block({ block }: { block: LegalBlock }) {
       return (
         <>
           {block.paragraphs.map((paragraph) => (
-            <p key={paragraph} className="text-sm/relaxed text-muted-foreground">
+            <p key={paragraph} className="text-base/relaxed text-muted-foreground">
               {paragraph}
             </p>
           ))}
@@ -28,7 +28,7 @@ function Block({ block }: { block: LegalBlock }) {
           {block.items.map((item) => (
             <li
               key={item}
-              className="relative pl-4 text-sm/relaxed text-muted-foreground before:absolute before:top-[0.6em] before:left-0 before:size-1.5 before:rounded-full before:bg-border"
+              className="relative pl-4 text-base/relaxed text-muted-foreground before:absolute before:top-[0.6em] before:left-0 before:size-1.5 before:rounded-full before:bg-border"
             >
               {item}
             </li>
@@ -42,7 +42,7 @@ function Block({ block }: { block: LegalBlock }) {
           {block.items.map((item) => (
             <div key={item.term} className="flex flex-col gap-1">
               <dt className="text-sm font-medium text-foreground">{item.term}</dt>
-              <dd className="text-sm/relaxed text-muted-foreground">
+              <dd className="text-base/relaxed text-muted-foreground">
                 {item.description}
               </dd>
             </div>
@@ -68,7 +68,7 @@ function Block({ block }: { block: LegalBlock }) {
                   {item.purpose}
                 </span>
               </div>
-              <p className="text-sm/relaxed text-muted-foreground">
+              <p className="text-base/relaxed text-muted-foreground">
                 {item.receives}
               </p>
               <p className="text-xs font-light text-muted-foreground">{item.location}</p>
@@ -88,7 +88,7 @@ export function LegalDocument({ doc }: { doc: LegalDocumentCopy }) {
         </h1>
         {/* text-pretty, not text-balance: the lead is a paragraph, and
             balancing a long body text ragged-rights every line of it. */}
-        <p className="text-sm/relaxed text-pretty text-muted-foreground">
+        <p className="text-base/relaxed text-pretty text-muted-foreground">
           {doc.lead}
         </p>
         <p className="text-xs font-light text-muted-foreground">

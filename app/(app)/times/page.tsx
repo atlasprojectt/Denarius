@@ -145,7 +145,7 @@ export default async function TimesPage({
             <h2 id="without-budget-title" className="text-sm font-medium">
               {copy.withoutBudget}
             </h2>
-            <p className="mt-0.5 text-[11px] text-muted-foreground">
+            <p className="mt-0.5 text-xs text-muted-foreground">
               {copy.withoutBudgetSub}
             </p>
           </div>
@@ -176,18 +176,18 @@ export default async function TimesPage({
                     className="group flex min-h-14 items-center gap-4 px-4 py-3 outline-none transition-colors duration-(--motion-duration-standard) ease-(--motion-ease-standard) hover:bg-surface-hover focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/40"
                   >
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-[13px] font-medium">{team.name}</p>
+                      <p className="truncate text-sm font-medium">{team.name}</p>
                       {note && (
-                        <p className="mt-0.5 truncate text-[11px] font-light text-muted-foreground">
+                        <p className="mt-0.5 truncate text-xs text-muted-foreground">
                           {note}
                         </p>
                       )}
                     </div>
                     <div className="text-right">
-                      <p className="text-[11px] text-muted-foreground">{copy.spent}</p>
-                      <p className="text-[13px] font-medium tabular-nums">{spend}</p>
+                      <p className="text-xs text-muted-foreground">{copy.spent}</p>
+                      <p className="text-sm font-medium tabular-nums">{spend}</p>
                     </div>
-                    <span className="hidden text-[11px] font-light text-muted-foreground sm:block">
+                    <span className="hidden text-xs text-muted-foreground sm:block">
                       {copy.defineBudget}
                     </span>
                     <RiArrowRightSLine className="size-4 shrink-0 text-muted-foreground transition-transform duration-(--motion-duration-fast) ease-(--motion-ease-standard) group-hover:translate-x-0.5" />

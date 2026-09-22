@@ -34,11 +34,11 @@ export function BudgetBar({
   return (
     <div className={`relative h-2.5 w-full ${className}`}>
       {/* Track: the faint full-width tick grid. */}
-      <div aria-hidden className="absolute inset-0 text-foreground/15" style={TICKS} />
+      <div aria-hidden className="absolute inset-0 text-bar-track" style={TICKS} />
       {/* Run-rate ghost: neutral ticks from spend to the projected close. */}
       {g.ghostStart !== null && g.ghostEnd !== null && (
         <div
-          className="absolute inset-0 text-foreground/15"
+          className="absolute inset-0 text-bar-ghost"
           style={{ ...TICKS, clipPath: cut(g.ghostStart, g.ghostEnd) }}
         />
       )}

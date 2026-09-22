@@ -99,8 +99,8 @@ export function ModelComparisonDrawer({
   return <>
     <Button type="button" variant="tertiary" size="xs" shape="full" onClick={() => setOpen(true)} aria-label={`${copy.action} ${source.model}`}><RiArrowLeftRightLine aria-hidden />{copy.action}</Button>
     <Sheet open={open} onOpenChange={setOpen}><SheetContent side="right" className="w-full overflow-y-auto sm:max-w-md"><SheetHeader className="border-b px-5 py-5 pr-12"><SheetTitle>{copy.title}</SheetTitle><SheetDescription>{copy.description}</SheetDescription></SheetHeader><div className="grid gap-5 p-5">
-      <div className="grid gap-1"><p className="text-[11px] text-muted-foreground">{copy.source}</p><p className="font-medium">{source.provider} · {source.model}</p></div>
-      {lastSyncAt && <p className="text-[11px] font-light text-muted-foreground tabular-nums">{copy.staleNote(lastSyncAt)}</p>}
+      <div className="grid gap-1"><p className="text-xs text-muted-foreground">{copy.source}</p><p className="font-medium">{source.provider} · {source.model}</p></div>
+      {lastSyncAt && <p className="text-xs text-muted-foreground tabular-nums">{copy.staleNote(lastSyncAt)}</p>}
       {alternatives.length === 0 ? <p className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">{copy.noAlternatives}</p> : <>
         <label className="grid gap-2"><span className="text-xs font-medium">{copy.alternative}</span><Select value={selected} onValueChange={(next) => setSelected(next ?? "")}><SelectTrigger><SelectValue placeholder={copy.alternative} /></SelectTrigger><SelectContent>{alternatives.map((price) => <SelectItem key={`${price.provider}:${price.model}`} value={`${price.provider}:${price.model}`}>{price.provider} · {price.model}</SelectItem>)}</SelectContent></Select></label>
         {result && <div className="grid gap-4"><div className="grid grid-cols-2 gap-2"><Metric label={copy.current} value={show(result.sourceCostUsd)} /><Metric label={copy.equivalent} value={show(result.equivalentCostUsd)} /></div><div className="grid gap-2 rounded-lg border border-border p-3"><Row label={copy.delta} value={result.deltaUsd === null ? copy.unavailable : show(result.deltaUsd)} /><Row label={copy.deltaPct} value={result.deltaPct === null ? copy.unavailable : `${(result.deltaPct * 100).toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%`} /><Row label={copy.budget} value={result.budgetFit === "under" ? copy.under : result.budgetFit === "over" ? copy.over : copy.unknown} /><Row label={copy.projected} value={collecting ? copy.collecting : show(result.projectedCostUsd)} /></div>
@@ -116,5 +116,5 @@ export function ModelComparisonDrawer({
     </div></SheetContent></Sheet>
   </>;
 }
-function Metric({ label, value }: { label: string; value: string }) { return <div className="grid gap-1 rounded-lg border border-border p-3"><span className="text-[11px] text-muted-foreground">{label}</span><strong className="tabular-nums">{value}</strong></div>; }
+function Metric({ label, value }: { label: string; value: string }) { return <div className="grid gap-1 rounded-lg border border-border p-3"><span className="text-xs text-muted-foreground">{label}</span><strong className="tabular-nums">{value}</strong></div>; }
 function Row({ label, value }: { label: string; value: string }) { return <div className="flex items-center justify-between gap-3 text-xs"><span className="text-muted-foreground">{label}</span><strong className="tabular-nums">{value}</strong></div>; }

@@ -6,14 +6,14 @@ import { RiArrowRightSLine, RiTeamLine } from "@remixicon/react";
 import { BudgetBar } from "@/components/domain/budget-bar";
 import { StatusPill } from "@/components/domain/status-pill";
 import { Button } from "@/components/ui/button";
+import { CardDescription } from "@/components/ui/card";
 import {
-  Card,
-  CardAction,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+  CockpitCard,
+  CockpitCardContent,
+  CockpitCardFrame,
+  CockpitCardHeader,
+  CockpitCardTitle,
+} from "@/components/domain/cockpit-card";
 import {
   Table,
   TableBody,
@@ -118,34 +118,35 @@ export function TeamBudgetTable({
     // scroller below keeps a long roster inside that height instead of pushing
     // past the row into the observations footer. `xl:h-full` locks it to the
     // constrained grid track so the page stays fixed and only this list scrolls.
-    <Card className="min-h-full xl:h-full">
-      <CardHeader className="border-b border-border">
-        <CardTitle as="h2" id="team-budget-title" className="flex items-center gap-2 text-sm">
-          <RiTeamLine className="size-4 text-muted-foreground" aria-hidden />
-          {c.title}
-        </CardTitle>
-        <CardDescription>
-          {teams.length === 0
-            ? c.emptyBody
-            : attentionCount > 0
-              ? c.subtitleAttention(attentionCount, teams.length)
-              : c.subtitleAllOk(teams.length)}
-        </CardDescription>
-        <CardAction className="col-start-1 row-start-3 mt-2 justify-self-start sm:col-start-2 sm:row-span-2 sm:row-start-1 sm:mt-0 sm:justify-self-end">
-          <Button
-            variant="secondary"
-            size="sm"
-            className="h-11 sm:h-7"
-            asChild
-          >
-            <Link href="/ajustes/orcamentos">
-              {teams.length === 0 ? c.emptyCta : c.manage}
-            </Link>
-          </Button>
-        </CardAction>
-      </CardHeader>
+    <CockpitCard className="min-h-full xl:h-full">
+      <CockpitCardHeader className="flex-col items-start gap-2 sm:flex-row sm:justify-between">
+        <div className="min-w-0">
+          <CockpitCardTitle id="team-budget-title" className="flex items-center gap-2">
+            <RiTeamLine className="size-4 text-muted-foreground" aria-hidden />
+            {c.title}
+          </CockpitCardTitle>
+          <CardDescription className="text-content-supporting">
+            {teams.length === 0
+              ? c.emptyBody
+              : attentionCount > 0
+                ? c.subtitleAttention(attentionCount, teams.length)
+                : c.subtitleAllOk(teams.length)}
+          </CardDescription>
+        </div>
+        <Button
+          variant="secondary"
+          size="sm"
+          className="h-11 shrink-0 sm:h-7"
+          asChild
+        >
+          <Link href="/ajustes/orcamentos">
+            {teams.length === 0 ? c.emptyCta : c.manage}
+          </Link>
+        </Button>
+      </CockpitCardHeader>
+      <CockpitCardFrame>
       {teams.length > 0 && (
-      <CardContent className="@container flex min-h-0 flex-1 flex-col">
+      <CockpitCardContent className="@container flex min-h-0 flex-1 flex-col">
           <div className="min-h-0 flex-1 overflow-y-auto">
           <div className="grid gap-2 @2xl:hidden">
             {teams.map((team) => {
@@ -155,13 +156,13 @@ export function TeamBudgetTable({
                   key={team.teamId}
                   href={`/times/${team.teamId}`}
                   aria-label={c.detail(team.teamName)}
-                  className="group min-h-11 rounded-lg border p-3 outline-none transition-colors hover:border-border hover:bg-surface-hover focus-visible:ring-2 focus-visible:ring-ring/40"
+                  className="group min-h-11 rounded-standard border p-3 outline-none transition-colors hover:border-border hover:bg-surface-hover focus-visible:ring-2 focus-visible:ring-ring/40"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <p className="min-w-0 truncate font-medium">{team.teamName}</p>
                     <TeamStatus team={team} currency={currency} />
                   </div>
-                  <dl className="mt-2.5 grid grid-cols-3 gap-2 text-[11px] leading-relaxed">
+                    <dl className="mt-2.5 grid grid-cols-3 gap-2 text-xs leading-relaxed">
                     <div>
                       <dt className="text-muted-foreground">{c.colSpent}</dt>
                       <dd className="mt-0.5 font-medium tabular-nums">
@@ -267,8 +268,9 @@ export function TeamBudgetTable({
           </Table>
           </div>
           </div>
-        </CardContent>
+        </CockpitCardContent>
       )}
-    </Card>
+      </CockpitCardFrame>
+    </CockpitCard>
   );
 }

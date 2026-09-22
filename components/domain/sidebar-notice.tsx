@@ -101,12 +101,12 @@ export function SidebarNotice({
       {icon}
       <AlertTitle className={`leading-4 ${titleTone[tone]}`}>{title}</AlertTitle>
       <AlertDescription
-        className={`col-start-2 line-clamp-3 text-left text-[11px]/4 ${t.description}`}
+        className={`col-start-2 line-clamp-3 text-left text-xs/4 ${t.description}`}
       >
         <p>{description}</p>
       </AlertDescription>
       {cta && (
-        <span className="col-start-2 mt-1 text-[11px] font-medium text-sidebar-foreground">
+        <span className="col-start-2 mt-1 text-xs font-medium text-sidebar-foreground">
           {cta}
         </span>
       )}

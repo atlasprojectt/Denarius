@@ -611,7 +611,10 @@ input[type="number"]::-webkit-outer-spin-button {
   --muted-foreground: oklch(0.553 0.013 58.071);
   /* Supporting copy is quieter than the normal muted tier without relying on
      opacity, so it remains readable in both themes. */
-  --content-supporting: oklch(0.575 0.012 58.071);
+  /* Supporting copy is still secondary, but it must remain readable when it
+     is rendered at the 12px helper size. This reaches ~4.87:1 on the light
+     canvas instead of the previous 4.20:1. */
+  --content-supporting: oklch(0.54 0.012 58.071);
   --accent: var(--surface-hover);
   --accent-foreground: oklch(0.216 0.006 56.043);
   --destructive: oklch(0.577 0.245 27.325);
@@ -1095,7 +1098,6 @@ input[type="number"]::-webkit-outer-spin-button {
   font-weight: 600;
   letter-spacing: 0.08em;
   text-align: right;
-  text-transform: uppercase;
 }
 
 .report-header-wordmark {
@@ -1137,7 +1139,6 @@ input[type="number"]::-webkit-outer-spin-button {
   font-size: 0.625rem;
   font-weight: 600;
   letter-spacing: 0.06em;
-  text-transform: uppercase;
 }
 
 .report-document-meta dd {
@@ -1176,9 +1177,8 @@ input[type="number"]::-webkit-outer-spin-button {
   color: #1c1917;
   font-family: var(--font-heading);
   font-size: 0.75rem;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: 0.075em;
-  text-transform: uppercase;
 }
 
 .report-section-number {
@@ -1215,7 +1215,7 @@ input[type="number"]::-webkit-outer-spin-button {
 .report-summary-row dd {
   color: #1c1917;
   font-size: 1rem;
-  font-weight: 650;
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.015em;
 }
@@ -1241,7 +1241,7 @@ input[type="number"]::-webkit-outer-spin-button {
 .report-verdict p {
   margin-top: 0.35rem;
   font-size: 0.8125rem;
-  font-weight: 550;
+  font-weight: 500;
   line-height: 1.5;
 }
 
@@ -1250,11 +1250,10 @@ input[type="number"]::-webkit-outer-spin-button {
   align-items: center;
   gap: 0.35rem;
   color: #57534e;
-  font-size: 0.625rem;
-  font-weight: 650;
+  font-size: 0.6875rem;
+  font-weight: 600;
   letter-spacing: 0.035em;
   white-space: nowrap;
-  text-transform: uppercase;
 }
 
 .report-status > span {
@@ -1312,14 +1311,13 @@ input[type="number"]::-webkit-outer-spin-button {
   border-top: 1px solid #a8a29e;
   border-bottom-color: #a8a29e;
   color: #57534e;
-  font-size: 0.625rem;
-  font-weight: 650;
+  font-size: 0.6875rem;
+  font-weight: 600;
   letter-spacing: 0.04em;
-  text-transform: uppercase;
 }
 
 .report-data-table tbody th {
-  font-weight: 550;
+  font-weight: 500;
 }
 
 .report-data-table .report-number {
@@ -1332,7 +1330,7 @@ input[type="number"]::-webkit-outer-spin-button {
 .report-total-row td {
   border-top: 1px solid #a8a29e;
   border-bottom: 0;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .report-cost-table {
@@ -1592,6 +1590,10 @@ input[type="number"]::-webkit-outer-spin-button {
 
   .report-data-table {
     font-size: 7pt;
+  }
+
+  .report-data-table thead th {
+    font-size: 6pt;
   }
 
   .report-data-table th,
