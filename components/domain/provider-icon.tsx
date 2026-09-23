@@ -7,7 +7,7 @@
 // that doesn't inline cleanly). Gemini is not a connectable provider yet
 // (PRD scope is OpenAI + Anthropic) — the icon ships ready for when it is.
 // When rendered next to a visible label, omit `title` and the icon is
-// aria-hidden (decorative), matching how remixicons are used.
+// aria-hidden (decorative), matching how the app's Hugeicons are used.
 
 export type ProviderIconName = "openai" | "anthropic" | "gemini";
 

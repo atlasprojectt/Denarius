@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { RiErrorWarningLine, RiInformationLine, RiTeamLine } from "@remixicon/react";
+import { RiErrorWarningLine, RiInformationLine, RiTeamLine } from "@/components/domain/icons";
 
 import { EmptyState } from "@/components/domain/empty-state";
 import { Notice } from "@/components/domain/notice";

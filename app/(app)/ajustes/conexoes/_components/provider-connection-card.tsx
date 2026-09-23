@@ -8,7 +8,7 @@ import {
   RiKey2Line,
   RiLightbulbLine,
   RiLinkUnlink,
-} from "@remixicon/react";
+} from "@/components/domain/icons";
 
 import { ActionStatus } from "@/components/domain/action-status";
 import { ConfirmationDialog } from "@/components/domain/confirmation-dialog";

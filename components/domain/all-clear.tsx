@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { RiCheckboxCircleLine } from "@remixicon/react";
+import { RiCheckboxCircleLine } from "@/components/domain/icons";
 
 import { SidebarNotice } from "@/components/domain/sidebar-notice";
 

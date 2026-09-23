@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { RiErrorWarningLine } from "@remixicon/react";
+import { RiErrorWarningLine } from "@/components/domain/icons";
 
 import { EmptyState } from "@/components/domain/empty-state";
 import { ErrorReference } from "@/components/domain/error-reference";

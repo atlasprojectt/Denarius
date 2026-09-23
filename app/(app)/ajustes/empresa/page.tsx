@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { RiInformationLine } from "@remixicon/react";
+import { RiInformationLine } from "@/components/domain/icons";
 
 import { Notice } from "@/components/domain/notice";
 import { PageContainer } from "@/components/domain/page-container";

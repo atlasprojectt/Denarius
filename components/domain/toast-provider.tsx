@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { Toast } from "@base-ui/react/toast";
-import { RiErrorWarningLine, RiCheckLine, RiCloseLine } from "@remixicon/react";
+import { RiErrorWarningLine, RiCheckLine, RiCloseLine } from "@/components/domain/icons";
 
 import { cn } from "@/lib/utils";
 

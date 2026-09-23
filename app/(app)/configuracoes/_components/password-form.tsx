@@ -1,6 +1,6 @@
 "use client";
 
-import { RiEyeLine, RiEyeOffLine } from "@remixicon/react";
+import { RiEyeLine, RiEyeOffLine } from "@/components/domain/icons";
 import { useActionState, useState } from "react";
 
 import { ActionToast } from "@/components/domain/toast-provider";

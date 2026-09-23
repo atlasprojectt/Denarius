@@ -4,7 +4,7 @@ import {
   RiCheckboxCircleLine,
   RiCompass3Line,
   RiInformationLine,
-} from "@remixicon/react";
+} from "@/components/domain/icons";
 
 import { EmptyState } from "@/components/domain/empty-state";
 import { PageContainer } from "@/components/domain/page-container";

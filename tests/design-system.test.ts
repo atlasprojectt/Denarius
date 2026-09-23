@@ -59,6 +59,29 @@ describe("neutral surface contract", () => {
   });
 });
 
+describe("modal focus contract", () => {
+  it("uses one semantic scrim for dialogs and sheets", () => {
+    const globals = source("app/globals.css");
+    const dialog = source("components/ui/dialog.tsx");
+    const sheet = source("components/ui/sheet.tsx");
+
+    expect(globals).toContain("--modal-overlay:");
+    expect(globals).toContain(".modal-overlay");
+    expect(dialog).toContain("modal-overlay fixed inset-0");
+    expect(sheet).toContain("modal-overlay fixed inset-0");
+    expect(dialog).not.toContain("bg-black/80");
+    expect(sheet).not.toContain("bg-black/80");
+  });
+
+  it("keeps Search on the shared scrim and the normal keyboard focus ring", () => {
+    const search = source("components/domain/search-dialog.tsx");
+
+    expect(search).not.toContain("overlayClassName");
+    expect(search).toContain("focus-visible:ring-2");
+    expect(search).toContain("focus-visible:ring-ring/40");
+  });
+});
+
 describe("helper/footer weight contract", () => {
   it("keeps DM Sans variable so font-light (300) is real, not synthesized", () => {
     for (const path of ["app/layout.tsx", "app/global-error.tsx"]) {
@@ -97,7 +120,6 @@ describe("helper/footer weight contract", () => {
         "app/(auth)/login/page.tsx",
         "app/(legal)/_components/legal-document.tsx",
         "app/(legal)/layout.tsx",
-        "components/domain/app-sidebar.tsx",
         "components/domain/calculation-disclosure.tsx",
         "components/domain/page-header.tsx",
         "components/domain/search-dialog.tsx",

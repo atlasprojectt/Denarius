@@ -1,4 +1,4 @@
-import { RiTeamLine } from "@remixicon/react";
+import { RiTeamLine } from "@/components/domain/icons";
 
 import { EmptyState } from "@/components/domain/empty-state";
 import { PageHeader } from "@/components/domain/page-header";

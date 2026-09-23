@@ -1,4 +1,4 @@
-import { RiHistoryLine } from "@remixicon/react";
+import { RiHistoryLine } from "@/components/domain/icons";
 
 import { SidebarNotice } from "@/components/domain/sidebar-notice";
 import type { ConnectionFreshness } from "@/lib/engine/freshness";

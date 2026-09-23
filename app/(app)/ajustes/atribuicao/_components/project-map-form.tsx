@@ -2,13 +2,12 @@
 
 import { useActionState, useMemo, useState } from "react";
 import {
-  RiAnthropicFill,
   RiLinksLine,
-  RiOpenaiFill,
-  type RemixiconComponentType,
-} from "@remixicon/react";
+} from "@/components/domain/icons";
+import type { AppIcon } from "@/components/domain/icons";
 
 import { ActionStatus } from "@/components/domain/action-status";
+import { ProviderIcon } from "@/components/domain/provider-icon";
 import { StateBadge } from "@/components/domain/state-badge";
 import { ActionToast } from "@/components/domain/toast-provider";
 import { UsdValue } from "@/components/domain/usd-value";
@@ -55,9 +54,13 @@ const providerLabel: Record<string, string> = {
   anthropic: "Anthropic",
 };
 
-const providerIcon: Record<string, RemixiconComponentType> = {
-  openai: RiOpenaiFill,
-  anthropic: RiAnthropicFill,
+const providerIcon: Record<string, AppIcon> = {
+  openai: ({ className }) => (
+    <ProviderIcon provider="openai" className={className} />
+  ),
+  anthropic: ({ className }) => (
+    <ProviderIcon provider="anthropic" className={className} />
+  ),
 };
 
 function ProviderBadge({

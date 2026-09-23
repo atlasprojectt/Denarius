@@ -5,7 +5,7 @@ import {
   RiArrowLeftLine,
   RiDownloadLine,
   RiPrinterLine,
-} from "@remixicon/react";
+} from "@/components/domain/icons";
 
 import { ActionStatus } from "@/components/domain/action-status";
 import { Button } from "@/components/ui/button";

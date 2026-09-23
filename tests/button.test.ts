@@ -27,7 +27,7 @@ describe("buttonVariants", () => {
   });
 
   it("keeps primary and destructive treatments distinct", () => {
-    expect(buttonVariants({ variant: "primary" })).toContain("bg-primary");
+    expect(buttonVariants({ variant: "primary" })).toContain("bg-foreground");
     expect(buttonVariants({ variant: "destructive" })).toContain("bg-destructive/10");
   });
 

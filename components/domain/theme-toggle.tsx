@@ -6,7 +6,7 @@ import {
   RiComputerLine,
   RiMoonLine,
   RiSunLine,
-} from "@remixicon/react";
+} from "@/components/domain/icons";
 
 import { Button } from "@/components/ui/button";
 import {

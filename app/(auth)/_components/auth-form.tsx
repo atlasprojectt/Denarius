@@ -6,7 +6,7 @@ import {
   RiEyeOffLine,
   RiKey2Line,
   RiMailLine,
-} from "@remixicon/react";
+} from "@/components/domain/icons";
 import Link from "next/link";
 import { useActionState, useId, useState, type ReactNode } from "react";
 

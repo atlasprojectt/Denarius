@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { RiArrowRightSLine } from "@remixicon/react";
+import { RiArrowRightSLine } from "@/components/domain/icons";
 
 import { SimulateDrawer } from "@/components/domain/simulate-drawer";
 import { StatusPill } from "@/components/domain/status-pill";

@@ -1,4 +1,4 @@
-import { RiArrowRightSLine, RiFileTextLine, RiLockLine } from "@remixicon/react";
+import { RiArrowRightSLine, RiFileTextLine, RiLockLine } from "@/components/domain/icons";
 
 import { cn } from "@/lib/utils";
 

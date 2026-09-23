@@ -11,18 +11,18 @@ const buttonVariants = cva(
     variants: {
       variant: {
         primary:
-          "bg-primary text-primary-foreground hover:bg-primary-hover active:bg-primary/90",
+          "bg-foreground text-background hover:bg-foreground/90 active:bg-foreground/80",
         secondary:
           "border-border bg-secondary text-foreground hover:border-border hover:bg-surface-hover hover:text-foreground active:bg-surface-selected",
         tertiary:
-          "bg-transparent text-muted-foreground [transition-duration:var(--motion-duration-fast)] hover:bg-surface-hover hover:text-foreground hover:[&_svg]:text-brand-accent-light active:bg-surface-selected",
+          "bg-transparent text-muted-foreground [transition-duration:var(--motion-duration-fast)] hover:bg-surface-hover hover:text-foreground hover:[&_svg]:text-foreground active:bg-surface-selected",
         ghost:
           "bg-transparent text-muted-foreground hover:bg-surface-hover hover:text-foreground active:bg-surface-selected",
         destructive:
           "border-destructive/25 bg-destructive/10 text-destructive hover:bg-destructive/20 active:bg-destructive/25 focus-visible:border-destructive/50 focus-visible:ring-destructive/25 dark:bg-destructive/20 dark:hover:bg-destructive/30",
         outline:
           "border-border bg-transparent text-foreground hover:bg-surface-hover active:bg-surface-selected",
-        link: "rounded-none text-primary underline-offset-4 hover:underline dark:text-primary-hover",
+        link: "rounded-none text-foreground underline-offset-4 hover:text-foreground hover:underline",
       },
       size: {
         sm: "h-7 min-w-20 gap-1.5 px-3 text-xs [&_svg:not([class*='size-'])]:size-3.5",

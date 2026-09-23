@@ -7,7 +7,8 @@ import {
   type ReactElement,
   type ReactNode,
 } from "react";
-import { RiErrorWarningLine } from "@remixicon/react";
+import { useFormStatus } from "react-dom";
+import { RiErrorWarningLine } from "@/components/domain/icons";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -22,19 +23,18 @@ import {
 
 const copy = { cancel: "Cancelar" };
 
-export function ConfirmationDialog({
-  trigger,
-  title,
-  description,
-  confirmLabel,
-  pendingLabel,
-  action,
-  pending,
-  success,
-  icon,
-  children,
-}: {
-  trigger: ReactElement<{ onClick?: MouseEventHandler }>;
+type ConfirmationDialogControl =
+  | {
+      kind?: "trigger";
+      trigger: ReactElement<{ onClick?: MouseEventHandler }>;
+    }
+  | {
+      kind: "controlled";
+      open: boolean;
+      onOpenChange: (open: boolean) => void;
+    };
+
+type ConfirmationDialogContentProps = {
   title: string;
   description: string;
   confirmLabel: string;
@@ -45,8 +45,57 @@ export function ConfirmationDialog({
   /** Per-action icon for the destructive header medallion. */
   icon?: ReactNode;
   children?: ReactNode;
+};
+
+function ConfirmationActions({
+  pending,
+  pendingLabel,
+  confirmLabel,
+}: {
+  pending: boolean;
+  pendingLabel?: string;
+  confirmLabel: string;
 }) {
-  const [open, setOpen] = useState(false);
+  const { pending: formPending } = useFormStatus();
+  const submitting = pending || formPending;
+
+  return (
+    <DialogFooter>
+      <DialogClose asChild>
+        <Button type="button" variant="outline" disabled={submitting} autoFocus>
+          {copy.cancel}
+        </Button>
+      </DialogClose>
+      <Button
+        type="submit"
+        variant="destructive"
+        loading={submitting}
+        loadingText={pendingLabel ?? confirmLabel}
+      >
+        {confirmLabel}
+      </Button>
+    </DialogFooter>
+  );
+}
+
+export function ConfirmationDialog(
+  props: ConfirmationDialogContentProps & ConfirmationDialogControl,
+) {
+  const {
+    title,
+    description,
+    confirmLabel,
+    pendingLabel,
+    action,
+    pending,
+    success,
+    icon,
+    children,
+  } = props;
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = props.kind === "controlled" ? props.open : internalOpen;
+  const setOpen =
+    props.kind === "controlled" ? props.onOpenChange : setInternalOpen;
 
   // Close on a landed success (React's "adjust state during render" pattern —
   // the action returns a fresh success string identity on every dispatch).
@@ -56,12 +105,15 @@ export function ConfirmationDialog({
     if (success) setOpen(false);
   }
 
-  const triggerWithOpen = cloneElement(trigger, {
-    onClick: (event) => {
-      trigger.props.onClick?.(event);
-      if (!event.defaultPrevented) setOpen(true);
-    },
-  });
+  const triggerWithOpen =
+    props.kind === "controlled"
+      ? null
+      : cloneElement(props.trigger, {
+          onClick: (event) => {
+            props.trigger.props.onClick?.(event);
+            if (!event.defaultPrevented) setOpen(true);
+          },
+        });
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -84,21 +136,11 @@ export function ConfirmationDialog({
             </div>
           </DialogHeader>
           {children}
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button type="button" variant="outline" disabled={pending} autoFocus>
-                {copy.cancel}
-              </Button>
-            </DialogClose>
-            <Button
-              type="submit"
-              variant="destructive"
-              loading={pending}
-              loadingText={pendingLabel ?? confirmLabel}
-            >
-              {confirmLabel}
-            </Button>
-          </DialogFooter>
+          <ConfirmationActions
+            pending={pending}
+            pendingLabel={pendingLabel}
+            confirmLabel={confirmLabel}
+          />
         </form>
       </DialogContent>
     </Dialog>

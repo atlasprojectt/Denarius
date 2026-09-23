@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { RiArrowRightSLine } from "@remixicon/react";
+import { RiArrowRightSLine } from "@/components/domain/icons";
 
 import { Button } from "@/components/ui/button";
 import type { Verdict } from "@/lib/engine/verdict";

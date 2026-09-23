@@ -1,4 +1,4 @@
-import { RiCheckboxCircleLine, RiErrorWarningLine } from "@remixicon/react";
+import { RiCheckboxCircleLine, RiErrorWarningLine } from "@/components/domain/icons";
 
 // Inline result line for useActionState forms (F4). One consistent look for
 // every mutation across the app. Success stays neutral — green is reserved for

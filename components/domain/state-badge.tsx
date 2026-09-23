@@ -1,4 +1,4 @@
-import type { RemixiconComponentType } from "@remixicon/react";
+import type { AppIcon } from "@/components/domain/icons";
 
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -22,7 +22,7 @@ export function StateBadge({
   className,
   children,
 }: {
-  icon: RemixiconComponentType;
+  icon: AppIcon;
   tone?: StateBadgeTone;
   className?: string;
   children: React.ReactNode;
@@ -33,7 +33,7 @@ export function StateBadge({
       data-slot="state-badge"
       data-tone={tone}
       className={cn(
-        "h-5 border-0 font-sans text-xs font-semibold shadow-none opacity-100 [&>svg]:size-3!",
+        "h-6 border-0 font-sans text-[0.6875rem] font-semibold tracking-[-0.01em] shadow-none opacity-100 [&>svg]:size-3!",
         toneClasses[tone],
         className,
       )}

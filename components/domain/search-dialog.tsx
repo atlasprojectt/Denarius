@@ -10,7 +10,7 @@ import {
   RiSearchLine,
   RiTeamLine,
   RiToolsLine,
-} from "@remixicon/react";
+} from "@/components/domain/icons";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -47,6 +47,7 @@ const copy = {
   errorHint: "Tente novamente em alguns instantes.",
   retry: "Tentar novamente",
   results: "Resultados da pesquisa",
+  clear: "Limpar busca",
   close: "Fechar pesquisa",
   noResults: (query: string) => `Nenhum resultado para “${query}”`,
   noResultsHint: "Tente outro termo.",
@@ -182,8 +183,7 @@ export function SearchDialog() {
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
         showCloseButton={false}
-        className="max-h-[calc(100dvh-2rem)] max-w-3xl gap-0 overflow-hidden p-0 sm:max-w-3xl"
-        overlayClassName="bg-black/80 supports-backdrop-filter:!backdrop-blur-[2px]"
+        className="max-h-[calc(100dvh-2rem)] max-w-3xl gap-0 overflow-hidden p-0 shadow-2xl ring-foreground/8 sm:max-w-3xl"
       >
         <DialogHeader className="sr-only">
           <DialogTitle>{copy.title}</DialogTitle>
@@ -192,7 +192,7 @@ export function SearchDialog() {
 
         <div
           className={cn(
-            "relative p-4 pr-12 transition-colors duration-(--motion-duration-standard) ease-(--motion-ease-standard)",
+            "relative p-3 pr-14 transition-colors duration-(--motion-duration-standard) ease-(--motion-ease-standard) sm:p-4 sm:pr-16",
             showResults && "border-b border-border",
           )}
         >
@@ -201,15 +201,14 @@ export function SearchDialog() {
               <Button
                 type="button"
                 variant="ghost"
-                size="icon-sm"
+                size="icon"
                 aria-label={copy.close}
-                className="absolute top-1/2 right-4 z-10 -translate-y-1/2"
+                className="absolute top-1/2 right-3 z-10 -translate-y-1/2 max-sm:size-11 sm:right-4"
               />
             }
           >
             <RiCloseLine />
           </DialogClose>
-          <RiSearchLine className="pointer-events-none absolute top-1/2 left-7 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             ref={inputRef}
             autoFocus
@@ -227,22 +226,35 @@ export function SearchDialog() {
             }
             onChange={(event) => setQuery(event.target.value)}
             onKeyDown={handleKeyDown}
-            className="h-12 rounded-control bg-card pr-28 pl-10 text-sm shadow-none focus-visible:border-ring/30 focus-visible:ring-1 focus-visible:ring-ring/10 md:text-sm"
+            className="peer h-12 appearance-none rounded-control border-border bg-surface-control pr-28 pl-10 text-sm shadow-none transition-[background-color,border-color,box-shadow] duration-(--motion-duration-standard) ease-(--motion-ease-standard) hover:bg-surface-control focus-visible:border-ring focus-visible:bg-surface-control focus-visible:ring-2 focus-visible:ring-ring/40 md:text-sm [&::-webkit-search-cancel-button]:hidden [&::-webkit-search-decoration]:hidden"
           />
-          <span
-            className="absolute top-1/2 right-16 flex -translate-y-1/2 items-center gap-1.5 text-xs text-muted-foreground"
-            aria-live="polite"
+          <RiSearchLine className="pointer-events-none absolute top-1/2 left-6 size-4 -translate-y-1/2 text-muted-foreground transition-colors duration-(--motion-duration-fast) peer-focus-visible:text-foreground sm:left-7" />
+          <div
+            className="absolute top-1/2 right-16 flex -translate-y-1/2 items-center gap-1.5 text-xs text-muted-foreground sm:right-[4.5rem]"
           >
             {loading ? (
-              <>
+              <span className="flex items-center gap-1.5" aria-live="polite">
                 <Spokes
                   className="size-3.5 shrink-0 motion-reduce:[animation:none]"
                   aria-hidden
                 />
                 {copy.searching}
-              </>
+              </span>
+            ) : query ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                aria-label={copy.clear}
+                onClick={() => {
+                  setQuery("");
+                  focusInput();
+                }}
+              >
+                <RiCloseLine />
+              </Button>
             ) : null}
-          </span>
+          </div>
         </div>
 
         <AnimatePresence initial={false}>

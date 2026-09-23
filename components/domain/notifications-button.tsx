@@ -5,13 +5,14 @@ import { useEffect, useId, useRef, useState } from "react";
 import {
   RiArrowRightSLine,
   RiCheckboxCircleFill,
+  RiCloseLine,
   RiCloseCircleFill,
   RiErrorWarningFill,
   RiNotification3Line,
   RiRefreshLine,
   RiTimeFill,
-  type RemixiconComponentType,
-} from "@remixicon/react";
+} from "@/components/domain/icons";
+import type { AppIcon } from "@/components/domain/icons";
 
 import { StateBadge, type StateBadgeTone } from "@/components/domain/state-badge";
 import { Badge } from "@/components/ui/badge";
@@ -23,6 +24,7 @@ import {
 } from "@/components/ui/popover";
 import {
   Sheet,
+  SheetClose,
   SheetContent,
   SheetDescription,
   SheetHeader,
@@ -55,6 +57,7 @@ const copy = {
   errorTitle: "Não foi possível atualizar",
   errorBody: "Verifique sua conexão e tente novamente.",
   retry: "Tentar novamente",
+  close: "Fechar notificações",
   active: (n: number) => (n === 1 ? "1 alerta ativo" : `${n} alertas ativos`),
   badgeAria: (n: number) =>
     n === 1
@@ -64,7 +67,7 @@ const copy = {
 
 const levelMeta: Record<
   BudgetNotification["level"],
-  { label: string; tone: StateBadgeTone; icon: RemixiconComponentType }
+  { label: string; tone: StateBadgeTone; icon: AppIcon }
 > = {
   warning: {
     label: "Limite atingido",
@@ -125,11 +128,21 @@ function PanelHeader({
   );
 
   return mobile ? (
-    <SheetHeader className="gap-0 border-b px-5 py-4 pr-12 text-left">
+    <SheetHeader className="relative gap-0 border-b px-5 py-4 pr-14 text-left">
       {content}
+      <SheetClose asChild>
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label={copy.close}
+          className="absolute right-2 top-1/2 size-11 -translate-y-1/2"
+        >
+          <RiCloseLine className="size-5" aria-hidden />
+        </Button>
+      </SheetClose>
     </SheetHeader>
   ) : (
-    <div className="border-b px-4 py-3.5">{content}</div>
+    <div className="border-b px-5 py-4">{content}</div>
   );
 }
 
@@ -165,9 +178,9 @@ function NotificationsPanel({
 
       <div className="min-h-0 overflow-y-auto overscroll-contain">
         {loading && items === null ? (
-          <div aria-label={copy.loading} className="divide-y px-4">
+          <div aria-label={copy.loading} className="divide-y px-5">
             {[0, 1, 2].map((item) => (
-              <div key={item} className="space-y-2.5 py-3.5">
+              <div key={item} className="space-y-2.5 py-4">
                 <Skeleton className="h-5 w-24 rounded-pill" />
                 <Skeleton className="h-4 w-3/4 rounded-sm" />
                 <Skeleton className="h-3 w-1/2 rounded-sm" />
@@ -175,7 +188,7 @@ function NotificationsPanel({
             ))}
           </div>
         ) : failed && items === null ? (
-          <div role="status" className="px-5 py-5">
+          <div role="status" className="flex min-h-40 flex-col items-start justify-center px-5 py-6">
             <p className="text-sm font-medium">{copy.errorTitle}</p>
             <p className="mt-1 text-xs/relaxed text-muted-foreground">
               {copy.errorBody}
@@ -201,7 +214,7 @@ function NotificationsPanel({
                   <Link
                     href={item.href}
                     onClick={onNavigate}
-                    className="group grid grid-cols-[minmax(0,1fr)_auto] gap-3 px-4 py-3.5 outline-none transition-colors duration-(--motion-duration-standard) ease-(--motion-ease-standard) hover:bg-surface-hover focus-visible:bg-surface-hover"
+                    className="group grid grid-cols-[minmax(0,1fr)_auto] gap-3 px-5 py-4 outline-none transition-colors duration-(--motion-duration-standard) ease-(--motion-ease-standard) hover:bg-surface-hover focus-visible:bg-surface-hover focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/40"
                   >
                     <span className="min-w-0">
                       <StateBadge icon={meta.icon} tone={meta.tone}>
@@ -224,7 +237,7 @@ function NotificationsPanel({
             })}
           </ul>
         ) : (
-          <div className="px-5 py-5">
+          <div className="flex min-h-44 flex-col items-center justify-center px-8 py-7 text-center">
             <StateBadge icon={RiCheckboxCircleFill} tone="positive">
               {copy.allClearBadge}
             </StateBadge>
@@ -418,6 +431,7 @@ export function NotificationsButton() {
         <SheetContent
           id={panelId}
           side="bottom"
+          showCloseButton={false}
           className="notifications-sheet max-h-[85svh] overflow-hidden rounded-t-xl border-border bg-popover p-0"
         >
           {panel}

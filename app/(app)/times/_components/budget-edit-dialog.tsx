@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { RiPencilLine } from "@remixicon/react";
+import { RiPencilLine } from "@/components/domain/icons";
 
 import { ActionStatus } from "@/components/domain/action-status";
 import { MoneyInput } from "@/components/domain/money-input";

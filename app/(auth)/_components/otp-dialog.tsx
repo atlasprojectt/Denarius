@@ -1,6 +1,6 @@
 "use client";
 
-import { RiMailSendLine } from "@remixicon/react";
+import { RiMailSendLine } from "@/components/domain/icons";
 import { useActionState, useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";

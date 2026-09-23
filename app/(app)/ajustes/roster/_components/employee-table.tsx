@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useMemo, useState } from "react";
-import { RiSearchLine } from "@remixicon/react";
+import { RiSearchLine } from "@/components/domain/icons";
 
 import { ActionStatus } from "@/components/domain/action-status";
 import { ConfirmationDialog } from "@/components/domain/confirmation-dialog";

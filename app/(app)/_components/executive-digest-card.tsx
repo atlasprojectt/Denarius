@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { RiSparkling2Line } from "@remixicon/react";
+import { RiSparkling2Line } from "@/components/domain/icons";
 
 import {
   CockpitCard,

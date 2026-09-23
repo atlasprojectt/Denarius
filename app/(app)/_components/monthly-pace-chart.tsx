@@ -1,6 +1,6 @@
 "use client";
 
-import { RiLineChartLine } from "@remixicon/react";
+import { RiLineChartLine } from "@/components/domain/icons";
 import {
   CHART_ANNOTATION_Z_INDEX,
   SpendTrendChart,
@@ -144,7 +144,7 @@ export function MonthlyPaceChart({
 
   if (todayValue <= 0) {
     return (
-      <CockpitCard data-monthly-pace className="min-h-full [--chart-surface:var(--surface-elevated)]" aria-labelledby="home-pace-title-empty">
+      <CockpitCard data-monthly-pace className="min-h-full [--chart-surface:var(--surface-canvas)]" aria-labelledby="home-pace-title-empty">
         <CockpitCardHeader className="min-h-10">
           <div className="flex items-center gap-2">
             <CockpitCardTitle id="home-pace-title-empty" className="flex items-center gap-2">
@@ -194,7 +194,7 @@ export function MonthlyPaceChart({
       : c.projectionValue(compactMoney(projection, currency, 2));
 
   return (
-    <CockpitCard data-monthly-pace className="min-h-full [--chart-surface:var(--surface-elevated)]" aria-labelledby="home-pace-title">
+    <CockpitCard data-monthly-pace className="min-h-full [--chart-surface:var(--surface-canvas)]" aria-labelledby="home-pace-title">
       <CockpitCardHeader className="min-h-10">
         <div className="flex items-center gap-2">
           <CockpitCardTitle id="home-pace-title" className="flex items-center gap-2">

@@ -1,6 +1,6 @@
 "use client";
 
-import { RiMailLine } from "@remixicon/react";
+import { RiMailLine } from "@/components/domain/icons";
 import Link from "next/link";
 import { useActionState } from "react";
 

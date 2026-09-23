@@ -4,7 +4,7 @@ import {
   RiDeleteBinLine,
   RiMenuLine,
   RiSettings3Line,
-} from "@remixicon/react";
+} from "@/components/domain/icons";
 import { notFound } from "next/navigation";
 
 import { PageContainer } from "@/components/domain/page-container";

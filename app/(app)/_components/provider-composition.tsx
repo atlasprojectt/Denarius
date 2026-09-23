@@ -4,7 +4,7 @@ import {
   RiArrowRightSLine,
   RiGroupLine,
   RiPieChart2Line,
-} from "@remixicon/react";
+} from "@/components/domain/icons";
 
 import {
   CockpitCard,

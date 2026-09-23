@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useRef, useState } from "react";
-import { RiCheckLine, RiFileCopyLine } from "@remixicon/react";
+import { RiCheckLine, RiFileCopyLine } from "@/components/domain/icons";
 
 import { ActionStatus } from "@/components/domain/action-status";
 import { Button } from "@/components/ui/button";

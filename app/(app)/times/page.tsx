@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { RiArrowRightSLine, RiPieChartLine, RiTeamLine } from "@remixicon/react";
+import { RiArrowRightSLine, RiPieChartLine, RiTeamLine } from "@/components/domain/icons";
 
 import { EmptyState } from "@/components/domain/empty-state";
 import { Notice } from "@/components/domain/notice";

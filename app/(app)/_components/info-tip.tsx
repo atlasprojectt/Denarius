@@ -1,6 +1,6 @@
 "use client";
 
-import { RiInformationLine } from "@remixicon/react";
+import { RiInformationLine } from "@/components/domain/icons";
 
 import {
   Tooltip,

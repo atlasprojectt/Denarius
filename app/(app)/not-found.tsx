@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { RiCompass3Line } from "@remixicon/react";
+import { RiCompass3Line } from "@/components/domain/icons";
 
 import { EmptyState } from "@/components/domain/empty-state";
 import { PageContainer } from "@/components/domain/page-container";

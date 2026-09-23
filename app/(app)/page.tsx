@@ -5,7 +5,7 @@ import {
   RiPieChartLine,
   RiScales3Line,
   RiShieldCheckLine,
-} from "@remixicon/react";
+} from "@/components/domain/icons";
 
 import { PageContainer } from "@/components/domain/page-container";
 import { Button } from "@/components/ui/button";

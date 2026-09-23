@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { RiEqualizer2Line } from "@remixicon/react";
+import { RiEqualizer2Line } from "@/components/domain/icons";
 
 import { Button } from "@/components/ui/button";
 import {

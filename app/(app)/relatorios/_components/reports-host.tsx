@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { RiFileChartLine, RiSparklingLine } from "@remixicon/react";
+import { RiFileChartLine, RiSparklingLine } from "@/components/domain/icons";
 
 import { EmptyState } from "@/components/domain/empty-state";
 import { StateBadge } from "@/components/domain/state-badge";

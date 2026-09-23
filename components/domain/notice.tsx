@@ -33,7 +33,7 @@ export function Notice({
   children,
 }: {
   tone?: NoticeTone;
-  /** A direct svg icon (Remix icon) — the Alert grid keys off it. */
+  /** A direct SVG icon (including Hugeicons) — the Alert grid keys off it. */
   icon?: ReactNode;
   title?: string;
   /** Optional right-aligned action (pass a Button/Link). */

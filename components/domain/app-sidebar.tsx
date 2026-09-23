@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
+  RiArrowRightSLine,
   RiExpandUpDownLine,
   RiFileChartLine,
   RiCloseLine,
@@ -14,9 +15,10 @@ import {
   RiSearchLine,
   RiTeamLine,
   RiUserLine,
-} from "@remixicon/react";
+} from "@/components/domain/icons";
 
 import { AllClear } from "@/components/domain/all-clear";
+import { ConfirmationDialog } from "@/components/domain/confirmation-dialog";
 import { LogoMark, LogoWordmark } from "@/components/domain/logo";
 import {
   NavGroup,
@@ -75,7 +77,11 @@ const copy = {
   settings: "Ajustes",
   profileMenu: "Perfil",
   profileSettings: "Configurações",
+  profileSettingsDetail: "Seu perfil e preferências",
   logout: "Sair",
+  logoutTitle: "Sair do Denarius?",
+  logoutDescription: "Sua sessão será encerrada neste dispositivo.",
+  logoutPending: "Saindo…",
   closeMenu: "Fechar menu",
 };
 
@@ -157,8 +163,9 @@ export function AppSidebar({
   latestReportPeriod: string | null;
 }) {
   const pathname = usePathname();
-  const { setOpenMobile } = useSidebar();
+  const { isMobile, setOpenMobile } = useSidebar();
   const hasNewReport = useNewReportBadge(latestReportPeriod);
+  const [logoutOpen, setLogoutOpen] = useState(false);
 
   function openSearch() {
     setOpenMobile(false);
@@ -272,53 +279,76 @@ export function AppSidebar({
                   <RiExpandUpDownLine className="ml-auto text-sidebar-foreground/65" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
-                  side="right"
+                  side={isMobile ? "top" : "right"}
                   align="end"
-                  sideOffset={10}
-                  className="w-64 rounded-xl"
+                  sideOffset={isMobile ? 8 : 10}
+                  className="w-64 max-w-[calc(100vw-1rem)] rounded-xl p-1.5"
                 >
                   {/* Identity header as a plain div: Base UI's GroupLabel
                       (DropdownMenuLabel) throws outside <Menu.Group>, which
                       crashed this menu the moment it opened. */}
-                  <div className="flex items-center gap-3 px-2 py-2">
-                    <Avatar className="size-8">
+                  <div className="flex items-center gap-3 px-2.5 py-2.5">
+                    <Avatar className="size-9 shrink-0">
                       <AvatarFallback className="text-xs font-semibold">
                         {userInitials}
                       </AvatarFallback>
                     </Avatar>
-                    <span className="grid min-w-0 leading-tight">
+                    <span className="grid min-w-0 gap-0.5 leading-tight">
                       <span className="truncate text-sm font-semibold text-foreground">
                         {userLabel}
                       </span>
                       {userLabel !== userEmail && (
-                        <span className="break-all text-xs font-light text-muted-foreground">
+                        <span
+                          className="truncate text-xs text-muted-foreground"
+                          title={userEmail}
+                        >
                           {userEmail}
                         </span>
                       )}
                     </span>
                   </div>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild className="h-9">
-                    <Link href="/configuracoes">
-                      <RiUserLine />
-                      <span>{copy.profileSettings}</span>
+                  <DropdownMenuItem
+                    asChild
+                    className="min-h-12 gap-3 rounded-control px-3 py-2 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/40"
+                  >
+                    <Link href="/configuracoes" onClick={() => setOpenMobile(false)}>
+                      <RiUserLine className="size-4" />
+                      <span className="grid min-w-0 flex-1 gap-0.5">
+                        <span className="text-sm font-medium">{copy.profileSettings}</span>
+                        <span className="text-xs text-muted-foreground group-focus/dropdown-menu-item:text-accent-foreground/70">
+                          {copy.profileSettingsDetail}
+                        </span>
+                      </span>
+                      <RiArrowRightSLine className="size-4 text-muted-foreground/65" aria-hidden />
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <form action={logout}>
-                    <DropdownMenuItem
-                      asChild
-                      variant="destructive"
-                      className="h-9"
-                    >
-                      <button type="submit" className="w-full">
-                        <RiLogoutBoxRLine />
-                        <span>{copy.logout}</span>
-                      </button>
-                    </DropdownMenuItem>
-                  </form>
+                  <DropdownMenuItem
+                    asChild
+                    variant="destructive"
+                    className="min-h-11 gap-3 rounded-control px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/40"
+                    onClick={() => setLogoutOpen(true)}
+                  >
+                    <button type="button" className="w-full">
+                      <RiLogoutBoxRLine className="size-4" />
+                      <span>{copy.logout}</span>
+                    </button>
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
+              <ConfirmationDialog
+                kind="controlled"
+                open={logoutOpen}
+                onOpenChange={setLogoutOpen}
+                title={copy.logoutTitle}
+                description={copy.logoutDescription}
+                confirmLabel={copy.logout}
+                pendingLabel={copy.logoutPending}
+                action={logout}
+                pending={false}
+                icon={<RiLogoutBoxRLine />}
+              />
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarFooter>

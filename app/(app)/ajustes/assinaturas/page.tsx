@@ -1,4 +1,4 @@
-import { RiCoinsLine, RiLockLine } from "@remixicon/react";
+import { RiCoinsLine, RiLockLine } from "@/components/domain/icons";
 
 import { EmptyState } from "@/components/domain/empty-state";
 import { PageHeader } from "@/components/domain/page-header";

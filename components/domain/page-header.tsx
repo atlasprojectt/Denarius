@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { RiArrowLeftSLine } from "@remixicon/react";
+import { RiArrowLeftSLine } from "@/components/domain/icons";
 
 // Shared page header (frontend F5: cross-screen domain component). Keeps every
 // screen's opening consistent: optional back link, title, one-line description,

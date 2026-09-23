@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { RiCheckboxCircleLine, RiDownloadLine } from "@remixicon/react";
+import { RiCheckboxCircleLine, RiDownloadLine } from "@/components/domain/icons";
 
 import { ActionStatus } from "@/components/domain/action-status";
 import { Button } from "@/components/ui/button";

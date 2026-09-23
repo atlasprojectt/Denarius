@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { RiArrowRightSLine } from "@remixicon/react";
+import { RiArrowRightSLine } from "@/components/domain/icons";
 
 import {
   Collapsible,

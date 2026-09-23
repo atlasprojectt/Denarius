@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { RiArrowRightSLine } from "@remixicon/react";
+import { RiArrowRightSLine } from "@/components/domain/icons";
 import type { ReactNode } from "react";
 
 import { Card } from "@/components/ui/card";

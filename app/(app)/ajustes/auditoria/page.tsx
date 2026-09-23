@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { RiErrorWarningLine, RiFileList3Line } from "@remixicon/react";
+import { RiErrorWarningLine, RiFileList3Line } from "@/components/domain/icons";
 
 import { EmptyState } from "@/components/domain/empty-state";
 import { PageContainer } from "@/components/domain/page-container";

@@ -9,7 +9,7 @@ import {
   RiArrowUpLine,
   RiPriceTag3Line,
   RiSearchLine,
-} from "@remixicon/react";
+} from "@/components/domain/icons";
 
 import { StateBadge } from "@/components/domain/state-badge";
 import { Button } from "@/components/ui/button";

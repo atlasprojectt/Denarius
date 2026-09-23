@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { RiDeleteBinLine, RiDownload2Line } from "@remixicon/react";
+import { RiDeleteBinLine, RiDownload2Line } from "@/components/domain/icons";
 
 import { ActionStatus } from "@/components/domain/action-status";
 import { Button } from "@/components/ui/button";

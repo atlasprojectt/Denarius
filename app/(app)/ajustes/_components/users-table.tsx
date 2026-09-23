@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { RiLockLine, RiUserUnfollowLine } from "@remixicon/react";
+import { RiLockLine, RiUserUnfollowLine } from "@/components/domain/icons";
 
 import { ConfirmationDialog } from "@/components/domain/confirmation-dialog";
 import { StateBadge } from "@/components/domain/state-badge";

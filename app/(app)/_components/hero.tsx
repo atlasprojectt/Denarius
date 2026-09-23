@@ -2,7 +2,7 @@ import {
   RiArrowDownCircleFill,
   RiArrowUpCircleFill,
   RiWallet3Line,
-} from "@remixicon/react";
+} from "@/components/domain/icons";
 
 import { StateBadge } from "@/components/domain/state-badge";
 import {

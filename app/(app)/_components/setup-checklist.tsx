@@ -4,8 +4,8 @@ import {
   RiContactsBookLine,
   RiPlugLine,
   RiWallet3Line,
-  type RemixiconComponentType,
-} from "@remixicon/react";
+} from "@/components/domain/icons";
+import type { AppIcon } from "@/components/domain/icons";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -30,7 +30,7 @@ import { homeCopy } from "./copy";
 const steps: ReadonlyArray<{
   key: "connected" | "hasRoster" | "hasBudget";
   href: string;
-  icon: RemixiconComponentType;
+  icon: AppIcon;
 }> = [
   { key: "connected", href: "/ajustes/conexoes", icon: RiPlugLine },
   { key: "hasRoster", href: "/ajustes/roster", icon: RiContactsBookLine },
@@ -43,7 +43,7 @@ function StepTile({
   icon: Icon,
   state,
 }: {
-  icon: RemixiconComponentType;
+  icon: AppIcon;
   state: "done" | "next" | "todo";
 }) {
   return (

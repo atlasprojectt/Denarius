@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { RiLockLine } from "@remixicon/react";
+import { RiLockLine } from "@/components/domain/icons";
 
 import { ActionStatus } from "@/components/domain/action-status";
 import { Button } from "@/components/ui/button";

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { RiArrowRightSLine, RiTeamLine } from "@remixicon/react";
+import { RiArrowRightSLine, RiTeamLine } from "@/components/domain/icons";
 
 import { BudgetBar } from "@/components/domain/budget-bar";
 import { StatusPill } from "@/components/domain/status-pill";

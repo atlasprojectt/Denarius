@@ -3,8 +3,8 @@ import {
   RiCloseCircleFill,
   RiErrorWarningFill,
   RiTimeFill,
-  type RemixiconComponentType,
-} from "@remixicon/react";
+} from "@/components/domain/icons";
+import type { AppIcon } from "@/components/domain/icons";
 
 import { StateBadge, type StateBadgeTone } from "@/components/domain/state-badge";
 import type { VerdictStatus } from "@/lib/engine/verdict";
@@ -28,7 +28,7 @@ const tone: Record<VerdictStatus, StateBadgeTone> = {
   collecting: "neutral",
 };
 
-const icon: Record<VerdictStatus, RemixiconComponentType> = {
+const icon: Record<VerdictStatus, AppIcon> = {
   green: RiCheckboxCircleFill,
   amber: RiErrorWarningFill,
   red: RiCloseCircleFill,

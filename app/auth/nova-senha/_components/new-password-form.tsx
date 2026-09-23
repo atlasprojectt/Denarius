@@ -1,6 +1,6 @@
 "use client";
 
-import { RiEyeLine, RiEyeOffLine, RiKey2Line } from "@remixicon/react";
+import { RiEyeLine, RiEyeOffLine, RiKey2Line } from "@/components/domain/icons";
 import { useActionState, useState } from "react";
 
 import { ActionStatus } from "@/components/domain/action-status";

@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { RiWallet3Line } from "@remixicon/react";
+import { RiWallet3Line } from "@/components/domain/icons";
 
 import { PageContainer } from "@/components/domain/page-container";
 import { PageHeader } from "@/components/domain/page-header";

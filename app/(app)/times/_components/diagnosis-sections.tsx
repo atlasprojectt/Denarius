@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { RiArrowRightLine, RiKey2Line, RiPriceTag3Line } from "@remixicon/react";
+import { RiArrowRightLine, RiKey2Line, RiPriceTag3Line } from "@/components/domain/icons";
 
 import { ProviderIcon, type ProviderIconName } from "@/components/domain/provider-icon";
 import { StateBadge } from "@/components/domain/state-badge";

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { RiArrowDownSLine } from "@remixicon/react";
+import { RiArrowDownSLine } from "@/components/domain/icons";
 
 import {
   Collapsible,

@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { RiAdminLine, RiUserLine } from "@remixicon/react";
+import { RiAdminLine, RiUserLine } from "@/components/domain/icons";
 
 import { PageHeader } from "@/components/domain/page-header";
 import { PageContainer } from "@/components/domain/page-container";

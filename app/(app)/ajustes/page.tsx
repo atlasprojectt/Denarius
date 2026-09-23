@@ -9,7 +9,7 @@ import {
   RiTeamLine,
   RiUserSettingsLine,
   RiWallet3Line,
-} from "@remixicon/react";
+} from "@/components/domain/icons";
 
 import { PageContainer } from "@/components/domain/page-container";
 import { PageHeader } from "@/components/domain/page-header";

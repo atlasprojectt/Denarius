@@ -1,4 +1,4 @@
-import { RiErrorWarningLine } from "@remixicon/react";
+import { RiErrorWarningLine } from "@/components/domain/icons";
 
 import { EmptyState } from "@/components/domain/empty-state";
 import { PageContainer } from "@/components/domain/page-container";
