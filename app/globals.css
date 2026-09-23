@@ -458,23 +458,35 @@ input[type="number"]::-webkit-outer-spin-button {
   container: team-index / inline-size;
 }
 
+@container team-index (min-width: 720px) {
+  .team-index-metrics {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
 @container team-index (min-width: 1180px) {
-  .team-index-header {
-    display: grid;
+  .team-index-header,
+  .team-index-row-grid,
+  .team-index-loading-row {
     grid-template-columns:
       minmax(170px, 1.35fr) 104px 108px 108px 118px 138px
       minmax(110px, 0.8fr) 172px;
   }
 
+  .team-index-header,
+  .team-index-loading-row {
+    display: grid;
+  }
+
   .team-index-row-grid {
-    grid-template-columns:
-      minmax(170px, 1.35fr) 104px 108px 108px 118px 138px
-      minmax(110px, 0.8fr) 172px;
     align-items: center;
     gap: 1rem;
   }
 
-  .team-index-metrics {
+  .team-index-identity,
+  .team-index-footer,
+  .team-index-metrics,
+  .team-index-loading-header {
     display: contents;
   }
 
@@ -496,6 +508,28 @@ input[type="number"]::-webkit-outer-spin-button {
 
   .team-index-progress {
     padding-right: 0.75rem;
+  }
+
+  .team-index-actions {
+    justify-self: end;
+  }
+
+  .team-index-loading-row {
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .team-index-loading-label {
+    display: none;
+  }
+
+  .team-index-loading-progress {
+    margin-top: 0;
+  }
+
+  .team-index-loading-action {
+    display: block;
+    justify-self: end;
   }
 }
 

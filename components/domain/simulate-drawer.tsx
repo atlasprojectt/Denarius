@@ -87,7 +87,7 @@ export function SimulateDrawer(props: SimulateDrawerProps) {
     // session could read as the current state.
     <Sheet onOpenChange={(open) => open && setDeltaPct(0)}>
       <SheetTrigger asChild>
-        <Button variant="outline" size="sm" className="h-11 sm:h-7">
+        <Button variant="outline" size="sm" className="h-11 md:h-7">
           <RiEqualizer2Line className="size-4" />
           {triggerLabel}
         </Button>
@@ -183,7 +183,7 @@ function Simulation({
           <Button
             variant="outline"
             size="sm"
-            className="h-11 sm:h-7"
+            className="h-11 md:h-7"
             onClick={() => onDeltaChange(0)}
           >
             {copy.presetCurrent}
@@ -191,7 +191,7 @@ function Simulation({
           <Button
             variant="outline"
             size="sm"
-            className="h-11 sm:h-7"
+            className="h-11 md:h-7"
             disabled={breakEvenPct === null}
             onClick={() => breakEvenPct !== null && onDeltaChange(breakEvenPct)}
           >

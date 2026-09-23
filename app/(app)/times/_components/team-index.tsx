@@ -29,6 +29,11 @@ const copy = {
   above: (amount: string) => `${amount} acima`,
   headroom: (amount: string) => `${amount} de folga`,
   open: (team: string) => `Abrir diagnóstico de ${team}`,
+  teamCount: (count: number) => (count === 1 ? "1 time" : `${count} times`),
+  groupDescription: {
+    attention: "Maior risco primeiro para orientar a ação.",
+    control: "Maior consumo primeiro para comparar times.",
+  },
 };
 
 function statusLabel(team: CockpitTeam): string {
@@ -62,7 +67,7 @@ function Metric({ label, value }: { label: string; value: string }) {
   return (
     <div className="min-w-0">
       <dt className="team-index-metric-label text-xs text-muted-foreground">{label}</dt>
-      <dd className="team-index-metric-value mt-0.5 truncate text-sm font-medium tabular-nums">
+      <dd className="team-index-metric-value mt-0.5 text-sm/5 font-medium tabular-nums">
         {value}
       </dd>
     </div>
@@ -101,20 +106,23 @@ function TeamRow({
       />
 
       <div className="team-index-row-grid relative pointer-events-none grid gap-3">
-        <div className="min-w-0">
-          <h3 className="truncate text-sm font-medium text-foreground">
-            {team.teamName}
-          </h3>
-          <p className="mt-0.5 truncate text-xs text-muted-foreground">
-            {contextLine(team, currency)}
-          </p>
+        <div className="team-index-identity flex min-w-0 items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h3 className="truncate text-sm font-semibold text-foreground">
+              {team.teamName}
+            </h3>
+            {priority === "attention" && (
+              <p className="mt-0.5 text-xs/relaxed text-muted-foreground">
+                {contextLine(team, currency)}
+              </p>
+            )}
+          </div>
+          <div className="w-fit shrink-0">
+            <StatusPill status={team.status} label={statusLabel(team)} />
+          </div>
         </div>
 
-        <div className="w-fit">
-          <StatusPill status={team.status} label={statusLabel(team)} />
-        </div>
-
-        <dl className="team-index-metrics grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-4">
+        <dl className="team-index-metrics grid grid-cols-2 gap-x-4 gap-y-2">
           <Metric label={copy.spent} value={money(evaluation.spent, currency)} />
           <Metric label={copy.budget} value={money(evaluation.budget, currency)} />
           <Metric
@@ -128,46 +136,53 @@ function TeamRow({
           <Metric label={copy.margin} value={marginLabel(team, currency)} />
         </dl>
 
-        <div className="team-index-progress flex items-center gap-2.5">
-          <TeamProgress
-            className="flex-1"
-            pctSpent={evaluation.pctSpent}
-            pctProjected={team.pctProjected}
-            status={team.status}
-          />
-          <span className="w-10 shrink-0 text-right text-xs text-muted-foreground tabular-nums">
-            {percent(evaluation.pctSpent)}
-          </span>
-        </div>
+        <div className="team-index-footer flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2">
+          <div
+            className={cn(
+              "team-index-progress flex min-w-0 flex-1 items-center gap-2.5",
+              priority === "attention" && "basis-full",
+            )}
+          >
+            <TeamProgress
+              className="flex-1"
+              pctSpent={evaluation.pctSpent}
+              pctProjected={team.pctProjected}
+              status={team.status}
+            />
+            <span className="w-10 shrink-0 text-right text-xs text-muted-foreground tabular-nums">
+              {percent(evaluation.pctSpent)}
+            </span>
+          </div>
 
-        <div className="pointer-events-auto relative z-10 flex items-center justify-end gap-1.5">
-          {priority === "attention" && (
-            <>
-              <Button
-                asChild
-                variant="secondary"
-                size="xs"
-                shape="full"
-                className="h-11 sm:h-6"
-              >
-                <Link href={href}>{copy.investigate}</Link>
-              </Button>
-              <SimulateDrawer
-                teamName={team.teamName}
-                currency={currency}
-                team={{
-                  spent: evaluation.spent,
-                  projection: evaluation.projection,
-                  budget: evaluation.budget,
-                }}
-                org={org}
-              />
-            </>
-          )}
-          <RiArrowRightSLine
-            aria-hidden
-            className="size-4 shrink-0 text-muted-foreground transition-transform duration-(--motion-duration-fast) ease-(--motion-ease-standard) group-hover/row:translate-x-0.5"
-          />
+          <div className="team-index-actions pointer-events-auto relative z-10 ml-auto flex items-center justify-end gap-1.5">
+            {priority === "attention" && (
+              <>
+                <Button
+                  asChild
+                  variant="secondary"
+                  size="xs"
+                  shape="full"
+                  className="h-11 md:h-6"
+                >
+                  <Link href={href}>{copy.investigate}</Link>
+                </Button>
+                <SimulateDrawer
+                  teamName={team.teamName}
+                  currency={currency}
+                  team={{
+                    spent: evaluation.spent,
+                    projection: evaluation.projection,
+                    budget: evaluation.budget,
+                  }}
+                  org={org}
+                />
+              </>
+            )}
+            <RiArrowRightSLine
+              aria-hidden
+              className="size-4 shrink-0 text-muted-foreground transition-transform duration-(--motion-duration-fast) ease-(--motion-ease-standard) group-hover/row:translate-x-0.5"
+            />
+          </div>
         </div>
       </div>
     </article>
@@ -191,12 +206,17 @@ export function TeamIndex({
 
   return (
     <section aria-labelledby={`team-group-${priority}`}>
-      <div className="mb-2 flex items-baseline justify-between gap-4">
-        <h2 id={`team-group-${priority}`} className="text-sm font-medium">
-          {title}
-        </h2>
-        <span className="text-xs text-muted-foreground tabular-nums">
-          {teams.length}
+      <div className="mb-3 flex items-end justify-between gap-4">
+        <div className="min-w-0">
+          <h2 id={`team-group-${priority}`} className="text-sm font-medium">
+            {title}
+          </h2>
+          <p className="mt-0.5 max-w-[46rem] text-xs/relaxed text-muted-foreground">
+            {copy.groupDescription[priority]}
+          </p>
+        </div>
+        <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
+          {copy.teamCount(teams.length)}
         </span>
       </div>
       <Card

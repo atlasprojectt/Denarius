@@ -24,6 +24,8 @@ const copy = {
   withoutBudget: "Sem orçamento",
   withoutBudgetSub:
     "O gasto continua visível; defina um limite para habilitar projeção e avisos.",
+  withoutBudgetViewerSub:
+    "O gasto continua visível; projeção e avisos exigem um orçamento definido por um administrador.",
   spent: "Gasto atual",
   defineBudget: "Definir orçamento",
   open: (team: string) => `Abrir diagnóstico de ${team}`,
@@ -113,7 +115,7 @@ export default async function TimesPage({
         meta={copy.asOf(period.monthLabel, period.dayOfPeriod, period.daysInPeriod)}
         actions={
           diagnosis.isAdmin ? (
-          <Button asChild variant="secondary" size="sm" shape="full">
+          <Button asChild variant="secondary" size="sm" shape="full" className="max-md:min-h-11">
             <Link href="/ajustes/orcamentos">{copy.manage}</Link>
           </Button>
           ) : undefined
@@ -146,7 +148,9 @@ export default async function TimesPage({
               {copy.withoutBudget}
             </h2>
             <p className="mt-0.5 text-xs text-muted-foreground">
-              {copy.withoutBudgetSub}
+              {diagnosis.isAdmin
+                ? copy.withoutBudgetSub
+                : copy.withoutBudgetViewerSub}
             </p>
           </div>
           <Card className="gap-0 py-0">
@@ -187,9 +191,11 @@ export default async function TimesPage({
                       <p className="text-xs text-muted-foreground">{copy.spent}</p>
                       <p className="text-sm font-medium tabular-nums">{spend}</p>
                     </div>
-                    <span className="hidden text-xs text-muted-foreground sm:block">
-                      {copy.defineBudget}
-                    </span>
+                    {diagnosis.isAdmin && (
+                      <span className="hidden text-xs text-muted-foreground sm:block">
+                        {copy.defineBudget}
+                      </span>
+                    )}
                     <RiArrowRightSLine className="size-4 shrink-0 text-muted-foreground transition-transform duration-(--motion-duration-fast) ease-(--motion-ease-standard) group-hover:translate-x-0.5" />
                   </Link>
                 );
@@ -203,16 +209,24 @@ export default async function TimesPage({
         <Notice
           icon={<RiPieChartLine />}
           title={copy.unattributedTitle}
-          action={
-            <Button asChild variant="tertiary" size="xs" motion="forward">
+        >
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+            <span className="min-w-48 flex-1 tabular-nums">
+              {copy.unattributedBody(unattributed)}
+            </span>
+            <Button
+              asChild
+              variant="tertiary"
+              size="xs"
+              motion="forward"
+              className="max-md:min-h-11"
+            >
               <Link href="/ajustes/atribuicao">
                 {copy.map}
                 <RiArrowRightSLine data-icon="inline-end" aria-hidden />
               </Link>
             </Button>
-          }
-        >
-          <span className="tabular-nums">{copy.unattributedBody(unattributed)}</span>
+          </div>
         </Notice>
       )}
     </PageContainer>

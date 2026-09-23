@@ -14,16 +14,29 @@ export default function TimesLoading() {
         {[3, 4].map((rows) => (
           <section key={rows} className="flex flex-col gap-2">
             <Skeleton className="h-4 w-32" />
-            <div className="overflow-hidden rounded-xl ring-1 ring-foreground/10">
-              <Skeleton className="h-8 w-full rounded-none" />
+            <div className="team-index-card overflow-hidden rounded-xl border border-border">
               {Array.from({ length: rows }, (_, index) => (
                 <div
                   key={index}
-                  className="flex h-[74px] items-center gap-4 border-t border-border px-4"
+                  className="team-index-loading-row border-b border-border px-4 py-4 last:border-b-0"
                 >
-                  <Skeleton className="h-4 w-36" />
-                  <Skeleton className="ml-auto h-4 w-20" />
-                  <Skeleton className="h-2 w-28" />
+                  <div className="team-index-loading-header flex items-center justify-between gap-4">
+                    <Skeleton className="h-4 w-28" />
+                    <Skeleton className="h-6 w-24 rounded-pill" />
+                  </div>
+                  <div className="team-index-metrics team-index-loading-metrics mt-3 grid grid-cols-2 gap-x-4 gap-y-2">
+                    {[0, 1, 2, 3].map((metric) => (
+                      <div key={metric} className="space-y-1.5">
+                        <Skeleton className="team-index-loading-label h-3 w-16" />
+                        <Skeleton className="h-4 w-24 max-w-full" />
+                      </div>
+                    ))}
+                  </div>
+                  <div className="team-index-loading-progress mt-3 flex items-center gap-3">
+                    <Skeleton className="h-2 flex-1" />
+                    <Skeleton className="h-3 w-8" />
+                  </div>
+                  <Skeleton className="team-index-loading-action hidden h-4 w-4" />
                 </div>
               ))}
             </div>
