@@ -26,7 +26,7 @@ function TabsList({
     <TabsPrimitive.List
       data-slot="tabs-list"
       className={cn(
-        "relative flex h-9 w-fit items-center gap-0.5 rounded-full border border-border bg-card p-0.5 text-muted-foreground",
+        "relative flex h-9 w-fit items-center gap-0.5 rounded-full bg-surface-control p-0.5 text-muted-foreground",
         className,
       )}
       {...props}
@@ -34,7 +34,7 @@ function TabsList({
       <TabsPrimitive.Indicator
         aria-hidden
         data-slot="tabs-indicator"
-        className="pointer-events-none absolute top-0 left-0 z-0 rounded-full bg-background [height:var(--active-tab-height)] [transform:translate(var(--active-tab-left),var(--active-tab-top))] [width:var(--active-tab-width)] transition-[transform,width] duration-(--motion-duration-max) ease-(--motion-ease-standard) motion-reduce:transition-none"
+        className="pointer-events-none absolute top-0 left-0 z-0 rounded-full bg-tab-active [height:var(--active-tab-height)] [transform:translate(var(--active-tab-left),var(--active-tab-top))] [width:var(--active-tab-width)] transition-[transform,width] duration-(--motion-duration-max) ease-(--motion-ease-standard) motion-reduce:transition-none"
       />
       {children}
     </TabsPrimitive.List>

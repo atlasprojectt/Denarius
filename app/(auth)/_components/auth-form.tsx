@@ -126,10 +126,10 @@ export function AuthForm({ oauthError }: { oauthError?: string }) {
           </div>
 
           <div className="denarius-auth-enter [animation-delay:60ms]">
-            <div className="relative grid grid-cols-2 rounded-[var(--radius-standard)] border border-border bg-surface-control p-1">
+            <div className="relative grid grid-cols-2 rounded-[var(--radius-standard)] bg-surface-control p-1">
               <span
                 aria-hidden
-                className="absolute inset-y-1 left-1 w-[calc(50%-0.25rem)] rounded-full bg-surface-elevated transition-transform duration-(--motion-duration-max)"
+                className="absolute inset-y-1 left-1 w-[calc(50%-0.25rem)] rounded-full bg-tab-active transition-transform duration-(--motion-duration-max)"
                 style={{
                   transitionTimingFunction: EASE,
                   transform: isSignup ? "translateX(100%)" : "translateX(0)",

@@ -53,7 +53,11 @@ describe("neutral surface contract", () => {
     expect(globals).toContain("--sidebar: var(--surface-deep)");
     expect(globals).toContain("--secondary: var(--surface-control)");
     expect(globals).toContain("--accent: var(--surface-hover)");
-    expect(globals).toContain("--sidebar-accent: var(--surface-selected)");
+    // The rail has its own interaction step because its light-mode base is
+    // darker than the shell. Reusing the shell's selected surface would make
+    // the sidebar jump to the wrong contrast ladder.
+    expect(globals).toContain("--sidebar-accent:");
+    expect(globals).toContain("--sidebar-accent-foreground:");
   });
 });
 
