@@ -1,6 +1,7 @@
 "use client";
 
-import { RiLineChartLine } from "@remixicon/react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { ChartLineIcon } from "@hugeicons/core-free-icons";
 import {
   CHART_ANNOTATION_Z_INDEX,
   SpendTrendChart,
@@ -147,7 +148,7 @@ export function MonthlyPaceChart({
         <CardHeader className="border-b border-border">
           <div className="flex items-center gap-2">
             <CardTitle as="h2" id="home-pace-title-empty" className="flex items-center gap-2 text-sm font-medium">
-              <RiLineChartLine className="size-4 text-muted-foreground" aria-hidden />
+              <HugeiconsIcon icon={ChartLineIcon} className="size-4 text-muted-foreground" aria-hidden />
               {c.title}
             </CardTitle>
             <InfoTip label={c.infoLabel}>{c.info}</InfoTip>
@@ -195,7 +196,7 @@ export function MonthlyPaceChart({
       <CardHeader className="gap-2 border-b border-border">
         <div className="flex items-center gap-2">
           <CardTitle as="h2" id="home-pace-title" className="flex items-center gap-2 text-sm font-medium">
-            <RiLineChartLine className="size-4 text-muted-foreground" aria-hidden />
+            <HugeiconsIcon icon={ChartLineIcon} className="size-4 text-muted-foreground" aria-hidden />
             {c.title}
           </CardTitle>
           <InfoTip label={c.infoLabel}>{c.info}</InfoTip>

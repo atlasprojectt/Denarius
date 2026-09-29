@@ -161,5 +161,5 @@ export function renderDigestEmail(input: DigestRenderInput): RenderedNotificatio
 
 /** Deep-link base, disclosed nowhere client-side; prod default is the live app. */
 export function appBaseUrl(): string {
-  return process.env.APP_BASE_URL ?? "https://denarius-nine.vercel.app";
+  return process.env.APP_BASE_URL ?? "https://app.usedenarius.pro";
 }

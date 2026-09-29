@@ -2,14 +2,15 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { HugeiconsIcon } from "@hugeicons/react";
 import {
-  RiArrowDownLine,
-  RiArrowRightSLine,
-  RiArrowUpDownLine,
-  RiArrowUpLine,
-  RiPriceTag3Line,
-  RiSearchLine,
-} from "@remixicon/react";
+  ArrowDown01Icon,
+  ArrowUp01Icon,
+  ArrowUpDownIcon,
+  ChevronRightIcon,
+  Search01Icon,
+  Tag01Icon,
+} from "@hugeicons/core-free-icons";
 
 import { StateBadge } from "@/components/domain/state-badge";
 import { Button } from "@/components/ui/button";
@@ -110,12 +111,12 @@ function SortButton({
       {children}
       {active ? (
         sort.direction === "desc" ? (
-          <RiArrowDownLine className="size-3" aria-hidden />
+          <HugeiconsIcon icon={ArrowDown01Icon} className="size-3" aria-hidden />
         ) : (
-          <RiArrowUpLine className="size-3" aria-hidden />
+          <HugeiconsIcon icon={ArrowUp01Icon} className="size-3" aria-hidden />
         )
       ) : (
-        <RiArrowUpDownLine
+        <HugeiconsIcon icon={ArrowUpDownIcon}
           className="size-3 opacity-0 transition-opacity duration-(--motion-duration-fast) ease-(--motion-ease-standard) group-hover/sort:opacity-30 group-focus-visible/sort:opacity-30"
           aria-hidden
         />
@@ -163,7 +164,7 @@ function MoneyValue({
     // Amber = data quality (honest numbers, principle #3): an unpriced model is
     // a gap in the total, not neutral trivia.
     return (
-      <StateBadge icon={RiPriceTag3Line} tone="amber">
+      <StateBadge icon={Tag01Icon} tone="amber">
         {copy.unpricedBadge}
       </StateBadge>
     );
@@ -202,7 +203,7 @@ function RowAction({ row }: { row: ExploreRow }) {
     >
       <Link href={row.href} aria-label={copy.action(row.label)}>
         {row.actionLabel}
-        <RiArrowRightSLine data-icon="inline-end" aria-hidden />
+        <HugeiconsIcon icon={ChevronRightIcon} data-icon="inline-end" aria-hidden />
       </Link>
     </Button>
   );
@@ -367,7 +368,7 @@ export function ExploreTable({
       {rows.length > 10 && (
         <label className="relative block max-w-sm">
           <span className="sr-only">{copy.search}</span>
-          <RiSearchLine className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+          <HugeiconsIcon icon={Search01Icon} className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             type="search"
             value={query}

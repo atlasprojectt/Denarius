@@ -1,7 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { RiFileChartLine, RiSparklingLine } from "@remixicon/react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import {
+  FileChartLineIcon,
+  SparkleIcon,
+} from "@hugeicons/core-free-icons";
 
 import { EmptyState } from "@/components/domain/empty-state";
 import { StateBadge } from "@/components/domain/state-badge";
@@ -211,7 +215,7 @@ export function ReportsHost({
               className="max-sm:min-h-11"
               onClick={generate}
             >
-              <RiFileChartLine aria-hidden />
+              <HugeiconsIcon icon={FileChartLineIcon} aria-hidden />
               {copy.liveCardCta}
             </Button>
           </div>
@@ -250,7 +254,7 @@ export function ReportsHost({
               badge={
                 showNovo ? (
                   <StateBadge
-                    icon={RiSparklingLine}
+                    icon={SparkleIcon}
                     tone="neutral"
                     aria-label={copy.closingNewHint}
                   >
@@ -293,7 +297,7 @@ export function ReportsHost({
         </div>
         {history.length === 0 ? (
           <EmptyState
-            icon={<RiFileChartLine />}
+            icon={<HugeiconsIcon icon={FileChartLineIcon} />}
             title={copy.emptyTitle}
             description={copy.emptyDescription}
           />

@@ -1,7 +1,8 @@
 "use client";
 
 import { useActionState } from "react";
-import { RiShieldCheckLine } from "@remixicon/react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { ShieldCheckIcon } from "@hugeicons/core-free-icons";
 
 import { ActionStatus } from "@/components/domain/action-status";
 import { Button } from "@/components/ui/button";
@@ -89,7 +90,7 @@ export function PrivacyForm({
       />
 
       <p className="flex items-start gap-2 rounded-lg bg-muted p-3 text-xs/relaxed text-muted-foreground">
-        <RiShieldCheckLine className="mt-0.5 size-4 shrink-0" aria-hidden />
+        <HugeiconsIcon icon={ShieldCheckIcon} className="mt-0.5 size-4 shrink-0" aria-hidden />
         {copy.neverStored}
       </p>
 

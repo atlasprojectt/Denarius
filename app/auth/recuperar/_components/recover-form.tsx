@@ -1,6 +1,7 @@
 "use client";
 
-import { RiMailLine } from "@remixicon/react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Mail01Icon } from "@hugeicons/core-free-icons";
 import Link from "next/link";
 import { useActionState } from "react";
 
@@ -56,7 +57,7 @@ export function RecoverForm() {
               aria-hidden
               className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-muted-foreground"
             >
-              <RiMailLine className="size-4" />
+              <HugeiconsIcon icon={Mail01Icon} className="size-4" />
             </span>
             <Input
               id="email"

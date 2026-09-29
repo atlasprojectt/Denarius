@@ -1,10 +1,10 @@
+import type { IconSvgElement } from "@hugeicons/react";
 import {
-  RiCheckboxCircleFill,
-  RiCloseCircleFill,
-  RiErrorWarningFill,
-  RiTimeFill,
-  type RemixiconComponentType,
-} from "@remixicon/react";
+  AlertCircleIcon,
+  CancelCircleIcon,
+  CheckmarkCircle02Icon,
+  Clock01Icon,
+} from "@hugeicons/core-free-icons";
 
 import { StateBadge, type StateBadgeTone } from "@/components/domain/state-badge";
 import type { VerdictStatus } from "@/lib/engine/verdict";
@@ -28,11 +28,11 @@ const tone: Record<VerdictStatus, StateBadgeTone> = {
   collecting: "neutral",
 };
 
-const icon: Record<VerdictStatus, RemixiconComponentType> = {
-  green: RiCheckboxCircleFill,
-  amber: RiErrorWarningFill,
-  red: RiCloseCircleFill,
-  collecting: RiTimeFill,
+const icon: Record<VerdictStatus, IconSvgElement> = {
+  green: CheckmarkCircle02Icon,
+  amber: AlertCircleIcon,
+  red: CancelCircleIcon,
+  collecting: Clock01Icon,
 };
 
 export function StatusPill({

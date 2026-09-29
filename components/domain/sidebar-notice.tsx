@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { RiCloseLine } from "@remixicon/react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Cancel01Icon } from "@hugeicons/core-free-icons";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -55,7 +56,7 @@ const reveal =
   "motion-safe:animate-in motion-safe:fade-in motion-safe:duration-(--motion-duration-max)";
 
 export type SidebarNoticeProps = {
-  /** Rendered as the Alert's leading svg — pass an element, e.g. <RiHistoryLine />. */
+  /** Rendered as the Alert's leading svg — pass an element, e.g. <HugeiconsIcon icon={HistoryIcon} />. */
   icon: ReactNode;
   title: string;
   description: string;
@@ -142,7 +143,7 @@ export function SidebarNotice({
             className="absolute top-1 right-1 size-6 text-current opacity-65 transition-opacity hover:bg-transparent hover:opacity-100"
             onClick={onDismiss}
           >
-            <RiCloseLine aria-hidden />
+            <HugeiconsIcon icon={Cancel01Icon} aria-hidden />
           </Button>
         )}
       </div>

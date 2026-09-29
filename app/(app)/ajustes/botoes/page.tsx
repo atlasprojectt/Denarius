@@ -1,10 +1,11 @@
+import { HugeiconsIcon } from "@hugeicons/react";
 import {
-  RiAddLine,
-  RiArrowRightSLine,
-  RiDeleteBinLine,
-  RiMenuLine,
-  RiSettings3Line,
-} from "@remixicon/react";
+  Add01Icon,
+  ChevronRightIcon,
+  Delete02Icon,
+  Menu01Icon,
+  Settings03Icon,
+} from "@hugeicons/core-free-icons";
 import { notFound } from "next/navigation";
 
 import { PageContainer } from "@/components/domain/page-container";
@@ -45,7 +46,7 @@ export default function ButtonShowcasePage() {
             >
               {label}
               {variant === "tertiary" ? (
-                <RiArrowRightSLine data-icon="inline-end" />
+                <HugeiconsIcon icon={ChevronRightIcon} data-icon="inline-end" />
               ) : null}
             </Button>
           ))}
@@ -57,15 +58,15 @@ export default function ButtonShowcasePage() {
         <CardContent className="flex flex-wrap items-center gap-3">
           {sizes.map((size) => (
             <Button key={size} size={size} variant="secondary">
-              <RiAddLine />
+              <HugeiconsIcon icon={Add01Icon} />
               {size}
             </Button>
           ))}
           <Button variant="ghost" size="icon-sm" aria-label="Abrir ajustes compactos">
-            <RiSettings3Line />
+            <HugeiconsIcon icon={Settings03Icon} />
           </Button>
           <Button variant="ghost" size="icon" aria-label="Abrir menu">
-            <RiMenuLine />
+            <HugeiconsIcon icon={Menu01Icon} />
           </Button>
         </CardContent>
       </Card>
@@ -76,7 +77,7 @@ export default function ButtonShowcasePage() {
           <Button shape="full">Ação autônoma</Button>
           <Button shape="standard" variant="secondary">Navegação estrutural</Button>
           <Button shape="full" variant="ghost" size="icon" aria-label="Ação por ícone">
-            <RiSettings3Line />
+            <HugeiconsIcon icon={Settings03Icon} />
           </Button>
         </CardContent>
       </Card>
@@ -88,7 +89,7 @@ export default function ButtonShowcasePage() {
           <Button disabled>Desabilitado</Button>
           <Button loading loadingText="Salvando…">Salvar</Button>
           <Button variant="destructive" loading loadingText="Excluindo…">
-            <RiDeleteBinLine />
+            <HugeiconsIcon icon={Delete02Icon} />
             Excluir
           </Button>
           <p className="w-full text-xs text-muted-foreground">
@@ -104,7 +105,7 @@ export default function ButtonShowcasePage() {
           <Button variant="secondary">Ação global</Button>
           <Button variant="tertiary" motion="forward">
             Ação contextual
-            <RiArrowRightSLine data-icon="inline-end" />
+            <HugeiconsIcon icon={ChevronRightIcon} data-icon="inline-end" />
           </Button>
         </CardContent>
       </Card>

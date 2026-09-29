@@ -1,7 +1,12 @@
 "use client";
 
 import { useActionState } from "react";
-import { RiMailCloseLine, RiMailLine, RiTimeLine } from "@remixicon/react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import {
+  Mail01Icon,
+  MailXIcon,
+  Time01Icon,
+} from "@hugeicons/core-free-icons";
 
 import { ConfirmationDialog } from "@/components/domain/confirmation-dialog";
 import { StateBadge } from "@/components/domain/state-badge";
@@ -61,7 +66,7 @@ function RevokeButton({ invitationId }: { invitationId: string }) {
         action={formAction}
         pending={pending}
         success={state.success}
-        icon={<RiMailCloseLine />}
+        icon={<HugeiconsIcon icon={MailXIcon} />}
       >
         <input type="hidden" name="invitationId" value={invitationId} />
       </ConfirmationDialog>
@@ -89,13 +94,13 @@ export function PendingInvitations({
         <Item key={invitation.id} variant="outline">
           <ItemMedia>
             <span className="grid size-8 place-items-center rounded-full bg-muted text-muted-foreground">
-              <RiMailLine className="size-4" aria-hidden />
+              <HugeiconsIcon icon={Mail01Icon} className="size-4" aria-hidden />
             </span>
           </ItemMedia>
           <ItemContent>
             <ItemTitle>
               {invitation.email}
-              <StateBadge icon={RiTimeLine}>{copy.pending}</StateBadge>
+              <StateBadge icon={Time01Icon}>{copy.pending}</StateBadge>
             </ItemTitle>
             <ItemDescription>
               {copy.roleLabel[invitation.role] ?? invitation.role} ·{" "}

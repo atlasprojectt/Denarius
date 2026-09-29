@@ -7,7 +7,8 @@ import {
   type ReactElement,
   type ReactNode,
 } from "react";
-import { RiErrorWarningLine } from "@remixicon/react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Alert02Icon } from "@hugeicons/core-free-icons";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -76,7 +77,7 @@ export function ConfirmationDialog({
               aria-hidden
               className="grid size-10 shrink-0 place-items-center rounded-full bg-destructive/10 text-destructive [&>svg]:size-5"
             >
-              {icon ?? <RiErrorWarningLine />}
+              {icon ?? <HugeiconsIcon icon={Alert02Icon} />}
             </span>
             <div className="flex min-w-0 flex-col gap-1 pt-0.5">
               <DialogTitle>{title}</DialogTitle>

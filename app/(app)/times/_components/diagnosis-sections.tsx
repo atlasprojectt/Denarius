@@ -1,5 +1,10 @@
 import Link from "next/link";
-import { RiArrowRightLine, RiKey2Line, RiPriceTag3Line } from "@remixicon/react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import {
+  ArrowRight01Icon,
+  Key02Icon,
+  Tag01Icon,
+} from "@hugeicons/core-free-icons";
 
 import { ProviderIcon, type ProviderIconName } from "@/components/domain/provider-icon";
 import { StateBadge } from "@/components/domain/state-badge";
@@ -327,7 +332,7 @@ function ContributorValue({
 }) {
   if (uncosted && derivedUsd === 0) {
     return (
-      <StateBadge icon={RiPriceTag3Line} tone="amber">
+      <StateBadge icon={Tag01Icon} tone="amber">
         {copy.uncosted}
       </StateBadge>
     );
@@ -398,7 +403,7 @@ function ContributorsSection({
                         {person.isShared ? copy.sharedKey : person.userId}
                       </span>
                       {person.isShared && (
-                        <StateBadge icon={RiKey2Line}>{copy.sharedKey}</StateBadge>
+                        <StateBadge icon={Key02Icon}>{copy.sharedKey}</StateBadge>
                       )}
                     </div>
                     <span className="text-right text-xs font-light text-muted-foreground tabular-nums">
@@ -497,7 +502,7 @@ function ControlPlanSection({ team }: { team: CockpitTeam }) {
                   </span>
                 </span>
                 {href && (
-                  <RiArrowRightLine className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+                  <HugeiconsIcon icon={ArrowRight01Icon} className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
                 )}
               </>
             );

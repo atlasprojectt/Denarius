@@ -56,41 +56,45 @@ export function AcceptForm({
           </p>
         </div>
 
-        <Field>
-          <FieldLabel htmlFor="email">{copy.email}</FieldLabel>
-          {/* Fixed, not editable: the token proves THIS address. */}
-          <Input id="email" value={email} readOnly disabled className="h-11" />
-          <FieldDescription>{copy.emailNote}</FieldDescription>
-        </Field>
+        <div className="rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8">
+          <div className="flex flex-col gap-4">
+            <Field>
+              <FieldLabel htmlFor="email">{copy.email}</FieldLabel>
+              {/* Fixed, not editable: the token proves THIS address. */}
+              <Input id="email" value={email} readOnly disabled className="h-11" />
+              <FieldDescription>{copy.emailNote}</FieldDescription>
+            </Field>
 
-        <Field>
-          <FieldLabel htmlFor="password">{copy.password}</FieldLabel>
-          <Input
-            id="password"
-            name="password"
-            type="password"
-            autoComplete="new-password"
-            minLength={PASSWORD_MIN}
-            aria-invalid={state.fieldErrors?.password !== undefined}
-            className="h-11"
-          />
-          {state.fieldErrors?.password ? (
-            <FieldError>{state.fieldErrors.password}</FieldError>
-          ) : (
-            <FieldDescription>{copy.passwordHint}</FieldDescription>
-          )}
-        </Field>
+            <Field>
+              <FieldLabel htmlFor="password">{copy.password}</FieldLabel>
+              <Input
+                id="password"
+                name="password"
+                type="password"
+                autoComplete="new-password"
+                minLength={PASSWORD_MIN}
+                aria-invalid={state.fieldErrors?.password !== undefined}
+                className="h-11"
+              />
+              {state.fieldErrors?.password ? (
+                <FieldError>{state.fieldErrors.password}</FieldError>
+              ) : (
+                <FieldDescription>{copy.passwordHint}</FieldDescription>
+              )}
+            </Field>
 
-        <ActionStatus error={state.error} />
+            <ActionStatus error={state.error} />
 
-        <Button
-          type="submit"
-          className="h-11"
-          loading={pending}
-          loadingText={copy.submitting}
-        >
-          {copy.submit}
-        </Button>
+            <Button
+              type="submit"
+              className="h-11"
+              loading={pending}
+              loadingText={copy.submitting}
+            >
+              {copy.submit}
+            </Button>
+          </div>
+        </div>
 
         <FieldDescription className="text-center">
           {copy.hasAccount}{" "}

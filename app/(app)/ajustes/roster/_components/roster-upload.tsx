@@ -1,7 +1,11 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { RiCheckboxCircleLine, RiDownloadLine } from "@remixicon/react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import {
+  CheckmarkCircle01Icon,
+  Download01Icon,
+} from "@hugeicons/core-free-icons";
 
 import { ActionStatus } from "@/components/domain/action-status";
 import { Button } from "@/components/ui/button";
@@ -77,7 +81,7 @@ export function RosterUpload({ isAdmin = true }: { isAdmin?: boolean }) {
               href={`data:text/csv;charset=utf-8,${encodeURIComponent(TEMPLATE_CSV)}`}
               download="roster-modelo.csv"
             >
-              <RiDownloadLine className="size-3.5" />
+              <HugeiconsIcon icon={Download01Icon} className="size-3.5" />
               {copy.template}
             </a>
           </Button>
@@ -125,7 +129,7 @@ export function RosterUpload({ isAdmin = true }: { isAdmin?: boolean }) {
               ) : (
                 <>
                   <p className="flex items-center gap-1.5 font-medium">
-                    <RiCheckboxCircleLine className="size-4 shrink-0" aria-hidden />
+                    <HugeiconsIcon icon={CheckmarkCircle01Icon} className="size-4 shrink-0" aria-hidden />
                     {copy.previewOk(preview.validCount)}
                   </p>
                   {preview.newTeams.length > 0 && (

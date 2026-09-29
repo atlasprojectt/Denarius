@@ -2,7 +2,7 @@
 
 > **Finalidade:** reunir o produto inteiro em uma visão não técnica, orientada à análise de problema, proposta de valor, experiência, fluxos, regras, limites e evidências necessárias para decidir se o Denarius resolve o problema a que se propõe.
 >
-> **Escopo desta fotografia:** tudo o que a pessoa encontra, configura, consulta e consegue fazer no produto em 27 de agosto de 2026, incluindo seus limites e as condições necessárias para entregar valor.
+> **Escopo desta fotografia:** tudo o que a pessoa encontra, configura, consulta e consegue fazer no produto em 28 de setembro de 2026, incluindo seus limites e as condições necessárias para entregar valor.
 
 ---
 
@@ -504,6 +504,9 @@ Algumas ações levam a uma área do Denarius para investigação. Ações de li
 4. Escolhe tema claro, escuro ou o tema do sistema.
 5. A preferência visual vale somente naquele navegador e não afeta colegas.
 6. Administradores podem ativar ou desativar o resumo semanal por e-mail.
+7. No card de risco ao final da página, o Admin pode iniciar a exclusão permanente da empresa e da própria conta; o Viewer pode iniciar a saída daquela empresa.
+8. As duas ações enviam um código de seis dígitos para o e-mail atual e só avançam depois da validação.
+9. A última etapa mostra uma frase específica para o papel: o Admin confirma a exclusão da empresa; o Viewer confirma que exclui a própria conta. O botão só habilita com a frase exata.
 
 ### Fluxo 22 — Exercitar direitos de dados e encerrar a empresa
 
@@ -512,10 +515,12 @@ Algumas ações levam a uma área do Denarius para investigação. Ações de li
 3. Pode desativar o armazenamento de dados por pessoa; novos dados passam a ser mantidos apenas no nível agregado.
 4. Pode exportar os dados completos da empresa em um único arquivo.
 5. A exportação respeita as escolhas de privacidade e exclui credenciais e links secretos.
-6. Para excluir o espaço, o administrador digita exatamente o nome da empresa e confirma a ação destrutiva.
-7. A exclusão remove acessos, pessoas, times, uso, custos, orçamentos, alertas e demais dados mantidos pelo Denarius.
-8. A ação é irreversível.
-9. Excluir o Denarius não cancela ferramentas, não apaga dados nos provedores e não interrompe gastos de OpenAI ou Anthropic.
+6. A área aponta para o card de risco em Configurações; não existe mais um atalho de exclusão sem confirmação por e-mail.
+7. Para excluir o espaço, o administrador confirma o código enviado ao e-mail atual e digita a frase exata com o nome da empresa.
+8. A exclusão remove acessos, pessoas, times, uso, custos, orçamentos, alertas e demais dados mantidos pelo Denarius.
+9. Um Viewer pode seguir o mesmo fluxo para sair: somente sua associação `app_user` é removida, e a empresa, o histórico e sua identidade Auth permanecem.
+10. As duas ações são irreversíveis para o escopo escolhido.
+11. Excluir o Denarius não cancela ferramentas, não apaga dados nos provedores e não interrompe gastos de OpenAI ou Anthropic.
 
 ---
 

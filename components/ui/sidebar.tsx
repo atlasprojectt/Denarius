@@ -23,7 +23,8 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { RiSidebarFoldLine } from "@remixicon/react"
+import { HugeiconsIcon } from "@hugeicons/react"
+import { SidebarLeftIcon } from "@hugeicons/core-free-icons"
 
 const SIDEBAR_COOKIE_NAME = "sidebar_state"
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
@@ -274,7 +275,7 @@ function SidebarTrigger({
       {/* Size class ON the svg: Button's `[&_svg:not([class*='size-'])]:size-3`
           out-specifies any parent [&_svg]:size-* override, so without this the
           glyph renders at 12px no matter what callers pass. */}
-      <RiSidebarFoldLine className="size-4.5" />
+      <HugeiconsIcon icon={SidebarLeftIcon} className="size-4.5" />
       <span className="sr-only">Toggle Sidebar</span>
     </Button>
   )

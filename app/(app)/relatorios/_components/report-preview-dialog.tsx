@@ -1,11 +1,13 @@
 "use client";
 
 import { motion, useReducedMotion } from "motion/react";
+import { type MouseEvent as ReactMouseEvent } from "react";
+import { HugeiconsIcon } from "@hugeicons/react";
 import {
-  RiArrowLeftLine,
-  RiDownloadLine,
-  RiPrinterLine,
-} from "@remixicon/react";
+  ArrowLeft01Icon,
+  Download01Icon,
+  PrinterIcon,
+} from "@hugeicons/core-free-icons";
 
 import { ActionStatus } from "@/components/domain/action-status";
 import { Button } from "@/components/ui/button";
@@ -72,6 +74,16 @@ export function ReportPreviewDialog({
 
   const busy = downloading || status === "loading";
 
+  // The popup is fullscreen, so a margin click never reaches the backdrop —
+  // the empty scroll area IS the outside. Paper, header and feedback clicks
+  // target their own elements and stay open; a text-selection drag ending in
+  // the margin must not close the document under the user's cursor.
+  function closeOnMarginClick(event: ReactMouseEvent<HTMLDivElement>) {
+    if (event.target !== event.currentTarget) return;
+    if (window.getSelection()?.isCollapsed === false) return;
+    onClose();
+  }
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent
@@ -88,7 +100,7 @@ export function ReportPreviewDialog({
             shape="full"
             onClick={onClose}
           >
-            <RiArrowLeftLine aria-hidden />
+            <HugeiconsIcon icon={ArrowLeft01Icon} aria-hidden />
             <span className="max-sm:sr-only">{copy.previewClose}</span>
           </Button>
           <div className="report-preview-dialog-meta">
@@ -104,7 +116,7 @@ export function ReportPreviewDialog({
               disabled={busy}
               onClick={() => void print()}
             >
-              <RiPrinterLine aria-hidden />
+              <HugeiconsIcon icon={PrinterIcon} aria-hidden />
               <span>{copy.print}</span>
             </Button>
             <Button
@@ -116,7 +128,7 @@ export function ReportPreviewDialog({
               loadingText={copy.preparingPdf}
               onClick={() => void download()}
             >
-              <RiDownloadLine aria-hidden />
+              <HugeiconsIcon icon={Download01Icon} aria-hidden />
               <span>{copy.downloadPdf}</span>
             </Button>
           </div>
@@ -142,6 +154,7 @@ export function ReportPreviewDialog({
           className="report-preview-scroll"
           role="region"
           aria-label="Documento do relatório"
+          onClick={closeOnMarginClick}
         >
           {status === "loading" && (
             <div className="report-preview-state" role="status">

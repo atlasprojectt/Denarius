@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { RiArrowLeftRightLine } from "@remixicon/react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { ArrowLeftRightIcon } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -97,7 +98,7 @@ export function ModelComparisonDrawer({
     ? copy.coveragePartial(economics.coverage.observedDays, economics.coverage.expectedDays)
     : copy.coverage(economics.coverage.observedDays);
   return <>
-    <Button type="button" variant="tertiary" size="xs" shape="full" onClick={() => setOpen(true)} aria-label={`${copy.action} ${source.model}`}><RiArrowLeftRightLine aria-hidden />{copy.action}</Button>
+    <Button type="button" variant="tertiary" size="xs" shape="full" onClick={() => setOpen(true)} aria-label={`${copy.action} ${source.model}`}><HugeiconsIcon icon={ArrowLeftRightIcon} aria-hidden />{copy.action}</Button>
     <Sheet open={open} onOpenChange={setOpen}><SheetContent side="right" className="w-full overflow-y-auto sm:max-w-md"><SheetHeader className="border-b px-5 py-5 pr-12"><SheetTitle>{copy.title}</SheetTitle><SheetDescription>{copy.description}</SheetDescription></SheetHeader><div className="grid gap-5 p-5">
       <div className="grid gap-1"><p className="text-[11px] text-muted-foreground">{copy.source}</p><p className="font-medium">{source.provider} · {source.model}</p></div>
       {lastSyncAt && <p className="text-[11px] font-light text-muted-foreground tabular-nums">{copy.staleNote(lastSyncAt)}</p>}

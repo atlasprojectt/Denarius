@@ -24,6 +24,7 @@ const tenantTables = [
   "invitation",
   "audit_log",
   "period_snapshot",
+  "account_deletion_challenge",
 ] as const;
 
 const applied = hasDbEnv
@@ -172,6 +173,15 @@ describe.skipIf(!ready)("tenant deletion database invariant", () => {
         period_month: period,
         currency: "BRL",
         breakdown: {},
+      }),
+      admin.from("account_deletion_challenge").insert({
+        tenant_id: tenant.id,
+        user_id: userId,
+        role: "admin",
+        target_name: tenant.name,
+        expected_phrase: `Eu confirmo a exclusão da empresa ${tenant.name}.`,
+        code_hash: "test-code-hash",
+        expires_at: new Date(Date.now() + 600_000).toISOString(),
       }),
     ]);
     for (const insert of inserts) expect(insert.error).toBeNull();

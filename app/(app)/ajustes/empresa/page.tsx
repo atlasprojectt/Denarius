@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { RiInformationLine } from "@remixicon/react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { InformationCircleIcon } from "@hugeicons/core-free-icons";
 
 import { Notice } from "@/components/domain/notice";
 import { PageContainer } from "@/components/domain/page-container";
@@ -55,7 +56,7 @@ export default async function CompanySettingsPage() {
         </CardContent>
       </Card>
       {!currencyEditable && (
-        <Notice icon={<RiInformationLine />} title={copy.lockedTitle}>
+        <Notice icon={<HugeiconsIcon icon={InformationCircleIcon} />} title={copy.lockedTitle}>
           <p>{copy.lockedBody}</p>
           <p className="mt-2 flex flex-wrap gap-3">
             <Link href="/ajustes/orcamentos" className="font-medium underline underline-offset-4">{copy.budgets}</Link>

@@ -1,11 +1,12 @@
 import Link from "next/link";
+import { HugeiconsIcon } from "@hugeicons/react";
 import {
-  RiCheckLine,
-  RiDashboard3Line,
-  RiPieChartLine,
-  RiScales3Line,
-  RiShieldCheckLine,
-} from "@remixicon/react";
+  DashboardSquare02Icon,
+  PieChartIcon,
+  ScaleIcon,
+  ShieldCheckIcon,
+  Tick01Icon,
+} from "@hugeicons/core-free-icons";
 
 import { PageContainer } from "@/components/domain/page-container";
 import { Button } from "@/components/ui/button";
@@ -51,7 +52,7 @@ export default async function HomePage() {
           <ExecutiveDigestCard cockpit={cockpit} currency="BRL" />
         </div>
         <div className="rounded-xl border p-6 md:p-8">
-          <RiDashboard3Line className="size-8 text-muted-foreground" aria-hidden />
+          <HugeiconsIcon icon={DashboardSquare02Icon} className="size-8 text-muted-foreground" aria-hidden />
           <h2 className="mt-4 text-lg font-semibold tracking-tight">
             {homeCopy.coldStart.title}
           </h2>
@@ -64,14 +65,15 @@ export default async function HomePage() {
               // early warnings — in that order. The fallback keeps the row
               // illustrated if copy ever gains a fourth item.
               const Icon =
-                [RiScales3Line, RiPieChartLine, RiShieldCheckLine][index] ??
-                RiCheckLine;
+                [ScaleIcon, PieChartIcon, ShieldCheckIcon][index] ??
+                Tick01Icon;
               return (
                 <li
                   key={item}
                   className="flex items-start gap-2.5 text-sm text-muted-foreground"
                 >
-                  <Icon
+                  <HugeiconsIcon
+                    icon={Icon}
                     className="mt-0.5 size-5 shrink-0 text-brand-accent-light"
                     aria-hidden
                   />

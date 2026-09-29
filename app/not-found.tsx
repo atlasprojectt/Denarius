@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { RiCompass3Line } from "@remixicon/react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Compass01Icon } from "@hugeicons/core-free-icons";
 
 import { EmptyState } from "@/components/domain/empty-state";
 import { LogoWordmark } from "@/components/domain/logo";
@@ -25,7 +26,7 @@ export default function RootNotFound() {
       <LogoWordmark className="h-6 w-auto" />
       <EmptyState
         className="max-w-sm"
-        icon={<RiCompass3Line />}
+        icon={<HugeiconsIcon icon={Compass01Icon} />}
         title={copy.title}
         description={copy.description}
         primaryAction={<Link href="/">{copy.home}</Link>}

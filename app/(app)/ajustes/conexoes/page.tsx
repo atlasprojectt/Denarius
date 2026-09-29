@@ -1,4 +1,8 @@
-import { RiLockLine, RiTimeLine } from "@remixicon/react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import {
+  LockIcon,
+  Time01Icon,
+} from "@hugeicons/core-free-icons";
 
 import { EmptyState } from "@/components/domain/empty-state";
 import { PageHeader } from "@/components/domain/page-header";
@@ -56,7 +60,7 @@ export default async function ConnectionsPage() {
           backLabel={copy.back}
         />
         <EmptyState
-          icon={<RiLockLine />}
+          icon={<HugeiconsIcon icon={LockIcon} />}
           title={copy.adminOnlyTitle}
           description={copy.adminOnlyBody}
         />
@@ -103,7 +107,7 @@ export default async function ConnectionsPage() {
               <ItemDescription>{item.description}</ItemDescription>
             </ItemContent>
             <ItemActions>
-              <StateBadge icon={RiTimeLine}>
+              <StateBadge icon={Time01Icon}>
                 {item.status}
               </StateBadge>
             </ItemActions>

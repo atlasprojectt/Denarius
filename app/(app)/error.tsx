@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { RiErrorWarningLine } from "@remixicon/react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Alert02Icon } from "@hugeicons/core-free-icons";
 
 import { EmptyState } from "@/components/domain/empty-state";
 import { ErrorReference } from "@/components/domain/error-reference";
@@ -34,7 +35,7 @@ export default function AppError({
   return (
     <PageContainer variant="settings" className="flex-1 gap-4">
       <EmptyState
-        icon={<RiErrorWarningLine />}
+        icon={<HugeiconsIcon icon={Alert02Icon} />}
         title={copy.title}
         description={copy.description}
       />

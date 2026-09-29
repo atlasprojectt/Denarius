@@ -1,14 +1,15 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import { HugeiconsIcon } from "@hugeicons/react";
 import {
-  RiCheckboxCircleFill,
-  RiErrorWarningFill,
-  RiErrorWarningLine,
-  RiKey2Line,
-  RiLightbulbLine,
-  RiLinkUnlink,
-} from "@remixicon/react";
+  Alert02Icon,
+  AlertCircleIcon,
+  CheckmarkCircle02Icon,
+  Key02Icon,
+  LightbulbIcon,
+  Unlink01Icon,
+} from "@hugeicons/core-free-icons";
 
 import { ActionStatus } from "@/components/domain/action-status";
 import { ConfirmationDialog } from "@/components/domain/confirmation-dialog";
@@ -114,19 +115,19 @@ function StatusBadge({ status }: { status: string | null }) {
   // 2026-07-21); revoked/not-connected stay neutral chrome.
   if (status === "error") {
     return (
-      <StateBadge icon={RiErrorWarningFill} tone="destructive">
+      <StateBadge icon={AlertCircleIcon} tone="destructive">
         {statusLabel(status)}
       </StateBadge>
     );
   }
   if (status === "active") {
     return (
-      <StateBadge icon={RiCheckboxCircleFill} tone="positive">
+      <StateBadge icon={CheckmarkCircle02Icon} tone="positive">
         {statusLabel(status)}
       </StateBadge>
     );
   }
-  return <StateBadge icon={RiLinkUnlink}>{statusLabel(status)}</StateBadge>;
+  return <StateBadge icon={Unlink01Icon}>{statusLabel(status)}</StateBadge>;
 }
 
 type KeyFormProps = {
@@ -154,7 +155,7 @@ function KeyForm({ provider, formAction, pending }: KeyFormProps) {
         <p className="text-xs/relaxed text-muted-foreground">{copy.keyHelp}</p>
       </div>
       <p className="flex items-start gap-2 rounded-lg bg-muted p-3 text-xs/relaxed text-muted-foreground">
-        <RiLightbulbLine className="mt-0.5 size-4 shrink-0" aria-hidden />
+        <HugeiconsIcon icon={LightbulbIcon} className="mt-0.5 size-4 shrink-0" aria-hidden />
         {copy.groupingTip}
       </p>
       <div>
@@ -209,7 +210,7 @@ function ActiveControls({ keyForm }: { keyForm: KeyFormProps }) {
           action={revokeAction}
           pending={revoking}
           success={revokeState.success}
-          icon={<RiKey2Line />}
+          icon={<HugeiconsIcon icon={Key02Icon} />}
         />
       </div>
       <ActionToast id={`${keyForm.provider}:sync`} state={syncState} error={syncState.error} success={syncState.success} />
@@ -262,7 +263,7 @@ export function ProviderConnectionCard({
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
         {status === "error" && lastSyncError && (
-          <Notice tone="destructive" icon={<RiErrorWarningLine />} title={sharedCopy.error}>
+          <Notice tone="destructive" icon={<HugeiconsIcon icon={Alert02Icon} />} title={sharedCopy.error}>
             {lastSyncError}
           </Notice>
         )}

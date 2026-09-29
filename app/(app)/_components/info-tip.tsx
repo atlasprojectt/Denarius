@@ -1,6 +1,7 @@
 "use client";
 
-import { RiInformationLine } from "@remixicon/react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { InformationCircleIcon } from "@hugeicons/core-free-icons";
 
 import {
   Tooltip,
@@ -25,7 +26,7 @@ export function InfoTip({ label, children }: { label: string; children: string }
           aria-label={label}
           className="inline-flex size-5 shrink-0 items-center justify-center rounded-full text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/40 max-md:-m-3 max-md:size-11"
         >
-          <RiInformationLine className="size-4" aria-hidden />
+          <HugeiconsIcon icon={InformationCircleIcon} className="size-4" aria-hidden />
         </TooltipTrigger>
         <TooltipContent side="top" className="max-w-xs text-xs/relaxed">
           {children}

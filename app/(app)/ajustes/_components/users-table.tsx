@@ -1,7 +1,11 @@
 "use client";
 
 import { useActionState } from "react";
-import { RiLockLine, RiUserUnfollowLine } from "@remixicon/react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import {
+  LockIcon,
+  UserMinus01Icon,
+} from "@hugeicons/core-free-icons";
 
 import { ConfirmationDialog } from "@/components/domain/confirmation-dialog";
 import { StateBadge } from "@/components/domain/state-badge";
@@ -59,7 +63,7 @@ function RemoveButton({ userId }: { userId: string }) {
         action={formAction}
         pending={pending}
         success={state.success}
-        icon={<RiUserUnfollowLine />}
+        icon={<HugeiconsIcon icon={UserMinus01Icon} />}
       >
         <input type="hidden" name="userId" value={userId} />
       </ConfirmationDialog>
@@ -106,7 +110,7 @@ export function UsersTable({
               <ItemActions>
                 {isAdmin && !isSelf && <RemoveButton userId={u.id} />}
                 {isSelf && (
-                  <StateBadge icon={RiLockLine}>
+                  <StateBadge icon={LockIcon}>
                     {copy.selfNote}
                   </StateBadge>
                 )}

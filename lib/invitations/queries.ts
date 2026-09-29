@@ -1,5 +1,6 @@
 import "server-only";
 
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
 import { invitationState } from "./policy";
@@ -23,6 +24,36 @@ type InvitationRow = {
   accepted_at: string | null;
   revoked_at: string | null;
 };
+
+export type InvitationLookup = {
+  email: string;
+  expires_at: string;
+  accepted_at: string | null;
+  revoked_at: string | null;
+  tenant: { name: string } | null;
+};
+
+/**
+ * Public invite-page lookup. This uses the same Supabase store as the invite
+ * actions; the separate Neon privileged connection is not part of this flow.
+ */
+export async function findInvitationByTokenHash(
+  tokenHash: string,
+): Promise<InvitationLookup | null> {
+  try {
+    const admin = createAdminClient();
+    const { data } = await admin
+      .from("invitation")
+      .select("email, expires_at, accepted_at, revoked_at, tenant:tenant_id(name)")
+      .eq("token_hash", tokenHash)
+      .maybeSingle();
+
+    return data as InvitationLookup | null;
+  } catch {
+    // A lookup failure has the same public result as an unknown token.
+    return null;
+  }
+}
 
 /** Invitations still waiting to be accepted — never the accepted, revoked or
  *  expired ones (an expired link is noise, not a pending task). */

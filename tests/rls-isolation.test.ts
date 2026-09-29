@@ -74,11 +74,21 @@ const invitationReady =
   ready &&
   requireTable(SUITE, "invitation", await tableApplied("invitation"), "*_invitations.sql");
 
+const accountDeletionReady =
+  ready &&
+  requireTable(
+    SUITE,
+    "account_deletion_challenge",
+    await tableApplied("account_deletion_challenge"),
+    "*_account_deletion.sql",
+  );
+
 const TABLES = [
   "tenant",
   "app_user",
   "team",
   ...(invitationReady ? (["invitation"] as const) : []),
+  ...(accountDeletionReady ? (["account_deletion_challenge"] as const) : []),
   ...(subscriptionReady ? (["subscription"] as const) : []),
   ...(providersReady
     ? (["provider_connection", "usage_daily", "cost_daily"] as const)
@@ -214,6 +224,21 @@ describe.skipIf(!ready)("RLS tenant isolation", () => {
         expires_at: new Date(Date.now() + 86_400_000).toISOString(),
       });
       if (inviteError) throw inviteError;
+    }
+
+    if (accountDeletionReady) {
+      const { error: challengeError } = await admin
+        .from("account_deletion_challenge")
+        .insert({
+          tenant_id: tenant.id,
+          user_id: authUser.user.id,
+          role: "admin",
+          target_name: `RLS Test ${label} ${run}`,
+          expected_phrase: `Eu confirmo a exclusão da empresa RLS Test ${label} ${run}.`,
+          code_hash: `challenge-hash-${label}-${run}`,
+          expires_at: new Date(Date.now() + 86_400_000).toISOString(),
+        });
+      if (challengeError) throw challengeError;
     }
 
     if (notificationLogReady) {

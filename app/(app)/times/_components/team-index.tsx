@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { RiArrowRightSLine } from "@remixicon/react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { ChevronRightIcon } from "@hugeicons/core-free-icons";
 
 import { SimulateDrawer } from "@/components/domain/simulate-drawer";
 import { StatusPill } from "@/components/domain/status-pill";
@@ -164,7 +165,7 @@ function TeamRow({
               />
             </>
           )}
-          <RiArrowRightSLine
+          <HugeiconsIcon icon={ChevronRightIcon}
             aria-hidden
             className="size-4 shrink-0 text-muted-foreground transition-transform duration-(--motion-duration-fast) ease-(--motion-ease-standard) group-hover/row:translate-x-0.5"
           />

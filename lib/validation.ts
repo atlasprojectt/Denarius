@@ -57,6 +57,24 @@ export const otpSchema = z.object({
     .regex(/^\d{6}$/, "Informe o código de 6 dígitos."),
 });
 
+/** Account-deletion verification is intentionally separate from signup OTP.
+ * The latter changes Supabase Auth state; this code only unlocks the explicit
+ * destructive flow after the current session has already been re-checked. */
+export const accountDeletionCodeSchema = z.object({
+  token: z
+    .string()
+    .trim()
+    .regex(/^\d{6}$/, "Informe o código de 6 dígitos."),
+});
+
+export const accountDeletionPhraseSchema = z.object({
+  phrase: z
+    .string()
+    .trim()
+    .min(1, "Digite a frase de confirmação.")
+    .max(240, "A frase de confirmação é muito longa."),
+});
+
 export const onboardingSchema = z.object({
   companyName: z
     .string()
@@ -112,13 +130,6 @@ export const privacySettingsSchema = z.object({
 
 export const removeUserSchema = z.object({
   userId: z.uuid("Usuário inválido."),
-});
-
-export const tenantDeletionSchema = z.object({
-  companyName: z
-    .string()
-    .min(1, "Digite o nome da empresa para confirmar.")
-    .max(80, "Nome da empresa muito longo."),
 });
 
 // Supported display currencies — editable only at day zero (no budgets/seats),

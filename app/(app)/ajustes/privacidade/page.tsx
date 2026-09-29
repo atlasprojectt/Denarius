@@ -46,7 +46,7 @@ export default async function PrivacySettingsPage() {
           <PrivacyForm showNames={tenant.show_names} storePerPerson={tenant.store_per_person} isAdmin={isAdmin} />
         </CardContent>
       </Card>
-      {isAdmin && <DataRightsPanel companyName={tenant.name} />}
+      {isAdmin && <DataRightsPanel />}
     </PageContainer>
   );
 }

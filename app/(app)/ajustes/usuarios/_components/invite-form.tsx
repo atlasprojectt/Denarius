@@ -1,7 +1,11 @@
 "use client";
 
 import { useActionState, useEffect, useRef, useState } from "react";
-import { RiCheckLine, RiFileCopyLine } from "@remixicon/react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import {
+  Copy01Icon,
+  Tick01Icon,
+} from "@hugeicons/core-free-icons";
 
 import { ActionStatus } from "@/components/domain/action-status";
 import { Button } from "@/components/ui/button";
@@ -59,9 +63,9 @@ function CopyLink({ url }: { url: string }) {
         }}
       >
         {copied ? (
-          <RiCheckLine className="size-3.5" aria-hidden />
+          <HugeiconsIcon icon={Tick01Icon} className="size-3.5" aria-hidden />
         ) : (
-          <RiFileCopyLine className="size-3.5" aria-hidden />
+          <HugeiconsIcon icon={Copy01Icon} className="size-3.5" aria-hidden />
         )}
         {copied ? copy.copied : copy.copy}
       </Button>

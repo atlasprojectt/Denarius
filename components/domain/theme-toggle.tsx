@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
+import { HugeiconsIcon } from "@hugeicons/react";
 import {
-  RiComputerLine,
-  RiMoonLine,
-  RiSunLine,
-} from "@remixicon/react";
+  ComputerIcon,
+  Moon01Icon,
+  Sun01Icon,
+} from "@hugeicons/core-free-icons";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -135,9 +136,9 @@ export function ThemeToggle({ className }: { className?: string }) {
       )}
     >
       {isDark ? (
-        <RiSunLine className="size-4" />
+        <HugeiconsIcon icon={Sun01Icon} className="size-4" />
       ) : (
-        <RiMoonLine className="size-4" />
+        <HugeiconsIcon icon={Moon01Icon} className="size-4" />
       )}
     </Button>
   );
@@ -284,21 +285,21 @@ export function ThemePicker() {
         selected={preference === "system"}
         label={copy.system}
         hint={copy.systemHint}
-        icon={<RiComputerLine className="size-4" />}
+        icon={<HugeiconsIcon icon={ComputerIcon} className="size-4" />}
       />
       <ThemeOption
         variant="light"
         selected={preference === "light"}
         label={copy.light}
         hint={copy.lightHint}
-        icon={<RiSunLine className="size-4" />}
+        icon={<HugeiconsIcon icon={Sun01Icon} className="size-4" />}
       />
       <ThemeOption
         variant="dark"
         selected={preference === "dark"}
         label={copy.dark}
         hint={copy.darkHint}
-        icon={<RiMoonLine className="size-4" />}
+        icon={<HugeiconsIcon icon={Moon01Icon} className="size-4" />}
       />
     </RadioGroup>
   );

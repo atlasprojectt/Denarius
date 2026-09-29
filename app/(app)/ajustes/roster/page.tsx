@@ -1,4 +1,5 @@
-import { RiTeamLine } from "@remixicon/react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { UsersIcon } from "@hugeicons/core-free-icons";
 
 import { EmptyState } from "@/components/domain/empty-state";
 import { PageHeader } from "@/components/domain/page-header";
@@ -64,7 +65,7 @@ export default async function RosterPage() {
 
       {employees.length === 0 ? (
         <EmptyState
-          icon={<RiTeamLine />}
+          icon={<HugeiconsIcon icon={UsersIcon} />}
           title={copy.emptyTitle}
           description={copy.emptyBody}
         />

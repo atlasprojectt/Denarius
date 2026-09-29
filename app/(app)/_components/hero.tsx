@@ -1,8 +1,9 @@
+import { HugeiconsIcon } from "@hugeicons/react";
 import {
-  RiArrowDownCircleFill,
-  RiArrowUpCircleFill,
-  RiWallet3Line,
-} from "@remixicon/react";
+  ArrowDown01Icon,
+  ArrowUp01Icon,
+  Wallet03Icon,
+} from "@hugeicons/core-free-icons";
 
 import { StateBadge } from "@/components/domain/state-badge";
 import {
@@ -35,7 +36,7 @@ const WEEK_DELTA_MIN = 0.005;
  *  without judging it — the signed percent carries it for screen readers. */
 function WeekDelta({ pct }: { pct: number | null }) {
   if (pct === null || Math.abs(pct) < WEEK_DELTA_MIN) return null;
-  const Arrow = pct < 0 ? RiArrowDownCircleFill : RiArrowUpCircleFill;
+  const Arrow = pct < 0 ? ArrowDown01Icon : ArrowUp01Icon;
   const signed = `${pct > 0 ? "+" : ""}${percent(pct, 1)}`;
   return (
     <StateBadge icon={Arrow} className="mt-1">
@@ -70,7 +71,7 @@ export function Hero({
     <Card className="min-h-full" aria-labelledby="home-hero-title">
       <CardHeader className="border-b border-border">
         <CardTitle as="h2" id="home-hero-title" className="flex items-center gap-2 text-sm font-medium">
-          <RiWallet3Line className="size-4 text-muted-foreground" aria-hidden />
+          <HugeiconsIcon icon={Wallet03Icon} className="size-4 text-muted-foreground" aria-hidden />
           {c.title}
         </CardTitle>
         <p className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1 pt-1.5 text-[clamp(2rem,4vw,2.5rem)] font-medium tracking-tight tabular-nums [overflow-wrap:anywhere]">

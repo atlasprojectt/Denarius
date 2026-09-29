@@ -1,4 +1,8 @@
-import { RiCoinsLine, RiLockLine } from "@remixicon/react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import {
+  Coins01Icon,
+  LockIcon,
+} from "@hugeicons/core-free-icons";
 
 import { EmptyState } from "@/components/domain/empty-state";
 import { PageHeader } from "@/components/domain/page-header";
@@ -49,7 +53,7 @@ export default async function SubscriptionsPage() {
           backLabel={copy.back}
         />
         <EmptyState
-          icon={<RiLockLine />}
+          icon={<HugeiconsIcon icon={LockIcon} />}
           title={copy.adminOnlyTitle}
           description={copy.adminOnlyBody}
         />
@@ -96,7 +100,7 @@ export default async function SubscriptionsPage() {
 
       {rows.length === 0 ? (
         <EmptyState
-          icon={<RiCoinsLine />}
+          icon={<HugeiconsIcon icon={Coins01Icon} />}
           title={copy.emptyTitle}
           description={copy.emptyBody}
         />

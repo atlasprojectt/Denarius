@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { RiSparkling2Line } from "@remixicon/react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { SparklesIcon } from "@hugeicons/core-free-icons";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { Cockpit } from "@/lib/engine/cockpit";
@@ -76,7 +77,7 @@ export function ExecutiveDigestCard({
     >
       <CardHeader className="border-b border-border px-4">
         <CardTitle as="h2" id="home-digest-title" className="flex items-center gap-2 text-sm">
-          <RiSparkling2Line className="size-4 text-muted-foreground" aria-hidden />
+          <HugeiconsIcon icon={SparklesIcon} className="size-4 text-muted-foreground" aria-hidden />
           {homeCopy.digest.title}
         </CardTitle>
       </CardHeader>

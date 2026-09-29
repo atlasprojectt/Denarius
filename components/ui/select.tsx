@@ -4,7 +4,13 @@ import * as React from "react"
 import { Select as SelectPrimitive } from "@base-ui/react/select"
 
 import { cn } from "@/lib/utils"
-import { RiExpandUpDownLine, RiCheckLine, RiArrowUpSLine, RiArrowDownSLine } from "@remixicon/react"
+import { HugeiconsIcon } from "@hugeicons/react"
+import {
+  ArrowUpDownIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
+  Tick01Icon,
+} from "@hugeicons/core-free-icons"
 
 const Select = SelectPrimitive.Root
 
@@ -49,7 +55,7 @@ function SelectTrigger({
       {children}
       <SelectPrimitive.Icon
         render={
-          <RiExpandUpDownLine className="pointer-events-none size-3.5 text-muted-foreground" />
+          <HugeiconsIcon icon={ArrowUpDownIcon} className="pointer-events-none size-3.5 text-muted-foreground" />
         }
       />
     </SelectPrimitive.Trigger>
@@ -130,7 +136,7 @@ function SelectItem({
           <span className="pointer-events-none absolute right-2 flex items-center justify-center" />
         }
       >
-        <RiCheckLine className="pointer-events-none" />
+        <HugeiconsIcon icon={Tick01Icon} className="pointer-events-none" />
       </SelectPrimitive.ItemIndicator>
     </SelectPrimitive.Item>
   )
@@ -165,7 +171,7 @@ function SelectScrollUpButton({
       )}
       {...props}
     >
-      <RiArrowUpSLine
+      <HugeiconsIcon icon={ChevronUpIcon}
       />
     </SelectPrimitive.ScrollUpArrow>
   )
@@ -184,7 +190,7 @@ function SelectScrollDownButton({
       )}
       {...props}
     >
-      <RiArrowDownSLine
+      <HugeiconsIcon icon={ChevronDownIcon}
       />
     </SelectPrimitive.ScrollDownArrow>
   )

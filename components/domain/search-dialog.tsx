@@ -2,15 +2,16 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react";
 import {
-  RiArrowRightSLine,
-  RiCloseLine,
-  RiFileChartLine,
-  RiPlugLine,
-  RiSearchLine,
-  RiTeamLine,
-  RiToolsLine,
-} from "@remixicon/react";
+  Cancel01Icon,
+  ChevronRightIcon,
+  FileChartLineIcon,
+  Plug01Icon,
+  Search01Icon,
+  ToolsIcon,
+  UsersIcon,
+} from "@hugeicons/core-free-icons";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -52,11 +53,11 @@ const copy = {
   noResultsHint: "Tente outro termo.",
 };
 
-const ICONS: Record<SearchResultType, React.ComponentType<{ className?: string }>> = {
-  team: RiTeamLine,
-  report: RiFileChartLine,
-  subscription: RiToolsLine,
-  connection: RiPlugLine,
+const ICONS: Record<SearchResultType, IconSvgElement> = {
+  team: UsersIcon,
+  report: FileChartLineIcon,
+  subscription: ToolsIcon,
+  connection: Plug01Icon,
 };
 
 const IDLE_RESPONSE: SearchResponse = { status: "idle", groups: [] };
@@ -183,7 +184,6 @@ export function SearchDialog() {
       <DialogContent
         showCloseButton={false}
         className="max-h-[calc(100dvh-2rem)] max-w-3xl gap-0 overflow-hidden p-0 sm:max-w-3xl"
-        overlayClassName="bg-black/80 supports-backdrop-filter:!backdrop-blur-[2px]"
       >
         <DialogHeader className="sr-only">
           <DialogTitle>{copy.title}</DialogTitle>
@@ -207,9 +207,9 @@ export function SearchDialog() {
               />
             }
           >
-            <RiCloseLine />
+            <HugeiconsIcon icon={Cancel01Icon} />
           </DialogClose>
-          <RiSearchLine className="pointer-events-none absolute top-1/2 left-7 size-4 -translate-y-1/2 text-muted-foreground" />
+          <HugeiconsIcon icon={Search01Icon} className="pointer-events-none absolute top-1/2 left-7 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             ref={inputRef}
             autoFocus
@@ -357,7 +357,7 @@ function ResultRow({
       )}
     >
       <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-        <Icon className="size-4" />
+        <HugeiconsIcon icon={Icon} className="size-4" />
       </span>
       <span className="min-w-0 flex-1">
         <span className="block truncate text-sm font-medium">{result.title}</span>
@@ -372,7 +372,7 @@ function ResultRow({
           {result.metadata}
         </span>
       )}
-      <RiArrowRightSLine className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+      <HugeiconsIcon icon={ChevronRightIcon} className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
     </Link>
   );
 }

@@ -1,12 +1,13 @@
 "use client";
 
+import { HugeiconsIcon } from "@hugeicons/react";
 import {
-  RiBuildingLine,
-  RiEyeLine,
-  RiEyeOffLine,
-  RiKey2Line,
-  RiMailLine,
-} from "@remixicon/react";
+  Building02Icon,
+  EyeIcon,
+  EyeOffIcon,
+  Key02Icon,
+  Mail01Icon,
+} from "@hugeicons/core-free-icons";
 import Link from "next/link";
 import { useActionState, useId, useState, type ReactNode } from "react";
 
@@ -47,6 +48,10 @@ const copy = {
   submittingLogin: "Entrando…",
   submittingSignup: "Criando conta…",
   or: "ou",
+  accountDeleted:
+    "A empresa e todos os dados do espaço foram excluídos do Denarius. Nada foi alterado nos provedores.",
+  membershipLeft:
+    "Você saiu da empresa. Seu acesso foi removido e os dados da empresa permanecem intactos.",
 };
 
 const initialState: AuthFormState = {};
@@ -80,7 +85,13 @@ function IconInput({
   );
 }
 
-export function AuthForm({ oauthError }: { oauthError?: string }) {
+export function AuthForm({
+  oauthError,
+  notice,
+}: {
+  oauthError?: string;
+  notice?: "account-deleted" | "membership-left";
+}) {
   const [mode, setMode] = useState<Mode>("login");
   const [showPassword, setShowPassword] = useState(false);
   const [loginState, loginAction, loginPending] = useActionState(
@@ -116,6 +127,16 @@ export function AuthForm({ oauthError }: { oauthError?: string }) {
         className="flex flex-col gap-7"
       >
         <FieldGroup className="gap-5">
+          {notice && (
+            <p
+              role="status"
+              className="rounded-[var(--radius-standard)] border border-border bg-surface-control px-3 py-2 text-sm text-muted-foreground"
+            >
+              {notice === "account-deleted"
+                ? copy.accountDeleted
+                : copy.membershipLeft}
+            </p>
+          )}
           <div className="denarius-auth-enter flex flex-col gap-2.5">
             <h1 className="max-w-[15ch] text-[2rem]/[1.08] font-semibold tracking-[-0.025em] text-balance sm:text-[2.25rem]/[1.08]">
               {copy.title}
@@ -177,7 +198,7 @@ export function AuthForm({ oauthError }: { oauthError?: string }) {
                 <FieldLabel htmlFor={companyFieldId}>
                   {copy.companyName}
                 </FieldLabel>
-                <IconInput icon={<RiBuildingLine className={iconClassName} />}>
+                <IconInput icon={<HugeiconsIcon icon={Building02Icon} className={iconClassName} />}>
                   <Input
                     id={companyFieldId}
                     name="companyName"
@@ -200,7 +221,7 @@ export function AuthForm({ oauthError }: { oauthError?: string }) {
 
           <Field className="denarius-auth-enter [animation-delay:120ms]">
             <FieldLabel htmlFor="email">{copy.email}</FieldLabel>
-            <IconInput icon={<RiMailLine className={iconClassName} />}>
+            <IconInput icon={<HugeiconsIcon icon={Mail01Icon} className={iconClassName} />}>
               <Input
                 id="email"
                 name="email"
@@ -229,7 +250,7 @@ export function AuthForm({ oauthError }: { oauthError?: string }) {
               )}
             </div>
             <IconInput
-              icon={<RiKey2Line className={iconClassName} />}
+              icon={<HugeiconsIcon icon={Key02Icon} className={iconClassName} />}
               trailing={
                 <Button
                   type="button"
@@ -242,9 +263,9 @@ export function AuthForm({ oauthError }: { oauthError?: string }) {
                   className="absolute top-1/2 right-0 size-11 -translate-y-1/2"
                 >
                   {showPassword ? (
-                    <RiEyeOffLine className={iconClassName} />
+                    <HugeiconsIcon icon={EyeOffIcon} className={iconClassName} />
                   ) : (
-                    <RiEyeLine className={iconClassName} />
+                    <HugeiconsIcon icon={EyeIcon} className={iconClassName} />
                   )}
                 </Button>
               }

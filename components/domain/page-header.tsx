@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { RiArrowLeftSLine } from "@remixicon/react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { ChevronLeftIcon } from "@hugeicons/core-free-icons";
 
 // Shared page header (frontend F5: cross-screen domain component). Keeps every
 // screen's opening consistent: optional back link, title, one-line description,
@@ -29,7 +30,7 @@ export function PageHeader({
             href={backHref}
             className="mb-1 inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
           >
-            <RiArrowLeftSLine className="size-3.5" />
+            <HugeiconsIcon icon={ChevronLeftIcon} className="size-3.5" />
             {backLabel}
           </Link>
         )}

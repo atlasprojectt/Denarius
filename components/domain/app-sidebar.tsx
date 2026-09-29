@@ -3,18 +3,20 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useFormStatus } from "react-dom";
+import { HugeiconsIcon } from "@hugeicons/react";
 import {
-  RiExpandUpDownLine,
-  RiFileChartLine,
-  RiCloseLine,
-  RiLineChartLine,
-  RiSettings3Line,
-  RiHome5Line,
-  RiLogoutBoxRLine,
-  RiSearchLine,
-  RiTeamLine,
-  RiUserLine,
-} from "@remixicon/react";
+  ArrowUpDownIcon,
+  Cancel01Icon,
+  ChartLineIcon,
+  FileChartLineIcon,
+  Home05Icon,
+  Logout02Icon,
+  Search01Icon,
+  Settings03Icon,
+  UserIcon,
+  UsersIcon,
+} from "@hugeicons/core-free-icons";
 
 import { AllClear } from "@/components/domain/all-clear";
 import { LogoMark, LogoWordmark } from "@/components/domain/logo";
@@ -44,6 +46,15 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { logout } from "@/lib/auth/actions";
 import type { ConnectionFreshness } from "@/lib/engine/freshness";
@@ -76,22 +87,43 @@ const copy = {
   profileMenu: "Perfil",
   profileSettings: "Configurações",
   logout: "Sair",
+  logoutTitle: "Sair do Denarius?",
+  logoutDescription:
+    "Você precisará entrar novamente para acessar os dados da sua empresa.",
+  logoutCancel: "Continuar no app",
+  logoutConfirm: "Sair",
+  logoutPending: "Saindo…",
   closeMenu: "Fechar menu",
 };
+
+function LogoutSubmitButton() {
+  const { pending } = useFormStatus();
+
+  return (
+    <Button
+      type="submit"
+      variant="destructive"
+      loading={pending}
+      loadingText={copy.logoutPending}
+    >
+      {copy.logoutConfirm}
+    </Button>
+  );
+}
 
 const navigation: { label: string; items: { title: string; path: string; icon: React.ReactNode }[] }[] = [
   {
     label: copy.groupCockpit,
     items: [
-      { title: copy.home, path: "/", icon: <RiHome5Line /> },
-      { title: copy.teams, path: "/times", icon: <RiTeamLine /> },
-      { title: copy.explore, path: "/explorar", icon: <RiLineChartLine /> },
-      { title: copy.reports, path: "/relatorios", icon: <RiFileChartLine /> },
+      { title: copy.home, path: "/", icon: <HugeiconsIcon icon={Home05Icon} /> },
+      { title: copy.teams, path: "/times", icon: <HugeiconsIcon icon={UsersIcon} /> },
+      { title: copy.explore, path: "/explorar", icon: <HugeiconsIcon icon={ChartLineIcon} /> },
+      { title: copy.reports, path: "/relatorios", icon: <HugeiconsIcon icon={FileChartLineIcon} /> },
     ],
   },
   {
     label: copy.groupAccount,
-    items: [{ title: copy.settings, path: "/ajustes", icon: <RiSettings3Line /> }],
+    items: [{ title: copy.settings, path: "/ajustes", icon: <HugeiconsIcon icon={Settings03Icon} /> }],
   },
 ];
 
@@ -159,6 +191,7 @@ export function AppSidebar({
   const pathname = usePathname();
   const { setOpenMobile } = useSidebar();
   const hasNewReport = useNewReportBadge(latestReportPeriod);
+  const [logoutOpen, setLogoutOpen] = useState(false);
 
   function openSearch() {
     setOpenMobile(false);
@@ -206,7 +239,7 @@ export function AppSidebar({
             onClick={() => setOpenMobile(false)}
             className="absolute top-1.5 right-2 size-11 md:hidden"
           >
-            <RiCloseLine className="size-5" />
+            <HugeiconsIcon icon={Cancel01Icon} className="size-5" />
           </Button>
         </SidebarHeader>
 
@@ -224,7 +257,7 @@ export function AppSidebar({
                     onClick={openSearch}
                     aria-label={`${copy.search} (${copy.searchShortcut})`}
                   >
-                    <RiSearchLine />
+                    <HugeiconsIcon icon={Search01Icon} />
                     <span className="truncate">{copy.search}</span>
                     <kbd className="ml-auto font-sans text-[10px] leading-none text-sidebar-foreground/65 group-data-[collapsible=icon]:hidden">
                       {copy.searchShortcut}
@@ -269,7 +302,7 @@ export function AppSidebar({
                       </span>
                     )}
                   </span>
-                  <RiExpandUpDownLine className="ml-auto text-sidebar-foreground/65" />
+                  <HugeiconsIcon icon={ArrowUpDownIcon} className="ml-auto text-sidebar-foreground/65" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
                   side="right"
@@ -300,25 +333,58 @@ export function AppSidebar({
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild className="h-9">
                     <Link href="/configuracoes">
-                      <RiUserLine />
+                      <HugeiconsIcon icon={UserIcon} />
                       <span>{copy.profileSettings}</span>
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <form action={logout}>
-                    <DropdownMenuItem
-                      asChild
-                      variant="destructive"
-                      className="h-9"
+                  <DropdownMenuItem
+                    asChild
+                    variant="destructive"
+                    className="h-9"
+                  >
+                    <button
+                      type="button"
+                      className="w-full"
+                      onClick={() => setLogoutOpen(true)}
                     >
-                      <button type="submit" className="w-full">
-                        <RiLogoutBoxRLine />
-                        <span>{copy.logout}</span>
-                      </button>
-                    </DropdownMenuItem>
-                  </form>
+                      <HugeiconsIcon icon={Logout02Icon} />
+                      <span>{copy.logout}</span>
+                    </button>
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
+              <Dialog open={logoutOpen} onOpenChange={setLogoutOpen}>
+                <DialogContent
+                  showCloseButton={false}
+                  className="max-h-[calc(100dvh-2rem)] overflow-y-auto overscroll-contain max-sm:[&_[data-slot=button]]:min-h-11"
+                >
+                  <form action={logout} className="contents">
+                    <DialogHeader className="flex-row items-start gap-3">
+                      <span
+                        aria-hidden
+                        className="grid size-10 shrink-0 place-items-center rounded-full bg-destructive/10 text-destructive [&>svg]:size-5"
+                      >
+                        <HugeiconsIcon icon={Logout02Icon} />
+                      </span>
+                      <div className="flex min-w-0 flex-col gap-1 pt-0.5">
+                        <DialogTitle>{copy.logoutTitle}</DialogTitle>
+                        <DialogDescription>
+                          {copy.logoutDescription}
+                        </DialogDescription>
+                      </div>
+                    </DialogHeader>
+                    <DialogFooter>
+                      <DialogClose asChild>
+                        <Button type="button" variant="outline" autoFocus>
+                          {copy.logoutCancel}
+                        </Button>
+                      </DialogClose>
+                      <LogoutSubmitButton />
+                    </DialogFooter>
+                  </form>
+                </DialogContent>
+              </Dialog>
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarFooter>

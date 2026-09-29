@@ -14,13 +14,23 @@ const copy = {
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{
+    error?: string;
+    space?: string;
+    membership?: string;
+  }>;
 }) {
-  const { error } = await searchParams;
+  const { error, space, membership } = await searchParams;
   const oauthError =
     error === "oauth"
       ? "Não foi possível entrar com o Google. Tente novamente."
       : undefined;
+  const notice =
+    space === "deleted"
+      ? ("account-deleted" as const)
+      : membership === "left"
+        ? ("membership-left" as const)
+        : undefined;
 
   return (
     <div className="grid min-h-svh bg-surface-canvas lg:grid-cols-[minmax(28rem,0.82fr)_minmax(0,1.18fr)]">
@@ -32,7 +42,7 @@ export default async function LoginPage({
         </div>
         <div className="flex flex-1 items-center justify-center py-8 lg:py-12">
           <div className="w-full max-w-[26rem]">
-            <AuthForm oauthError={oauthError} />
+            <AuthForm oauthError={oauthError} notice={notice} />
           </div>
         </div>
         {/* The legal pages are public and have to be reachable from the only

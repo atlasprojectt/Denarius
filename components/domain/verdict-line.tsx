@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { RiArrowRightSLine } from "@remixicon/react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { ChevronRightIcon } from "@hugeicons/core-free-icons";
 
 import { Button } from "@/components/ui/button";
 import type { Verdict } from "@/lib/engine/verdict";
@@ -61,7 +62,7 @@ export function VerdictLine({
           <Button asChild variant="tertiary" size="sm" shape="full" motion="forward">
             <Link href={action.href}>
               {action.label}
-              <RiArrowRightSLine className="size-3.5" data-icon="inline-end" aria-hidden />
+              <HugeiconsIcon icon={ChevronRightIcon} className="size-3.5" data-icon="inline-end" aria-hidden />
             </Link>
           </Button>
         )}

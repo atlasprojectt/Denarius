@@ -47,6 +47,22 @@ export const INVITE_ACCEPT: RateLimitRule = {
   windowSeconds: 10 * 60,
 };
 
+/** Deletion sends a credential-bearing message. Unlike invitation delivery,
+ * this path fails closed when its limiter is unavailable: a missing backend
+ * must never turn an irreversible action into an unthrottled mailer. */
+export const ACCOUNT_DELETION_REQUEST: RateLimitRule = {
+  name: "account-deletion:request",
+  limit: 3,
+  windowSeconds: 15 * 60,
+};
+
+/** A separate bucket keeps code-entry probes from consuming resend slots. */
+export const ACCOUNT_DELETION_VERIFY: RateLimitRule = {
+  name: "account-deletion:verify",
+  limit: 12,
+  windowSeconds: 15 * 60,
+};
+
 /**
  * Hashes whatever identifies the caller before it is stored. The bucket keys an
  * IP address or a tenant; an IP is personal data under the LGPD, and this table
@@ -121,6 +137,22 @@ export async function takeRateLimitSlot(
     });
   } catch {
     return true;
+  }
+}
+
+/** Strict counterpart used by destructive account deletion. */
+export async function takeRateLimitSlotFailClosed(
+  rule: RateLimitRule,
+  subject: string,
+): Promise<boolean> {
+  try {
+    return await rateLimitTake({
+      p_bucket: bucketKey(rule, subject),
+      p_limit: rule.limit,
+      p_window_seconds: rule.windowSeconds,
+    });
+  } catch {
+    return false;
   }
 }
 

@@ -1,7 +1,8 @@
 "use client";
 
 import { useActionState } from "react";
-import { RiPencilLine } from "@remixicon/react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { PencilEdit01Icon } from "@hugeicons/core-free-icons";
 
 import { ActionStatus } from "@/components/domain/action-status";
 import { MoneyInput } from "@/components/domain/money-input";
@@ -62,7 +63,7 @@ export function BudgetEditDialog({
     <Dialog>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm" className="h-11 sm:h-7">
-          <RiPencilLine className="size-4" />
+          <HugeiconsIcon icon={PencilEdit01Icon} className="size-4" />
           {existing ? copy.edit : copy.define}
         </Button>
       </DialogTrigger>

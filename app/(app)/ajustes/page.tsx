@@ -1,15 +1,16 @@
 import { redirect } from "next/navigation";
+import { HugeiconsIcon } from "@hugeicons/react";
 import {
-  RiBuildingLine,
-  RiCoinsLine,
-  RiFileList3Line,
-  RiPieChartLine,
-  RiPlugLine,
-  RiShieldKeyholeLine,
-  RiTeamLine,
-  RiUserSettingsLine,
-  RiWallet3Line,
-} from "@remixicon/react";
+  Building02Icon,
+  Coins01Icon,
+  FileTextIcon,
+  PieChartIcon,
+  Plug01Icon,
+  ShieldKeyIcon,
+  UserSettings01Icon,
+  UsersIcon,
+  Wallet03Icon,
+} from "@hugeicons/core-free-icons";
 
 import { PageContainer } from "@/components/domain/page-container";
 import { PageHeader } from "@/components/domain/page-header";
@@ -133,7 +134,7 @@ export default async function SettingsPage() {
         <SettingsSection id="settings-company" title={copy.groupCompany}>
           <SettingsNavigationItem
             href="/ajustes/empresa"
-            icon={<RiBuildingLine />}
+            icon={<HugeiconsIcon icon={Building02Icon} />}
             title={copy.companyTitle}
             description={copy.companyDescription}
             meta={
@@ -147,7 +148,7 @@ export default async function SettingsPage() {
         <SettingsSection id="settings-sources" title={copy.groupSources}>
           <SettingsNavigationItem
             href="/ajustes/conexoes"
-            icon={<RiPlugLine />}
+            icon={<HugeiconsIcon icon={Plug01Icon} />}
             title={copy.connectionsTitle}
             description={copy.connectionsDescription}
             meta={
@@ -158,13 +159,13 @@ export default async function SettingsPage() {
           />
           <SettingsNavigationItem
             href="/ajustes/atribuicao"
-            icon={<RiPieChartLine />}
+            icon={<HugeiconsIcon icon={PieChartIcon} />}
             title={copy.attributionTitle}
             description={copy.attributionDescription}
           />
           <SettingsNavigationItem
             href="/ajustes/roster"
-            icon={<RiTeamLine />}
+            icon={<HugeiconsIcon icon={UsersIcon} />}
             title={copy.rosterTitle}
             description={copy.rosterDescription}
             meta={
@@ -175,7 +176,7 @@ export default async function SettingsPage() {
           />
           <SettingsNavigationItem
             href="/ajustes/assinaturas"
-            icon={<RiCoinsLine />}
+            icon={<HugeiconsIcon icon={Coins01Icon} />}
             title={copy.seatsTitle}
             description={copy.seatsDescription}
             meta={
@@ -191,7 +192,7 @@ export default async function SettingsPage() {
         <SettingsSection id="settings-governance" title={copy.groupGovernance}>
           <SettingsNavigationItem
             href="/ajustes/orcamentos"
-            icon={<RiWallet3Line />}
+            icon={<HugeiconsIcon icon={Wallet03Icon} />}
             title={copy.budgetsTitle}
             description={copy.budgetsDescription}
             meta={
@@ -202,13 +203,13 @@ export default async function SettingsPage() {
           />
           <SettingsNavigationItem
             href="/ajustes/privacidade"
-            icon={<RiShieldKeyholeLine />}
+            icon={<HugeiconsIcon icon={ShieldKeyIcon} />}
             title={copy.privacyTitle}
             description={copy.privacyDescription}
           />
           <SettingsNavigationItem
             href="/ajustes/usuarios"
-            icon={<RiUserSettingsLine />}
+            icon={<HugeiconsIcon icon={UserSettings01Icon} />}
             title={copy.usersTitle}
             description={copy.usersDescription}
             meta={
@@ -222,7 +223,7 @@ export default async function SettingsPage() {
           {isAdmin && (
             <SettingsNavigationItem
               href="/ajustes/auditoria"
-              icon={<RiFileList3Line />}
+              icon={<HugeiconsIcon icon={FileTextIcon} />}
               title={copy.auditTitle}
               description={copy.auditDescription}
             />

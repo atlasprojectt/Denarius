@@ -32,6 +32,7 @@ export type AuditAction =
   | "invitation.revoked"
   | "invitation.accepted"
   | "user.removed"
+  | "user.left"
   | "privacy.updated"
   | "tenant.exported"
   | "tenant.deleted"

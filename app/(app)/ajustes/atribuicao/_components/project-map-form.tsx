@@ -1,15 +1,11 @@
 "use client";
 
 import { useActionState, useMemo, useState } from "react";
-import {
-  RiAnthropicFill,
-  RiLinksLine,
-  RiOpenaiFill,
-  type RemixiconComponentType,
-} from "@remixicon/react";
+import { Link01Icon } from "@hugeicons/core-free-icons";
+import { RiAnthropicFill, RiOpenaiFill } from "@remixicon/react";
 
 import { ActionStatus } from "@/components/domain/action-status";
-import { StateBadge } from "@/components/domain/state-badge";
+import { StateBadge, type StateBadgeIcon } from "@/components/domain/state-badge";
 import { ActionToast } from "@/components/domain/toast-provider";
 import { UsdValue } from "@/components/domain/usd-value";
 import { Button } from "@/components/ui/button";
@@ -55,7 +51,7 @@ const providerLabel: Record<string, string> = {
   anthropic: "Anthropic",
 };
 
-const providerIcon: Record<string, RemixiconComponentType> = {
+const providerIcon: Record<string, StateBadgeIcon> = {
   openai: RiOpenaiFill,
   anthropic: RiAnthropicFill,
 };
@@ -67,7 +63,7 @@ function ProviderBadge({
   provider: string;
   className?: string;
 }) {
-  const Icon = providerIcon[provider] ?? RiLinksLine;
+  const Icon = providerIcon[provider] ?? Link01Icon;
   return (
     <StateBadge icon={Icon} className={className}>
       {providerLabel[provider] ?? provider}

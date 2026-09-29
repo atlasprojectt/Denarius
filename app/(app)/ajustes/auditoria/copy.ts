@@ -43,6 +43,7 @@ export const ACTION_LABEL: Record<AuditAction, string> = {
   "invitation.revoked": "Revogou um convite",
   "invitation.accepted": "Aceitou o convite",
   "user.removed": "Removeu um usuário",
+  "user.left": "Saiu do espaço",
   "privacy.updated": "Alterou a privacidade",
   "tenant.exported": "Exportou os dados da empresa",
   "tenant.deleted": "Solicitou a exclusão da empresa",

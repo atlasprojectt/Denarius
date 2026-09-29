@@ -1,4 +1,9 @@
-import { RiArrowRightSLine, RiFileTextLine, RiLockLine } from "@remixicon/react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import {
+  ChevronRightIcon,
+  FileTextIcon,
+  LockIcon,
+} from "@hugeicons/core-free-icons";
 
 import { cn } from "@/lib/utils";
 
@@ -32,9 +37,9 @@ export function FileRow({
         )}
       >
         {locked ? (
-          <RiLockLine className="size-5" />
+          <HugeiconsIcon icon={LockIcon} className="size-5" />
         ) : (
-          <RiFileTextLine className="size-5" />
+          <HugeiconsIcon icon={FileTextIcon} className="size-5" />
         )}
       </span>
       <span className="grid min-w-0 flex-1 gap-0.5 text-left">
@@ -45,7 +50,7 @@ export function FileRow({
         <span className="truncate text-xs text-muted-foreground">{meta}</span>
       </span>
       {!locked && (
-        <RiArrowRightSLine
+        <HugeiconsIcon icon={ChevronRightIcon}
           aria-hidden
           className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5"
         />

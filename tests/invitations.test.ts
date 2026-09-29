@@ -101,7 +101,23 @@ describe("invitation email", () => {
     expect(mail.subject).toContain("Acme");
     expect(mail.text).toContain(input.inviteUrl);
     expect(mail.html).toContain(input.inviteUrl);
-    expect(mail.html).toContain('src="https://denarius.app/brand/denarius-avatar.png"');
+    expect(mail.html).toContain('src="https://app.usedenarius.pro/brand/denarius-avatar.png"');
+    expect(mail.text).toContain("Criar meu acesso");
+    expect(mail.html).toContain('lang="pt-BR"');
+    expect(mail.html).toContain("background:#ff5100");
+  });
+
+  it("serves the logo from the canonical host even for non-prod links", () => {
+    // Gmail cannot fetch localhost/preview hosts, so a logo derived from the
+    // invite URL arrives broken — the link follows the request, the logo does not.
+    const local = renderInvite({
+      ...input,
+      inviteUrl: "http://localhost:3000/convite/tok123",
+    });
+    expect(local.html).toContain("http://localhost:3000/convite/tok123");
+    expect(local.html).toContain(
+      'src="https://app.usedenarius.pro/brand/denarius-avatar.png"',
+    );
   });
 
   it("states the role it grants — the invitee learns what they are getting", () => {
@@ -117,5 +133,15 @@ describe("invitation email", () => {
     const mail = renderInvite({ ...input, companyName: "<script>x</script>" });
     expect(mail.html).not.toContain("<script>");
     expect(mail.html).toContain("&lt;script&gt;");
+  });
+
+  it("escapes the invite URL in HTML attributes and fallback text", () => {
+    const mail = renderInvite({
+      ...input,
+      inviteUrl: 'https://denarius.app/convite/tok123?next="/inicio"',
+    });
+    expect(mail.html).toContain("&quot;/inicio&quot;");
+    expect(mail.html).not.toContain('href="https://denarius.app/convite/tok123?next="/inicio"');
+    expect(mail.text).toContain('next="/inicio"');
   });
 });

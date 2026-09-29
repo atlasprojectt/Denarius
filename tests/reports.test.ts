@@ -218,6 +218,15 @@ describe("report shell and print contract", () => {
     );
   });
 
+  it("closes on the empty scroll margins, never on the paper", () => {
+    // The popup is fullscreen, so the backdrop never sees the click — the
+    // scroll area itself owns the outside-click close.
+    expect(previewDialogSource).toContain("closeOnMarginClick");
+    expect(previewDialogSource).toContain(
+      "event.target !== event.currentTarget",
+    );
+  });
+
   it("keeps the preview free of PDF readers and popups", () => {
     for (const source of [previewDialogSource, reportDocumentSource]) {
       expect(source).not.toContain("pagedjs");
@@ -263,8 +272,8 @@ describe("file-centre flow (agora / fechamento / history)", () => {
   it("keeps file rows quiet: viewing opens, actions live in the dialog", () => {
     expect(fileRowSource).not.toContain("Imprimir");
     expect(fileRowSource).not.toContain("Baixar PDF");
-    expect(fileRowSource).toContain("RiArrowRightSLine");
-    expect(fileRowSource).toContain("RiLockLine");
+    expect(fileRowSource).toContain("ChevronRightIcon");
+    expect(fileRowSource).toContain("LockIcon");
     expect(previewDialogSource).toContain("copy.print");
     expect(previewDialogSource).toContain("copy.downloadPdf");
   });

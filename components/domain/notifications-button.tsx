@@ -2,16 +2,16 @@
 
 import Link from "next/link";
 import { useEffect, useId, useRef, useState } from "react";
+import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react";
 import {
-  RiArrowRightSLine,
-  RiCheckboxCircleFill,
-  RiCloseCircleFill,
-  RiErrorWarningFill,
-  RiNotification3Line,
-  RiRefreshLine,
-  RiTimeFill,
-  type RemixiconComponentType,
-} from "@remixicon/react";
+  AlertCircleIcon,
+  BellIcon,
+  CancelCircleIcon,
+  CheckmarkCircle02Icon,
+  ChevronRightIcon,
+  Clock01Icon,
+  Refresh01Icon,
+} from "@hugeicons/core-free-icons";
 
 import { StateBadge, type StateBadgeTone } from "@/components/domain/state-badge";
 import { Badge } from "@/components/ui/badge";
@@ -64,22 +64,22 @@ const copy = {
 
 const levelMeta: Record<
   BudgetNotification["level"],
-  { label: string; tone: StateBadgeTone; icon: RemixiconComponentType }
+  { label: string; tone: StateBadgeTone; icon: IconSvgElement }
 > = {
   warning: {
     label: "Limite atingido",
     tone: "amber",
-    icon: RiErrorWarningFill,
+    icon: AlertCircleIcon,
   },
   projected_breach: {
     label: "Risco projetado",
     tone: "amber",
-    icon: RiTimeFill,
+    icon: Clock01Icon,
   },
   breach: {
     label: "Estourado",
     tone: "destructive",
-    icon: RiCloseCircleFill,
+    icon: CancelCircleIcon,
   },
 };
 
@@ -115,7 +115,7 @@ function PanelHeader({
       <div className="flex items-center gap-2.5">
         {title}
         {count > 0 && (
-          <StateBadge icon={RiNotification3Line} tone="neutral">
+          <StateBadge icon={BellIcon} tone="neutral">
             {copy.active(count)}
           </StateBadge>
         )}
@@ -188,7 +188,7 @@ function NotificationsPanel({
               loadingText={copy.retry}
               onClick={onRetry}
             >
-              <RiRefreshLine data-icon="inline-start" aria-hidden />
+              <HugeiconsIcon icon={Refresh01Icon} data-icon="inline-start" aria-hidden />
               {copy.retry}
             </Button>
           </div>
@@ -214,7 +214,7 @@ function NotificationsPanel({
                         {item.detail}
                       </span>
                     </span>
-                    <RiArrowRightSLine
+                    <HugeiconsIcon icon={ChevronRightIcon}
                       className="mt-1 size-4 shrink-0 self-center text-muted-foreground/55 transition-transform duration-(--motion-duration-fast) group-hover:translate-x-0.5"
                       aria-hidden
                     />
@@ -225,7 +225,7 @@ function NotificationsPanel({
           </ul>
         ) : (
           <div className="px-5 py-5">
-            <StateBadge icon={RiCheckboxCircleFill} tone="positive">
+            <StateBadge icon={CheckmarkCircle02Icon} tone="positive">
               {copy.allClearBadge}
             </StateBadge>
             <p className="mt-2.5 text-sm font-medium">{copy.allClearTitle}</p>
@@ -388,7 +388,7 @@ export function NotificationsButton() {
       title={copy.title}
       className="size-10 overflow-visible border-border bg-card text-foreground shadow-sm hover:border-border hover:bg-surface-hover aria-expanded:border-border aria-expanded:bg-surface-selected sm:size-9"
     >
-      <RiNotification3Line className="size-[18px]" aria-hidden />
+      <HugeiconsIcon icon={BellIcon} className="size-[18px]" aria-hidden />
       {count > 0 && (
         <Badge
           aria-hidden

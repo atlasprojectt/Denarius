@@ -1,7 +1,8 @@
 "use client";
 
 import { useActionState } from "react";
-import { RiLockLine } from "@remixicon/react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { LockIcon } from "@hugeicons/core-free-icons";
 
 import { ActionStatus } from "@/components/domain/action-status";
 import { Button } from "@/components/ui/button";
@@ -50,7 +51,7 @@ export function CurrencyForm({
         <p className="text-sm font-medium">{copy.label}</p>
         <p className="flex items-center gap-1.5 text-sm tabular-nums">
           {currency}
-          <RiLockLine className="size-3.5 text-muted-foreground" aria-hidden />
+          <HugeiconsIcon icon={LockIcon} className="size-3.5 text-muted-foreground" aria-hidden />
         </p>
         <p className="text-xs/relaxed text-muted-foreground">{copy.lockedNote}</p>
       </div>

@@ -129,6 +129,8 @@ The headline metric is **spend in money governed against a budget**; tokens are 
 **Settings and account**
 58. As an Admin, I want to manage company settings (name, display currency), so that it fits my reality.
 59. As an Admin, I want to remove a user, so that I can revoke access for someone who left.
+59a. As an Admin, I want to permanently delete the company and my account from Preferences after confirming my e-mail with a one-time code and typing an exact final phrase, so that an accidental click cannot erase the space.
+59b. As a Viewer, I want to leave the company from Preferences after the same e-mail and phrase confirmation, so that my membership is removed without deleting the company's data.
 
 **Credential self-service** *(shipped 2026-08-05, issues #68/#69)*
 60. As a user, I want to request a recovery link by email when I forget my password, so that losing a password doesn't mean losing the account — and I want the answer to look the same whether or not the address is registered, so that the page can't be used to discover who has an account here.
@@ -137,7 +139,7 @@ The headline metric is **spend in money governed against a budget**; tokens are 
 **Administrative evidence** *(shipped 2026-08-05, issue #73)*
 62. As an Admin, I want an append-only trail of administrative actions — who changed a budget, connected or revoked a key, moved a privacy switch, invited or removed someone — so that I can show an auditor (or an acquirer) what happened in the space. **Admin-only**: the trail names people, so a Viewer reads nothing (principle #1). Retention 24 months, stated on screen.
 
-**Data rights** *(shipped 2026-08-07, issue #74 — see "LGPD self-service" under Data & security)*
+**Data rights** *(export/deletion shipped 2026-08-07, issue #74; verified account exit shipped 2026-09-28 — see "LGPD self-service" under Data & security)*
 63. As an Admin, I want to export everything my company's space holds as one file, and to permanently delete the space, so that I exercise LGPD art. 18 myself instead of filing a request. Deleting Denarius removes nothing at OpenAI or Anthropic, and the product says so.
 
 **Documented months** *(shipped 2026-08-07, issues #94/#95)*
@@ -242,9 +244,10 @@ presented as a fixed two-page promise.
   | `period_snapshot` | tenant_id, closed period, frozen totals/verdict/team/provider breakdown and honesty flags — aggregates only, immutable after close |
   | `invitation` | id, tenant_id, email, role, token **hash** (never the raw token), invited_by, expires_at (7 days), accepted_at, revoked_at — tenant + role live here, never in self-writable auth metadata |
   | `audit_log` | id, tenant_id, actor_id (nullable), actor_email (snapshotted), action, target, detail (redacted), created_at — append-only, Admin-read, 24-month retention |
+  | `account_deletion_challenge` | id, tenant_id, user_id, role, target/phrase snapshot, HMACs for the e-mail code and final grant, attempts, expiry/verification/consumption timestamps — server-only system state |
   | `rate_limit_hit` | bucket (hashed subject), at — system state only, backs the invitation create/accept limits; fails **open** |
 - **Per-tenant toggle:** store-per-person **on by default**, switchable off (then only team aggregates are kept — data minimization for LGPD/sensitive customers).
-- **LGPD self-service (art. 18):** an Admin can stream a complete tenant-scoped JSON export or permanently delete the company space in **Ajustes → Privacidade**. The export has explicit safe-field allowlists (never provider ciphertext, invitation token hashes or secrets) and applies the tenant's privacy switches: names are omitted when `show_names` is off and person grain is omitted when `store_per_person` is off. Deletion requires typing the exact company name, revokes every provider connection before erasure, deletes every product row and every linked Auth user, and makes clear that removing Denarius does **not** remove or change anything in OpenAI or Anthropic. Viewers can do neither operation.
+- **LGPD self-service (art. 18):** an Admin can stream a complete tenant-scoped JSON export or permanently delete the company space from the risk card in **Configurações** (linked from **Ajustes → Privacidade**). Permanent deletion first sends a six-digit code to the current Auth e-mail, then requires the exact final phrase containing the company name; it revokes every provider connection before erasure, deletes every product row and every linked Auth user, and makes clear that removing Denarius does **not** remove or change anything in OpenAI or Anthropic. A Viewer can use the same two-step confirmation to leave: only the `app_user` membership is removed, while the Auth identity, company and history remain. The Viewer cannot export or delete the company.
 
 **Multi-tenancy & auth**
 - Isolation: **shared DB with `tenant_id` on every table + Postgres Row-Level Security (RLS)** as a second layer (a query bug can't leak across customers — the due-diligence answer).

@@ -2,7 +2,8 @@
 
 import { DM_Sans, Geist, Geist_Mono } from "next/font/google";
 import Link from "next/link";
-import { RiErrorWarningLine } from "@remixicon/react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Alert02Icon } from "@hugeicons/core-free-icons";
 
 import { EmptyState } from "@/components/domain/empty-state";
 import { ErrorReference } from "@/components/domain/error-reference";
@@ -67,7 +68,7 @@ export default function GlobalError({
         <LogoWordmark className="h-6 w-auto" />
         <EmptyState
           className="max-w-sm"
-          icon={<RiErrorWarningLine />}
+          icon={<HugeiconsIcon icon={Alert02Icon} />}
           title={copy.title}
           description={copy.description}
         />

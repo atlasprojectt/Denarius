@@ -2,7 +2,12 @@
 
 import { useEffect, useRef } from "react";
 import { Toast } from "@base-ui/react/toast";
-import { RiErrorWarningLine, RiCheckLine, RiCloseLine } from "@remixicon/react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import {
+  Alert02Icon,
+  Cancel01Icon,
+  Tick01Icon,
+} from "@hugeicons/core-free-icons";
 
 import { cn } from "@/lib/utils";
 
@@ -31,9 +36,9 @@ function ToastList() {
       >
         <Toast.Content className="flex min-h-16 items-start gap-3 overflow-hidden p-4 pr-11">
           {destructive ? (
-            <RiErrorWarningLine className="mt-0.5 size-4 shrink-0 text-destructive" />
+            <HugeiconsIcon icon={Alert02Icon} className="mt-0.5 size-4 shrink-0 text-destructive" />
           ) : (
-            <RiCheckLine className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+            <HugeiconsIcon icon={Tick01Icon} className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
           )}
           <div className="min-w-0">
             <Toast.Title className="text-sm font-semibold" />
@@ -43,7 +48,7 @@ function ToastList() {
             className="absolute top-2.5 right-2.5 inline-flex size-7 items-center justify-center rounded-full text-muted-foreground outline-none hover:bg-surface-hover hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/40"
             aria-label="Fechar notificação"
           >
-            <RiCloseLine className="size-4" />
+            <HugeiconsIcon icon={Cancel01Icon} className="size-4" />
           </Toast.Close>
         </Toast.Content>
       </Toast.Root>

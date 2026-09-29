@@ -1,17 +1,23 @@
 import { redirect } from "next/navigation";
-import { RiAdminLine, RiUserLine } from "@remixicon/react";
+import Link from "next/link";
+import {
+  ShieldUserIcon,
+  UserIcon,
+} from "@hugeicons/core-free-icons";
 
 import { PageHeader } from "@/components/domain/page-header";
 import { PageContainer } from "@/components/domain/page-container";
 import { StateBadge } from "@/components/domain/state-badge";
 import { ThemePicker } from "@/components/domain/theme-toggle";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { hasPasswordIdentity } from "@/lib/auth/password";
 import { profileInitials, profileLabel } from "@/lib/settings/account";
 import { createClient } from "@/lib/supabase/server";
 import { DigestForm } from "./_components/digest-form";
+import { AccountDeletionCard } from "./_components/account-deletion-card";
 import { PasswordForm } from "./_components/password-form";
 import { PreferenceSection } from "./_components/preference-section";
 import { ProfileForm } from "./_components/profile-form";
@@ -36,6 +42,9 @@ const copy = {
   notificationsTitle: "Notificações",
   notificationsSub:
     "Escolha quais comunicações deseja receber por e-mail.",
+  legalNavLabel: "Documentos legais",
+  privacyPolicy: "Privacidade",
+  terms: "Termos",
 };
 
 type AccountRow = {
@@ -43,7 +52,7 @@ type AccountRow = {
   role: string;
   display_name: string | null;
   digest_opt_out: boolean;
-  tenant: { id: string } | null;
+  tenant: { id: string; name: string } | null;
 };
 
 export default async function PersonalSettingsPage() {
@@ -55,7 +64,7 @@ export default async function PersonalSettingsPage() {
 
   const { data } = await supabase
     .from("app_user")
-    .select("email, role, display_name, digest_opt_out, tenant:tenant_id(id)")
+    .select("email, role, display_name, digest_opt_out, tenant:tenant_id(id, name)")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -70,7 +79,7 @@ export default async function PersonalSettingsPage() {
     displayName: account.display_name,
     email: account.email,
   });
-  const RoleIcon = account.role === "admin" ? RiAdminLine : RiUserLine;
+  const RoleIcon = account.role === "admin" ? ShieldUserIcon : UserIcon;
 
   return (
     <PageContainer variant="form" className="gap-6">
@@ -149,6 +158,25 @@ export default async function PersonalSettingsPage() {
           )}
         </CardContent>
       </Card>
+
+      <AccountDeletionCard
+        role={account.role === "admin" ? "admin" : "viewer"}
+        email={account.email}
+        displayName={displayName}
+        companyName={account.tenant.name}
+      />
+
+      <nav
+        aria-label={copy.legalNavLabel}
+        className="flex items-center justify-center gap-2"
+      >
+        <Button variant="outline" size="sm" asChild>
+          <Link href="/privacidade">{copy.privacyPolicy}</Link>
+        </Button>
+        <Button variant="outline" size="sm" asChild>
+          <Link href="/termos">{copy.terms}</Link>
+        </Button>
+      </nav>
     </PageContainer>
   );
 }

@@ -1,6 +1,11 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { RiArrowRightSLine, RiPieChartLine, RiTeamLine } from "@remixicon/react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import {
+  ChevronRightIcon,
+  PieChartIcon,
+  UsersIcon,
+} from "@hugeicons/core-free-icons";
 
 import { EmptyState } from "@/components/domain/empty-state";
 import { Notice } from "@/components/domain/notice";
@@ -65,7 +70,7 @@ export default async function TimesPage({
       <PageContainer variant="wide" className="gap-6">
         <PageHeader title={copy.title} description={copy.subtitle} />
         <EmptyState
-          icon={<RiTeamLine />}
+          icon={<HugeiconsIcon icon={UsersIcon} />}
           title={copy.emptyTitle}
           description={copy.emptyBody}
           primaryAction={<Link href="/ajustes/roster">{copy.emptyRosterCta}</Link>}
@@ -190,7 +195,7 @@ export default async function TimesPage({
                     <span className="hidden text-[11px] font-light text-muted-foreground sm:block">
                       {copy.defineBudget}
                     </span>
-                    <RiArrowRightSLine className="size-4 shrink-0 text-muted-foreground transition-transform duration-(--motion-duration-fast) ease-(--motion-ease-standard) group-hover:translate-x-0.5" />
+                    <HugeiconsIcon icon={ChevronRightIcon} className="size-4 shrink-0 text-muted-foreground transition-transform duration-(--motion-duration-fast) ease-(--motion-ease-standard) group-hover:translate-x-0.5" />
                   </Link>
                 );
               })}
@@ -201,13 +206,13 @@ export default async function TimesPage({
 
       {unattributed && (
         <Notice
-          icon={<RiPieChartLine />}
+          icon={<HugeiconsIcon icon={PieChartIcon} />}
           title={copy.unattributedTitle}
           action={
             <Button asChild variant="tertiary" size="xs" motion="forward">
               <Link href="/ajustes/atribuicao">
                 {copy.map}
-                <RiArrowRightSLine data-icon="inline-end" aria-hidden />
+                <HugeiconsIcon icon={ChevronRightIcon} data-icon="inline-end" aria-hidden />
               </Link>
             </Button>
           }

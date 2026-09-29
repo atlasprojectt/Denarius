@@ -1,11 +1,11 @@
 import Link from "next/link";
+import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react";
 import {
-  RiCheckLine,
-  RiContactsBookLine,
-  RiPlugLine,
-  RiWallet3Line,
-  type RemixiconComponentType,
-} from "@remixicon/react";
+  ContactBookIcon,
+  Plug01Icon,
+  Tick01Icon,
+  Wallet03Icon,
+} from "@hugeicons/core-free-icons";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -30,11 +30,11 @@ import { homeCopy } from "./copy";
 const steps: ReadonlyArray<{
   key: "connected" | "hasRoster" | "hasBudget";
   href: string;
-  icon: RemixiconComponentType;
+  icon: IconSvgElement;
 }> = [
-  { key: "connected", href: "/ajustes/conexoes", icon: RiPlugLine },
-  { key: "hasRoster", href: "/ajustes/roster", icon: RiContactsBookLine },
-  { key: "hasBudget", href: "/ajustes/orcamentos", icon: RiWallet3Line },
+  { key: "connected", href: "/ajustes/conexoes", icon: Plug01Icon },
+  { key: "hasRoster", href: "/ajustes/roster", icon: ContactBookIcon },
+  { key: "hasBudget", href: "/ajustes/orcamentos", icon: Wallet03Icon },
 ];
 
 type SetupState = { connected: boolean; hasRoster: boolean; hasBudget: boolean };
@@ -43,7 +43,7 @@ function StepTile({
   icon: Icon,
   state,
 }: {
-  icon: RemixiconComponentType;
+  icon: IconSvgElement;
   state: "done" | "next" | "todo";
 }) {
   return (
@@ -56,7 +56,7 @@ function StepTile({
         state === "todo" && "border border-border text-muted-foreground",
       )}
     >
-      <Icon className="size-4" />
+      <HugeiconsIcon icon={Icon} className="size-4" />
     </span>
   );
 }
@@ -98,7 +98,8 @@ export function SetupChecklist({
                       done ? "text-muted-foreground" : "font-medium",
                     )}
                   >
-                    <step.icon
+                    <HugeiconsIcon
+                      icon={step.icon}
                       aria-hidden
                       className={cn(
                         "size-3.5 shrink-0",
@@ -175,7 +176,7 @@ export function SetupChecklist({
                       {homeCopy.setup[`${step.key}Detail`]}
                     </span>
                     {done && (
-                      <StateBadge icon={RiCheckLine} className="mt-2">
+                      <StateBadge icon={Tick01Icon} className="mt-2">
                         {homeCopy.setup.stepDoneBadge}
                       </StateBadge>
                     )}

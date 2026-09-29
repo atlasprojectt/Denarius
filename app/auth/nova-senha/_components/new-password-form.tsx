@@ -1,6 +1,11 @@
 "use client";
 
-import { RiEyeLine, RiEyeOffLine, RiKey2Line } from "@remixicon/react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import {
+  EyeIcon,
+  EyeOffIcon,
+  Key02Icon,
+} from "@hugeicons/core-free-icons";
 import { useActionState, useState } from "react";
 
 import { ActionStatus } from "@/components/domain/action-status";
@@ -58,7 +63,7 @@ export function NewPasswordForm({ email }: { email: string }) {
               aria-hidden
               className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-muted-foreground"
             >
-              <RiKey2Line className="size-4" />
+              <HugeiconsIcon icon={Key02Icon} className="size-4" />
             </span>
             <Input
               id="password"
@@ -79,9 +84,9 @@ export function NewPasswordForm({ email }: { email: string }) {
               className="absolute top-1/2 right-1 -translate-y-1/2"
             >
               {showPassword ? (
-                <RiEyeOffLine className="size-4" />
+                <HugeiconsIcon icon={EyeOffIcon} className="size-4" />
               ) : (
-                <RiEyeLine className="size-4" />
+                <HugeiconsIcon icon={EyeIcon} className="size-4" />
               )}
             </Button>
           </div>
@@ -99,7 +104,7 @@ export function NewPasswordForm({ email }: { email: string }) {
               aria-hidden
               className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-muted-foreground"
             >
-              <RiKey2Line className="size-4" />
+              <HugeiconsIcon icon={Key02Icon} className="size-4" />
             </span>
             <Input
               id="confirmation"

@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { RiArrowRightSLine } from "@remixicon/react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { ChevronRightIcon } from "@hugeicons/core-free-icons";
 import type { ReactNode } from "react";
 
 import { Card } from "@/components/ui/card";
@@ -69,7 +70,7 @@ export function SettingsNavigationItem({
       )}
 
       <span className="col-start-3 row-span-2 row-start-1 flex size-9 shrink-0 items-center justify-end text-muted-foreground sm:col-start-4">
-        <RiArrowRightSLine
+        <HugeiconsIcon icon={ChevronRightIcon}
           aria-hidden
           className="size-4 transition-transform duration-(--motion-duration-fast) ease-(--motion-ease-standard) group-hover/item:translate-x-0.5 motion-reduce:transform-none motion-reduce:transition-none"
         />

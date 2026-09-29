@@ -1,10 +1,11 @@
 import Link from "next/link";
+import { HugeiconsIcon } from "@hugeicons/react";
 import {
-  RiBarChartHorizontalLine,
-  RiCheckboxCircleLine,
-  RiCompass3Line,
-  RiInformationLine,
-} from "@remixicon/react";
+  BarChartHorizontalIcon,
+  CheckmarkCircle01Icon,
+  Compass01Icon,
+  InformationCircleIcon,
+} from "@hugeicons/core-free-icons";
 
 import { EmptyState } from "@/components/domain/empty-state";
 import { PageContainer } from "@/components/domain/page-container";
@@ -325,7 +326,7 @@ export default async function ExplorePage() {
 
       {coldStart ? (
         <EmptyState
-          icon={<RiCompass3Line />}
+          icon={<HugeiconsIcon icon={Compass01Icon} />}
           title={copy.emptyTitle}
           description={copy.emptyBody}
           primaryAction={
@@ -392,7 +393,7 @@ export default async function ExplorePage() {
                     />
 
                     <div className="flex items-start gap-2 rounded-lg border border-border px-3 py-2.5 text-xs/relaxed font-light text-muted-foreground">
-                      <RiInformationLine
+                      <HugeiconsIcon icon={InformationCircleIcon}
                         aria-hidden
                         className="mt-0.5 size-3.5 shrink-0"
                       />
@@ -417,7 +418,7 @@ export default async function ExplorePage() {
               // The tab stays visible with a contextual empty instead of
               // silently disappearing while seats carry the screen.
               <EmptyState
-                icon={<RiBarChartHorizontalLine />}
+                icon={<HugeiconsIcon icon={BarChartHorizontalIcon} />}
                 title={copy.modelsEmptyTitle}
                 description={copy.modelsEmptyBody}
                 primaryAction={
@@ -447,7 +448,7 @@ export default async function ExplorePage() {
                   />
                 </CardContent>
                 <CardFooter className="border-t border-border py-3 text-xs font-light text-muted-foreground">
-                  <RiCheckboxCircleLine
+                  <HugeiconsIcon icon={CheckmarkCircle01Icon}
                     aria-hidden
                     className="mr-2 size-3.5 shrink-0"
                   />

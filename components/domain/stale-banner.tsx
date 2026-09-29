@@ -1,4 +1,5 @@
-import { RiHistoryLine } from "@remixicon/react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { HistoryIcon } from "@hugeicons/core-free-icons";
 
 import { SidebarNotice } from "@/components/domain/sidebar-notice";
 import type { ConnectionFreshness } from "@/lib/engine/freshness";
@@ -39,7 +40,7 @@ export function StaleBanner({ items }: { items: ConnectionFreshness[] }) {
 
   return (
     <SidebarNotice
-      icon={<RiHistoryLine />}
+      icon={<HugeiconsIcon icon={HistoryIcon} />}
       title={copy.title}
       description={summary}
       href="/ajustes/conexoes"

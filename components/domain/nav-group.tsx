@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { RiArrowRightSLine } from "@remixicon/react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { ChevronRightIcon } from "@hugeicons/core-free-icons";
 
 import {
   Collapsible,
@@ -82,7 +83,7 @@ export function NavGroup({ label, items }: SidebarNavGroup) {
               >
                 {item.icon}
                 <span>{item.title}</span>
-                <RiArrowRightSLine className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                <HugeiconsIcon icon={ChevronRightIcon} className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
               </CollapsibleTrigger>
               <CollapsibleContent>
                 <SidebarMenuSub>

@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { RiEqualizer2Line } from "@remixicon/react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { SlidersHorizontalIcon } from "@hugeicons/core-free-icons";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -88,7 +89,7 @@ export function SimulateDrawer(props: SimulateDrawerProps) {
     <Sheet onOpenChange={(open) => open && setDeltaPct(0)}>
       <SheetTrigger asChild>
         <Button variant="outline" size="sm" className="h-11 sm:h-7">
-          <RiEqualizer2Line className="size-4" />
+          <HugeiconsIcon icon={SlidersHorizontalIcon} className="size-4" />
           {triggerLabel}
         </Button>
       </SheetTrigger>

@@ -5,8 +5,7 @@ import { LogoWordmark } from "@/components/domain/logo";
 // Brand cover for the login right half: the orange texture artwork with the
 // wordmark overlaid top-right in a light-orange monochrome. Floats as a rounded
 // card (m-2 + rounded-xl + shadow-sm) matching the app's inset sidebar frame,
-// so auth and product share the same chrome. The invite page keeps the
-// narrative BrandPanel; this one carries no copy.
+// so auth and product share the same chrome. This one carries no copy.
 export function CoverPanel() {
   return (
     <div className="hidden p-2 lg:flex">

@@ -1,6 +1,10 @@
 "use client";
 
-import { RiEyeLine, RiEyeOffLine } from "@remixicon/react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import {
+  EyeIcon,
+  EyeOffIcon,
+} from "@hugeicons/core-free-icons";
 import { useActionState, useState } from "react";
 
 import { ActionToast } from "@/components/domain/toast-provider";
@@ -57,9 +61,9 @@ export function PasswordForm() {
             className="absolute top-1/2 right-1 -translate-y-1/2"
           >
             {show ? (
-              <RiEyeOffLine className="size-4" />
+              <HugeiconsIcon icon={EyeOffIcon} className="size-4" />
             ) : (
-              <RiEyeLine className="size-4" />
+              <HugeiconsIcon icon={EyeIcon} className="size-4" />
             )}
           </Button>
         </div>

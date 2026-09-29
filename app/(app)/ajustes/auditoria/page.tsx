@@ -1,5 +1,9 @@
 import { notFound } from "next/navigation";
-import { RiErrorWarningLine, RiFileList3Line } from "@remixicon/react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import {
+  Alert02Icon,
+  FileTextIcon,
+} from "@hugeicons/core-free-icons";
 
 import { EmptyState } from "@/components/domain/empty-state";
 import { PageContainer } from "@/components/domain/page-container";
@@ -58,13 +62,13 @@ export default async function AuditSettingsPage() {
             // Never the empty state here: "nothing was recorded" is a claim
             // about the past, and this screen has no idea whether it is true.
             <EmptyState
-              icon={<RiErrorWarningLine />}
+              icon={<HugeiconsIcon icon={Alert02Icon} />}
               title={copy.unavailableTitle}
               description={copy.unavailableDescription}
             />
           ) : entries.length === 0 ? (
             <EmptyState
-              icon={<RiFileList3Line />}
+              icon={<HugeiconsIcon icon={FileTextIcon} />}
               title={copy.emptyTitle}
               description={copy.emptyDescription}
             />

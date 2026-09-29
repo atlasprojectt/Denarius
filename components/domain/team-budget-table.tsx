@@ -1,7 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { RiArrowRightSLine, RiTeamLine } from "@remixicon/react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import {
+  ChevronRightIcon,
+  UsersIcon,
+} from "@hugeicons/core-free-icons";
 
 import { BudgetBar } from "@/components/domain/budget-bar";
 import { StatusPill } from "@/components/domain/status-pill";
@@ -121,7 +125,7 @@ export function TeamBudgetTable({
     <Card className="min-h-full xl:h-full">
       <CardHeader className="border-b border-border">
         <CardTitle as="h2" id="team-budget-title" className="flex items-center gap-2 text-sm">
-          <RiTeamLine className="size-4 text-muted-foreground" aria-hidden />
+          <HugeiconsIcon icon={UsersIcon} className="size-4 text-muted-foreground" aria-hidden />
           {c.title}
         </CardTitle>
         <CardDescription>
@@ -191,7 +195,7 @@ export function TeamBudgetTable({
                     <span className="text-xs font-light tabular-nums text-muted-foreground">
                       {percent(ev.pctSpent)}
                     </span>
-                    <RiArrowRightSLine className="size-4 text-muted-foreground transition-transform duration-(--motion-duration-fast) ease-(--motion-ease-standard) group-hover:translate-x-0.5" />
+                    <HugeiconsIcon icon={ChevronRightIcon} className="size-4 text-muted-foreground transition-transform duration-(--motion-duration-fast) ease-(--motion-ease-standard) group-hover:translate-x-0.5" />
                   </div>
                 </Link>
               );
@@ -258,7 +262,7 @@ export function TeamBudgetTable({
                         : money(ev.projection, currency)}
                     </TableCell>
                     <TableCell className="p-0 pr-2 text-right">
-                      <RiArrowRightSLine className="ml-auto size-4 text-muted-foreground transition-transform duration-(--motion-duration-fast) ease-(--motion-ease-standard) group-hover:translate-x-0.5" />
+                      <HugeiconsIcon icon={ChevronRightIcon} className="ml-auto size-4 text-muted-foreground transition-transform duration-(--motion-duration-fast) ease-(--motion-ease-standard) group-hover:translate-x-0.5" />
                     </TableCell>
                   </TableRow>
                 );

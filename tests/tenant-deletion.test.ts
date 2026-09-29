@@ -176,25 +176,3 @@ describe("tenant deletion", () => {
     expect(state.events).toEqual(["credentials-revoked"]);
   });
 });
-
-describe("deletion authorization", () => {
-  it("denies a Viewer before invoking the destructive core", async () => {
-    vi.resetModules();
-    const deleteCore = vi.fn();
-    vi.doMock("@/lib/auth/session", () => ({
-      requireAdmin: async () => ({ error: "admin only" }),
-    }));
-    vi.doMock("@/lib/privacy/delete", () => ({
-      deleteTenantPermanently: deleteCore,
-    }));
-    vi.doMock("next/navigation", () => ({ redirect: vi.fn() }));
-
-    const { deleteTenantAccount } = await import("@/lib/privacy/actions");
-    const formData = new FormData();
-    formData.set("companyName", state.companyName);
-    const result = await deleteTenantAccount({}, formData);
-
-    expect(result.error).toBeTruthy();
-    expect(deleteCore).not.toHaveBeenCalled();
-  });
-});

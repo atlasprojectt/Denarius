@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { RiCompass3Line } from "@remixicon/react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Compass01Icon } from "@hugeicons/core-free-icons";
 
 import { EmptyState } from "@/components/domain/empty-state";
 import { PageContainer } from "@/components/domain/page-container";
@@ -23,7 +24,7 @@ export default function AppNotFound() {
   return (
     <PageContainer variant="settings" className="flex-1">
       <EmptyState
-        icon={<RiCompass3Line />}
+        icon={<HugeiconsIcon icon={Compass01Icon} />}
         title={copy.title}
         description={copy.description}
         primaryAction={<Link href="/times">{copy.cta}</Link>}

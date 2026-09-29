@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { RiCheckboxCircleLine } from "@remixicon/react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { CheckmarkCircle01Icon } from "@hugeicons/core-free-icons";
 
 import { SidebarNotice } from "@/components/domain/sidebar-notice";
 
@@ -32,7 +33,7 @@ export function AllClear() {
 
   return (
     <SidebarNotice
-      icon={<RiCheckboxCircleLine />}
+      icon={<HugeiconsIcon icon={CheckmarkCircle01Icon} />}
       title={copy.title}
       description={copy.body}
       tone="green"

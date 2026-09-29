@@ -1,10 +1,11 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
+import { HugeiconsIcon } from "@hugeicons/react";
 import {
-  RiArrowRightSLine,
-  RiGroupLine,
-  RiPieChart2Line,
-} from "@remixicon/react";
+  ChevronRightIcon,
+  PieChart02Icon,
+  UserGroupIcon,
+} from "@hugeicons/core-free-icons";
 
 import {
   Card,
@@ -37,7 +38,7 @@ const c = homeCopy.composition;
 const entryIcon: Record<string, ReactNode> = {
   openai: <ProviderIcon provider="openai" className="size-4" />,
   anthropic: <ProviderIcon provider="anthropic" className="size-4" />,
-  seats: <RiGroupLine className="size-4 text-muted-foreground" aria-hidden />,
+  seats: <HugeiconsIcon icon={UserGroupIcon} className="size-4 text-muted-foreground" aria-hidden />,
 };
 
 export function ProviderComposition({
@@ -68,7 +69,7 @@ export function ProviderComposition({
     <Card size="sm" className="min-h-full" aria-labelledby="home-composition-title">
       <CardHeader className="border-b border-border">
         <CardTitle as="h2" id="home-composition-title" className="flex items-center gap-2 text-sm">
-          <RiPieChart2Line className="size-4 text-muted-foreground" aria-hidden />
+          <HugeiconsIcon icon={PieChart02Icon} className="size-4 text-muted-foreground" aria-hidden />
           {c.title}
           <span className="-ml-0.5">
             <InfoTip label={c.infoLabel}>{c.info}</InfoTip>
@@ -118,7 +119,7 @@ export function ProviderComposition({
             >
               <Link href="/ajustes/atribuicao">
                 {c.mapCta}
-                <RiArrowRightSLine className="size-3.5" data-icon="inline-end" aria-hidden />
+                <HugeiconsIcon icon={ChevronRightIcon} className="size-3.5" data-icon="inline-end" aria-hidden />
               </Link>
             </Button>
           </p>

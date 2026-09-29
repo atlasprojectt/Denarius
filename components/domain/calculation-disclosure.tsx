@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { RiArrowDownSLine } from "@remixicon/react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { ChevronDownIcon } from "@hugeicons/core-free-icons";
 
 import {
   Collapsible,
@@ -26,7 +27,7 @@ export function CalculationDisclosure({
     <Collapsible open={open} onOpenChange={setOpen}>
       <CollapsibleTrigger className="group flex w-full items-center justify-between gap-3 rounded-standard px-3 py-2 text-left text-xs font-medium text-muted-foreground outline-none transition-colors duration-(--motion-duration-standard) ease-(--motion-ease-standard) hover:bg-surface-hover hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/40">
         {title}
-        <RiArrowDownSLine
+        <HugeiconsIcon icon={ChevronDownIcon}
           aria-hidden
           className={cn(
             "size-4 shrink-0 transition-transform duration-(--motion-duration-fast) ease-(--motion-ease-standard) motion-reduce:transition-none",

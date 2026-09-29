@@ -1,4 +1,5 @@
-import { RiErrorWarningLine } from "@remixicon/react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Alert02Icon } from "@hugeicons/core-free-icons";
 
 import { EmptyState } from "@/components/domain/empty-state";
 import { PageContainer } from "@/components/domain/page-container";
@@ -21,7 +22,7 @@ export default async function ReportsPage() {
       <PageContainer variant="wide" className="gap-6">
         <PageHeader title={copy.indexTitle} description={copy.indexDescription} />
         <EmptyState
-          icon={<RiErrorWarningLine />}
+          icon={<HugeiconsIcon icon={Alert02Icon} />}
           title={copy.unavailableTitle}
           description={copy.unavailableDescription}
         />

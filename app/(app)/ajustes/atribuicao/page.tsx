@@ -1,9 +1,10 @@
 import Link from "next/link";
+import { HugeiconsIcon } from "@hugeicons/react";
 import {
-  RiPieChartLine,
-  RiLightbulbLine,
-  RiLockLine,
-} from "@remixicon/react";
+  LightbulbIcon,
+  LockIcon,
+  PieChartIcon,
+} from "@hugeicons/core-free-icons";
 
 import { EmptyState } from "@/components/domain/empty-state";
 import { PageHeader } from "@/components/domain/page-header";
@@ -43,7 +44,7 @@ export default async function AttributionPage() {
           backLabel={copy.back}
         />
         <EmptyState
-          icon={<RiLockLine />}
+          icon={<HugeiconsIcon icon={LockIcon} />}
           title={copy.adminOnlyTitle}
           description={copy.adminOnlyBody}
         />
@@ -68,7 +69,7 @@ export default async function AttributionPage() {
 
       {projects.length === 0 ? (
         <EmptyState
-          icon={<RiPieChartLine />}
+          icon={<HugeiconsIcon icon={PieChartIcon} />}
           title={copy.emptyTitle}
           description={copy.emptyBody}
           primaryAction={<Link href="/ajustes/conexoes">{copy.connectCta}</Link>}
@@ -85,7 +86,7 @@ export default async function AttributionPage() {
           </CardContent>
           <CardFooter className="text-xs/relaxed font-light text-muted-foreground">
             <p className="flex items-start gap-2">
-              <RiLightbulbLine className="mt-0.5 size-4 shrink-0" aria-hidden />
+              <HugeiconsIcon icon={LightbulbIcon} className="mt-0.5 size-4 shrink-0" aria-hidden />
               {copy.tip}
             </p>
           </CardFooter>

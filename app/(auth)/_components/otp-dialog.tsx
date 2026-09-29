@@ -1,6 +1,7 @@
 "use client";
 
-import { RiMailSendLine } from "@remixicon/react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { MailSend01Icon } from "@hugeicons/core-free-icons";
 import { useActionState, useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -90,7 +91,7 @@ export function OtpDialog({
             aria-hidden
             className="mb-1 flex size-10 items-center justify-center rounded-full bg-muted text-muted-foreground"
           >
-            <RiMailSendLine className="size-5" />
+            <HugeiconsIcon icon={MailSend01Icon} className="size-5" />
           </span>
           <DialogTitle>{copy.title}</DialogTitle>
           <DialogDescription>{copy.description(email)}</DialogDescription>

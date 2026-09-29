@@ -1,5 +1,10 @@
 import Link from "next/link";
-import { RiErrorWarningLine, RiInformationLine, RiTeamLine } from "@remixicon/react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import {
+  Alert02Icon,
+  InformationCircleIcon,
+  UsersIcon,
+} from "@hugeicons/core-free-icons";
 
 import { EmptyState } from "@/components/domain/empty-state";
 import { Notice } from "@/components/domain/notice";
@@ -93,14 +98,14 @@ export default async function BudgetsPage() {
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           {org && mismatch !== 0 && (
-            <Notice icon={<RiInformationLine />}>
+            <Notice icon={<HugeiconsIcon icon={InformationCircleIcon} />}>
               {mismatch > 0
                 ? copy.mismatchOver(money(mismatch, currency))
                 : copy.mismatchUnder(money(-mismatch, currency))}
             </Notice>
           )}
           {org && org.currency !== "USD" && org.frozenFxRate === null && (
-            <Notice tone="amber" icon={<RiErrorWarningLine />}>
+            <Notice tone="amber" icon={<HugeiconsIcon icon={Alert02Icon} />}>
               {copy.fxMissing}
             </Notice>
           )}
@@ -108,7 +113,7 @@ export default async function BudgetsPage() {
           <BudgetTableForm rows={rows} currency={currency} isAdmin={isAdmin} />
           {teams.length === 0 && (
             <EmptyState
-              icon={<RiTeamLine />}
+              icon={<HugeiconsIcon icon={UsersIcon} />}
               title={copy.noTeamsTitle}
               description={copy.noTeamsBody}
               primaryAction={<Link href="/ajustes/roster">{copy.noTeamsCta}</Link>}
