@@ -45,7 +45,11 @@ jobs:
           node-version: 22
 
       - name: Install Vercel CLI
-        run: npm install --global vercel@latest
+        # Pin the CLI used by the known-good production deploy. A moving
+        # `latest` tag can change deployment behavior without a repository
+        # change; 60.1.3 is the version that successfully published main on
+        # 2026-09-29.
+        run: npm install --global vercel@60.1.3
 
       # Source deploy (Vercel builds on its own infra), NOT --prebuilt: the
       # Supabase env vars are marked Sensitive in Vercel, which `vercel pull`
