@@ -94,7 +94,13 @@ export function buildCsp(nonce: string, options: CspOptions = {}): string {
     ["style-src", "'self'", "'unsafe-inline'"],
     // next/font self-hosts every face at build time — no font CDN.
     ["font-src", "'self'", "data:"],
-    ["img-src", "'self'", "data:", "blob:"],
+    [
+      "img-src",
+      "'self'",
+      "data:",
+      "blob:",
+      ...(supabaseOrigin ? [supabaseOrigin] : []),
+    ],
     ["connect-src", ...connectSrc],
     // Clickjacking: the app is never framed, and never frames anything.
     ["frame-ancestors", "'none'"],
