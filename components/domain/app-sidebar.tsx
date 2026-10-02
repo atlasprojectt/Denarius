@@ -25,7 +25,7 @@ import {
   type SidebarNavGroup,
 } from "@/components/domain/nav-group";
 import { StaleBanner } from "@/components/domain/stale-banner";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -177,6 +177,7 @@ export function AppSidebar({
   userEmail,
   userInitials,
   userLabel,
+  userAvatarUrl,
   staleConnections,
   allClear,
   latestReportPeriod,
@@ -184,6 +185,7 @@ export function AppSidebar({
   userEmail: string;
   userInitials: string;
   userLabel: string;
+  userAvatarUrl: string | null;
   staleConnections: ConnectionFreshness[];
   allClear: boolean;
   latestReportPeriod: string | null;
@@ -290,6 +292,7 @@ export function AppSidebar({
                   render={<SidebarMenuButton size="lg" />}
                 >
                   <Avatar className="size-8">
+                    {userAvatarUrl && <AvatarImage src={userAvatarUrl} alt="" />}
                     <AvatarFallback className="bg-sidebar-accent text-xs font-semibold text-sidebar-accent-foreground">
                       {userInitials}
                     </AvatarFallback>
@@ -315,6 +318,7 @@ export function AppSidebar({
                       crashed this menu the moment it opened. */}
                   <div className="flex items-center gap-3 px-2 py-2">
                     <Avatar className="size-8">
+                      {userAvatarUrl && <AvatarImage src={userAvatarUrl} alt="" />}
                       <AvatarFallback className="text-xs font-semibold">
                         {userInitials}
                       </AvatarFallback>

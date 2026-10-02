@@ -127,17 +127,15 @@ port = 54324
 # sender_name = "Admin"
 
 [storage]
-# Denarius: the product stores no files — usage metadata only.
-enabled = false
+# Profile photos are stored in a private bucket; usage data remains metadata-only.
+enabled = true
 # The maximum file size allowed (e.g. "5MB", "500KB").
 file_size_limit = "50MiB"
 
-# Uncomment to configure local storage buckets
-# [storage.buckets.images]
-# public = false
-# file_size_limit = "50MiB"
-# allowed_mime_types = ["image/png", "image/jpeg"]
-# objects_path = "./images"
+[storage.buckets.profile-avatars]
+public = false
+file_size_limit = "3MiB"
+allowed_mime_types = ["image/jpeg", "image/png", "image/webp"]
 
 # Allow connections via S3 compatible clients
 [storage.s3_protocol]

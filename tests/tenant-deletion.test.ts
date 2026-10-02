@@ -4,8 +4,10 @@ const state = vi.hoisted(() => ({
   companyName: "Empresa Exata",
   events: [] as string[],
   users: ["viewer-1", "admin-actor", "admin-2"],
+  avatarPaths: {} as Record<string, string>,
   revokeError: false,
   membershipError: false,
+  storageError: false,
   authErrorFor: null as string | null,
   tenantDeleteError: false,
 }));
@@ -14,8 +16,10 @@ function resetState(): void {
   state.companyName = "Empresa Exata";
   state.events = [];
   state.users = ["viewer-1", "admin-actor", "admin-2"];
+  state.avatarPaths = {};
   state.revokeError = false;
   state.membershipError = false;
+  state.storageError = false;
   state.authErrorFor = null;
   state.tenantDeleteError = false;
 }
@@ -57,7 +61,10 @@ function queryFor(table: string) {
       }
       if (table === "app_user" && operation === "select") {
         return Promise.resolve({
-          data: state.users.map((id) => ({ id })),
+          data: state.users.map((id) => ({
+            id,
+            avatar_path: state.avatarPaths[id] ?? null,
+          })),
           error: state.membershipError ? { code: "500" } : null,
         }).then(onFulfilled);
       }
@@ -84,6 +91,20 @@ vi.mock("@/lib/audit/log", () => ({
 vi.mock("@/lib/supabase/admin", () => ({
   createAdminClient: () => ({
     from: (table: string) => queryFor(table),
+    storage: {
+      from: () => ({
+        list: async (userId: string) => ({
+          data: state.avatarPaths[userId]
+            ? [{ name: state.avatarPaths[userId].split(`${userId}/`)[1] }]
+            : [],
+          error: state.storageError ? { statusCode: "500" } : null,
+        }),
+        remove: async (paths: string[]) => {
+          state.events.push(`avatars-removed:${paths.length}`);
+          return { error: state.storageError ? { statusCode: "500" } : null };
+        },
+      }),
+    },
     auth: {
       admin: {
         deleteUser: async (userId: string) => {
@@ -134,6 +155,43 @@ describe("tenant deletion", () => {
 
     expect(result).toEqual({ ok: false, reason: "name_mismatch" });
     expect(state.events).toEqual([]);
+  });
+
+  it("removes stored profile avatars before Auth identities", async () => {
+    state.avatarPaths = {
+      "viewer-1": "viewer-1/avatar-a.jpg",
+      "admin-actor": "admin-actor/avatar-b.png",
+    };
+
+    const result = await deleteTenantPermanently({
+      actor,
+      companyName: state.companyName,
+    });
+
+    expect(result).toEqual({ ok: true });
+    expect(state.events).toEqual([
+      "credentials-revoked",
+      "avatars-removed:1",
+      "avatars-removed:1",
+      "audit-written",
+      "auth-deleted:viewer-1",
+      "auth-deleted:admin-2",
+      "auth-deleted:admin-actor",
+      "tenant-deleted",
+    ]);
+  });
+
+  it("stops before Auth deletion when avatar cleanup fails", async () => {
+    state.avatarPaths = { "admin-actor": "admin-actor/avatar.jpg" };
+    state.storageError = true;
+
+    const result = await deleteTenantPermanently({
+      actor,
+      companyName: state.companyName,
+    });
+
+    expect(result).toEqual({ ok: false, reason: "avatar_cleanup_failed" });
+    expect(state.events).toEqual(["credentials-revoked"]);
   });
 
   it("stops before audit or Auth deletion when credentials cannot be discarded", async () => {

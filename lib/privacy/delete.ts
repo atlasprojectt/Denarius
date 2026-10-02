@@ -1,6 +1,7 @@
 import "server-only";
 
 import { recordAudit, type AuditActor } from "@/lib/audit/log";
+import { removeProfileAvatarObjects } from "@/lib/settings/avatar-storage";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export type TenantDeletionFailure =
@@ -8,6 +9,7 @@ export type TenantDeletionFailure =
   | "name_mismatch"
   | "credential_revoke_failed"
   | "membership_read_failed"
+  | "avatar_cleanup_failed"
   | "auth_delete_failed"
   | "tenant_delete_failed";
 
@@ -22,8 +24,9 @@ type MembershipRow = { id: string };
  * Irreversible tenant teardown, ordered around the failure modes:
  *
  * 1. discard provider ciphertext before anything can strand it;
- * 2. delete every other Auth user, then the acting Admin;
- * 3. delete the tenant row and let the declared cascades remove all data.
+ * 2. remove every user's private avatar objects;
+ * 3. delete every other Auth user, then the acting Admin;
+ * 4. delete the tenant row and let the declared cascades remove all data.
  *
  * The actor goes last so a failure deleting another member still leaves one
  * Admin able to retry. Auth users go before the tenant: the opposite order can
@@ -78,6 +81,10 @@ export async function deleteTenantPermanently(input: {
     ...memberIds.filter((id) => id !== input.actor.userId),
     ...memberIds.filter((id) => id === input.actor.userId),
   ];
+
+  if (!(await removeProfileAvatarObjects(admin, memberIds))) {
+    return { ok: false, reason: "avatar_cleanup_failed" };
+  }
 
   // This entry is intentionally removed by the tenant cascade. Keeping a
   // customer-identifying tombstone after erasure would contradict the erasure;

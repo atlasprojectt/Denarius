@@ -498,6 +498,8 @@ Algumas ações levam a uma área do Denarius para investigação. Ações de li
 
 ### Fluxo 21 — Gerenciar preferências pessoais
 
+As preferências também permitem trocar a foto de perfil (JPG, PNG ou WebP de até 3 MB); sem foto, o produto usa as iniciais.
+
 1. O usuário vê nome, e-mail e papel.
 2. Pode editar o nome de exibição; o e-mail permanece a identidade da conta.
 3. Pode trocar a senha quando usa credencial própria do Denarius.

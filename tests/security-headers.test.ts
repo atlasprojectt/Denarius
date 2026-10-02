@@ -57,6 +57,10 @@ describe("buildCsp", () => {
     expect(directive(buildCsp("n", { supabaseOrigin: null }), "connect-src")).toBe(
       "connect-src 'self'",
     );
+    expect(directive(csp, "img-src")).toContain("https://project.supabase.co");
+    expect(directive(buildCsp("n", { supabaseOrigin: null }), "img-src")).toBe(
+      "img-src 'self' data: blob:",
+    );
   });
 
   it("keeps inline STYLE deliberately, and only style", () => {

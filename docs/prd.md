@@ -128,6 +128,7 @@ The headline metric is **spend in money governed against a budget**; tokens are 
 
 **Settings and account**
 58. As an Admin, I want to manage company settings (name, display currency), so that it fits my reality.
+58a. As a user, I want to change my profile photo from Preferences, so that the account menu identifies me at a glance; JPG, PNG and WebP files up to 3 MB are accepted, with initials as the fallback.
 59. As an Admin, I want to remove a user, so that I can revoke access for someone who left.
 59a. As an Admin, I want to permanently delete the company and my account from Preferences after confirming my e-mail with a one-time code and typing an exact final phrase, so that an accidental click cannot erase the space.
 59b. As a Viewer, I want to leave the company from Preferences after the same e-mail and phrase confirmation, so that my membership is removed without deleting the company's data.

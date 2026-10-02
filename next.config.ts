@@ -28,7 +28,12 @@ const nextConfig: NextConfig = {
   agentRules: false,
 
   experimental: {
-    serverActions: { allowedOrigins: SERVER_ACTION_ORIGINS },
+    serverActions: {
+      allowedOrigins: SERVER_ACTION_ORIGINS,
+      // Leave room for multipart boundaries while the avatar schema caps the
+      // actual image at 3 MB.
+      bodySizeLimit: "4mb",
+    },
   },
 
   // The request-independent half of the security headers (issue #60). They live

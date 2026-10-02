@@ -20,11 +20,14 @@ import { getCockpitData } from "@/lib/home/queries";
 import { isReportPath } from "@/lib/reports/path";
 import { latestClosedPeriodPath } from "@/lib/reports/queries";
 import { profileInitials, profileLabel } from "@/lib/settings/account";
+import { isMissingProfileAvatarColumn } from "@/lib/settings/avatar-schema";
+import { profileAvatarUrl } from "@/lib/settings/avatar-url";
 import { createClient } from "@/lib/supabase/server";
 
 type AppUserRow = {
   email: string;
   display_name: string | null;
+  avatar_path?: string | null;
   tenant: { name: string } | null;
 };
 
@@ -47,11 +50,11 @@ export default async function AppLayout({
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const [{ data }, { data: connectionData }, latestReportPeriod] =
+  const [appUserResult, { data: connectionData }, latestReportPeriod] =
     await Promise.all([
       supabase
         .from("app_user")
-        .select("email, display_name, tenant:tenant_id(name)")
+        .select("email, display_name, avatar_path, tenant:tenant_id(name)")
         .eq("id", user.id)
         .maybeSingle(),
       renderingReport
@@ -62,10 +65,30 @@ export default async function AppLayout({
       // Snapshot data, not live state — safe beside the frozen surfaces.
       latestClosedPeriodPath().catch(() => null),
     ]);
-  const appUser = data as AppUserRow | null;
+
+  // Profile avatars were added after the first production schema. Keep the
+  // app shell usable while that migration is being applied: a missing avatar
+  // column must not look like a missing tenant and bounce the user forever
+  // between / and /onboarding. Once the column exists, this stays one query.
+  let appUserData = appUserResult.data;
+  if (isMissingProfileAvatarColumn(appUserResult.error)) {
+    const fallback = await supabase
+      .from("app_user")
+      .select("email, display_name, tenant:tenant_id(name)")
+      .eq("id", user.id)
+      .maybeSingle();
+    appUserData = fallback.data
+      ? { ...fallback.data, avatar_path: null }
+      : null;
+  }
+  const appUser = appUserData as AppUserRow | null;
 
   // Signed in but no tenant yet (e.g. first Google login) → bootstrap.
   if (!appUser) redirect("/onboarding");
+  const avatarUrl = await profileAvatarUrl(
+    supabase,
+    appUser.avatar_path ?? null,
+  );
 
   const connections = ((connectionData ?? []) as ConnectionRow[]).map(
     (connection): ConnectionStatus => ({
@@ -98,6 +121,7 @@ export default async function AppLayout({
             displayName: appUser.display_name,
             email: appUser.email,
           })}
+          userAvatarUrl={avatarUrl}
           staleConnections={staleConnections}
           allClear={allClear}
           latestReportPeriod={latestReportPeriod}

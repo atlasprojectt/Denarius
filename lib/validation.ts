@@ -1,6 +1,10 @@
 import { z } from "zod";
 
 import { normalizePtBrMoney } from "@/lib/locale-money";
+import {
+  PROFILE_AVATAR_MAX_BYTES,
+  PROFILE_AVATAR_MIME_TYPES,
+} from "@/lib/settings/avatar";
 
 // Shared zod schemas — the single source of validation truth (F4).
 // Server actions validate authoritatively with these; clients may reuse them.
@@ -89,6 +93,13 @@ export const profileNameSchema = z.object({
     .trim()
     .min(2, "Informe seu nome (mínimo 2 caracteres).")
     .max(80, "Nome muito longo (máximo 80 caracteres)."),
+});
+
+export const profileAvatarSchema = z.object({
+  avatar: z
+    .file({ error: "Selecione uma foto." })
+    .max(PROFILE_AVATAR_MAX_BYTES, "A foto deve ter no máximo 3 MB.")
+    .mime([...PROFILE_AVATAR_MIME_TYPES], "Use uma imagem JPG, PNG ou WebP."),
 });
 
 export const companySettingsSchema = z.object({

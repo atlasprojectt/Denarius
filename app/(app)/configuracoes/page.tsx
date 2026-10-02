@@ -9,17 +9,20 @@ import { PageHeader } from "@/components/domain/page-header";
 import { PageContainer } from "@/components/domain/page-container";
 import { StateBadge } from "@/components/domain/state-badge";
 import { ThemePicker } from "@/components/domain/theme-toggle";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { hasPasswordIdentity } from "@/lib/auth/password";
 import { profileInitials, profileLabel } from "@/lib/settings/account";
+import { isMissingProfileAvatarColumn } from "@/lib/settings/avatar-schema";
+import { profileAvatarUrl } from "@/lib/settings/avatar-url";
 import { createClient } from "@/lib/supabase/server";
 import { DigestForm } from "./_components/digest-form";
 import { AccountDeletionCard } from "./_components/account-deletion-card";
 import { PasswordForm } from "./_components/password-form";
 import { PreferenceSection } from "./_components/preference-section";
+import { ProfileAvatarForm } from "./_components/profile-avatar-form";
 import { ProfileForm } from "./_components/profile-form";
 
 const copy = {
@@ -51,6 +54,7 @@ type AccountRow = {
   email: string;
   role: string;
   display_name: string | null;
+  avatar_path?: string | null;
   digest_opt_out: boolean;
   tenant: { id: string; name: string } | null;
 };
@@ -62,13 +66,28 @@ export default async function PersonalSettingsPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data } = await supabase
+  const profileResult = await supabase
     .from("app_user")
-    .select("email, role, display_name, digest_opt_out, tenant:tenant_id(id, name)")
+    .select("email, role, display_name, avatar_path, digest_opt_out, tenant:tenant_id(id, name)")
     .eq("id", user.id)
     .maybeSingle();
 
-  const account = data as AccountRow | null;
+  let accountData = profileResult.data;
+  const avatarColumnAvailable = !isMissingProfileAvatarColumn(
+    profileResult.error,
+  );
+  if (!avatarColumnAvailable) {
+    const fallback = await supabase
+      .from("app_user")
+      .select("email, role, display_name, digest_opt_out, tenant:tenant_id(id, name)")
+      .eq("id", user.id)
+      .maybeSingle();
+    accountData = fallback.data
+      ? { ...fallback.data, avatar_path: null }
+      : null;
+  }
+
+  const account = accountData as AccountRow | null;
   if (!account?.tenant) redirect("/onboarding");
 
   const displayName = profileLabel({
@@ -79,6 +98,10 @@ export default async function PersonalSettingsPage() {
     displayName: account.display_name,
     email: account.email,
   });
+  const avatarUrl = await profileAvatarUrl(
+    supabase,
+    account.avatar_path ?? null,
+  );
   const RoleIcon = account.role === "admin" ? ShieldUserIcon : UserIcon;
 
   return (
@@ -95,6 +118,7 @@ export default async function PersonalSettingsPage() {
             <div className="flex flex-col gap-5">
               <div className="flex items-center gap-3.5 sm:gap-4">
                 <Avatar size="lg" className="size-14 sm:size-16">
+                  {avatarUrl && <AvatarImage src={avatarUrl} alt="" />}
                   <AvatarFallback className="text-lg font-semibold">
                     {initials}
                   </AvatarFallback>
@@ -112,6 +136,13 @@ export default async function PersonalSettingsPage() {
                 </StateBadge>
               </div>
 
+              {avatarColumnAvailable && (
+                <ProfileAvatarForm
+                  key={account.avatar_path ?? "no-avatar"}
+                  initials={initials}
+                  avatarUrl={avatarUrl}
+                />
+              )}
               <ProfileForm displayName={displayName} />
             </div>
           </PreferenceSection>

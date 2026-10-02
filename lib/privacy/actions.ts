@@ -17,6 +17,7 @@ import { requireSession, type Session } from "@/lib/auth/session";
 import { emailChannel } from "@/lib/notify/channel";
 import { dbFailure, logFailure, logSkipped } from "@/lib/logging/server-log";
 import { deleteTenantPermanently } from "@/lib/privacy/delete";
+import { removeProfileAvatarObjects } from "@/lib/settings/avatar-storage";
 import {
   ACCOUNT_DELETION_CHALLENGE_COOKIE,
   ACCOUNT_DELETION_GRANT_COOKIE,
@@ -363,6 +364,10 @@ export async function confirmAccountDeletion(
 
   if (session.role === "viewer") {
     const admin = createAdminClient();
+    if (!(await removeProfileAvatarObjects(admin, [session.userId]))) {
+      logFailure("account_deletion.viewer_avatar_cleanup", session.tenantId);
+      return { step: "error", error: copy.membershipFailed };
+    }
     await recordAudit(session, "user.left", { target: "Membro", detail: { role: "viewer" } });
     const { count, error } = await admin
       .from("app_user")
@@ -388,7 +393,7 @@ export async function confirmAccountDeletion(
   if (!result.ok) {
     if (result.reason === "name_mismatch") return { step: "error", error: copy.tenantMismatch };
     if (result.reason === "credential_revoke_failed") return { step: "error", error: copy.credentialRevokeFailed };
-    if (result.reason === "auth_delete_failed" || result.reason === "tenant_delete_failed" || result.reason === "membership_read_failed" || result.reason === "tenant_not_found") {
+    if (result.reason === "auth_delete_failed" || result.reason === "tenant_delete_failed" || result.reason === "membership_read_failed" || result.reason === "avatar_cleanup_failed" || result.reason === "tenant_not_found") {
       return { step: "error", error: copy.tenantDeleteFailed };
     }
     return { step: "error", error: copy.failed };

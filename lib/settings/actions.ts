@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { recordAudit } from "@/lib/audit/log";
-import { requireAdmin } from "@/lib/auth/session";
+import { requireAdmin, requireSession } from "@/lib/auth/session";
 import { canRemoveUser } from "@/lib/privacy/policy";
 import { dbFailure, logFailure } from "@/lib/logging/server-log";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -13,9 +13,14 @@ import {
   digestPreferenceSchema,
   displayCurrencySchema,
   privacySettingsSchema,
+  profileAvatarSchema,
   profileNameSchema,
   removeUserSchema,
 } from "@/lib/validation";
+import {
+  PROFILE_AVATAR_BUCKET,
+  profileAvatarFormat,
+} from "./avatar";
 
 export type SettingsFormState = { error?: string; success?: string };
 
@@ -236,6 +241,90 @@ export async function updateProfileName(
 
   revalidateAccountSurfaces();
   return { success: "Perfil salvo." };
+}
+
+export async function updateProfileAvatar(
+  _prev: SettingsFormState,
+  formData: FormData,
+): Promise<SettingsFormState> {
+  const parsed = profileAvatarSchema.safeParse({
+    avatar: formData.get("avatar"),
+  });
+  if (!parsed.success) return { error: firstIssue(parsed.error) };
+
+  const auth = await requireSession();
+  if (auth.error !== undefined) return { error: auth.error };
+
+  const { session } = auth;
+  const admin = createAdminClient();
+  const { data: current, error: currentError } = await admin
+    .from("app_user")
+    .select("avatar_path")
+    .eq("id", session.userId)
+    .eq("tenant_id", session.tenantId)
+    .maybeSingle();
+
+  if (currentError || !current) {
+    logFailure(
+      "settings.profile_avatar.read",
+      session.tenantId,
+      dbFailure(currentError),
+    );
+    return { error: "Não foi possível carregar seu perfil. Tente novamente." };
+  }
+
+  const bytes = new Uint8Array(await parsed.data.avatar.arrayBuffer());
+  const format = profileAvatarFormat(bytes);
+  if (!format || format.mimeType !== parsed.data.avatar.type) {
+    return { error: "Use uma imagem JPG, PNG ou WebP válida." };
+  }
+
+  const oldPath =
+    typeof current.avatar_path === "string" ? current.avatar_path : null;
+  const newPath = `${session.userId}/${crypto.randomUUID()}.${format.extension}`;
+  const { error: uploadError } = await admin.storage
+    .from(PROFILE_AVATAR_BUCKET)
+    .upload(newPath, bytes, {
+      cacheControl: "3600",
+      contentType: format.mimeType,
+      upsert: false,
+    });
+
+  if (uploadError) {
+    logFailure("settings.profile_avatar.upload", session.tenantId);
+    return { error: "Não foi possível enviar sua foto. Tente novamente." };
+  }
+
+  let updateQuery = admin
+    .from("app_user")
+    .update({ avatar_path: newPath }, { count: "exact" })
+    .eq("id", session.userId)
+    .eq("tenant_id", session.tenantId);
+  updateQuery = oldPath
+    ? updateQuery.eq("avatar_path", oldPath)
+    : updateQuery.is("avatar_path", null);
+  const { error: updateError, count } = await updateQuery;
+
+  if (updateError || count !== 1) {
+    await admin.storage.from(PROFILE_AVATAR_BUCKET).remove([newPath]);
+    logFailure("settings.profile_avatar.save", session.tenantId, {
+      matched: count ?? 0,
+      ...dbFailure(updateError),
+    });
+    return { error: "Seu perfil mudou em outra janela. Tente novamente." };
+  }
+
+  if (oldPath) {
+    const { error: removeError } = await admin.storage
+      .from(PROFILE_AVATAR_BUCKET)
+      .remove([oldPath]);
+    if (removeError) {
+      logFailure("settings.profile_avatar.cleanup", session.tenantId);
+    }
+  }
+
+  revalidateAccountSurfaces();
+  return { success: "Foto de perfil atualizada." };
 }
 
 /** Weekly-digest opt-out (issue #20) — each user controls their own row. */

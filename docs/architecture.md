@@ -100,6 +100,8 @@ The forwarded request headers are built **fresh at each use, never captured once
 
 See the full table in [prd.md → Data & security](prd.md). Entities: `tenant`, `user`, `employee`, `team` (+ implicit Unattributed), `provider_connection`, `subscription` (daily accrual), `usage_daily`, `cost_daily`, `budget` (thresholds + frozen FX), `model_price` (append-only), `finding`, `notification_log`, `invitation`, `audit_log` (append-only, Admin-read), `account_deletion_challenge` (server-only verification state), `period_snapshot` (the frozen closed month — team aggregates only, never a person, so it cannot become the back door around the privacy switches).
 
+Profile avatars are presentation-only: `app_user.avatar_path` points to an object in the private Supabase Storage bucket `profile-avatars`, scoped below the user's UUID. Pages request a one-hour signed URL; the browser never receives a bucket credential or service-role key.
+
 Implementation note: the conceptual `user` entity is the **`app_user`** table (`user` is reserved in Postgres; `auth.users` belongs to Supabase Auth). `app_user.display_name` is presentation-only profile metadata for the Denarius UI; authentication email remains owned by Supabase Auth. The Unattributed bucket is a `team` row flagged `is_unattributed` (internal name, UI renders its label from the flag).
 
 ## 7. Currency & FX
@@ -124,13 +126,13 @@ Forms whose selections must survive a racing revalidation (attribution mapping) 
 | CI | An **ephemeral** Supabase stack raised by `supabase start` inside the job (`supabase/config.toml`, issue #78), with every migration applied from scratch. Lives for one run; keys are read back from the stack, never written down |
 | Production | Vercel project linked to repo; Supabase project; secrets as Vercel env vars |
 
-MVP runs on free tiers; DB/secret rigor from day one. Move off free tier at first paying customer.
+MVP runs on free tiers; DB/secret rigor from day one. Move off free tier at first paying customer. Supabase Storage is enabled locally and in production for private profile avatars only; all other product data remains database metadata.
 
 ## 9. Testing strategy (summary)
 
 Nine seams, detailed in [prd.md → Testing Decisions](prd.md). The pattern: **fake provider injection** for ingestion; **pure-function tests** for engine/findings/planning; **RLS isolation** integration test (tenant A cannot read tenant B — the most critical due-diligence test); RBAC/privacy; HTTP seam with transactional rollback.
 
-**Where the database-backed suites run (issue #78).** `rls-isolation`, `roster-import`, `rbac-privacy` and `rate-limit` need a real Postgres + Auth + PostgREST, so the quality gate raises one: `supabase start` applies `supabase/migrations` from zero, in order — which is also the only check that the migrations still apply cleanly from scratch. `supabase/config.toml` turns off every service the product does not use (Realtime, Storage, Studio, edge functions, log ingestion, the local SMTP catcher) and raises the auth sign-in rate limit, because the isolation fixtures sign in repeatedly from one IP.
+**Where the database-backed suites run (issue #78).** `rls-isolation`, `roster-import`, `rbac-privacy` and `rate-limit` need a real Postgres + Auth + PostgREST, so the quality gate raises one: `supabase start` applies `supabase/migrations` from zero, in order — which is also the only check that the migrations still apply cleanly from scratch. `supabase/config.toml` turns off every service the product does not use (Realtime, Studio, edge functions, log ingestion, the local SMTP catcher); Storage stays enabled for the private profile-avatar bucket. The auth sign-in rate limit is raised because the isolation fixtures sign in repeatedly from one IP.
 
 **A skipped database suite is a failure in CI.** These suites were written to self-skip when the env is absent, and CI gave them no env — so the single most important test in the repo never ran, and the green check said otherwise. `tests/support/db.ts` now gates them: quiet skip locally (the pure suites must stay runnable with no infrastructure), and with `DENARIUS_REQUIRE_DB_TESTS=1` a skip registers a **failing** test instead. Same for an individual table whose migration is missing — an unverified table is an unverified isolation claim.
 
