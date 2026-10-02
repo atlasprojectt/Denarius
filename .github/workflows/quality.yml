@@ -56,7 +56,9 @@ jobs:
           version: 2.112.0
 
       - name: Start the ephemeral database (applies every migration from scratch)
-        run: supabase start -x realtime,storage-api,imgproxy,mailpit,studio,edge-runtime,logflare,vector,supavisor
+        # Storage must stay running: tenant deletion verifies that profile-avatar
+        # objects are removed before the tenant can be deleted.
+        run: supabase start -x realtime,imgproxy,mailpit,studio,edge-runtime,logflare,vector,supavisor
 
       # The local stack mints its own keys per run; they are read back from it
       # rather than written down, so no credential lives in this file. Nothing
