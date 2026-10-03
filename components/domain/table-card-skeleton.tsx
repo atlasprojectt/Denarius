@@ -1,7 +1,7 @@
 import { Skeleton } from "@/components/ui/skeleton";
 
 /** Loading placeholder for a table Card (title + description + N rows) —
- *  shared by the Explorar and Times route skeletons (F1: RSC streaming). */
+ *  shared by the Composição and Times route skeletons (F1: RSC streaming). */
 export function TableCardSkeleton({ rows }: { rows: number }) {
   return (
     <div className="flex flex-col gap-4 rounded-xl border p-6">

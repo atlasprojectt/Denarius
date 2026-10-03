@@ -60,9 +60,9 @@ function resetState(): void {
   state.keyringThrows = false;
 }
 
-// Minimal in-memory stand-in for the Neon admin helpers: records writes,
+// Minimal in-memory stand-in for the Supabase admin adapter: records writes,
 // answers the exact reads runProviderSync performs.
-vi.mock("@/lib/db/admin", () => ({
+vi.mock("@/lib/db/supabase-admin", () => ({
   findProviderConnectionForSync: async () => state.connection,
   findTenantStorePerPerson: async () =>
     state.connection === null ? null : state.storePerPerson,

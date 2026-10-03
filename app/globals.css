@@ -1617,3 +1617,12 @@ input[type="number"]::-webkit-outer-spin-button {
 [data-slot="chart"] .recharts-surface {
   cursor: crosshair;
 }
+
+/* Recharts moves programmatic focus to its internal z-index groups while the
+   pointer crosses an accessibility-enabled chart. Those groups are not user
+   controls, so their browser outline becomes a misleading frame around the
+   whole plot. Keep the surface itself available for keyboard focus while
+   suppressing the internal layer outline. */
+[data-slot="chart"] [class*="recharts-zIndex-layer_"]:focus {
+  outline: none;
+}

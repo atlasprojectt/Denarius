@@ -8,7 +8,7 @@ const authenticatedRoutes = [
   "/explorar",
   "/relatorios",
   "/ajustes",
-  "/configuracoes",
+  "/preferencias",
 ] as const;
 
 test.setTimeout(90_000);
@@ -144,7 +144,7 @@ test("Home cards use divided headers and cards remain darker than the shell", as
 });
 
 test("button geometry follows autonomous and structural intent", async ({ page }) => {
-  await page.goto("/configuracoes");
+  await page.goto("/preferencias");
 
   const structural = page.getByRole("link", { name: "Início", exact: true });
   const search = page.getByRole("button", { name: "Pesquisa (Ctrl P)" });
@@ -190,6 +190,12 @@ test("authenticated product surfaces stay inside the viewport", async ({ page })
     await waitForRouteReady(page);
     await expectNoPageOverflow(page, route);
   }
+});
+
+test("legacy personal settings URL redirects to preferences", async ({ page }) => {
+  await page.goto("/configuracoes");
+  await expect(page).toHaveURL(/\/preferencias\/?$/);
+  await waitForRouteReady(page);
 });
 
 test("Global search finds and opens a team with keyboard navigation", async ({ page }) => {
@@ -290,10 +296,10 @@ test("State badges keep the shared icon-led geometry", async ({ page }) => {
   expect(darkDestructive).toBe("#fb2c36");
 });
 
-test("Explore exposes the current tab contract and semantic panel heading", async ({ page }) => {
+test("Composition exposes the current tab contract and semantic panel heading", async ({ page }) => {
   await page.goto("/explorar");
-  await expect(page.getByRole("tablist", { name: "Visualizações de gastos" })).toBeVisible();
-  await expect(page.getByRole("tab", { name: "Modelos" })).toHaveAttribute(
+  await expect(page.getByRole("tablist", { name: "Composição do gasto" })).toBeVisible();
+  await expect(page.getByRole("tab", { name: "Modelos de IA" })).toHaveAttribute(
     "aria-selected",
     "true",
   );
@@ -347,7 +353,7 @@ test("report keeps one main landmark, unique ids, and a dialog preview", async (
 test("mobile controls keep touch-sized targets", async ({ page }) => {
   test.skip(test.info().project.name !== "mobile");
 
-  for (const route of ["/", "/explorar", "/relatorios", "/ajustes", "/configuracoes"] as const) {
+  for (const route of ["/", "/explorar", "/relatorios", "/ajustes", "/preferencias"] as const) {
     await page.goto(route);
     await waitForRouteReady(page);
     const targets = page.locator(
@@ -383,6 +389,50 @@ test("shell and charts expose concise Portuguese accessible names", async ({ pag
   );
 });
 
+test("team chart keeps the Home hover focus treatment", async ({ page }) => {
+  await page.goto("/times");
+  const team = page.getByRole("link", { name: /Ver detalhe de/ }).first();
+  test.skip((await team.count()) === 0, "O tenant seed não tem times.");
+
+  await team.click();
+  await page.waitForURL(/\/times\/[0-9a-f-]+$/);
+  const chart = page.locator('[data-slot="chart"]').first();
+  await expect(chart).toBeVisible();
+
+  const surface = chart.locator("svg.recharts-surface");
+  const box = await surface.boundingBox();
+  expect(box).not.toBeNull();
+  await surface.hover({
+    position: {
+      x: (box?.width ?? 0) / 2,
+      y: (box?.height ?? 0) / 2,
+    },
+  });
+
+  const chartRoot = page.locator('[data-reveal="team-chart"]');
+  await expect(
+    chartRoot.locator('.denarius-chart-focus[data-visible="true"]'),
+  ).toHaveCount(3);
+  const focusedLayer = chart.locator(
+    '[class*="recharts-zIndex-layer_"]:focus',
+  );
+  await expect(focusedLayer).toHaveCount(1);
+  await expect(focusedLayer).toHaveCSS("outline-style", "none");
+  await expect(chart.locator(".denarius-chart-scrim")).toHaveAttribute(
+    "data-visible",
+    "true",
+  );
+  const surfaceColors = await chart.evaluate((element) => {
+    const scrim = element.querySelector<SVGElement>(".denarius-chart-scrim");
+    const card = element.closest<HTMLElement>('[data-reveal="team-chart"]');
+    return {
+      scrimFill: scrim ? getComputedStyle(scrim).fill : null,
+      cardBackground: card ? getComputedStyle(card).backgroundColor : null,
+    };
+  });
+  expect(surfaceColors.scrimFill).toBe(surfaceColors.cardBackground);
+});
+
 test("sidebar removes layout motion when reduced motion is requested", async ({ page }) => {
   test.skip(test.info().project.name !== "desktop");
   await page.emulateMedia({ reducedMotion: "reduce" });
@@ -394,13 +444,25 @@ test("sidebar removes layout motion when reduced motion is requested", async ({ 
   expect(durations).toEqual({ gap: "0s", inset: "0s" });
 });
 
-test("Settings is an index with dedicated company, privacy, and users routes", async ({ page }) => {
+test("Settings groups organization, sources, and governance routes", async ({ page }) => {
   await page.goto("/ajustes");
+  await expect(page.getByRole("heading", { name: "Organização" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Fontes e atribuição" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Governança e confiança" })).toBeVisible();
   await expect(page.getByRole("link", { name: /Empresa e moeda/ })).toBeVisible();
   await expect(page.getByRole("link", { name: /Privacidade/ })).toBeVisible();
   await expect(page.getByRole("link", { name: /Usuários/ })).toBeVisible();
   await page.getByRole("link", { name: /Empresa e moeda/ }).click();
   await expect(page).toHaveURL(/\/ajustes\/empresa$/);
+});
+
+test("Privacy owns data export and the account exit risk surface", async ({ page }) => {
+  await page.goto("/ajustes/privacidade");
+  await expect(page.getByRole("heading", { name: "Privacidade e dados" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Zona de risco" })).toBeVisible();
+  if (await page.getByRole("heading", { name: "Seus dados" }).count()) {
+    await expect(page.getByRole("heading", { name: "Seus dados" })).toBeVisible();
+  }
 });
 
 test("Destructive controls open an explicit confirmation", async ({ page }) => {

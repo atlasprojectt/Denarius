@@ -5,8 +5,10 @@ import { useRouter } from "next/navigation";
 import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react";
 import {
   Cancel01Icon,
+  ChartLineIcon,
   ChevronRightIcon,
   FileChartLineIcon,
+  Home05Icon,
   Plug01Icon,
   Search01Icon,
   ToolsIcon,
@@ -28,6 +30,12 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { searchWorkspace } from "@/lib/search/actions";
+import {
+  addRecentSearch,
+  parseRecentSearches,
+  SEARCH_RECENT_KEY,
+  serializeRecentSearches,
+} from "@/lib/search/recent";
 import { MAX_SEARCH_LENGTH, MIN_SEARCH_LENGTH } from "@/lib/search/search";
 import { SEARCH_OPEN_EVENT } from "@/lib/search/shortcut";
 import type {
@@ -41,7 +49,7 @@ const copy = {
   title: "Pesquisa",
   description: "Encontre recursos do workspace e abra o destino diretamente.",
   label: "Buscar no Denarius",
-  placeholder: "Buscar no Denarius...",
+  placeholder: "Buscar no Denarius…",
   searching: "Pesquisando…",
   partial: "Algumas categorias não puderam ser pesquisadas agora.",
   error: "Não foi possível pesquisar agora.",
@@ -49,6 +57,14 @@ const copy = {
   retry: "Tentar novamente",
   results: "Resultados da pesquisa",
   close: "Fechar pesquisa",
+  scopes: "Pesquisar em",
+  recent: "Pesquisas recentes",
+  clearRecent: "Limpar histórico",
+  quickActions: "Ações rápidas",
+  move: "Mover",
+  select: "Selecionar",
+  quit: "Sair",
+  removeRecent: (query: string) => `Remover “${query}” do histórico`,
   noResults: (query: string) => `Nenhum resultado para “${query}”`,
   noResultsHint: "Tente outro termo.",
 };
@@ -62,14 +78,78 @@ const ICONS: Record<SearchResultType, IconSvgElement> = {
 
 const IDLE_RESPONSE: SearchResponse = { status: "idle", groups: [] };
 
-export function SearchDialog() {
+type IdleItem =
+  | { kind: "suggestion"; id: string; label: string; query: string }
+  | { kind: "recent"; id: string; label: string; query: string }
+  | {
+      kind: "action";
+      id: string;
+      label: string;
+      description: string;
+      href: string;
+      icon: IconSvgElement;
+    };
+
+type ActiveItem =
+  | { mode: "idle"; index: number }
+  | { mode: "results"; index: number }
+  | { mode: "none" };
+
+const SEARCH_SCOPES = [
+  { label: "Times", query: "times" },
+  { label: "Relatórios", query: "relatórios" },
+  { label: "Assinaturas", query: "assinaturas" },
+  { label: "Conexões", query: "conexões" },
+] as const;
+
+const QUICK_ACTIONS = [
+  {
+    id: "home",
+    label: "Ver cockpit",
+    description: "Resumo de gasto e veredito",
+    href: "/",
+    icon: Home05Icon,
+  },
+  {
+    id: "teams",
+    label: "Comparar times",
+    description: "Pacing, orçamento e contribuições",
+    href: "/times",
+    icon: UsersIcon,
+  },
+  {
+    id: "explore",
+    label: "Ver composição",
+    description: "Modelos de IA e custos fixos",
+    href: "/explorar",
+    icon: ChartLineIcon,
+  },
+  {
+    id: "reports",
+    label: "Abrir relatórios",
+    description: "Fechamentos mensais e histórico",
+    href: "/relatorios",
+    icon: FileChartLineIcon,
+  },
+] satisfies ReadonlyArray<Omit<Extract<IdleItem, { kind: "action" }>, "kind">>;
+
+export function SearchDialog({ historyScope }: { historyScope: string }) {
   const router = useRouter();
   const reduceMotion = useReducedMotion();
+  const recentStorageKey = `${SEARCH_RECENT_KEY}:${historyScope}`;
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [response, setResponse] = useState<SearchResponse>(IDLE_RESPONSE);
   const [loading, setLoading] = useState(false);
-  const [activeIndex, setActiveIndex] = useState(-1);
+  const [recentQueries, setRecentQueries] = useState<string[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      return parseRecentSearches(window.localStorage.getItem(recentStorageKey));
+    } catch {
+      return [];
+    }
+  });
+  const [activeItem, setActiveItem] = useState<ActiveItem>({ mode: "none" });
   const requestSequence = useRef(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -79,6 +159,24 @@ export function SearchDialog() {
   );
   const showResults =
     query.trim().length >= MIN_SEARCH_LENGTH && response.status !== "idle";
+  const idleItems = useMemo<IdleItem[]>(
+    () => [
+      ...SEARCH_SCOPES.map((scope) => ({
+        kind: "suggestion" as const,
+        id: `suggestion-${scope.query}`,
+        label: scope.label,
+        query: scope.query,
+      })),
+      ...recentQueries.map((recent) => ({
+        kind: "recent" as const,
+        id: `recent-${recent}`,
+        label: recent,
+        query: recent,
+      })),
+      ...QUICK_ACTIONS.map((action) => ({ kind: "action" as const, ...action })),
+    ],
+    [recentQueries],
+  );
 
   const focusInput = useCallback(() => {
     window.requestAnimationFrame(() => inputRef.current?.focus());
@@ -89,7 +187,7 @@ export function SearchDialog() {
     setQuery("");
     setResponse(IDLE_RESPONSE);
     setLoading(false);
-    setActiveIndex(-1);
+    setActiveItem({ mode: "none" });
   }, []);
 
   const handleOpenChange = useCallback(
@@ -101,13 +199,37 @@ export function SearchDialog() {
     [focusInput, reset],
   );
 
+  const rememberSearch = useCallback((value: string) => {
+    setRecentQueries((current) => addRecentSearch(current, value));
+  }, []);
+
+  const clearRecentSearches = useCallback(() => {
+    setRecentQueries([]);
+  }, []);
+
+  const removeRecentSearch = useCallback((value: string) => {
+    setRecentQueries((current) => current.filter((queryValue) => queryValue !== value));
+  }, []);
+
+  useEffect(() => {
+    try {
+      if (recentQueries.length === 0) {
+        window.localStorage.removeItem(recentStorageKey);
+      } else {
+        window.localStorage.setItem(recentStorageKey, serializeRecentSearches(recentQueries));
+      }
+    } catch {
+      // Local history is best effort; a blocked storage should not affect search.
+    }
+  }, [recentQueries, recentStorageKey]);
+
   const runSearch = useCallback(async (value: string) => {
     const normalized = value.trim();
     const sequence = ++requestSequence.current;
     if (normalized.length < MIN_SEARCH_LENGTH) {
       setLoading(false);
       setResponse(IDLE_RESPONSE);
-      setActiveIndex(-1);
+      setActiveItem({ mode: "none" });
       return;
     }
 
@@ -116,11 +238,15 @@ export function SearchDialog() {
       const nextResponse = await searchWorkspace(normalized);
       if (sequence !== requestSequence.current) return;
       setResponse(nextResponse);
-      setActiveIndex(nextResponse.groups.some((group) => group.results.length) ? 0 : -1);
+      setActiveItem(
+        nextResponse.groups.some((group) => group.results.length)
+          ? { mode: "results", index: 0 }
+          : { mode: "none" },
+      );
     } catch {
       if (sequence !== requestSequence.current) return;
       setResponse({ status: "error", groups: [] });
-      setActiveIndex(-1);
+      setActiveItem({ mode: "none" });
     } finally {
       if (sequence === requestSequence.current) setLoading(false);
     }
@@ -161,21 +287,55 @@ export function SearchDialog() {
   }, [focusInput, handleOpenChange, open]);
 
   function selectResult(result: SearchResult) {
+    rememberSearch(query);
     handleOpenChange(false);
     router.push(result.href);
   }
 
+  function selectIdleItem(item: IdleItem) {
+    if (item.kind === "action") {
+      handleOpenChange(false);
+      router.push(item.href);
+      return;
+    }
+
+    setQuery(item.query);
+    setResponse(IDLE_RESPONSE);
+    setActiveItem({ mode: "none" });
+    focusInput();
+  }
+
   function handleKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
-    if (!results.length) return;
-    if (event.key === "ArrowDown") {
+    const isResultsMode = showResults;
+    const itemCount = isResultsMode ? results.length : idleItems.length;
+    if (!itemCount) return;
+
+    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
       event.preventDefault();
-      setActiveIndex((index) => (index + 1) % results.length);
-    } else if (event.key === "ArrowUp") {
+      const direction = event.key === "ArrowDown" ? 1 : -1;
+      setActiveItem((current) => {
+        const currentIndex =
+          current.mode === (isResultsMode ? "results" : "idle")
+            ? current.index
+            : direction > 0
+              ? -1
+              : 0;
+        const nextIndex = (currentIndex + direction + itemCount) % itemCount;
+        return isResultsMode
+          ? { mode: "results", index: nextIndex }
+          : { mode: "idle", index: nextIndex };
+      });
+    } else if (event.key === "Enter") {
+      const currentIndex =
+        activeItem.mode === (isResultsMode ? "results" : "idle")
+          ? activeItem.index
+          : 0;
       event.preventDefault();
-      setActiveIndex((index) => (index <= 0 ? results.length - 1 : index - 1));
-    } else if (event.key === "Enter" && activeIndex >= 0) {
-      event.preventDefault();
-      selectResult(results[activeIndex]);
+      if (isResultsMode && results[currentIndex]) {
+        selectResult(results[currentIndex]);
+      } else if (!isResultsMode && idleItems[currentIndex]) {
+        selectIdleItem(idleItems[currentIndex]);
+      }
     }
   }
 
@@ -220,12 +380,23 @@ export function SearchDialog() {
             aria-label={copy.label}
             role="combobox"
             aria-autocomplete="list"
-            aria-controls={showResults ? "search-dialog-results" : undefined}
-            aria-expanded={results.length > 0}
+            aria-controls={showResults ? "search-dialog-results" : "search-dialog-idle"}
+            aria-expanded={open}
             aria-activedescendant={
-              activeIndex >= 0 ? `search-dialog-result-${activeIndex}` : undefined
+              activeItem.mode === "results"
+                ? `search-dialog-result-${activeItem.index}`
+                : activeItem.mode === "idle"
+                  ? `search-dialog-idle-${activeItem.index}`
+                  : undefined
             }
-            onChange={(event) => setQuery(event.target.value)}
+            onChange={(event) => {
+              const value = event.target.value;
+              setQuery(value);
+              if (value.trim().length < MIN_SEARCH_LENGTH) {
+                setResponse(IDLE_RESPONSE);
+                setActiveItem({ mode: "none" });
+              }
+            }}
             onKeyDown={handleKeyDown}
             className="h-12 rounded-xl bg-card pr-28 pl-10 text-sm shadow-none focus-visible:border-ring/30 focus-visible:ring-1 focus-visible:ring-ring/10 md:text-sm"
           />
@@ -244,6 +415,39 @@ export function SearchDialog() {
             ) : null}
           </span>
         </div>
+
+        <AnimatePresence initial={false}>
+          {!showResults && (
+            <motion.div
+              initial={reduceMotion ? false : { height: 0, opacity: 0, y: 6 }}
+              animate={{ height: "auto", opacity: 1, y: 0 }}
+              exit={reduceMotion ? { height: 0, opacity: 0 } : { height: 0, opacity: 0, y: 6 }}
+              transition={
+                reduceMotion
+                  ? { duration: 0 }
+                  : { duration: 0.18, ease: [0.22, 1, 0.36, 1] }
+              }
+              className="min-h-0 overflow-hidden"
+            >
+              <IdlePanel
+                id="search-dialog-idle"
+                items={idleItems}
+                recentQueries={recentQueries}
+                activeIndex={activeItem.mode === "idle" ? activeItem.index : -1}
+                onActive={(index) => setActiveItem({ mode: "idle", index })}
+                onSelect={selectIdleItem}
+                onRemoveRecent={removeRecentSearch}
+                onClearRecent={clearRecentSearches}
+                onScopeSelect={(scopeQuery) => {
+                  setQuery(scopeQuery);
+                  setResponse(IDLE_RESPONSE);
+                  setActiveItem({ mode: "none" });
+                  focusInput();
+                }}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         <AnimatePresence initial={false}>
           {showResults && (
@@ -307,9 +511,12 @@ export function SearchDialog() {
                                   key={`${result.type}-${result.id}`}
                                   result={result}
                                   index={index}
-                                  active={activeIndex === index}
-                                  onActive={() => setActiveIndex(index)}
-                                  onSelect={() => handleOpenChange(false)}
+                                  active={activeItem.mode === "results" && activeItem.index === index}
+                                  onActive={() => setActiveItem({ mode: "results", index })}
+                                  onSelect={() => {
+                                    rememberSearch(query);
+                                    handleOpenChange(false);
+                                  }}
                                 />
                               );
                             })}
@@ -319,12 +526,198 @@ export function SearchDialog() {
                     ))}
                   </div>
                 )}
+                <KeyboardHints />
               </div>
             </motion.div>
           )}
         </AnimatePresence>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function IdlePanel({
+  id,
+  items,
+  recentQueries,
+  activeIndex,
+  onActive,
+  onSelect,
+  onRemoveRecent,
+  onClearRecent,
+  onScopeSelect,
+}: {
+  id: string;
+  items: IdleItem[];
+  recentQueries: string[];
+  activeIndex: number;
+  onActive: (index: number) => void;
+  onSelect: (item: IdleItem) => void;
+  onRemoveRecent: (query: string) => void;
+  onClearRecent: () => void;
+  onScopeSelect: (query: string) => void;
+}) {
+  const suggestionItems = items.filter((item) => item.kind === "suggestion");
+  const recentItems = items.filter((item) => item.kind === "recent");
+  const actionItems = items.filter((item) => item.kind === "action");
+
+  const itemIndex = (item: IdleItem) => items.findIndex(({ id: itemId }) => itemId === item.id);
+
+  return (
+    <div
+      id={id}
+      role="listbox"
+      aria-label={copy.description}
+      className="max-h-[min(34rem,calc(100dvh-7rem))] overflow-y-auto px-4 pb-3"
+    >
+      <section aria-labelledby="search-dialog-scopes" className="border-b border-border py-3">
+        <h2 id="search-dialog-scopes" className="mb-2 text-xs font-semibold text-muted-foreground">
+          {copy.scopes}
+        </h2>
+        <div className="flex flex-wrap gap-2">
+          {suggestionItems.map((item) => {
+            const index = itemIndex(item);
+            return (
+              <button
+                key={item.id}
+                id={`search-dialog-idle-${index}`}
+                type="button"
+                role="option"
+                aria-selected={activeIndex === index}
+                onClick={() => onScopeSelect(item.query)}
+                onMouseEnter={() => onActive(index)}
+                className={cn(
+                  "rounded-full border border-border bg-surface-elevated px-3 py-1.5 text-xs font-medium transition-colors hover:bg-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/40",
+                  activeIndex === index && "bg-surface-selected",
+                )}
+              >
+                {item.label}
+              </button>
+            );
+          })}
+        </div>
+      </section>
+
+      {recentQueries.length > 0 && (
+        <section aria-labelledby="search-dialog-recent" className="border-b border-border py-3">
+          <div className="mb-1.5 flex items-center justify-between gap-3">
+            <h2 id="search-dialog-recent" className="text-xs font-semibold text-muted-foreground">
+              {copy.recent}
+            </h2>
+            <button
+              type="button"
+              onClick={onClearRecent}
+              className="text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+            >
+              {copy.clearRecent}
+            </button>
+          </div>
+          <div className="grid gap-0.5">
+            {recentItems.map((item) => {
+              const index = itemIndex(item);
+              return (
+                <div
+                  key={item.id}
+                  id={`search-dialog-idle-${index}`}
+                  role="option"
+                  aria-selected={activeIndex === index}
+                  onMouseEnter={() => onActive(index)}
+                  className={cn(
+                    "flex min-h-10 items-center gap-2 rounded-lg px-2 transition-colors",
+                    activeIndex === index && "bg-surface-selected",
+                  )}
+                >
+                  <button
+                    type="button"
+                    onClick={() => onSelect(item)}
+                    className="flex min-w-0 flex-1 items-center gap-2 text-left text-sm outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/40"
+                  >
+                    <HugeiconsIcon icon={Search01Icon} className="size-4 shrink-0 text-muted-foreground" />
+                    <span className="truncate">{item.label}</span>
+                  </button>
+                  <button
+                    type="button"
+                    aria-label={copy.removeRecent(item.label)}
+                    onClick={() => onRemoveRecent(item.query)}
+                    className="flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-surface-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+                  >
+                    <HugeiconsIcon icon={Cancel01Icon} className="size-3.5" />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
+      <section aria-labelledby="search-dialog-actions" className="pt-3">
+        <h2 id="search-dialog-actions" className="mb-1.5 text-xs font-semibold text-muted-foreground">
+          {copy.quickActions}
+        </h2>
+        <div className="grid gap-0.5">
+          {actionItems.map((item) => {
+            const index = itemIndex(item);
+            return (
+              <button
+                key={item.id}
+                id={`search-dialog-idle-${index}`}
+                type="button"
+                role="option"
+                aria-selected={activeIndex === index}
+                onClick={() => onSelect(item)}
+                onMouseEnter={() => onActive(index)}
+                className={cn(
+                  "group flex min-h-12 items-center gap-3 rounded-lg px-2 text-left outline-none transition-colors hover:bg-surface-hover focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/40",
+                  activeIndex === index && "bg-surface-selected",
+                )}
+              >
+                <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
+                  <HugeiconsIcon icon={item.icon} className="size-4" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-medium">{item.label}</span>
+                  <span className="block truncate text-xs text-muted-foreground">{item.description}</span>
+                </span>
+                <HugeiconsIcon
+                  icon={ChevronRightIcon}
+                  className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5"
+                />
+              </button>
+            );
+          })}
+        </div>
+      </section>
+
+      <KeyboardHints />
+    </div>
+  );
+}
+
+function KeyboardHints() {
+  return (
+    <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-border pt-3 text-xs text-muted-foreground">
+      <span className="inline-flex items-center gap-1.5">
+        <KeyHint value="↑" />
+        <KeyHint value="↓" />
+        {copy.move}
+      </span>
+      <span className="inline-flex items-center gap-1.5">
+        <KeyHint value="↵" />
+        {copy.select}
+      </span>
+      <span className="inline-flex items-center gap-1.5">
+        <KeyHint value="Esc" />
+        {copy.quit}
+      </span>
+    </div>
+  );
+}
+
+function KeyHint({ value }: { value: string }) {
+  return (
+    <kbd className="inline-flex min-w-6 items-center justify-center rounded-md border border-border bg-surface-elevated px-1.5 py-1 text-[10px] font-medium leading-none text-foreground">
+      {value}
+    </kbd>
   );
 }
 

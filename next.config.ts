@@ -27,6 +27,13 @@ const nextConfig: NextConfig = {
   // a dev server must not rewrite them, in any worktree.
   agentRules: false,
 
+  // Next's file tracer cannot infer the Brotli archives that
+  // @sparticuz/chromium decompresses at runtime. Include them in both PDF
+  // route functions or production will fail before Chromium can launch.
+  outputFileTracingIncludes: {
+    "/api/relatorios/*/pdf": ["./node_modules/@sparticuz/chromium/bin/**/*"],
+  },
+
   experimental: {
     serverActions: {
       allowedOrigins: SERVER_ACTION_ORIGINS,

@@ -61,6 +61,19 @@ describe("neutral surface contract", () => {
   });
 });
 
+describe("sheet geometry contract", () => {
+  it("floats side sheets on desktop and dims the page behind them", () => {
+    const sheet = source("components/ui/sheet.tsx");
+
+    expect(sheet).toContain('bg-black/20 backdrop-blur-[6px]');
+    expect(sheet).toContain("data-[side=right]:sm:inset-y-4");
+    expect(sheet).toContain("data-[side=right]:sm:right-4");
+    expect(sheet).toContain("data-[side=right]:sm:h-[calc(100dvh-2rem)]");
+    expect(sheet).toContain("data-[side=right]:sm:rounded-xl");
+    expect(sheet).toContain("data-[side=right]:sm:shadow-2xl");
+  });
+});
+
 describe("helper/footer weight contract", () => {
   it("keeps DM Sans variable so font-light (300) is real, not synthesized", () => {
     for (const path of ["app/layout.tsx", "app/global-error.tsx"]) {
@@ -81,7 +94,7 @@ describe("helper/footer weight contract", () => {
         "app/(app)/_components/monthly-pace-chart.tsx",
         "app/(app)/_components/pacing-bar.tsx",
         "app/(app)/_components/provider-composition.tsx",
-        "app/(app)/_components/setup-checklist.tsx",
+        "app/(app)/_components/onboarding-guide.tsx",
         "app/(app)/ajustes/_components/settings-navigation.tsx",
         "app/(app)/ajustes/_components/users-table.tsx",
         "app/(app)/ajustes/assinaturas/_components/subscription-table.tsx",

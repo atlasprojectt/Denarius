@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/card";
 import { currentRole } from "@/lib/auth/session";
 import { canEditCompanySettings } from "@/lib/settings/account";
+import { counted } from "@/lib/plural";
 import { createClient } from "@/lib/supabase/server";
 import { listTeams } from "@/lib/teams/queries";
 
@@ -21,14 +22,14 @@ import { RosterUpload } from "./_components/roster-upload";
 
 const copy = {
   back: "Ajustes",
-  title: "Roster",
+  title: "Pessoas e times",
   subtitle:
-    "A lista de funcionários e times — a base da atribuição de gasto por time e pessoa.",
+    "A lista de pessoas e times — a base da atribuição de gasto por time e pessoa.",
   emptyTitle: "Nenhum funcionário importado ainda",
   emptyBody:
     "Suba um CSV com as colunas name, email e team (ou nome, email, time). Vírgula ou ponto-e-vírgula funcionam; quem não estiver no arquivo em reimportações é mantido.",
   peopleTitle: "Pessoas",
-  peopleSub: (n: number) => `${n} pessoa(s) no roster.`,
+  peopleSub: (n: number) => `${counted(n, "pessoa", "pessoas")} cadastradas.`,
 };
 
 type EmployeeRow = {

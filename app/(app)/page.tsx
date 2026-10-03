@@ -1,15 +1,4 @@
-import Link from "next/link";
-import { HugeiconsIcon } from "@hugeicons/react";
-import {
-  DashboardSquare02Icon,
-  PieChartIcon,
-  ScaleIcon,
-  ShieldCheckIcon,
-  Tick01Icon,
-} from "@hugeicons/core-free-icons";
-
 import { PageContainer } from "@/components/domain/page-container";
-import { Button } from "@/components/ui/button";
 import { budgetedTeams } from "@/lib/engine/cockpit";
 import { syncStamp } from "@/lib/format";
 import { getHomeData } from "@/lib/home/queries";
@@ -17,10 +6,10 @@ import { Hero } from "./_components/hero";
 import { MonthlyPaceChart } from "./_components/monthly-pace-chart";
 import { ProviderComposition } from "./_components/provider-composition";
 import { TeamBudgetTable } from "@/components/domain/team-budget-table";
-import { SetupChecklist } from "./_components/setup-checklist";
-import { homeCopy } from "./_components/copy";
+import { OnboardingGuide } from "./_components/onboarding-guide";
 import { ExecutiveDigestCard } from "./_components/executive-digest-card";
 import { HomeGreeting } from "./_components/home-greeting";
+import { homeCopy } from "./_components/copy";
 import { profileLabel } from "@/lib/settings/account";
 
 // The Home cockpit (#19, redesigned 2026-07): a stable, read-mostly overview —
@@ -47,55 +36,7 @@ export default async function HomePage() {
     return (
       <PageContainer variant="full" className="gap-6">
         <HomeGreeting name={profileLabel(user)} status={null} />
-        <p className="text-2xl font-semibold tracking-tight">{homeCopy.question}</p>
-        <div className="max-w-xl">
-          <ExecutiveDigestCard cockpit={cockpit} currency="BRL" />
-        </div>
-        <div className="rounded-xl border p-6 md:p-8">
-          <HugeiconsIcon icon={DashboardSquare02Icon} className="size-8 text-muted-foreground" aria-hidden />
-          <h2 className="mt-4 text-lg font-semibold tracking-tight">
-            {homeCopy.coldStart.title}
-          </h2>
-          <p className="mt-1.5 max-w-xl text-sm/relaxed text-muted-foreground">
-            {homeCopy.coldStart.body}
-          </p>
-          <ul className="mt-5 grid gap-3 sm:grid-cols-3">
-            {homeCopy.coldStart.unlocks.map((item, index) => {
-              // Index-coupled to the unlocks copy above: verdict, projection,
-              // early warnings — in that order. The fallback keeps the row
-              // illustrated if copy ever gains a fourth item.
-              const Icon =
-                [ScaleIcon, PieChartIcon, ShieldCheckIcon][index] ??
-                Tick01Icon;
-              return (
-                <li
-                  key={item}
-                  className="flex items-start gap-2.5 text-sm text-muted-foreground"
-                >
-                  <HugeiconsIcon
-                    icon={Icon}
-                    className="mt-0.5 size-5 shrink-0 text-brand-accent-light"
-                    aria-hidden
-                  />
-                  {item}
-                </li>
-              );
-            })}
-          </ul>
-          <div className="mt-7 flex flex-wrap gap-2.5">
-            <Button asChild>
-              <Link href="/ajustes/orcamentos">
-                {homeCopy.coldStart.setBudgetCta}
-              </Link>
-            </Button>
-            <Button variant="outline" asChild>
-              <Link href="/ajustes/conexoes">
-                {homeCopy.coldStart.connectCta}
-              </Link>
-            </Button>
-          </div>
-        </div>
-        <SetupChecklist state={setup} />
+        <OnboardingGuide state={setup} />
       </PageContainer>
     );
   }
@@ -126,7 +67,7 @@ export default async function HomePage() {
       {/* Setup guide (PRD story: first verdict): a verdict can exist while a
           step is still missing (e.g. budget set, roster pending) — keep the
           compact strip until all three are done. Renders null when complete. */}
-      <SetupChecklist state={setup} variant="compact" />
+      <OnboardingGuide state={setup} variant="compact" />
 
       {/* The cockpit grid. min-w-0 wrappers matter: grid children default to
           min-width auto, and the table + long tabular-nums strings would

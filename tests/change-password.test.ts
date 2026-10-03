@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// Issue #69 — changing your own password from /configuracoes. The behaviour
+// Issue #69 — changing your own password from /preferencias. The behaviour
 // that matters is the one Supabase does NOT give us: `updateUser` never checks
 // the current password, so without an explicit verification an unlocked laptop
 // or a stolen session cookie is a permanent account takeover. These tests hold

@@ -35,7 +35,7 @@ const copy = {
   emptyTitle: "Nenhum time ainda",
   emptyBody:
     "Importe o roster para ver seus setores aqui, ou conecte os provedores para começar a atribuir o gasto.",
-  emptyRosterCta: "Importar roster",
+  emptyRosterCta: "Importar pessoas",
   emptyConnectCta: "Conectar provedores",
   zero: "Sem gasto neste período.",
   noFx: "API em US$ não somada — câmbio do período indisponível.",

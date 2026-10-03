@@ -46,11 +46,11 @@ import { ExploreTable, type ExploreRow } from "./_components/explore-table";
 import { ExploreTabs } from "./_components/explore-tabs";
 
 const copy = {
-  title: "Explorar",
-  subtitle: "Analise onde os gastos se concentram por modelo e por assentos.",
+  title: "Composição do gasto",
+  subtitle: "Analise como o gasto se distribui entre modelos de IA e custos fixos.",
   asOf: (label: string, day: number, days: number) =>
     `${capitalize(label)} · dia ${day} de ${days}`,
-  emptyTitle: "Sem dados para explorar ainda",
+  emptyTitle: "Ainda não há dados para compor",
   emptyBody:
     "Conecte a OpenAI e a Anthropic para importar o gasto real de API, ou registre assinaturas e assentos para acompanhar o custo fixo por time.",
   emptySeatsCta: "Adicionar assinaturas",
@@ -58,7 +58,7 @@ const copy = {
   modelsEmptyTitle: "Sem uso de API neste período",
   modelsEmptyBody:
     "Conecte um provedor ou aguarde a próxima sincronização para ver o gasto por modelo.",
-  seatsTitle: "Assentos por time",
+  seatsTitle: "Custos fixos por time",
   seatsSub: "Custo de assinaturas distribuído dia a dia no período.",
   colTeam: "Time",
   colSpend: "Gasto acumulado",

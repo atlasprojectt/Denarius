@@ -71,7 +71,7 @@ function Item({
   // Base UI's useRender only renders children it receives via `props`. When not
   // composing through `asChild`/`render`, forward the JSX children explicitly —
   // otherwise a plain <Item>…</Item> renders an empty <div> (this dropped the
-  // whole /configuracoes card). Mirrors the SidebarMenuButton pattern.
+  // whole /preferencias card). Mirrors the SidebarMenuButton pattern.
   const childRender =
     asChild && React.isValidElement(children) ? children : render
   return useRender({

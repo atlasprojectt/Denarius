@@ -68,6 +68,9 @@ vi.mock("@/lib/db/admin", () => ({
           : null,
     };
   },
+}));
+
+vi.mock("@/lib/budgets/admin", () => ({
   deleteBudgetReturning: async (id: string, tenantId: string) => {
     state.filters.push({ table: "budget", column: "id", value: id });
     state.filters.push({ table: "budget", column: "tenant_id", value: tenantId });

@@ -29,8 +29,10 @@ function firstIssue(error: { issues: { message: string }[] }): string {
 }
 
 function revalidateAccountSurfaces() {
+  revalidatePath("/preferencias");
   revalidatePath("/configuracoes");
   revalidatePath("/ajustes");
+  revalidatePath("/ajustes/privacidade");
   revalidatePath("/", "layout");
 }
 

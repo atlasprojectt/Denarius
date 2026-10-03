@@ -163,7 +163,7 @@ O produto autenticado possui cinco destinos principais:
 |---|---|
 | **Início** | Obter a resposta executiva do dia e identificar o que merece atenção. |
 | **Times** | Comparar times e aprofundar diagnóstico, causa, margem, plano e cenário. |
-| **Explorar** | Entender composição por modelo e por assentos, com reconciliação financeira. |
+| **Composição** | Entender a composição por modelo e por custos fixos, com reconciliação financeira. |
 | **Relatórios** | Consultar o mês em andamento e preservar meses fechados para terceiros. |
 | **Ajustes** | Configurar empresa, fontes, estrutura, orçamento, privacidade e acessos. |
 
@@ -171,15 +171,9 @@ O menu da conta também dá acesso às preferências pessoais e à saída da ses
 
 ### Áreas de Ajustes
 
-- Empresa e moeda.
-- Conexões.
-- Atribuição.
-- Quadro de pessoas.
-- Assinaturas e assentos.
-- Orçamentos.
-- Privacidade.
-- Usuários e convites.
-- Auditoria administrativa.
+- **Organização:** Empresa e moeda; Pessoas e times; Acessos e usuários.
+- **Fontes e atribuição:** Conexões; Atribuição de gasto; Assinaturas e assentos.
+- **Governança e confiança:** Orçamentos; Privacidade e dados; Auditoria administrativa.
 
 ### Superfícies públicas
 
@@ -310,7 +304,7 @@ Antes de conectar OpenAI ou Anthropic, o administrador pode:
 3. O administrador escolhe o time responsável por cada item.
 4. Alterações ainda não salvas ficam evidentes antes de sair.
 5. Itens sem mapeamento continuam em **Não atribuído**.
-6. O gasto não atribuído participa do total da empresa e é destacado em Home, Times, Explorar e relatórios quando relevante.
+6. O gasto não atribuído participa do total da empresa e é destacado em Home, Times, Composição e relatórios quando relevante.
 7. A liderança pode partir do aviso de não atribuído diretamente para a área de mapeamento.
 
 **Limite de atribuição:** a qualidade por time depende da disciplina de projetos e workspaces no provedor. Uso compartilhado permanece honestamente compartilhado ou não atribuído.
@@ -405,7 +399,7 @@ Algumas ações levam a uma área do Denarius para investigação. Ações de li
 
 **Resultado esperado:** transformar “precisamos gastar menos” em uma pergunta mensurável: “quanto o ritmo precisa mudar e qual seria o efeito?”.
 
-### Fluxo 16 — Explorar modelos e assentos
+### Fluxo 16 — Composição por modelos e custos fixos
 
 #### Aba Modelos
 
@@ -506,9 +500,6 @@ As preferências também permitem trocar a foto de perfil (JPG, PNG ou WebP de a
 4. Escolhe tema claro, escuro ou o tema do sistema.
 5. A preferência visual vale somente naquele navegador e não afeta colegas.
 6. Administradores podem ativar ou desativar o resumo semanal por e-mail.
-7. No card de risco ao final da página, o Admin pode iniciar a exclusão permanente da empresa e da própria conta; o Viewer pode iniciar a saída daquela empresa.
-8. As duas ações enviam um código de seis dígitos para o e-mail atual e só avançam depois da validação.
-9. A última etapa mostra uma frase específica para o papel: o Admin confirma a exclusão da empresa; o Viewer confirma que exclui a própria conta. O botão só habilita com a frase exata.
 
 ### Fluxo 22 — Exercitar direitos de dados e encerrar a empresa
 
@@ -517,7 +508,7 @@ As preferências também permitem trocar a foto de perfil (JPG, PNG ou WebP de a
 3. Pode desativar o armazenamento de dados por pessoa; novos dados passam a ser mantidos apenas no nível agregado.
 4. Pode exportar os dados completos da empresa em um único arquivo.
 5. A exportação respeita as escolhas de privacidade e exclui credenciais e links secretos.
-6. A área aponta para o card de risco em Configurações; não existe mais um atalho de exclusão sem confirmação por e-mail.
+6. A área reúne o card de risco depois da exportação; não existe mais um atalho de exclusão sem confirmação por e-mail.
 7. Para excluir o espaço, o administrador confirma o código enviado ao e-mail atual e digita a frase exata com o nome da empresa.
 8. A exclusão remove acessos, pessoas, times, uso, custos, orçamentos, alertas e demais dados mantidos pelo Denarius.
 9. Um Viewer pode seguir o mesmo fluxo para sair: somente sua associação `app_user` é removida, e a empresa, o histórico e sua identidade Auth permanecem.

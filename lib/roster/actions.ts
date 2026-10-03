@@ -9,6 +9,7 @@ import {
   type RosterRowError,
 } from "@/lib/roster/parse-csv";
 import { dbFailure, logFailure } from "@/lib/logging/server-log";
+import { counted } from "@/lib/plural";
 import {
   deleteEmployeeReturning,
   isOwnedTeam,
@@ -95,7 +96,7 @@ export async function importRoster(
   // whole-tree invalidation (QA-02 rule, see lib/providers/actions.ts).
   revalidatePath("/", "layout");
   return {
-    success: `${result.imported} pessoa(s) importada(s), ${result.teams_created} time(s) criado(s).`,
+    success: `${counted(result.imported, "pessoa importada", "pessoas importadas")}, ${counted(result.teams_created, "time criado", "times criados")}.`,
   };
 }
 

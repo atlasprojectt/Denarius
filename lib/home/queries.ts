@@ -376,7 +376,7 @@ export async function getTimesData(): Promise<TimesData> {
 export async function getHomeData(): Promise<HomeData> {
   const now = new Date();
   // The supplementary Home reads do not depend on the cockpit — one parallel
-  // batch. Roster remains the setup-checklist source of truth.
+  // batch. Roster remains the onboarding guide's source of truth.
   const [assembly, roster, weekCosts, dailyCosts, user] = await Promise.all([
     assembleCockpit(),
     rosterHeadcount(),

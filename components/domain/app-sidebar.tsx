@@ -78,14 +78,14 @@ const copy = {
   groupAccount: "Conta",
   home: "Início",
   teams: "Times",
-  explore: "Explorar",
+  explore: "Composição",
   reports: "Relatórios",
   reportsNew: "Novo relatório de fechamento disponível",
   search: "Pesquisa",
   searchShortcut: "Ctrl P",
   settings: "Ajustes",
   profileMenu: "Perfil",
-  profileSettings: "Configurações",
+  profileSettings: "Preferências",
   logout: "Sair",
   logoutTitle: "Sair do Denarius?",
   logoutDescription:
@@ -336,7 +336,7 @@ export function AppSidebar({
                   </div>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild className="h-9">
-                    <Link href="/configuracoes">
+                    <Link href="/preferencias">
                       <HugeiconsIcon icon={UserIcon} />
                       <span>{copy.profileSettings}</span>
                     </Link>

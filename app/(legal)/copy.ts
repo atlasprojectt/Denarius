@@ -210,7 +210,7 @@ export const privacyCopy: LegalDocument = {
           kind: "text",
           paragraphs: [
             "Sobre a Anthropic, vale o detalhe: uma vez por semana o Denarius manda o rascunho do resumo executivo para a API do Claude apenas para reescrevê-lo em linguagem corrente. O que vai nesse texto são nomes de time e números que o próprio Denarius já calculou. Não vão prompts, respostas, nomes de pessoas nem qualquer dado individual, e o modelo não calcula nada — se a redação devolvida contiver um número que não foi enviado, ela é descartada e o texto determinístico é usado no lugar.",
-            "Se a empresa não quiser receber o resumo semanal, cada pessoa pode desativá-lo em Configurações; sem envio, não há esse compartilhamento.",
+                "Se a empresa não quiser receber o resumo semanal, cada pessoa pode desativá-lo em Preferências; sem envio, não há esse compartilhamento.",
           ],
         },
       ],
@@ -223,7 +223,7 @@ export const privacyCopy: LegalDocument = {
           kind: "list",
           items: [
             "O histórico de uso, custo e orçamento é mantido enquanto a empresa tiver conta ativa — comparar meses é a função do produto.",
-            "Quando um administrador exclui o espaço no card de risco de Configurações, após confirmar o e-mail e a frase final, apagamos imediatamente os dados ativos da empresa e os acessos vinculados. Cópias de segurança da infraestrutura expiram nos ciclos dos fornecedores acima.",
+                "Quando um administrador exclui o espaço no card de risco de Ajustes → Privacidade e dados, após confirmar o e-mail e a frase final, apagamos imediatamente os dados ativos da empresa e os acessos vinculados. Cópias de segurança da infraestrutura expiram nos ciclos dos fornecedores acima.",
             "Remover uma pessoa apaga imediatamente o acesso dela; o gasto histórico do time permanece, já sem vínculo com a conta removida.",
             "Um visualizador também pode sair pelo card de risco, após a mesma confirmação. Nesse caso removemos apenas a associação dele com a empresa; a identidade Auth, o espaço e o histórico permanecem.",
             "Prompts e respostas não têm prazo de retenção porque nunca são armazenados.",
@@ -247,7 +247,7 @@ export const privacyCopy: LegalDocument = {
             "Acesso e correção: um administrador vê e edita, na própria interface, os dados de conta, o quadro de pessoas, as assinaturas e os orçamentos.",
             "Eliminação de acesso: um administrador remove uma pessoa em Ajustes, sem precisar falar conosco.",
             "Exportação dos dados da empresa: um administrador baixa um arquivo JSON completo em Ajustes. A exportação respeita as escolhas de nomes e armazenamento por pessoa e nunca inclui credenciais ou tokens de convite.",
-            "Exclusão total da conta: um administrador confirma o código enviado ao e-mail atual e digita a frase exata com o nome exato da empresa no card de risco de Configurações. Isso apaga o espaço e os acessos no Denarius, mas não altera nem exclui nada na OpenAI ou na Anthropic.",
+                "Exclusão total da conta: um administrador confirma o código enviado ao e-mail atual e digita a frase exata com o nome exato da empresa no card de risco de Ajustes → Privacidade e dados. Isso apaga o espaço e os acessos no Denarius, mas não altera nem exclui nada na OpenAI ou na Anthropic.",
             "Saída do visualizador: um visualizador confirma o código enviado ao e-mail atual e a frase final para remover sua própria associação. Isso não exclui a empresa nem os dados dela.",
             "Informação sobre compartilhamento: é a lista de fornecedores desta página.",
           ],

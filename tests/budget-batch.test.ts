@@ -21,6 +21,7 @@ const state = vi.hoisted(() => ({
   inserts: [] as Row[],
   updates: [] as { id: string; payload: Row }[],
   updateFails: false,
+  insertFails: false,
   fxCalls: 0,
   revalidated: [] as string[],
 }));
@@ -32,6 +33,7 @@ function resetState(): void {
   state.inserts = [];
   state.updates = [];
   state.updateFails = false;
+  state.insertFails = false;
   state.fxCalls = 0;
   state.revalidated = [];
 }
@@ -82,9 +84,9 @@ vi.mock("@/lib/fx/rate", () => ({
   },
 }));
 
-// The batch now runs through the Neon admin seam (stage 5); the in-memory
-// helpers record exactly what the old Supabase stub captured.
-vi.mock("@/lib/db/admin", () => ({
+// The batch uses the same Supabase project as the authenticated read path;
+// these in-memory helpers stand in for that server-only adapter.
+vi.mock("@/lib/budgets/admin", () => ({
   isOwnedTeam: async () => true,
   findTenantDisplayCurrency: async () => "BRL",
   filterOwnedTeamIds: async (_tenantId: string, teamIds: string[]) =>
@@ -101,6 +103,7 @@ vi.mock("@/lib/db/admin", () => ({
     return 1;
   },
   insertBudget: async (row: Row) => {
+    if (state.insertFails) throw Object.assign(new Error("db failure"), { code: "23503" });
     state.inserts.push(row);
   },
   deleteBudgetReturning: async () => ({ count: 0, row: null }),
@@ -300,6 +303,21 @@ describe("saveBudgetsBatch — one Save for the whole table", () => {
     );
     expect(result.error).toContain("1 de 2");
     expect(state.inserts).toHaveLength(1); // the team row still landed
+  });
+
+  it("does not claim any budget was saved when every write fails", async () => {
+    state.insertFails = true;
+    const result = await saveBudgetsBatch(
+      {},
+      form([
+        ["row", "org"],
+        ["amount|org", "1.000,00"],
+        ["warnPct|org", "80"],
+      ]),
+    );
+    expect(result.error).toBe("Nenhum orçamento foi salvo. Tente novamente.");
+    expect(state.inserts).toHaveLength(0);
+    expect(state.audited).toHaveLength(0);
   });
 
   it("an entirely empty batch is a no-op error, not a silent success", async () => {

@@ -154,7 +154,7 @@ export default async function AppLayout({
             {children}
           </div>
           <RevealController />
-          <SearchDialog />
+          <SearchDialog historyScope={user.id} />
         </SidebarInset>
       </SidebarProvider>
     </AppToastProvider>

@@ -91,10 +91,14 @@ export function CumulativeChart({
   }
 
   return (
-    <div data-reveal="team-cumulative" suppressHydrationWarning>
+    <div
+      data-reveal="team-cumulative"
+      suppressHydrationWarning
+      className="flex min-h-[200px] flex-1 flex-col sm:min-h-[220px] xl:min-h-[200px]"
+    >
       <SpendTrendChart
         data-reveal-wipe
-        className="h-[280px] w-full"
+        className="min-h-0 flex-1"
         rows={rows}
         xKey="day"
         xDomain={[1, daysInPeriod]}
@@ -115,7 +119,7 @@ export function CumulativeChart({
           x={today.day}
           y={today.spent}
           r={4}
-          fill="var(--background)"
+          fill="var(--chart-surface, var(--background))"
           stroke="var(--brand-accent)"
           strokeWidth={2.5}
         >
@@ -136,7 +140,7 @@ export function CumulativeChart({
             r={3.5}
             fill="var(--brand-accent)"
             fillOpacity={0.7}
-            stroke="var(--background)"
+            stroke="var(--chart-surface, var(--background))"
             strokeWidth={1.25}
           />
         )}

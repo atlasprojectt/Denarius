@@ -12,7 +12,7 @@ import {
 import { cn } from "@/lib/utils";
 
 // The one "how was this calculated" disclosure surface (F5 domain component —
-// Explorar and the team drill-down). Callers own the body; the trigger and
+// Composição and the team drill-down). Callers own the body; the trigger and
 // content chrome stay identical across screens.
 export function CalculationDisclosure({
   title,

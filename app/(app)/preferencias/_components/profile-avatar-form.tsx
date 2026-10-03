@@ -1,6 +1,10 @@
 "use client";
 
 import {
+  ImageUpload01Icon,
+} from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
+import {
   useActionState,
   useEffect,
   useRef,
@@ -23,6 +27,8 @@ const copy = {
   label: "Foto de perfil",
   hint: "JPG, PNG ou WebP · até 3 MB.",
   choose: "Arquivo da foto de perfil",
+  chooseAction: "Escolher imagem",
+  noFile: "Nenhuma imagem selecionada",
   save: "Atualizar foto",
   saving: "Enviando…",
 };
@@ -65,11 +71,11 @@ export function ProfileAvatarForm({
 
   return (
     <form action={formAction} className="flex flex-col gap-3">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-3">
-          <Avatar size="lg" className="size-12">
+      <div className="flex flex-col gap-3 rounded-lg border bg-muted/20 p-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex min-w-0 items-center gap-3">
+          <Avatar size="lg" className="size-10 shrink-0">
             {previewUrl && <AvatarImage src={previewUrl} alt="" />}
-            <AvatarFallback className="text-sm font-semibold">
+            <AvatarFallback className="text-xs font-semibold">
               {initials}
             </AvatarFallback>
           </Avatar>
@@ -77,13 +83,16 @@ export function ProfileAvatarForm({
             <Label htmlFor="profile-avatar" className="text-sm font-medium">
               {copy.label}
             </Label>
+            <p className="mt-0.5 truncate text-xs/relaxed text-muted-foreground">
+              {selectedFile?.name ?? copy.noFile}
+            </p>
             <p className="mt-0.5 text-xs/relaxed text-muted-foreground">
               {copy.hint}
             </p>
           </div>
         </div>
 
-        <div className="flex flex-col gap-2 sm:items-end">
+        <div className="flex shrink-0 flex-col gap-2 sm:items-end">
           <Input
             ref={inputRef}
             id="profile-avatar"
@@ -92,10 +101,20 @@ export function ProfileAvatarForm({
             accept="image/jpeg,image/png,image/webp"
             onChange={handleFileChange}
             aria-label={copy.choose}
-            className="h-10 max-w-full sm:w-64"
+            className="sr-only"
           />
           <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => inputRef.current?.click()}
+          >
+            <HugeiconsIcon icon={ImageUpload01Icon} aria-hidden />
+            {copy.chooseAction}
+          </Button>
+          <Button
             type="submit"
+            size="sm"
             loading={pending}
             loadingText={copy.saving}
             disabled={!selectedFile || pending}

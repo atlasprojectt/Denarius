@@ -11,7 +11,7 @@ import {
   findProviderConnectionStatus,
   revokeProviderConnection,
   upsertProviderConnectionCredential,
-} from "@/lib/db/admin";
+} from "@/lib/db/supabase-admin";
 import { money } from "@/lib/money";
 import {
   dbFailure,

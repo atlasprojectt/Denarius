@@ -13,7 +13,7 @@ import { PendingInvitations } from "./_components/pending-invitations";
 
 const copy = {
   back: "Ajustes",
-  title: "Usuários",
+  title: "Acessos e usuários",
   subtitle: "Quem tem acesso a este espaço e qual papel cada pessoa ocupa.",
   inviteTitle: "Convidar pessoa",
   inviteDescription:

@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { describe, expect, it, vi } from "vitest";
 
 import { escapeLikePattern, normalizeSearchText, rankSearchResults } from "@/lib/search/ranking";
+import { addRecentSearch, parseRecentSearches } from "@/lib/search/recent";
 import { aggregateSearch, parseSearchQuery, SEARCH_GROUP_LIMIT, SEARCH_TOTAL_LIMIT } from "@/lib/search/search";
 import type { SearchContext, SearchProvider, SearchResult } from "@/lib/search/types";
 
@@ -12,6 +13,24 @@ function provider(type: SearchProvider["type"], label: string, results: SearchRe
 }
 
 describe("global search", () => {
+  it("keeps recent searches trimmed, unique, and bounded", () => {
+    const recent = addRecentSearch(["times", "relatórios"], " times ");
+    expect(recent).toEqual(["times", "relatórios"]);
+
+    const bounded = addRecentSearch(
+      ["one", "two", "three", "four", "five"],
+      "six",
+    );
+    expect(bounded).toEqual(["six", "one", "two", "three", "four"]);
+  });
+
+  it("ignores malformed or invalid recent-search storage", () => {
+    expect(parseRecentSearches("not-json")).toEqual([]);
+    expect(parseRecentSearches(JSON.stringify(["a", "valid query"]))).toEqual([
+      "valid query",
+    ]);
+  });
+
   it("does not search empty, whitespace, or one-character queries", async () => {
     const search = provider("team", "Times", [result("1", "Alpha")]);
     for (const query of ["", "  ", "a"]) expect(await aggregateSearch(context(), query, [search])).toEqual({ status: "idle", groups: [] });

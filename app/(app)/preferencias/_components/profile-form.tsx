@@ -14,8 +14,7 @@ import {
 const copy = {
   name: "Nome de exibição",
   hint: "Este nome será exibido dentro do Denarius.",
-  emailNote: "O e-mail é definido pela sua conta de acesso.",
-  save: "Salvar perfil",
+  save: "Salvar nome",
   saving: "Salvando…",
 };
 
@@ -43,7 +42,7 @@ export function ProfileForm({ displayName }: { displayName: string }) {
             maxLength={80}
             value={name}
             onChange={(event) => setName(event.target.value)}
-            aria-describedby="display-name-description account-email-note"
+            aria-describedby="display-name-description"
             className="h-10"
           />
           <p
@@ -52,19 +51,13 @@ export function ProfileForm({ displayName }: { displayName: string }) {
           >
             {copy.hint}
           </p>
-          <p
-            id="account-email-note"
-            className="text-xs/relaxed text-muted-foreground"
-          >
-            {copy.emailNote}
-          </p>
         </div>
         <Button
           type="submit"
           loading={pending}
           loadingText={copy.saving}
           disabled={!changed || pending}
-          className="w-full md:w-auto"
+          className="w-full sm:w-auto"
         >
           {copy.save}
         </Button>

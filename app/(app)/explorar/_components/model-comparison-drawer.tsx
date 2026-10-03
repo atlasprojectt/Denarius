@@ -33,6 +33,7 @@ const copy = {
   perMillion: "Custo por 1M tokens",
   coverageLabel: "Cobertura",
   coverage: (days: number) => `${days} ${days === 1 ? "dia observado" : "dias observados"}`,
+  coverageComplete: (days: number, expected: number) => `${days} de ${expected} dias observados — cobertura completa`,
   coveragePartial: (days: number, expected: number) => `${days} de ${expected} dias observados — cobertura parcial`,
   methodology: (period: string) => `Metodologia · período de ${period}: custo derivado = Σ(tokens × preço vigente na data), em US$; custo por 1M = derivado ÷ tokens × 1M. Sem contagem de requests na fonte — custo por chamada indisponível. Total reportado pelo provedor está no resumo da tela (grão por provedor, não por modelo).`,
   collecting: "Coletando ritmo…",
@@ -95,7 +96,9 @@ export function ModelComparisonDrawer({
   };
   const perMillion = show(economics.costPerMillionUsd);
   const coverage = economics.coverage.expectedDays !== null && economics.coverage.expectedDays !== undefined
-    ? copy.coveragePartial(economics.coverage.observedDays, economics.coverage.expectedDays)
+    ? economics.coverage.complete
+      ? copy.coverageComplete(economics.coverage.observedDays, economics.coverage.expectedDays)
+      : copy.coveragePartial(economics.coverage.observedDays, economics.coverage.expectedDays)
     : copy.coverage(economics.coverage.observedDays);
   return <>
     <Button type="button" variant="tertiary" size="xs" shape="full" onClick={() => setOpen(true)} aria-label={`${copy.action} ${source.model}`}><HugeiconsIcon icon={ArrowLeftRightIcon} aria-hidden />{copy.action}</Button>

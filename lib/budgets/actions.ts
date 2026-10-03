@@ -14,7 +14,7 @@ import {
   isOwnedTeam,
   updateBudgetById,
   type DeletedBudget,
-} from "@/lib/db/admin";
+} from "@/lib/budgets/admin";
 import { monthStartUtc } from "@/lib/engine/period";
 import { fetchUsdRate } from "@/lib/fx/rate";
 import { dbFailure, logFailure } from "@/lib/logging/server-log";
@@ -395,6 +395,9 @@ export async function saveBudgetsBatch(
   await recordAuditBatch(auth.session, audited);
 
   revalidatePath("/", "layout");
+  if (failed.length === rows.length) {
+    return { error: "Nenhum orçamento foi salvo. Tente novamente." };
+  }
   if (failed.length > 0) {
     return {
       error: `Parte do lote não foi salva (${failed.length} de ${rows.length}). Os demais orçamentos foram gravados — tente salvar novamente.`,

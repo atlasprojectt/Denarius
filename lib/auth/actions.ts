@@ -330,7 +330,7 @@ async function passwordIsCorrect(
 }
 
 /**
- * Change your own password from /configuracoes (issue #69).
+ * Change your own password from /preferencias (issue #69).
  *
  * **The current password is verified explicitly** — `updateUser` does not check
  * it. Without that step an unlocked laptop or a stolen session cookie is a

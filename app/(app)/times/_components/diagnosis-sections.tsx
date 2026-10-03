@@ -64,7 +64,7 @@ const copy = {
   bridgeNoFx: (seats: string, apiUsd: string) =>
     `${seats} em assentos + ${apiUsd} de API. Os valores não são somados sem o câmbio do período.`,
   mixDerivedNote:
-    "A composição por provedor usa o custo derivado de tokens × preço; o total reportado fica em Explorar.",
+    "A composição por provedor usa o custo derivado de tokens × preço; o total reportado fica em Composição.",
   uncostedNote:
     "Modelos sem preço aparecem como não precificados em vez de desaparecer do total.",
   fxNote: (rate: string, date: string) =>
@@ -584,7 +584,11 @@ export function DiagnosisBody({
         currentSpend={currentSpend}
       />
 
-      <Card data-reveal="team-chart" suppressHydrationWarning>
+      <Card
+        data-reveal="team-chart"
+        suppressHydrationWarning
+        className="[--chart-surface:var(--card)]"
+      >
         <CardHeader>
           <CardTitle>{copy.chartTitle}</CardTitle>
           <CardDescription>

@@ -10,9 +10,9 @@ import {
 } from "@/components/ui/tabs";
 
 const copy = {
-  label: "Visualizações de gastos",
-  models: "Modelos",
-  seats: "Assentos",
+  label: "Composição do gasto",
+  models: "Modelos de IA",
+  seats: "Custos fixos",
 };
 
 type TabValue = "models" | "seats";

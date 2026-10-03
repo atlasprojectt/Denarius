@@ -1,6 +1,6 @@
 import "server-only";
 
-import { insertAuditLog } from "@/lib/db/admin";
+import { insertAuditLog } from "@/lib/db/supabase-admin";
 import { dbFailure, logFailure, logThrown } from "@/lib/logging/server-log";
 
 import { redactDetail, redactTarget, type AuditDetail } from "./redact";

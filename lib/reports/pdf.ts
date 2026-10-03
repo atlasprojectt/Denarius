@@ -8,6 +8,8 @@ import { existsSync } from "node:fs";
 import { platform } from "node:os";
 import { execFileSync } from "node:child_process";
 
+const DEFAULT_APP_ORIGIN = "https://app.usedenarius.pro";
+
 export class ReportPdfError extends Error {
   constructor(
     message: string,
@@ -28,7 +30,9 @@ function safeFilename(value: string) {
 }
 
 function trustedOrigin(requestHeaders: Headers): string {
-  const configured = process.env.REPORT_PDF_ORIGIN ?? process.env.APP_BASE_URL;
+  // APP_BASE_URL is the email deep-link base. It may contain a path or a
+  // stale value, so it must not decide where the server renders a PDF.
+  const configured = process.env.REPORT_PDF_ORIGIN;
   if (configured) {
     const origin = new URL(configured);
     if (origin.protocol !== "http:" && origin.protocol !== "https:") {
@@ -38,6 +42,11 @@ function trustedOrigin(requestHeaders: Headers): string {
   }
 
   const host = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host");
+  // Vercel does not guarantee REPORT_PDF_ORIGIN is configured in every
+  // environment, but the production hostname is fixed. Keep the fallback
+  // allow-listed so a forged Host header cannot turn PDF generation into an
+  // SSRF primitive.
+  if (host === "app.usedenarius.pro") return DEFAULT_APP_ORIGIN;
   if (!host || !/^(localhost|127\.0\.0\.1)(:\d+)?$/.test(host)) {
     throw new Error("report pdf trusted origin missing");
   }
@@ -136,6 +145,11 @@ export async function reportPdf(path: string, filename: string) {
       if (!source || !sheet || sheet.getBoundingClientRect().height <= 0 || sheet.textContent?.trim() === "") {
         throw new Error("report pdf document rendered empty");
       }
+      // The render endpoint keeps a screen-sized copy so direct navigation
+      // remains inspectable. It must stay out of the PDF: its A4 leaves carry
+      // the preview border and would duplicate the print source below.
+      const preview = document.querySelector<HTMLElement>(".report-preview-paper");
+      if (preview) preview.style.display = "none";
       source.style.display = "block";
     });
     const pdf = await page.pdf({

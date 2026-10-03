@@ -28,10 +28,10 @@ import {
 const copy = {
   title: "Ajustes",
   subtitle:
-    "Gerencie a empresa, as fontes de gasto, os acessos e as regras de governança.",
-  groupCompany: "Empresa",
-  groupSources: "Fontes de gasto",
-  groupGovernance: "Governança",
+    "Gerencie a organização, as fontes de gasto, os acessos e as regras de governança.",
+  groupOrganization: "Organização",
+  groupSources: "Fontes e atribuição",
+  groupGovernance: "Governança e confiança",
   companyTitle: "Empresa e moeda",
   companyDescription:
     "Configure os dados da empresa e a moeda de exibição.",
@@ -41,10 +41,10 @@ const copy = {
     counted(count, "conexão ativa", "conexões ativas"),
   connectionAttention: (count: number) =>
     counted(count, "requer atenção", "requerem atenção"),
-  attributionTitle: "Atribuição",
+  attributionTitle: "Atribuição de gasto",
   attributionDescription: "Associe projetos e workspaces aos times.",
-  rosterTitle: "Roster",
-  rosterDescription: "Gerencie as pessoas e seus respectivos times.",
+  rosterTitle: "Pessoas e times",
+  rosterDescription: "Gerencie as pessoas e a estrutura dos times.",
   people: (count: number) => counted(count, "pessoa", "pessoas"),
   teams: (count: number) => counted(count, "time", "times"),
   seatsTitle: "Assinaturas e assentos",
@@ -56,9 +56,9 @@ const copy = {
   companyBudget: "Empresa",
   companyPending: "empresa pendente",
   budgetNone: "Não definido",
-  privacyTitle: "Privacidade",
-  privacyDescription: "Controle nomes, permissões e retenção de dados.",
-  usersTitle: "Usuários",
+  privacyTitle: "Privacidade e dados",
+  privacyDescription: "Controle nomes, dados por pessoa e direitos do espaço.",
+  usersTitle: "Acessos e usuários",
   usersDescription: "Gerencie quem pode acessar este espaço.",
   users: (count: number) => counted(count, "usuário", "usuários"),
   auditTitle: "Auditoria",
@@ -131,7 +131,7 @@ export default async function SettingsPage() {
       <PageHeader title={copy.title} description={copy.subtitle} />
 
       <div className="flex flex-col gap-7">
-        <SettingsSection id="settings-company" title={copy.groupCompany}>
+        <SettingsSection id="settings-organization" title={copy.groupOrganization}>
           <SettingsNavigationItem
             href="/ajustes/empresa"
             icon={<HugeiconsIcon icon={Building02Icon} />}
@@ -140,6 +140,28 @@ export default async function SettingsPage() {
             meta={
               <SettingsItemStatus>
                 {tenant.display_currency}
+              </SettingsItemStatus>
+            }
+          />
+          <SettingsNavigationItem
+            href="/ajustes/roster"
+            icon={<HugeiconsIcon icon={UsersIcon} />}
+            title={copy.rosterTitle}
+            description={copy.rosterDescription}
+            meta={
+              <SettingsItemStatus>
+                {copy.people(employeeCount ?? 0)} · {copy.teams(teamCount ?? 0)}
+              </SettingsItemStatus>
+            }
+          />
+          <SettingsNavigationItem
+            href="/ajustes/usuarios"
+            icon={<HugeiconsIcon icon={UserSettings01Icon} />}
+            title={copy.usersTitle}
+            description={copy.usersDescription}
+            meta={
+              <SettingsItemStatus>
+                {copy.users(userCount ?? 0)}
               </SettingsItemStatus>
             }
           />
@@ -162,17 +184,6 @@ export default async function SettingsPage() {
             icon={<HugeiconsIcon icon={PieChartIcon} />}
             title={copy.attributionTitle}
             description={copy.attributionDescription}
-          />
-          <SettingsNavigationItem
-            href="/ajustes/roster"
-            icon={<HugeiconsIcon icon={UsersIcon} />}
-            title={copy.rosterTitle}
-            description={copy.rosterDescription}
-            meta={
-              <SettingsItemStatus>
-                {copy.people(employeeCount ?? 0)} · {copy.teams(teamCount ?? 0)}
-              </SettingsItemStatus>
-            }
           />
           <SettingsNavigationItem
             href="/ajustes/assinaturas"
@@ -206,17 +217,6 @@ export default async function SettingsPage() {
             icon={<HugeiconsIcon icon={ShieldKeyIcon} />}
             title={copy.privacyTitle}
             description={copy.privacyDescription}
-          />
-          <SettingsNavigationItem
-            href="/ajustes/usuarios"
-            icon={<HugeiconsIcon icon={UserSettings01Icon} />}
-            title={copy.usersTitle}
-            description={copy.usersDescription}
-            meta={
-              <SettingsItemStatus>
-                {copy.users(userCount ?? 0)}
-              </SettingsItemStatus>
-            }
           />
           {/* Admin-only surface, and the only settings entry hidden rather than
               disabled for a Viewer: the trail names people and what they did. */}

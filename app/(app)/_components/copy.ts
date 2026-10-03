@@ -3,7 +3,6 @@
 // language elsewhere (product principle #6).
 
 export const homeCopy = {
-  question: "Você está no controle do gasto com IA?",
   greeting: {
     fallback: "Olá",
     morning: "Bom dia",
@@ -23,18 +22,33 @@ export const homeCopy = {
   dataAsOf: (stamp: string) => `Atualizado ${stamp}`,
 
   setup: {
-    title: "Prepare o primeiro veredito",
-    subtitle: "Três passos deixam o Denarius pronto para responder se o gasto está sob controle.",
+    eyebrow: "Configuração inicial",
+    title: "Prepare seu primeiro veredito",
+    subtitle: "Faça o primeiro passo agora. Depois, complete os dois seguintes para acompanhar seu gasto com IA.",
     progress: (done: number, total: number) => `${done} de ${total} concluídos`,
-    stepDone: (label: string) => `${label} — concluído`,
+    compactTitle: "Próximo passo",
+    nowLabel: "Agora",
+    afterLabel: "Depois",
+    afterEmpty: "Este é o último passo da configuração.",
+    completeLabel: "Quando estiver completo",
+    completeBody: "O painel passa a mostrar uma resposta clara sobre o gasto, com contexto para decidir o que fazer.",
+    completedBefore: (done: number) => `${done} passo${done === 1 ? "" : "s"} já concluído${done === 1 ? "" : "s"}`,
     stepDoneBadge: "Concluído",
     connected: "Conectar um provedor",
+    connectedNow: "Conecte uma fonte de gasto",
     connectedDetail: "OpenAI ou Anthropic, com uma Admin Key somente leitura.",
-    hasRoster: "Importar o roster",
+    hasRoster: "Importar pessoas",
+    hasRosterNow: "Importe as pessoas e os times",
     hasRosterDetail: "Times e pessoas para atribuir cada real gasto.",
     hasBudget: "Definir o orçamento",
+    hasBudgetNow: "Defina o orçamento mensal",
     hasBudgetDetail: "O limite mensal que destrava veredito e avisos.",
-    continue: "Continuar configuração",
+    openStep: "Abrir configuração",
+    outcomes: [
+      "Veredito diário sobre o controle do gasto",
+      "Projeção de fechamento no ritmo atual",
+      "Avisos antecipados para decidir a tempo",
+    ],
   },
 
   hero: {
@@ -63,7 +77,7 @@ export const homeCopy = {
   composition: {
     title: "Gasto por fonte",
     infoLabel: "Mais informações sobre gasto por fonte",
-    info: "O mesmo gasto do período, agrupado por fonte — o total da empresa é a soma dos times mais o não atribuído. Tokens e modelos ficam em Explorar.",
+    info: "O mesmo gasto do período, agrupado por fonte — o total da empresa é a soma dos times mais o não atribuído. Tokens e modelos ficam em Composição.",
     empty: "Sem gasto de API convertido ainda neste período.",
     entryValue: (amount: string, pct: string) => `${amount} (${pct})`,
     unattributed: (amount: string) => `${amount} sem atribuição`,
@@ -107,15 +121,4 @@ export const homeCopy = {
     projectionValue: (value: string) => `Projeção · ${value}`,
   },
 
-  coldStart: {
-    title: "Configure o Denarius para ter a resposta",
-    body: "O veredito — dentro ou fora do orçamento, com projeção de fechamento — aparece assim que houver um orçamento definido e uma fonte de gasto.",
-    setBudgetCta: "Definir orçamento",
-    connectCta: "Conectar provedores",
-    unlocks: [
-      "Veredito diário: dentro ou fora do orçamento, em uma frase",
-      "Projeção de fechamento do mês no ritmo atual",
-      "Avisos antecipados antes de o orçamento estourar",
-    ],
-  },
 } as const;

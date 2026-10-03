@@ -9,6 +9,7 @@ import {
 
 import { ActionStatus } from "@/components/domain/action-status";
 import { Button } from "@/components/ui/button";
+import { counted } from "@/lib/plural";
 import {
   Card,
   CardAction,
@@ -24,14 +25,14 @@ const copy = {
   hint: "Colunas: name, email, team (aceita nome, email, time; vírgula ou ponto-e-vírgula).",
   template: "Baixar modelo",
   preview: "Validar arquivo",
-  commit: (count: number) => `Importar ${count} pessoa(s)`,
+  commit: (count: number) => `Importar ${counted(count, "pessoa", "pessoas")}`,
   validating: "Validando…",
   importing: "Importando…",
-  previewOk: (count: number) => `${count} linha(s) válida(s), pronto para importar.`,
+  previewOk: (count: number) => `${counted(count, "linha válida", "linhas válidas")}, pronto para importar.`,
   previewNewTeams: (teams: string[]) =>
     `Times novos que serão criados: ${teams.join(", ")}.`,
   previewErrors: (count: number) =>
-    `${count} erro(s) — corrija o arquivo e valide de novo. Nada foi importado.`,
+    `${counted(count, "erro", "erros")} — corrija o arquivo e valide de novo. Nada foi importado.`,
   errorLine: (line: number) => `Linha ${line}:`,
   adminOnly: "Somente administradores podem importar o roster.",
 };

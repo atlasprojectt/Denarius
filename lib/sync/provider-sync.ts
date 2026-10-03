@@ -23,7 +23,7 @@ import {
   upsertUsageDaily,
   type CostDailyUpsert,
   type UsageDailyUpsert,
-} from "@/lib/db/admin";
+} from "@/lib/db/supabase-admin";
 import { collapsePersonGrain } from "@/lib/privacy/minimize";
 
 // On-demand sync for ONE tenant's connection to ONE provider (connect button /
