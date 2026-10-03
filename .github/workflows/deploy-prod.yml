@@ -46,8 +46,8 @@ jobs:
 
       - name: Install Vercel CLI
         # Pin a reviewed CLI version so deployment behavior changes only with
-        # a repository change. Project and scope are passed explicitly below;
-        # this keeps a runner's implicit `.vercel` state out of the decision.
+        # a repository change. The project is passed explicitly below; the
+        # VERCEL_ORG_ID environment variable supplies the CI team scope.
         run: npm install --global vercel@62.2.0
 
       # Source deploy (Vercel builds on its own infra), NOT --prebuilt: the
@@ -58,6 +58,6 @@ jobs:
       # with `npm ci` as well (vercel.json installCommand), so what gets built
       # there is the same locked tree the gate above just verified.
       - name: Deploy to production
-        run: vercel deploy --prod --yes --project="$VERCEL_PROJECT_ID" --scope="$VERCEL_ORG_ID" --token="$VERCEL_TOKEN"
+        run: vercel deploy --prod --yes --project="$VERCEL_PROJECT_ID" --token="$VERCEL_TOKEN"
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
