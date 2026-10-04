@@ -1,9 +1,14 @@
 import { z } from "zod";
 
 import { connectionsSearchProvider } from "./providers/connections";
+import { employeesSearchProvider } from "./providers/employees";
+import { budgetsSearchProvider } from "./providers/budgets";
+import { companySearchProvider } from "./providers/company";
 import { reportsSearchProvider } from "./providers/reports";
+import { routesSearchProvider } from "./routes";
 import { subscriptionsSearchProvider } from "./providers/subscriptions";
 import { teamsSearchProvider } from "./providers/teams";
+import { usersSearchProvider } from "./providers/users";
 import type { SearchContext, SearchProvider, SearchResponse } from "./types";
 
 export const MIN_SEARCH_LENGTH = 2;
@@ -14,7 +19,12 @@ export const SEARCH_TOTAL_LIMIT = 20;
 const querySchema = z.string().trim().min(MIN_SEARCH_LENGTH).max(MAX_SEARCH_LENGTH);
 
 export const searchProviders: SearchProvider[] = [
+  routesSearchProvider,
+  companySearchProvider,
   teamsSearchProvider,
+  employeesSearchProvider,
+  usersSearchProvider,
+  budgetsSearchProvider,
   reportsSearchProvider,
   subscriptionsSearchProvider,
   connectionsSearchProvider,
@@ -57,3 +67,4 @@ export async function aggregateSearch(
   if (failures === allowed.length) return { status: "error", groups: [] };
   return { status: failures ? "partial" : "ok", groups };
 }
+

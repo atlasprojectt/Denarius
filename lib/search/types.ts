@@ -2,9 +2,14 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 export type SearchResultType =
   | "team"
+  | "employee"
+  | "user"
   | "report"
   | "subscription"
-  | "connection";
+  | "connection"
+  | "company"
+  | "budget"
+  | "route";
 
 export type SearchResult = {
   id: string;
@@ -39,3 +44,4 @@ export type SearchProvider = {
   adminOnly?: boolean;
   search(context: SearchContext, query: string): Promise<SearchResult[]>;
 };
+

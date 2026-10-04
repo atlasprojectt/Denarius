@@ -87,7 +87,7 @@ function EmployeeRow({
 
   if (!editing) {
     return (
-      <TableRow>
+      <TableRow id={`employee-${employee.id}`}>
         <TableCell className="font-medium">{employee.name}</TableCell>
         <TableCell className="text-muted-foreground">{employee.email}</TableCell>
         <TableCell>{employee.teamName}</TableCell>
@@ -204,7 +204,7 @@ function MobileEmployeeCard({
 
   if (!editing) {
     return (
-      <div className="rounded-lg border p-4">
+      <div id={`employee-${employee.id}`} className="rounded-lg border p-4">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="font-medium">{employee.name}</p>
@@ -354,3 +354,4 @@ export function EmployeeTable({
     </div>
   );
 }
+

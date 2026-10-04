@@ -7,6 +7,7 @@ import {
   Cancel01Icon,
   ChartLineIcon,
   ChevronRightIcon,
+  Building01Icon,
   FileChartLineIcon,
   Home05Icon,
   Plug01Icon,
@@ -37,6 +38,7 @@ import {
   serializeRecentSearches,
 } from "@/lib/search/recent";
 import { MAX_SEARCH_LENGTH, MIN_SEARCH_LENGTH } from "@/lib/search/search";
+import { SEARCH_SCOPES } from "@/lib/search/routes";
 import { SEARCH_OPEN_EVENT } from "@/lib/search/shortcut";
 import type {
   SearchResponse,
@@ -71,15 +73,20 @@ const copy = {
 
 const ICONS: Record<SearchResultType, IconSvgElement> = {
   team: UsersIcon,
+  employee: UsersIcon,
+  user: UsersIcon,
   report: FileChartLineIcon,
   subscription: ToolsIcon,
   connection: Plug01Icon,
+  company: Building01Icon,
+  budget: ChartLineIcon,
+  route: ChevronRightIcon,
 };
 
 const IDLE_RESPONSE: SearchResponse = { status: "idle", groups: [] };
 
 type IdleItem =
-  | { kind: "suggestion"; id: string; label: string; query: string }
+  | { kind: "suggestion"; id: string; label: string; query: string; href: string }
   | { kind: "recent"; id: string; label: string; query: string }
   | {
       kind: "action";
@@ -94,13 +101,6 @@ type ActiveItem =
   | { mode: "idle"; index: number }
   | { mode: "results"; index: number }
   | { mode: "none" };
-
-const SEARCH_SCOPES = [
-  { label: "Times", query: "times" },
-  { label: "Relatórios", query: "relatórios" },
-  { label: "Assinaturas", query: "assinaturas" },
-  { label: "Conexões", query: "conexões" },
-] as const;
 
 const QUICK_ACTIONS = [
   {
@@ -166,6 +166,7 @@ export function SearchDialog({ historyScope }: { historyScope: string }) {
         id: `suggestion-${scope.query}`,
         label: scope.label,
         query: scope.query,
+        href: scope.href,
       })),
       ...recentQueries.map((recent) => ({
         kind: "recent" as const,
@@ -293,6 +294,11 @@ export function SearchDialog({ historyScope }: { historyScope: string }) {
   }
 
   function selectIdleItem(item: IdleItem) {
+    if (item.kind === "suggestion") {
+      handleOpenChange(false);
+      router.push(item.href);
+      return;
+    }
     if (item.kind === "action") {
       handleOpenChange(false);
       router.push(item.href);
@@ -438,11 +444,9 @@ export function SearchDialog({ historyScope }: { historyScope: string }) {
                 onSelect={selectIdleItem}
                 onRemoveRecent={removeRecentSearch}
                 onClearRecent={clearRecentSearches}
-                onScopeSelect={(scopeQuery) => {
-                  setQuery(scopeQuery);
-                  setResponse(IDLE_RESPONSE);
-                  setActiveItem({ mode: "none" });
-                  focusInput();
+                onScopeSelect={(scope) => {
+                  handleOpenChange(false);
+                  router.push(scope.href);
                 }}
               />
             </motion.div>
@@ -555,7 +559,7 @@ function IdlePanel({
   onSelect: (item: IdleItem) => void;
   onRemoveRecent: (query: string) => void;
   onClearRecent: () => void;
-  onScopeSelect: (query: string) => void;
+  onScopeSelect: (scope: Extract<IdleItem, { kind: "suggestion" }>) => void;
 }) {
   const suggestionItems = items.filter((item) => item.kind === "suggestion");
   const recentItems = items.filter((item) => item.kind === "recent");
@@ -584,7 +588,7 @@ function IdlePanel({
                 type="button"
                 role="option"
                 aria-selected={activeIndex === index}
-                onClick={() => onScopeSelect(item.query)}
+                onClick={() => onScopeSelect(item)}
                 onMouseEnter={() => onActive(index)}
                 className={cn(
                   "rounded-full border border-border bg-surface-elevated px-3 py-1.5 text-xs font-medium transition-colors hover:bg-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/40",
@@ -789,3 +793,4 @@ function QuietState({
     </div>
   );
 }
+

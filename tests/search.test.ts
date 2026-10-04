@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { escapeLikePattern, normalizeSearchText, rankSearchResults } from "@/lib/search/ranking";
 import { addRecentSearch, parseRecentSearches } from "@/lib/search/recent";
+import { SEARCH_SCOPES, routesSearchProvider } from "@/lib/search/routes";
 import { aggregateSearch, parseSearchQuery, SEARCH_GROUP_LIMIT, SEARCH_TOTAL_LIMIT } from "@/lib/search/search";
 import type { SearchContext, SearchProvider, SearchResult } from "@/lib/search/types";
 
@@ -41,6 +42,30 @@ describe("global search", () => {
     expect(parseSearchQuery("  eng  ")).toBe("eng");
     expect(parseSearchQuery("a")).toBeNull();
     expect(parseSearchQuery("x".repeat(81))).toBeNull();
+  });
+
+  it("keeps scope suggestions attached to their app destinations", () => {
+    expect(SEARCH_SCOPES).toEqual([
+      { label: "Times", query: "times", href: "/times" },
+      { label: "Relatórios", query: "relatórios", href: "/relatorios" },
+      { label: "Assinaturas", query: "assinaturas", href: "/ajustes/assinaturas" },
+      { label: "Conexões", query: "conexões", href: "/ajustes/conexoes" },
+    ]);
+  });
+
+  it("searches app routes and keeps admin-only routes private", async () => {
+    const viewerRoutes = await routesSearchProvider.search(context("viewer"), "times");
+    expect(viewerRoutes).toEqual(expect.arrayContaining([
+      expect.objectContaining({ title: "Times", href: "/times" }),
+    ]));
+
+    const viewerAdminRoutes = await routesSearchProvider.search(context("viewer"), "conexões");
+    expect(viewerAdminRoutes).toHaveLength(0);
+
+    const adminRoutes = await routesSearchProvider.search(context("admin"), "conexões");
+    expect(adminRoutes).toEqual(expect.arrayContaining([
+      expect.objectContaining({ title: "Conexões", href: "/ajustes/conexoes" }),
+    ]));
   });
 
   it("ranks exact, prefix, title contains, then secondary matches", () => {
@@ -82,3 +107,4 @@ describe("global search", () => {
     expect((await aggregateSearch(context(), "eng", [bad])).status).toBe("error");
   });
 });
+
