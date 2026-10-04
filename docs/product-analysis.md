@@ -2,7 +2,9 @@
 
 > **Finalidade:** reunir o produto inteiro em uma visão não técnica, orientada à análise de problema, proposta de valor, experiência, fluxos, regras, limites e evidências necessárias para decidir se o Denarius resolve o problema a que se propõe.
 >
-> **Escopo desta fotografia:** tudo o que a pessoa encontra, configura, consulta e consegue fazer no produto em 28 de setembro de 2026, incluindo seus limites e as condições necessárias para entregar valor.
+> **Escopo desta fotografia:** tudo o que a pessoa encontra, configura, consulta e consegue fazer no produto em 4 de outubro de 2026, incluindo seus limites e as condições necessárias para entregar valor. O documento descreve o código local; não confirma configuração de produção.
+>
+> Para a diferença entre promessa, implementação e riscos operacionais, consulte [current-state.md](current-state.md).
 
 ---
 
@@ -168,6 +170,8 @@ O produto autenticado possui cinco destinos principais:
 | **Ajustes** | Configurar empresa, fontes, estrutura, orçamento, privacidade e acessos. |
 
 O menu da conta também dá acesso às preferências pessoais e à saída da sessão.
+
+A Pesquisa abre como um modal pelo controle da barra lateral ou por `Ctrl+P`. Ela pesquisa rotas e recursos autorizados da empresa. Consultas recentes ficam apenas no armazenamento do navegador.
 
 ### Áreas de Ajustes
 

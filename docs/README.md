@@ -1,19 +1,22 @@
 # Denarius — project context (`docs/`)
 
+> Reviewed 2026-10-04. The repository is an implemented beta. Read [current-state.md](current-state.md) first when you need the gap between the code and the product promise.
+
 Everything an engineer or agent needs to work on Denarius. Read in this order:
 
 | Doc | What it holds | Read when |
 |---|---|---|
-| [prd.md](prd.md) | **Source of truth.** Problem, solution, 66 user stories, all product/UX/testing decisions (P1–P16), success metrics, risks, build order | Always first |
+| [current-state.md](current-state.md) | Audited snapshot of shipped behavior, known limits, and documentation/code conflicts | When checking whether a claim matches the repository |
+| [prd.md](prd.md) | **Product source of truth.** Problem, promise, user stories, scope, and product rules | When changing product behavior or scope |
 | [product-analysis.md](product-analysis.md) | Complete Portuguese, non-technical product map: problem, roles, end-to-end flows, visible rules, states, gaps, evaluation framework and validation script | When assessing whether the product solves the customer problem |
 | [architecture.md](architecture.md) | System shape: stack, repo layout, multi-tenancy/RLS, browser security boundary, data flow, data model, environments, supply-chain policy | Before touching any code |
 | [backend.md](backend.md) | Module-by-module backend spec: connectors, sync, budget engine formulas, findings rules, notifications, LLM guardrails, auth/RBAC (password rule, recovery, rate limits, audit log, data rights), credential encryption, period snapshot, server logging, env vars | Before any backend work |
-| [frontend.md](frontend.md) | Screens, component contracts, design tokens, interaction patterns, UI states, the responsive contract, the closed-month print layer | Before any frontend work |
+| [frontend.md](frontend.md) | Route responsibilities, UI states, component boundaries, accessibility, and responsive rules. Visual tokens are intentionally minimal during the UI reformulation. | Before any frontend work |
 
 Fixed conventions:
 
 - **Docs and code in English**; product copy (UI strings) in **pt-BR**.
-- **[frontend.md](frontend.md) is the visual contract** for the frontend (design tokens + component contracts); the running app is the live reference. (A static `prototype/` seeded these decisions and was removed once the real screens shipped in #12–#15.)
-- **UI/UX decisions** from the 2026-07 audit program live in the PRD (decision P16) and in [frontend.md](frontend.md); the working audit/handoff notes were retired once the redesign shipped.
-- **Where the work stands (2026-08-07):** the v1 build order (issues **#12–#23**) is complete, and so is the pre-launch hardening track that followed (**#57–#95**: legal pages, password policy + recovery + change, security headers, rate limiting, role gating, error boundaries and branded 404, audit log, tenant data rights, rotatable credential encryption, supply-chain gate, RLS isolation running in CI, structured server logging, responsive pass, period snapshot + closed-month reports). Everything still open is **HITL** — infrastructure and provider access a human must provision: **#11, #56, #59, #63, #64, #65, #66, #67**.
+- **[frontend.md](frontend.md) is a structural contract**, not a final visual system. The running app is the behavior reference while the UI is being reformulated. The old static prototype is historical and was removed.
+- **Product rules belong in the PRD.** The frontend doc records route and implementation contracts, not a second visual source of truth.
+- **Current implementation status:** the v1 cockpit, provider connectors, attribution, budgets, alerts, reports, account controls, privacy controls, and hardening work are in the repository. See [current-state.md](current-state.md) for limits and unresolved code/documentation conflicts.
 - Every decision passes the exit-thesis filter: *"does this raise sale value / survive due diligence?"* — not "does this scale?".

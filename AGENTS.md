@@ -42,10 +42,10 @@ If a change would require violating #1, **stop and flag it** — updating the PR
 | Doc | Holds |
 |---|---|
 | [docs/README.md](docs/README.md) | Index + reading order |
-| [docs/prd.md](docs/prd.md) | **Source of truth**: stories, decisions P1–P15, scope, build order |
+| [docs/prd.md](docs/prd.md) | **Source of truth**: stories, product rules, scope, and build history |
 | [docs/architecture.md](docs/architecture.md) | System shape, data flow, tenancy, data model |
 | [docs/backend.md](docs/backend.md) | Module contracts, engine formulas, env vars |
-| [docs/frontend.md](docs/frontend.md) | Screens, tokens, patterns, F1–F6 — **visual reference** now that the app screens exist |
+| [docs/frontend.md](docs/frontend.md) | Route contracts, states, accessibility, and F1–F6. Visual values are intentionally minimal during the UI reformulation. |
 
 Never decide alone what a doc has already decided. Docs > memory > instinct.
 
@@ -57,7 +57,7 @@ Read docs → Plan → Implement (small vertical slice) → Test → Self-review
 → Address comments → Merge
 ```
 
-Work = GitHub issues **#11–#23**, dependency-ordered. Don't start an issue whose blockers aren't closed. #11 is HITL (founder provisions infra/keys).
+Work is dependency-ordered. The original v1 issues are historical; use [docs/current-state.md](docs/current-state.md) for shipped behavior, limits, and remaining operational checks. Do not start work whose documented blockers are open.
 
 ### 6. Checklist — before implementing
 
@@ -99,12 +99,12 @@ Work = GitHub issues **#11–#23**, dependency-ordered. Don't start an issue who
 
 **Always:**
 - Connectors behind the `UsageProvider` seam; notification channels behind an interface.
-- Schema changes as versioned migrations in `supabase/migrations` (auto-deploy via GitHub integration) — never dashboard clicks.
+- Schema changes live in versioned files in `supabase/migrations`. CI applies the chain from zero. Production application follows the approved deployment path; never use dashboard-only edits.
 - Reuse existing services/helpers before writing new ones.
 
 ### 10. Technical invariants — never break
 
-1. **Tenant isolation:** every table has `tenant_id` + an RLS policy. No exceptions, no "temporary" tables without it.
+1. **Tenant isolation:** every tenant-owned table has `tenant_id` + an RLS policy. Global catalogs and server-only state are explicit exceptions with restricted access; never add an unscoped product table.
 2. **The LLM never computes.** All numbers (spend, %, margin, projection, savings) come from deterministic code and are **injected** into narration; control-plan actions come from a curated catalog — the LLM phrases, never invents. Tests assert no non-injected figures.
 3. **Reconciliation invariant:** `org total = Σ team totals + Unattributed`. Spend never silently disappears; unknown models surface as "uncosted", never dropped.
 4. **USD is the source of truth**, stored exactly as providers report; display converts via the **FX rate frozen at period start**, disclosed on screen.
@@ -115,7 +115,7 @@ Work = GitHub issues **#11–#23**, dependency-ordered. Don't start an issue who
 
 - **RSC-first (F1):** pages are Server Components reading Postgres; mutations are server actions; no internal REST, no React Query, no global state. `"use client"` only for real interactivity (drawer, modal, collapse, slider).
 - **Copy (F2):** UI strings in **pt-BR**, isolated in copy constants at the top of the component or per-screen `copy.ts` — never inline in JSX. Code, comments, docs, commits: English.
-- **Charts (F3):** budget/pacing bars are hand-rolled CSS (progress bars, not charts); Recharts only for the cumulative line in the team drill-down.
+- **Charts (F3):** budget and pacing bars are hand-rolled CSS. Recharts is limited to cumulative time-series views; the current app uses it on Home and team diagnosis.
 - **Forms (F4):** shared zod schema (single validation truth) + server action + `useActionState`; native `<form>` for trivial forms; react-hook-form only if the roster-CSV preview earns it.
 - **Organization (F5):** shadcn primitives in `components/ui/` (untouched); screen components colocated in `app/<route>/_components/`; cross-screen domain components (BudgetBar, VerdictLine, StatusPill) in `components/domain/`; no barrel files.
 - **When to create:** a domain component when used by 2+ screens; a hook only when stateful logic repeats; a util as a pure function in `lib/`. Reuse before creating.
@@ -126,7 +126,7 @@ Work = GitHub issues **#11–#23**, dependency-ordered. Don't start an issue who
 
 - **Fake providers, never live APIs, in tests** — canonical OpenAI/Anthropic payload fixtures behind the seam.
 - **The engine is exhaustively unit-tested** (projection, guard, margins, thresholds, verdict, dedup, FX, seat accrual) — it's the hero; a wrong number here kills the product's trust.
-- **The RLS isolation test is the most critical test in the repo:** tenant A must not read tenant B, across all tables.
+- **The RLS isolation test is the most critical test in the repo:** tenant A must not read tenant B across tenant-owned tables; catalog and server-only exceptions get explicit access tests.
 - LLM calls mocked in CI, always. Sync jobs idempotent (upsert by natural key).
 
 ### 13. Quality bar
@@ -159,8 +159,8 @@ After any meaningful decision, ask: **"does this need to enter the documentation
 |---|---|
 | App dev | `npm run dev` → http://localhost:3000 |
 | Tests | `npm test` · `npm run test:e2e` (Playwright) |
-| DB migration | new file in `supabase/migrations/` → auto-deploys on merge to `main` |
+| DB migration | add a file in `supabase/migrations/`; CI applies the chain from zero, then apply production migrations through the approved deployment path |
 
 - **`gh` auth quirk (this machine):** the GCM token lacks `read:org`, so `gh auth login` fails. Use:
   `export GH_TOKEN=$(printf 'protocol=https\nhost=github.com\n\n' | git credential fill | sed -n 's/^password=//p')`
-- **Current state (2026-07):** docs done; PRD hardened (P1–P15, F1–F6 locked). The static `prototype/` (its job done once the real screens shipped) was **removed** — docs/frontend.md §4 holds the tokens and the running app is the visual reference. **Merged: #12 walking skeleton** (auth + tenant + RLS), **#13 roster CSV** (pure parser, atomic `roster_import` RPC), **#14 manual seats** (subscription CRUD, daily-accrual engine, Explore reconciliation), **#15 OpenAI connector** (UsageProvider seam + fake behind `ALLOW_FAKE_PROVIDER`, AES-256-GCM key storage, immediate sync, uncosted models, USD display pending FX in #18), **#16 Anthropic connector** (second provider through the same seam; workspace/key grain, no per-user data; shared key-lifecycle actions + `runProviderSync(tenant, provider)` replacing the OpenAI-specific sync; Codex prices seeded in `model_price`; live validation vs a real Admin key still pending #11), **#17 daily cron + attribution** (Vercel Cron route `app/api/cron/sync/route.ts` guarded by `CRON_SECRET`, scheduled in `vercel.json` — the one cross-tenant path, reusing `runProviderSync`; `project_map` table + `/ajustes/atribuicao` mapping UI + `teamApiSpend()`/`teamDetail()` for by-team and Admin-only per-person cost at `/times/[teamId]`; pure `reconcile()` + `freshness()` engine functions with a `StaleBanner`, both unit-tested). Migrations #12–#15 applied on Supabase manually via SQL editor — **#16's price seed, #17's `20260704140000_attribution.sql`, and #18's `20260704160000_budgets.sql` need the same manual apply**. **Merged: #18 budget engine (the HERO)** — `budget` table (org + per-team, thresholds, frozen-FX triple); pure engine `lib/engine/budget.ts` (run-rate projection + day-5 guard, current/projected margin, pacing, `combinedSpend` = seats + API-USD×frozenFX), `thresholds.ts` (crossings, severity, `notificationsToFire` dedup/escalation), `drivers.ts` (`topDrivers`), `verdict.ts` (green/amber/red + neutral collecting, deterministic sentence — LLM never computes); findings in `lib/findings/` (catalog-only control plans, `buildBudgetThresholdFinding` + `orderFindings`); FX capture `lib/fx/rate.ts` (best-effort, null-disclosed); admin-guarded CRUD `lib/budgets/actions.ts` + minimal UI `/ajustes/orcamentos`. Exhaustively unit-tested; `budget` added to the RLS isolation test. **Flagged for founder:** severity ranks a *realized* breach above a *projected* one (verdict-consistent), a reasoned deviation from PRD P11's literal "80→100→projected" ladder. Next: #19 (Home cockpit — verdict line, pacing pair, needs-attention rows). Real Admin keys (#11) still pending (needs org Owner) — the fake provider covers the demo path meanwhile. **HITL for #17:** the founder must set `CRON_SECRET` in Vercel prod env for the daily cron to run (fail-closed until then). **Deployed to Vercel prod** (project `denarius`, live at `app.usedenarius.pro`); prod env has the Supabase + `CREDENTIAL_ENCRYPTION_KEY` vars but deliberately **not** `ALLOW_FAKE_PROVIDER`. **Push-to-`main` auto-deploys** via `.github/workflows/deploy-prod.yml` (lint+typecheck+test gate → `vercel deploy --prod`; source deploy, not prebuilt, because the Supabase vars are Sensitive and `vercel pull` can't read them). Vercel's native Git integration is unavailable — Hobby plan won't connect a private org repo — hence the CLI workflow. Prod and local dev currently share one Supabase project (split before the first paying customer). CodeRabbit is seatless (Free plan) — PRs get a local 8-angle review instead. **The current visual skin is a PROVISIONAL front — an approximation to align on the intended feel, NOT the final UI** (brand accent `#FF5100`, light/dark via a `.dark` class + no-FOUC script + `ThemeToggle`, two-tone wordmark used extensively / collapsing to the coin in the sidebar). Structure (F1–F6, tokens-as-CSS-vars) is stable; the paint is temporary and will be redone before launch — see docs/frontend.md §4.
+- **Current state (2026-10-04):** the v1 cockpit and pre-launch hardening are implemented. Read [docs/current-state.md](docs/current-state.md) for the audited feature list, limits, and unresolved database, forecast, and search conflicts. The UI is in a planned visual reformulation; [docs/frontend.md](docs/frontend.md) records structural contracts only. Real provider validation, production database separation, and other human-provisioned checks remain open.
