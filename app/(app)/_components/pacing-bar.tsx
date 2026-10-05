@@ -29,6 +29,7 @@ export function PacingBar({
   daysInPeriod: number;
 }) {
   const s = pacingSegments(pctSpent, pctProjected);
+  const collecting = pctProjected === null;
 
   // The legend's overrun swatch follows the strongest red on the bar: solid
   // once the budget is already gone, the lighter projected red before that.
@@ -40,7 +41,9 @@ export function PacingBar({
     // data-reveal-state is stamped by the RevealController pre-hydration.
     <div data-reveal="pacing-bar" suppressHydrationWarning>
       <p className="sr-only">
-        {c.pace.description(percent(pctSpent), dayOfPeriod, daysInPeriod)}
+        {collecting
+          ? c.pace.descriptionCollecting(percent(pctSpent), dayOfPeriod, daysInPeriod)
+          : c.pace.description(percent(pctSpent), dayOfPeriod, daysInPeriod)}
       </p>
 
       <div aria-hidden className="mb-1.5 flex items-baseline justify-between gap-3 text-xs tabular-nums">
@@ -70,14 +73,16 @@ export function PacingBar({
       </div>
 
       <p className="mt-2 text-xs text-muted-foreground md:hidden">
-        {c.pace.legend}
+        {collecting ? c.pace.legendCollecting : c.pace.legend}
       </p>
       <div
         aria-hidden
         className="mt-2 hidden flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground md:flex"
       >
         <LegendItem swatch={`${SWATCH} bg-pace-spent`} label={c.pace.spent} />
-        <LegendItem swatch={`${SWATCH} bg-pace-projected`} label={c.pace.projected} />
+        {!collecting && (
+          <LegendItem swatch={`${SWATCH} bg-pace-projected`} label={c.pace.projected} />
+        )}
         <LegendItem swatch={`${SWATCH} ${overSwatch}`} label={c.pace.over} />
         <LegendItem swatch={`${SWATCH} bg-pace-leftover`} label={c.pace.leftover} />
       </div>

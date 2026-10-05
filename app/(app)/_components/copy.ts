@@ -70,9 +70,13 @@ export const homeCopy = {
       leftover: "Sobra",
       legend:
         "Da esquerda para a direita: gasto, projeção até o fechamento, o que passa do orçamento (em vermelho) e a sobra. Tom forte é o que já foi gasto; tom claro, o que ainda vai ser.",
+      legendCollecting:
+        "Ritmo de fechamento ainda sendo coletado. A projeção aparece a partir do quinto dia.",
       /** Always present for assistive tech — the visual legend is md-and-up. */
       description: (spent: string, day: number, days: number) =>
         `Barra de ritmo: ${spent} do orçamento gasto no dia ${day} de ${days}. Da esquerda para a direita: o gasto, a projeção do que ainda será gasto até o fechamento, a parte que passa do orçamento, em vermelho, e a sobra do orçamento. O tom forte é o que já foi gasto e o tom claro, o que ainda vai ser.`,
+      descriptionCollecting: (spent: string, day: number, days: number) =>
+        `Barra de ritmo: ${spent} do orçamento gasto no dia ${day} de ${days}. O ritmo de fechamento ainda está sendo coletado. A barra mostra o gasto e a sobra do orçamento.`,
     },
   },
 
