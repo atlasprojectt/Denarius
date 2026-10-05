@@ -34,7 +34,7 @@ export function DataRightsPanel() {
         <CardDescription>{copy.description}</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
-        <div className="flex flex-col gap-3 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-3 rounded-md border p-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
             <p className="text-sm font-medium">{copy.exportTitle}</p>
             <p className="mt-0.5 text-xs/relaxed text-muted-foreground">

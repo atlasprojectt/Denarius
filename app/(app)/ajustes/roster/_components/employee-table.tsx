@@ -204,7 +204,7 @@ function MobileEmployeeCard({
 
   if (!editing) {
     return (
-      <div id={`employee-${employee.id}`} className="rounded-lg border p-4">
+      <div id={`employee-${employee.id}`} className="rounded-md border p-4">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="font-medium">{employee.name}</p>
@@ -237,7 +237,7 @@ function MobileEmployeeCard({
   }
 
   return (
-    <form action={action} noValidate className="flex flex-col gap-3 rounded-lg border bg-muted p-4">
+    <form action={action} noValidate className="flex flex-col gap-3 rounded-md border bg-muted p-4">
       <input type="hidden" name="employeeId" value={employee.id} />
       <Input name="name" defaultValue={employee.name} aria-invalid={state.fieldErrors?.name !== undefined} />
       <Input name="email" type="email" defaultValue={employee.email} aria-invalid={state.fieldErrors?.email !== undefined} />
@@ -292,7 +292,7 @@ export function EmployeeTable({
       {employees.length > 10 && (
         <label className="relative block max-w-sm">
           <span className="sr-only">{copy.search}</span>
-          <HugeiconsIcon icon={Search01Icon} className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+          <HugeiconsIcon icon={Search01Icon} className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-ink-faint" />
           <Input
             type="search"
             value={query}
@@ -307,7 +307,7 @@ export function EmployeeTable({
       )}
 
       {visible.length === 0 ? (
-        <p className="rounded-lg border border-dashed p-5 text-sm text-muted-foreground">
+        <p className="rounded-md border border-dashed p-5 text-sm text-ink-secondary">
           {copy.noResults}
         </p>
       ) : (
@@ -340,7 +340,7 @@ export function EmployeeTable({
 
       {totalPages > 1 && (
         <div className="flex items-center justify-between gap-3 border-t pt-4">
-          <p className="text-xs font-light text-muted-foreground tabular-nums">{copy.page(safePage, totalPages)}</p>
+          <p className="text-xs text-muted-foreground tabular-nums">{copy.page(safePage, totalPages)}</p>
           <div className="flex gap-2">
             <Button type="button" variant="outline" size="sm" disabled={safePage === 1} onClick={() => setPage((value) => Math.max(1, value - 1))}>
               {copy.previous}

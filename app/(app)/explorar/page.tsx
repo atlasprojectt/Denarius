@@ -10,6 +10,7 @@ import {
 import { EmptyState } from "@/components/domain/empty-state";
 import { PageContainer } from "@/components/domain/page-container";
 import { PageHeader } from "@/components/domain/page-header";
+import type { ProviderIconName } from "@/components/domain/provider-icon";
 import {
   Card,
   CardContent,
@@ -18,7 +19,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import { listBudgets } from "@/lib/budgets/queries";
 import { attributeSeats } from "@/lib/engine/accrual";
 import { governedDailySpend } from "@/lib/engine/budget";
@@ -33,7 +33,7 @@ import {
 import { currentPeriod } from "@/lib/engine/period";
 import { reconcile } from "@/lib/engine/reconcile";
 import { syncStamp } from "@/lib/format";
-import { money } from "@/lib/money";
+import { money, signedMoney } from "@/lib/money";
 import { listSubscriptions } from "@/lib/subscriptions/queries";
 import { listTeams } from "@/lib/teams/queries";
 import { createClient } from "@/lib/supabase/server";
@@ -79,20 +79,20 @@ const copy = {
   derivedNote: (derived: string, reported: string) =>
     `Derivado de tokens × preço: ${derived} · reportado pelos provedores: ${reported}.`,
   fxNote: (rate: string, date: string) =>
-    `Convertido de US$ no câmbio congelado do período (${rate} por US$ 1, capturado em ${date}).`,
+    `Convertido de US$ no câmbio congelado do período (${rate}/US$, capturado em ${date}).`,
   fxMissingNote:
     "Câmbio do período indisponível — valores de API exibidos em US$ (originais), sem conversão estimada.",
   unpricedBand: (amount: string) =>
     `${amount} ainda não foram distribuídos entre modelos porque existem modelos sem preço cadastrado.`,
   overDerivedBand: (amount: string) =>
-    `O valor precificado supera o total reportado em ${amount}. Consulte os detalhes do cálculo.`,
+    `Precificado X reportado: ${amount}. Consulte os detalhes do cálculo.`,
   calculationReported: "Total reportado pelo provedor",
   calculationDerived: "Total derivado de tokens × preço",
   calculationUnpriced: "Valor sem precificação",
   calculationFx: "Câmbio congelado do período",
   fxUnavailable: "Indisponível",
   fxCaptured: (rate: string, date: string) =>
-    `${rate} por US$ 1 · capturado em ${date}`,
+    `${rate}/US$ · capturado em ${date}`,
   zero: "Sem gasto neste período.",
 };
 
@@ -101,6 +101,10 @@ type ConnectionRow = {
   status: string;
   last_sync_at: string | null;
 };
+
+function isProviderIcon(value: string): value is ProviderIconName {
+  return value === "openai" || value === "anthropic";
+}
 
 function capitalize(value: string): string {
   return value.length === 0
@@ -154,11 +158,10 @@ export default async function ExplorePage() {
     currency,
     fx,
   );
-  const differenceAmount = primaryMoney(absoluteDifference);
   const differenceNotice =
     reconciliation.driftUsd >= 0
-      ? copy.unpricedBand(differenceAmount)
-      : copy.overDerivedBand(differenceAmount);
+      ? copy.unpricedBand(primaryMoney(absoluteDifference))
+      : copy.overDerivedBand(primaryMoney(absoluteDifference, signedMoney));
   const fxNote =
     fx !== null
       ? copy.fxNote(money(fx.rate, currency), fx.date ?? "—")
@@ -226,6 +229,7 @@ export default async function ExplorePage() {
     return {
       id: `${row.provider}:${row.model}`,
       label: row.model,
+      provider: isProviderIcon(row.provider) ? row.provider : undefined,
       amount: row.uncosted ? null : display.display,
       originalUsd: row.uncosted ? undefined : usd,
       tokens: row.inputTokens + row.outputTokens,
@@ -341,49 +345,38 @@ export default async function ExplorePage() {
           defaultTab={apiSpend.hasData ? "models" : "seats"}
           models={
             apiSpend.hasData ? (
-              <Card id="por-modelo" className="gap-0 py-0">
-                <CardHeader className="py-4">
-                  <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                    <CardTitle>
-                      <h2>{copy.apiTitle(period.monthLabel)}</h2>
-                    </CardTitle>
-                    {lastSyncAt && (
-                      <p className="text-[11px] font-light text-muted-foreground tabular-nums">
-                        {copy.apiAsOf(syncStamp(lastSyncAt))}
-                      </p>
-                    )}
-                  </div>
-                </CardHeader>
+              <div id="por-modelo" className="flex flex-col gap-4">
+                <div className="grid gap-4 md:grid-cols-3">
+                  <FinancialMetric
+                    label={copy.reported}
+                    value={usdDisplay(apiSpend.monthUsd, currency, fx)}
+                    primary
+                  />
+                  <FinancialMetric
+                    label={copy.priced}
+                    detail={copy.pricedDetail}
+                    value={usdDisplay(apiSpend.derivedUsd, currency, fx)}
+                  />
+                  <FinancialMetric
+                    label={copy.unpriced}
+                    value={unpricedDisplay}
+                  />
+                </div>
 
-                <CardContent className="p-0">
-                  <div className="flex flex-col border-y border-border md:grid md:grid-cols-[1fr_auto_1fr_auto_1fr]">
-                    <FinancialMetric
-                      label={copy.reported}
-                      value={usdDisplay(apiSpend.monthUsd, currency, fx)}
-                      primary
-                    />
-                    <Separator className="md:hidden" />
-                    <Separator
-                      orientation="vertical"
-                      className="my-4 hidden md:block"
-                    />
-                    <FinancialMetric
-                      label={copy.priced}
-                      detail={copy.pricedDetail}
-                      value={usdDisplay(apiSpend.derivedUsd, currency, fx)}
-                    />
-                    <Separator className="md:hidden" />
-                    <Separator
-                      orientation="vertical"
-                      className="my-4 hidden md:block"
-                    />
-                    <FinancialMetric
-                      label={copy.unpriced}
-                      value={unpricedDisplay}
-                    />
-                  </div>
-
-                  <div className="flex flex-col gap-3 p-4">
+                <Card className="gap-0 py-0">
+                  <CardHeader className="py-4">
+                    <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                      <CardTitle>
+                        <h2>{copy.apiTitle(period.monthLabel)}</h2>
+                      </CardTitle>
+                      {lastSyncAt && (
+                        <p className="text-xs text-muted-foreground tabular-nums">
+                          {copy.apiAsOf(syncStamp(lastSyncAt))}
+                        </p>
+                      )}
+                    </div>
+                  </CardHeader>
+                  <CardContent className="border-t border-border p-4">
                     <ExploreTable
                       rows={modelRows}
                       currency={currency}
@@ -391,15 +384,18 @@ export default async function ExplorePage() {
                       tokensHeader={copy.colTokens}
                       amountHeader={copy.colDerived}
                     />
+                  </CardContent>
+                </Card>
 
-                    <div className="flex items-start gap-2 rounded-lg border border-border px-3 py-2.5 text-xs/relaxed font-light text-muted-foreground">
-                      <HugeiconsIcon icon={InformationCircleIcon}
-                        aria-hidden
-                        className="mt-0.5 size-3.5 shrink-0"
-                      />
-                      <p>{differenceNotice}</p>
-                    </div>
-
+                <Card size="sm" className="gap-2">
+                  <CardContent className="flex items-start gap-2 px-4 text-xs/relaxed text-muted-foreground">
+                    <HugeiconsIcon icon={InformationCircleIcon}
+                      aria-hidden
+                      className="mt-0.5 size-3.5 shrink-0"
+                    />
+                    <p>{differenceNotice}</p>
+                  </CardContent>
+                  <div className="px-1">
                     <CalculationDetails
                       items={calculationItems}
                       notes={[
@@ -412,8 +408,8 @@ export default async function ExplorePage() {
                       ]}
                     />
                   </div>
-                </CardContent>
-              </Card>
+                </Card>
+              </div>
             ) : (
               // The tab stays visible with a contextual empty instead of
               // silently disappearing while seats carry the screen.
@@ -435,7 +431,7 @@ export default async function ExplorePage() {
                     <h2>{copy.seatsTitle}</h2>
                   </CardTitle>
                   <CardDescription>{copy.seatsSub}</CardDescription>
-                  <p className="text-[11px] font-light text-muted-foreground tabular-nums">
+                  <p className="text-xs text-muted-foreground tabular-nums">
                     {periodLabel}
                   </p>
                 </CardHeader>
@@ -447,7 +443,7 @@ export default async function ExplorePage() {
                     amountHeader={copy.colSpend}
                   />
                 </CardContent>
-                <CardFooter className="border-t border-border py-3 text-xs font-light text-muted-foreground">
+                <CardFooter className="border-t border-border py-3 text-xs text-muted-foreground">
                   <HugeiconsIcon icon={CheckmarkCircle01Icon}
                     aria-hidden
                     className="mr-2 size-3.5 shrink-0"
@@ -465,10 +461,10 @@ export default async function ExplorePage() {
   );
 }
 
-function primaryMoney(value: UsdDisplay): string {
+function primaryMoney(value: UsdDisplay, format = money): string {
   return value.display === null
-    ? money(value.usd, "USD")
-    : money(value.display, value.currency);
+    ? format(value.usd, "USD")
+    : format(value.display, value.currency);
 }
 
 function FinancialMetric({
@@ -483,25 +479,25 @@ function FinancialMetric({
   primary?: boolean;
 }) {
   return (
-    <div className="min-w-0 px-4 py-4">
-      <p className="text-[11px] font-medium text-muted-foreground">{label}</p>
+    <Card className="min-w-0 gap-0 px-4">
+      <p className="text-xs font-medium text-muted-foreground">{label}</p>
       <p
         className={
           primary
-            ? "mt-1 text-xl font-semibold tracking-tight text-foreground tabular-nums"
-            : "mt-1 text-lg font-medium tracking-tight text-foreground tabular-nums"
+            ? "mt-1 text-xl text-foreground tabular-nums"
+            : "mt-1 text-lg font-medium text-foreground tabular-nums"
         }
       >
         {primaryMoney(value)}
       </p>
       {value.display !== null && (
-        <p className="mt-0.5 text-[11px] font-light text-muted-foreground tabular-nums">
+        <p className="mt-0.5 text-xs text-muted-foreground tabular-nums">
           {money(value.usd, "USD")}
         </p>
       )}
       {detail && (
-        <p className="mt-1 text-[11px] font-light text-muted-foreground">{detail}</p>
+        <p className="mt-1 text-xs text-muted-foreground">{detail}</p>
       )}
-    </div>
+    </Card>
   );
 }

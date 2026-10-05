@@ -13,7 +13,8 @@ Reviewed on 2026-10-04 against the local working tree. This includes uncommitted
 | Composition | Model and fixed-cost views, reconciliation and uncosted disclosures, model-cost comparison and current-period usage economics |
 | Reports | On-demand current-month document, closed-month snapshots, preview dialog, browser printing, authenticated PDF downloads |
 | Administration | Company settings, privacy switches, users and invitations, append-only audit log, tenant JSON export, verified company deletion or Viewer departure |
-| Personal preferences | Display name, private profile avatar, password change, browser theme, Admin weekly-digest preference |
+| Personal preferences | Display name, private profile avatar (hover to change), password change by e-mailed code, browser theme, Admin weekly-digest preference |
+| Help and support | "Ajuda e suporte" in the account menu opens `/suporte`, which redirects to a pre-addressed Gmail compose window for help and bug reports |
 | Search | Sidebar modal with `Ctrl+P`, route and tenant-resource results, browser-only recent queries; local changes add company, employee, user, and budget providers |
 | Operations | Daily sync, budget-alert delivery, weekly digest, closing/backfill job, structured logs, security headers, credential rotation, database-backed CI gate |
 
@@ -41,6 +42,7 @@ These findings remain open. Updating documentation does not approve a change to 
 | Names in expanded search | The local employee and user providers are Admin-only but do not check `tenant.show_names`. The documentation must not claim that the names switch is enforced in those results. |
 | Chart contract | Recharts is used for cumulative time-series views on Home and team diagnosis. Budget and pacing bars remain CSS. The next visual pass may change presentation without changing the data contract. |
 | Missing FX and verdict | `combinedSpend()` returns seat-only display spend plus separate USD when FX is absent. The live cockpit still evaluates that partial display amount; closed reports withhold their verdict. This needs review against "honest numbers or no numbers". |
+| Margin sign against signed differences | Since 2026-10-05 the team index and Home team table show `Projeção X orçamento: +R$ 1.200,00` (`+` = above the budget). Team diagnosis still shows "Margem projetada" as budget − projection (PRD story 28), so the same overrun reads `-R$ 1.200,00` there, and its conclusion keeps words to avoid two signs for one fact in one card. One convention needs a founder decision. |
 
 ## Documentation changes in this review
 

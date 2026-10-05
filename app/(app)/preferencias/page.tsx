@@ -1,17 +1,15 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import {
-  ShieldUserIcon,
-  UserIcon,
+  LockPasswordIcon,
+  Notification01Icon,
+  PaintBoardIcon,
 } from "@hugeicons/core-free-icons";
 
 import { PageHeader } from "@/components/domain/page-header";
 import { PageContainer } from "@/components/domain/page-container";
-import { StateBadge } from "@/components/domain/state-badge";
 import { ThemePicker } from "@/components/domain/theme-toggle";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { hasPasswordIdentity } from "@/lib/auth/password";
 import { profileInitials, profileLabel } from "@/lib/settings/account";
 import { isMissingProfileAvatarColumn } from "@/lib/settings/avatar-schema";
@@ -19,25 +17,16 @@ import { profileAvatarUrl } from "@/lib/settings/avatar-url";
 import { createClient } from "@/lib/supabase/server";
 import { DigestForm } from "./_components/digest-form";
 import { PasswordForm } from "./_components/password-form";
-import { PreferenceSection } from "./_components/preference-section";
-import { ProfileAvatarForm } from "./_components/profile-avatar-form";
-import { ProfileForm } from "./_components/profile-form";
+import { PreferenceCard } from "./_components/preference-card";
+import { ProfileCard } from "./_components/profile-card";
 
 const copy = {
   title: "Preferências",
   subtitle:
     "Controle sua identidade, segurança e a forma como o Denarius funciona para você.",
-  profileTitle: "Perfil",
-  profileSub: "Atualize como você é identificado e veja o contexto da sua conta.",
-  accountContext: "Contexto da conta",
-  companyLabel: "Empresa",
-  accessLabel: "Acesso",
-  roleLabel: {
-    admin: "Administrador",
-    viewer: "Visualizador",
-  } as Record<string, string>,
   passwordTitle: "Segurança e acesso",
   passwordSub: "Como você entra e protege sua conta no Denarius.",
+  passwordRow: "Senha",
   passwordGoogle:
     "Você entra pela sua conta Google, então não existe senha do Denarius para trocar — a senha e a verificação em duas etapas ficam com o Google.",
   appearanceTitle: "Aparência",
@@ -102,116 +91,61 @@ export default async function PersonalSettingsPage() {
     supabase,
     account.avatar_path ?? null,
   );
-  const RoleIcon = account.role === "admin" ? ShieldUserIcon : UserIcon;
 
   return (
-    <PageContainer variant="form" className="gap-6">
+    <PageContainer variant="form" className="gap-5">
       <PageHeader title={copy.title} description={copy.subtitle} />
 
-      <Card>
-        <CardContent className="p-0">
-          <PreferenceSection
-            id="profile-preferences-title"
-            title={copy.profileTitle}
-            description={copy.profileSub}
-          >
-            <div className="grid gap-6 md:grid-cols-[minmax(180px,0.78fr)_minmax(0,1.22fr)] md:gap-8">
-              <div className="rounded-lg border bg-muted/30 p-4 sm:p-5">
-                <p className="text-xs font-medium text-muted-foreground">
-                  {copy.accountContext}
-                </p>
-                <div className="mt-4 flex items-center gap-3">
-                  <Avatar size="lg" className="size-14 shrink-0">
-                    {avatarUrl && <AvatarImage src={avatarUrl} alt="" />}
-                    <AvatarFallback className="text-lg font-semibold">
-                      {initials}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="min-w-0">
-                    <p className="truncate text-base font-semibold">{displayName}</p>
-                    <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                      {account.email}
-                    </p>
-                  </div>
-                </div>
+      <ProfileCard
+        displayName={displayName}
+        email={account.email}
+        initials={initials}
+        avatarUrl={avatarUrl}
+        avatarPath={account.avatar_path ?? null}
+        avatarEditable={avatarColumnAvailable}
+        companyName={account.tenant.name}
+        role={account.role}
+      />
 
-                <dl className="mt-5 grid gap-3 border-t pt-4 text-xs">
-                  <div className="flex items-center justify-between gap-4">
-                    <dt className="text-muted-foreground">{copy.companyLabel}</dt>
-                    <dd className="truncate text-right font-medium">{account.tenant.name}</dd>
-                  </div>
-                  <div className="flex items-center justify-between gap-4">
-                    <dt className="text-muted-foreground">{copy.accessLabel}</dt>
-                    <dd>
-                      <StateBadge icon={RoleIcon}>
-                        {copy.roleLabel[account.role] ?? account.role}
-                      </StateBadge>
-                    </dd>
-                  </div>
-                </dl>
-              </div>
+      <PreferenceCard
+        id="password-preferences-title"
+        icon={LockPasswordIcon}
+        title={copy.passwordTitle}
+        description={copy.passwordSub}
+      >
+        {/* A Google account has no password here to change — say so
+            instead of offering a flow that could only fail (#69). */}
+        {hasPasswordIdentity(user) ? (
+          // The code goes to the Auth address, so that is the one to name.
+          <PasswordForm email={user.email ?? account.email} />
+        ) : (
+          <div>
+            <p className="text-ui font-medium">{copy.passwordRow}</p>
+            <p className="mt-0.5 text-xs/relaxed text-muted-foreground">
+              {copy.passwordGoogle}
+            </p>
+          </div>
+        )}
+      </PreferenceCard>
 
-              <div className="flex min-w-0 flex-col gap-5">
-                <ProfileForm displayName={displayName} />
-                {avatarColumnAvailable && (
-                  <div className="border-t pt-5">
-                    <ProfileAvatarForm
-                      key={account.avatar_path ?? "no-avatar"}
-                      initials={initials}
-                      avatarUrl={avatarUrl}
-                    />
-                  </div>
-                )}
-              </div>
-            </div>
-          </PreferenceSection>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardContent className="p-0">
-          <PreferenceSection
-            id="password-preferences-title"
-            title={copy.passwordTitle}
-            description={copy.passwordSub}
-          >
-            {/* A Google account has no password here to change — say so
-                instead of offering a form that could only fail (#69). */}
-            {hasPasswordIdentity(user) ? (
-              <PasswordForm />
-            ) : (
-              <p className="text-xs/relaxed text-muted-foreground">
-                {copy.passwordGoogle}
-              </p>
-            )}
-          </PreferenceSection>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardContent className="p-0">
-          <PreferenceSection
-            id="appearance-preferences-title"
-            title={copy.appearanceTitle}
-            description={copy.appearanceSub}
-          >
-            <ThemePicker />
-          </PreferenceSection>
-        </CardContent>
-      </Card>
+      <PreferenceCard
+        id="appearance-preferences-title"
+        icon={PaintBoardIcon}
+        title={copy.appearanceTitle}
+        description={copy.appearanceSub}
+      >
+        <ThemePicker />
+      </PreferenceCard>
 
       {account.role === "admin" && (
-        <Card>
-          <CardContent className="p-0">
-            <PreferenceSection
-              id="notification-preferences-title"
-              title={copy.notificationsTitle}
-              description={copy.notificationsSub}
-            >
-              <DigestForm receiveDigest={!account.digest_opt_out} />
-            </PreferenceSection>
-          </CardContent>
-        </Card>
+        <PreferenceCard
+          id="notification-preferences-title"
+          icon={Notification01Icon}
+          title={copy.notificationsTitle}
+          description={copy.notificationsSub}
+        >
+          <DigestForm receiveDigest={!account.digest_opt_out} />
+        </PreferenceCard>
       )}
 
       <nav

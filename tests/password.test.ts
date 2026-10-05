@@ -83,7 +83,7 @@ describe("confirmation", () => {
     expect(result.error?.issues[0]?.path).toEqual(["password"]);
   });
 
-  it("carries extra fields through — the change-password form adds the current one", () => {
+  it("carries extra fields through — the change-password form adds its own", () => {
     const schemaWithCurrent = withConfirmation({
       currentPassword: z.string().min(1, "Informe sua senha atual."),
     });

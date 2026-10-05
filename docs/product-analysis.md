@@ -219,7 +219,7 @@ A Pesquisa abre como um modal pelo controle da barra lateral ou por `Ctrl+P`. El
 2. Se esquecer a senha, informa seu e-mail para receber um link de recuperação.
 3. A resposta não revela se aquele e-mail possui conta.
 4. Pelo link recebido, escolhe uma nova senha.
-5. Em Preferências, quem usa senha pode trocá-la informando a senha atual; as demais sessões são encerradas.
+5. Em Preferências, quem usa senha pode trocá-la confirmando um código de seis dígitos enviado ao seu e-mail; as demais sessões são encerradas.
 6. Quem entra apenas com Google vê a explicação de que senha e verificação pertencem à conta Google.
 7. O menu da conta permite encerrar a sessão.
 

@@ -2,14 +2,11 @@ import Link from "next/link";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { ChevronRightIcon } from "@hugeicons/core-free-icons";
 
-import { SimulateDrawer } from "@/components/domain/simulate-drawer";
 import { StatusPill } from "@/components/domain/status-pill";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import type { CockpitTeam } from "@/lib/engine/cockpit";
 import { percent } from "@/lib/format";
-import { money } from "@/lib/money";
-import { cn } from "@/lib/utils";
+import { money, signedMoney } from "@/lib/money";
 import { TeamProgress } from "./team-progress";
 
 const copy = {
@@ -18,17 +15,11 @@ const copy = {
   spent: "Gasto",
   budget: "Orçamento",
   projection: "Projeção",
-  margin: "Margem projetada",
   progress: "Progresso",
-  actions: "Ações",
-  investigate: "Investigar",
   collecting: "Coletando ritmo",
-  breachContext: (amount: string) => `Já está ${amount} acima do orçamento.`,
-  riskContext: (amount: string) => `Projetado para fechar ${amount} acima.`,
-  controlContext: (amount: string) => `Projetado para fechar ${amount} abaixo.`,
-  thresholdContext: (value: string) => `Já consumiu ${value} do orçamento.`,
-  above: (amount: string) => `${amount} acima`,
-  headroom: (amount: string) => `${amount} de folga`,
+  spentVsBudget: (delta: string) => `Gasto X orçamento: ${delta}`,
+  projectionVsBudget: (delta: string) => `Projeção X orçamento: ${delta}`,
+  thresholdContext: (value: string) => `Já consumiu ${value} do orçamento`,
   open: (team: string) => `Abrir diagnóstico de ${team}`,
 };
 
@@ -41,29 +32,25 @@ function statusLabel(team: CockpitTeam): string {
 function contextLine(team: CockpitTeam, currency: string): string {
   const evaluation = team.evaluation;
   if (evaluation.breached) {
-    return copy.breachContext(money(evaluation.spent - evaluation.budget, currency));
+    return copy.spentVsBudget(
+      signedMoney(evaluation.spent - evaluation.budget, currency),
+    );
   }
   if (evaluation.projectedMargin === null) return copy.collecting;
-  if (evaluation.projectedMargin < 0) {
-    return copy.riskContext(money(-evaluation.projectedMargin, currency));
+  if (evaluation.projectedMargin >= 0 && team.finding !== null) {
+    return copy.thresholdContext(percent(evaluation.pctSpent));
   }
-  if (team.finding !== null) return copy.thresholdContext(percent(evaluation.pctSpent));
-  return copy.controlContext(money(evaluation.projectedMargin, currency));
-}
-
-function marginLabel(team: CockpitTeam, currency: string): string {
-  const margin = team.evaluation.projectedMargin;
-  if (margin === null) return "—";
-  return margin < 0
-    ? copy.above(money(-margin, currency))
-    : copy.headroom(money(margin, currency));
+  // projection − budget is the margin's negation: "+" closes above, "−" below.
+  return copy.projectionVsBudget(
+    signedMoney(-evaluation.projectedMargin, currency),
+  );
 }
 
 function Metric({ label, value }: { label: string; value: string }) {
   return (
     <div className="min-w-0">
-      <dt className="team-index-metric-label text-[11px] text-muted-foreground">{label}</dt>
-      <dd className="team-index-metric-value mt-0.5 truncate text-[13px] font-medium tabular-nums">
+      <dt className="team-index-metric-label text-xs text-muted-foreground">{label}</dt>
+      <dd className="team-index-metric-value mt-0.5 truncate text-ui font-medium tabular-nums">
         {value}
       </dd>
     </div>
@@ -73,14 +60,10 @@ function Metric({ label, value }: { label: string; value: string }) {
 function TeamRow({
   team,
   currency,
-  org,
-  priority,
   index,
 }: {
   team: CockpitTeam;
   currency: string;
-  org: { projection: number | null; budget: number };
-  priority: "attention" | "control";
   index: number;
 }) {
   const evaluation = team.evaluation;
@@ -90,23 +73,20 @@ function TeamRow({
     <article
       data-reveal-legend
       style={{ animationDelay: `${70 + index * 55}ms` }}
-      className={cn(
-        "group/row relative px-4 py-3.5 transition-colors duration-(--motion-duration-standard) ease-(--motion-ease-standard) hover:bg-surface-hover",
-        priority === "attention" && "bg-muted",
-      )}
+      className="group/row relative px-4 py-3.5 transition-colors duration-(--motion-duration-standard) ease-(--motion-ease-standard) hover:bg-surface-hover"
     >
       <Link
         href={href}
         aria-label={copy.open(team.teamName)}
-        className="absolute inset-0 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/40"
+        className="absolute inset-0 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/40"
       />
 
       <div className="team-index-row-grid relative pointer-events-none grid gap-3">
         <div className="min-w-0">
-          <h3 className="truncate text-[13px] font-medium text-foreground">
+          <h3 className="truncate text-ui font-medium text-foreground">
             {team.teamName}
           </h3>
-          <p className="mt-0.5 truncate text-[11px] font-light text-muted-foreground">
+          <p className="mt-0.5 truncate text-xs text-muted-foreground">
             {contextLine(team, currency)}
           </p>
         </div>
@@ -115,7 +95,7 @@ function TeamRow({
           <StatusPill status={team.status} label={statusLabel(team)} />
         </div>
 
-        <dl className="team-index-metrics grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-4">
+        <dl className="team-index-metrics grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-3">
           <Metric label={copy.spent} value={money(evaluation.spent, currency)} />
           <Metric label={copy.budget} value={money(evaluation.budget, currency)} />
           <Metric
@@ -126,7 +106,6 @@ function TeamRow({
                 : money(evaluation.projection, currency)
             }
           />
-          <Metric label={copy.margin} value={marginLabel(team, currency)} />
         </dl>
 
         <div className="team-index-progress flex items-center gap-2.5">
@@ -136,35 +115,12 @@ function TeamRow({
             pctProjected={team.pctProjected}
             status={team.status}
           />
-          <span className="w-10 shrink-0 text-right text-[11px] font-light text-muted-foreground tabular-nums">
+          <span className="w-10 shrink-0 text-right text-xs text-muted-foreground tabular-nums">
             {percent(evaluation.pctSpent)}
           </span>
         </div>
 
-        <div className="pointer-events-auto relative z-10 flex items-center justify-end gap-1.5">
-          {priority === "attention" && (
-            <>
-              <Button
-                asChild
-                variant="secondary"
-                size="xs"
-                shape="full"
-                className="h-11 sm:h-6"
-              >
-                <Link href={href}>{copy.investigate}</Link>
-              </Button>
-              <SimulateDrawer
-                teamName={team.teamName}
-                currency={currency}
-                team={{
-                  spent: evaluation.spent,
-                  projection: evaluation.projection,
-                  budget: evaluation.budget,
-                }}
-                org={org}
-              />
-            </>
-          )}
+        <div className="flex items-center justify-end">
           <HugeiconsIcon icon={ChevronRightIcon}
             aria-hidden
             className="size-4 shrink-0 text-muted-foreground transition-transform duration-(--motion-duration-fast) ease-(--motion-ease-standard) group-hover/row:translate-x-0.5"
@@ -179,13 +135,11 @@ export function TeamIndex({
   title,
   teams,
   currency,
-  org,
   priority,
 }: {
   title: string;
   teams: CockpitTeam[];
   currency: string;
-  org: { projection: number | null; budget: number };
   priority: "attention" | "control";
 }) {
   if (teams.length === 0) return null;
@@ -196,7 +150,7 @@ export function TeamIndex({
         <h2 id={`team-group-${priority}`} className="text-sm font-medium">
           {title}
         </h2>
-        <span className="text-[11px] font-light text-muted-foreground tabular-nums">
+        <span className="text-xs text-muted-foreground tabular-nums">
           {teams.length}
         </span>
       </div>
@@ -206,15 +160,14 @@ export function TeamIndex({
         suppressHydrationWarning
         className="team-index-card gap-0 py-0"
       >
-        <div className="team-index-header hidden gap-4 border-b border-border px-4 py-2 text-[11px] font-medium text-muted-foreground">
+        <div className="team-index-header hidden gap-4 border-b border-border px-4 py-2 text-xs font-medium text-muted-foreground">
           <span>{copy.team}</span>
           <span>{copy.status}</span>
           <span>{copy.spent}</span>
           <span>{copy.budget}</span>
           <span>{copy.projection}</span>
-          <span>{copy.margin}</span>
           <span>{copy.progress}</span>
-          <span className="text-right">{copy.actions}</span>
+          <span aria-hidden />
         </div>
         <div className="divide-y divide-border">
           {teams.map((team, index) => (
@@ -222,8 +175,6 @@ export function TeamIndex({
               key={team.teamId}
               team={team}
               currency={currency}
-              org={org}
-              priority={priority}
               index={index}
             />
           ))}

@@ -154,7 +154,7 @@ function KeyForm({ provider, formAction, pending }: KeyFormProps) {
         />
         <p className="text-xs/relaxed text-muted-foreground">{copy.keyHelp}</p>
       </div>
-      <p className="flex items-start gap-2 rounded-lg bg-muted p-3 text-xs/relaxed text-muted-foreground">
+      <p className="flex items-start gap-2 rounded-md bg-muted p-3 text-xs/relaxed text-muted-foreground">
         <HugeiconsIcon icon={LightbulbIcon} className="mt-0.5 size-4 shrink-0" aria-hidden />
         {copy.groupingTip}
       </p>
@@ -251,10 +251,10 @@ export function ProviderConnectionCard({
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-sm">
-          <ProviderIcon provider={provider} className="size-4 shrink-0" />
+          <ProviderIcon provider={provider} className="size-5 shrink-0" />
           {providerCopy[provider].title}
         </CardTitle>
-        <CardDescription className="font-light tabular-nums">
+        <CardDescription className="tabular-nums">
           {stamp ? sharedCopy.lastSync(stamp) : sharedCopy.neverSynced}
         </CardDescription>
         <CardAction>

@@ -126,7 +126,7 @@ export default async function AppLayout({
           allClear={allClear}
           latestReportPeriod={latestReportPeriod}
         />
-        <SidebarInset className="min-w-0 shadow-none md:border md:border-border md:peer-data-[variant=inset]:shadow-none">
+        <SidebarInset className="min-w-0 shadow-none md:border md:border-border/60 md:peer-data-[variant=inset]:shadow-none">
           <header data-app-header className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2.5 border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/80 md:rounded-t-xl">
             <SidebarTrigger
               aria-label="Alternar menu lateral"
@@ -150,7 +150,7 @@ export default async function AppLayout({
               RevealController persists across navigations and replays them.
               flex column so a page can opt into filling the viewport height
               (Home's cockpit grid) with flex-1. */}
-          <div data-app-content data-reveal-root className="flex flex-1 flex-col px-4 py-8 md:px-8">
+          <div data-app-content data-reveal-root className="flex flex-1 flex-col px-3 py-4 md:px-5 md:py-5">
             {children}
           </div>
           <RevealController />

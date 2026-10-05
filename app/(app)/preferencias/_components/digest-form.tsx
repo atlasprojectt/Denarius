@@ -1,9 +1,8 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { startTransition, useActionState, useState } from "react";
 
 import { ActionToast } from "@/components/domain/toast-provider";
-import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -16,12 +15,12 @@ const copy = {
   description:
     "Enviado às sextas-feiras para administradores, com os principais números do período.",
   note: "Alertas de orçamento não são afetados.",
-  save: "Salvar notificações",
-  saving: "Salvando…",
 };
 
 const initialState: SettingsFormState = {};
 
+/** A switch takes effect when flipped — no separate save step. A refused save
+ *  snaps the switch back to what the server holds. */
 export function DigestForm({ receiveDigest }: { receiveDigest: boolean }) {
   const [state, formAction, pending] = useActionState(
     updateDigestPreference,
@@ -29,49 +28,47 @@ export function DigestForm({ receiveDigest }: { receiveDigest: boolean }) {
   );
   const [receive, setReceive] = useState(receiveDigest);
 
-  const changed = receive !== receiveDigest;
+  const [prevState, setPrevState] = useState(state);
+  if (state !== prevState) {
+    setPrevState(state);
+    if (state.error) setReceive(receiveDigest);
+  }
+
+  function handleChange(checked: boolean) {
+    setReceive(checked);
+    const formData = new FormData();
+    if (checked) formData.set("receiveDigest", "on");
+    startTransition(() => formAction(formData));
+  }
 
   return (
-    <form action={formAction} className="flex w-full flex-col gap-5">
-      <div className="flex min-h-11 items-start justify-between gap-5">
-        <div className="min-w-0 flex-1">
-          <Label htmlFor="receiveDigest" className="cursor-pointer text-[13px]">
-            {copy.label}
-          </Label>
-          <p
-            id="digest-description"
-            className="mt-1 text-xs/relaxed text-muted-foreground"
-          >
-            {copy.description}
-          </p>
-          <p
-            id="digest-note"
-            className="mt-1.5 text-xs/relaxed text-muted-foreground"
-          >
-            {copy.note}
-          </p>
-        </div>
-        <Switch
-          id="receiveDigest"
-          name="receiveDigest"
-          checked={receive}
-          onCheckedChange={setReceive}
-          aria-describedby="digest-description digest-note"
-          className="mt-0.5"
-        />
-      </div>
-
-      <div className="flex justify-end">
-        <Button
-          type="submit"
-          loading={pending}
-          loadingText={copy.saving}
-          disabled={!changed || pending}
-          className="w-full md:w-auto"
+    <div className="flex items-start justify-between gap-5">
+      <div className="min-w-0 flex-1">
+        <Label htmlFor="receiveDigest" className="cursor-pointer text-ui">
+          {copy.label}
+        </Label>
+        <p
+          id="digest-description"
+          className="mt-1 text-xs/relaxed text-muted-foreground"
         >
-          {copy.save}
-        </Button>
+          {copy.description}
+        </p>
+        <p
+          id="digest-note"
+          className="mt-1.5 text-xs/relaxed text-muted-foreground"
+        >
+          {copy.note}
+        </p>
       </div>
+      <Switch
+        id="receiveDigest"
+        checked={receive}
+        onCheckedChange={handleChange}
+        disabled={pending}
+        aria-busy={pending || undefined}
+        aria-describedby="digest-description digest-note"
+        className="mt-0.5"
+      />
 
       <ActionToast
         id="digest-preference"
@@ -79,6 +76,6 @@ export function DigestForm({ receiveDigest }: { receiveDigest: boolean }) {
         success={state.success}
         error={state.error}
       />
-    </form>
+    </div>
   );
 }

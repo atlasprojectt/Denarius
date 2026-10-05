@@ -222,17 +222,17 @@ function MobileSubscriptionCard({
 
   if (!editing) {
     return (
-      <div className="rounded-lg border p-4">
+      <div className="rounded-md border p-4">
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="font-medium">{subscription.tool}</p>
-            <p className="mt-1 text-xs font-light text-muted-foreground">
+            <p className="mt-1 text-xs text-muted-foreground">
               {subscription.seatCount} {copy.seats.toLocaleLowerCase("pt-BR")} · {subscription.teamName ?? copy.shared}
             </p>
           </div>
           <p className="text-sm font-medium tabular-nums">{subscription.monthly}</p>
         </div>
-        <p className="mt-2 text-xs font-light text-muted-foreground tabular-nums">{copy.accrued}: {subscription.accrued}</p>
+        <p className="mt-2 text-xs text-muted-foreground tabular-nums">{copy.accrued}: {subscription.accrued}</p>
         <div className="mt-4 flex gap-2">
           <Button type="button" variant="outline" size="sm" onClick={() => setEditing(true)}>{copy.edit}</Button>
           <ConfirmationDialog
@@ -254,7 +254,7 @@ function MobileSubscriptionCard({
   }
 
   return (
-    <form action={action} noValidate className="flex flex-col gap-3 rounded-lg border bg-muted p-4">
+    <form action={action} noValidate className="flex flex-col gap-3 rounded-md border bg-muted p-4">
       <input type="hidden" name="subscriptionId" value={subscription.id} />
       <Input name="tool" defaultValue={subscription.tool} aria-invalid={state.fieldErrors?.tool !== undefined} />
       <Input name="seatCount" type="number" min={1} step={1} defaultValue={subscription.seatCount} aria-invalid={state.fieldErrors?.seatCount !== undefined} />

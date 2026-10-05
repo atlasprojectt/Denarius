@@ -117,7 +117,7 @@ export function AuthForm({
     : (state.error ?? (isSignup ? undefined : oauthError));
 
   const inputClassName =
-    "h-11 rounded-[var(--radius-standard)] border-border bg-surface-control pl-10 text-[15px] hover:border-border hover:bg-surface-hover focus-visible:border-ring focus-visible:bg-surface-control focus-visible:ring-1 focus-visible:ring-ring/40";
+    "h-11 rounded-sm border-border bg-surface-control pl-10 text-base hover:border-border hover:bg-surface-hover focus-visible:border-ring focus-visible:bg-surface-control focus-visible:ring-1 focus-visible:ring-ring/40";
   const iconClassName = "size-4";
 
   return (
@@ -130,7 +130,7 @@ export function AuthForm({
           {notice && (
             <p
               role="status"
-              className="rounded-[var(--radius-standard)] border border-border bg-surface-control px-3 py-2 text-sm text-muted-foreground"
+              className="rounded-md border border-border bg-surface-control px-3 py-2 text-sm text-ink-secondary"
             >
               {notice === "account-deleted"
                 ? copy.accountDeleted
@@ -138,16 +138,16 @@ export function AuthForm({
             </p>
           )}
           <div className="denarius-auth-enter flex flex-col gap-2.5">
-            <h1 className="max-w-[15ch] text-[2rem]/[1.08] font-semibold tracking-[-0.025em] text-balance sm:text-[2.25rem]/[1.08]">
+            <h1 className="max-w-[15ch] text-display-sm font-light text-balance md:text-display">
               {copy.title}
             </h1>
-            <p className="max-w-[44ch] text-sm/relaxed text-pretty text-muted-foreground">
+            <p className="max-w-[44ch] text-sm/relaxed text-pretty text-ink-secondary">
               {copy.subtitle}
             </p>
           </div>
 
           <div className="denarius-auth-enter [animation-delay:60ms]">
-            <div className="relative grid grid-cols-2 rounded-[var(--radius-standard)] bg-surface-control p-1">
+            <div className="relative grid grid-cols-2 rounded-full bg-surface-control p-1">
               <span
                 aria-hidden
                 className="absolute inset-y-1 left-1 w-[calc(50%-0.25rem)] rounded-full bg-tab-active transition-transform duration-(--motion-duration-max)"
@@ -172,7 +172,7 @@ export function AuthForm({
                   className={`relative z-10 h-11 bg-transparent text-sm font-medium transition-colors duration-(--motion-duration-standard) hover:bg-transparent ${
                     mode === value
                       ? "text-foreground"
-                      : "text-muted-foreground hover:text-foreground"
+                      : "text-ink-secondary hover:text-foreground"
                   }`}
                 >
                   {label}
@@ -243,7 +243,7 @@ export function AuthForm({
               {!isSignup && (
                 <Link
                   href="/auth/recuperar"
-                  className="inline-flex min-h-11 items-center text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground"
+                  className="inline-flex min-h-11 items-center text-sm text-ink-secondary underline underline-offset-4 hover:text-foreground"
                 >
                   {copy.forgotPassword}
                 </Link>
@@ -292,7 +292,7 @@ export function AuthForm({
           {shownError && (
             <p
               role="alert"
-              className="rounded-[var(--radius-standard)] border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+              className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
             >
               {shownError}
             </p>

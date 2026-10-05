@@ -8,7 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { compareModel, type ComparisonUsage } from "@/lib/engine/model-comparison";
 import type { ModelPrice } from "@/lib/engine/derive";
-import { money } from "@/lib/money";
+import { signedPercent } from "@/lib/format";
+import { money, signedMoney } from "@/lib/money";
 
 const copy = {
   action: "Comparar",
@@ -30,17 +31,17 @@ const copy = {
   economics: "Economia de uso",
   totalTokens: "Tokens totais",
   mix: "Participação input / output",
-  perMillion: "Custo por 1M tokens",
+  perMillion: "Custo/1M tokens",
   coverageLabel: "Cobertura",
   coverage: (days: number) => `${days} ${days === 1 ? "dia observado" : "dias observados"}`,
   coverageComplete: (days: number, expected: number) => `${days} de ${expected} dias observados — cobertura completa`,
   coveragePartial: (days: number, expected: number) => `${days} de ${expected} dias observados — cobertura parcial`,
-  methodology: (period: string) => `Metodologia · período de ${period}: custo derivado = Σ(tokens × preço vigente na data), em US$; custo por 1M = derivado ÷ tokens × 1M. Sem contagem de requests na fonte — custo por chamada indisponível. Total reportado pelo provedor está no resumo da tela (grão por provedor, não por modelo).`,
+  methodology: (period: string) => `Metodologia · período de ${period}: custo derivado = Σ(tokens × preço vigente na data), em US$; custo/1M = derivado ÷ tokens × 1M. Sem contagem de requests na fonte — custo por chamada indisponível. Total reportado pelo provedor está no resumo da tela (grão por provedor, não por modelo).`,
   collecting: "Coletando ritmo…",
   collectingNote: "Projeção de fechamento disponível a partir do dia 5 do período.",
   staleNote: (stamp: string) => `Dados de ${stamp}.`,
   noBudgetNote: "Sem orçamento ou câmbio congelado — o encaixe no orçamento fica indisponível.",
-  fxNote: (rate: string, date: string) => `Convertido pelo câmbio congelado do período (${rate} por US$ 1, capturado em ${date}).`,
+  fxNote: (rate: string, date: string) => `Convertido pelo câmbio congelado do período (${rate}/US$, capturado em ${date}).`,
   fxMissingNote: "Câmbio do período indisponível — valores exibidos em US$ (originais), sem conversão estimada.",
   uncostedNote: "Modelo sem preço cadastrado — o custo equivalente fica indisponível em vez de estimado.",
   partialNote: "Cobertura parcial do período — o fechamento projetado fica indisponível.",
@@ -89,10 +90,10 @@ export function ModelComparisonDrawer({
   const collecting = dayOfPeriod !== undefined && dayOfPeriod < 5;
   // Display-primary money: USD facts convert at the frozen period rate; without
   // a rate the original USD stands with the disclosure — never a guess.
-  const show = (usd: number | null): string => {
+  const show = (usd: number | null, format = money): string => {
     if (usd === null) return copy.unavailable;
-    if (fxRate !== null && fxRate > 0) return `${money(usd * fxRate, currency)} (${money(usd, "USD")})`;
-    return money(usd, "USD");
+    if (fxRate !== null && fxRate > 0) return `${format(usd * fxRate, currency)} (${format(usd, "USD")})`;
+    return format(usd, "USD");
   };
   const perMillion = show(economics.costPerMillionUsd);
   const coverage = economics.coverage.expectedDays !== null && economics.coverage.expectedDays !== undefined
@@ -103,22 +104,22 @@ export function ModelComparisonDrawer({
   return <>
     <Button type="button" variant="tertiary" size="xs" shape="full" onClick={() => setOpen(true)} aria-label={`${copy.action} ${source.model}`}><HugeiconsIcon icon={ArrowLeftRightIcon} aria-hidden />{copy.action}</Button>
     <Sheet open={open} onOpenChange={setOpen}><SheetContent side="right" className="w-full overflow-y-auto sm:max-w-md"><SheetHeader className="border-b px-5 py-5 pr-12"><SheetTitle>{copy.title}</SheetTitle><SheetDescription>{copy.description}</SheetDescription></SheetHeader><div className="grid gap-5 p-5">
-      <div className="grid gap-1"><p className="text-[11px] text-muted-foreground">{copy.source}</p><p className="font-medium">{source.provider} · {source.model}</p></div>
-      {lastSyncAt && <p className="text-[11px] font-light text-muted-foreground tabular-nums">{copy.staleNote(lastSyncAt)}</p>}
-      {alternatives.length === 0 ? <p className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">{copy.noAlternatives}</p> : <>
+      <div className="grid gap-1"><p className="text-xs text-muted-foreground">{copy.source}</p><p className="font-medium">{source.provider} · {source.model}</p></div>
+      {lastSyncAt && <p className="text-xs text-muted-foreground tabular-nums">{copy.staleNote(lastSyncAt)}</p>}
+      {alternatives.length === 0 ? <p className="rounded-md border border-dashed p-4 text-sm text-ink-secondary">{copy.noAlternatives}</p> : <>
         <label className="grid gap-2"><span className="text-xs font-medium">{copy.alternative}</span><Select value={selected} onValueChange={(next) => setSelected(next ?? "")}><SelectTrigger><SelectValue placeholder={copy.alternative} /></SelectTrigger><SelectContent>{alternatives.map((price) => <SelectItem key={`${price.provider}:${price.model}`} value={`${price.provider}:${price.model}`}>{price.provider} · {price.model}</SelectItem>)}</SelectContent></Select></label>
-        {result && <div className="grid gap-4"><div className="grid grid-cols-2 gap-2"><Metric label={copy.current} value={show(result.sourceCostUsd)} /><Metric label={copy.equivalent} value={show(result.equivalentCostUsd)} /></div><div className="grid gap-2 rounded-lg border border-border p-3"><Row label={copy.delta} value={result.deltaUsd === null ? copy.unavailable : show(result.deltaUsd)} /><Row label={copy.deltaPct} value={result.deltaPct === null ? copy.unavailable : `${(result.deltaPct * 100).toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%`} /><Row label={copy.budget} value={result.budgetFit === "under" ? copy.under : result.budgetFit === "over" ? copy.over : copy.unknown} /><Row label={copy.projected} value={collecting ? copy.collecting : show(result.projectedCostUsd)} /></div>
-          {result.status === "uncosted" && <p className="text-xs font-light text-muted-foreground">{copy.uncostedNote}</p>}
-          {result.partialCoverage && <p className="text-xs font-light text-muted-foreground">{copy.partialNote}</p>}
-          {budgetUsd == null && <p className="text-xs font-light text-muted-foreground">{copy.noBudgetNote}</p>}
-          {collecting && <p className="text-xs font-light text-muted-foreground">{copy.collectingNote}</p>}
+        {result && <div className="grid gap-4"><div className="grid grid-cols-2 gap-2"><Metric label={copy.current} value={show(result.sourceCostUsd)} /><Metric label={copy.equivalent} value={show(result.equivalentCostUsd)} /></div><div className="grid gap-2 rounded-md border border-border p-3"><Row label={copy.delta} value={result.deltaUsd === null ? copy.unavailable : show(result.deltaUsd, signedMoney)} /><Row label={copy.deltaPct} value={result.deltaPct === null ? copy.unavailable : signedPercent(result.deltaPct, 1)} /><Row label={copy.budget} value={result.budgetFit === "under" ? copy.under : result.budgetFit === "over" ? copy.over : copy.unknown} /><Row label={copy.projected} value={collecting ? copy.collecting : show(result.projectedCostUsd)} /></div>
+          {result.status === "uncosted" && <p className="text-xs text-muted-foreground">{copy.uncostedNote}</p>}
+          {result.partialCoverage && <p className="text-xs text-muted-foreground">{copy.partialNote}</p>}
+          {budgetUsd == null && <p className="text-xs text-muted-foreground">{copy.noBudgetNote}</p>}
+          {collecting && <p className="text-xs text-muted-foreground">{copy.collectingNote}</p>}
           <div className="grid gap-2 border-t border-border pt-4"><h3 className="text-xs font-medium">{copy.economics}</h3><Row label={copy.totalTokens} value={(result.inputTokens + result.outputTokens).toLocaleString("pt-BR")} /><Row label={copy.mix} value={`${result.inputTokens.toLocaleString("pt-BR")} / ${result.outputTokens.toLocaleString("pt-BR")}`} /><Row label={copy.perMillion} value={perMillion} /><Row label={copy.coverageLabel} value={coverage} /></div>
-          <p className="text-xs font-light text-muted-foreground">{copy.methodology(periodLabel)}</p>
-          <p className="text-xs font-light text-muted-foreground">{fxRate !== null && fxRate > 0 ? copy.fxNote(money(fxRate, currency), fxDate ?? "—") : copy.fxMissingNote}</p>
-          <p className="text-xs font-light text-muted-foreground">{copy.disclaimer}</p></div>}
+          <p className="text-xs text-muted-foreground">{copy.methodology(periodLabel)}</p>
+          <p className="text-xs text-muted-foreground">{fxRate !== null && fxRate > 0 ? copy.fxNote(money(fxRate, currency), fxDate ?? "—") : copy.fxMissingNote}</p>
+          <p className="text-xs text-muted-foreground">{copy.disclaimer}</p></div>}
       </>}
     </div></SheetContent></Sheet>
   </>;
 }
-function Metric({ label, value }: { label: string; value: string }) { return <div className="grid gap-1 rounded-lg border border-border p-3"><span className="text-[11px] text-muted-foreground">{label}</span><strong className="tabular-nums">{value}</strong></div>; }
+function Metric({ label, value }: { label: string; value: string }) { return <div className="grid gap-1 rounded-md border border-border p-3"><span className="text-xs text-muted-foreground">{label}</span><strong className="tabular-nums">{value}</strong></div>; }
 function Row({ label, value }: { label: string; value: string }) { return <div className="flex items-center justify-between gap-3 text-xs"><span className="text-muted-foreground">{label}</span><strong className="tabular-nums">{value}</strong></div>; }

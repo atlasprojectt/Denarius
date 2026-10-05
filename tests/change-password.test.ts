@@ -1,32 +1,32 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// Issue #69 — changing your own password from /preferencias. The behaviour
-// that matters is the one Supabase does NOT give us: `updateUser` never checks
-// the current password, so without an explicit verification an unlocked laptop
-// or a stolen session cookie is a permanent account takeover. These tests hold
-// that verification, the Google-only refusal, and the eviction of every other
-// session, over an in-memory Supabase stub.
+// Changing your own password from /preferencias. `updateUser` never checks who
+// is asking, so without a proof beyond the session an unlocked laptop or a
+// stolen cookie is a permanent account takeover. The proof is a six-digit code
+// e-mailed to the account's address (founder direction 2026-10-05, replacing
+// the current-password check of issue #69). These tests hold that proof, its
+// expiry and binding, the fail-closed limiter and mail legs, the Google-only
+// refusal, and the eviction of every other session — over in-memory stubs.
 
 const state = vi.hoisted(() => ({
   user: null as Record<string, unknown> | null,
-  /** Passwords the throwaway probe client accepts. */
-  correctPassword: "senha atual longa",
-  /** Recorded so a test can prove the probe never became the real session. */
-  probeSignIns: [] as { email: string; password: string }[],
-  sessionSignIns: [] as { email: string; password: string }[],
-  /** Scopes the PROBE signed out with — its own session must not outlive the check. */
-  probeSignOutScopes: [] as (string | undefined)[],
+  cookies: new Map<string, string>(),
+  sent: [] as { to: string[]; text: string; html: string }[],
+  channelConfigured: true,
+  sendFails: false,
+  /** "allow" | "deny" | "throw" — the limiter RPC's answer. */
+  limiter: "allow" as "allow" | "deny" | "throw",
+  limiterBuckets: [] as string[],
   updateError: null as { code?: string; reasons?: string[] } | null,
-  updatedPassword: null as string | null,
+  updatedPasswords: [] as string[],
   signOutScopes: [] as (string | undefined)[],
 }));
 
 const EMAIL = "ceo@empresa.com";
-const CURRENT = "senha atual longa";
 const NEXT = "senha nova bem longa";
 
-function emailUser(): Record<string, unknown> {
-  return { id: "user-1", email: EMAIL, identities: [{ provider: "email" }] };
+function emailUser(id = "user-1"): Record<string, unknown> {
+  return { id, email: EMAIL, identities: [{ provider: "email" }] };
 }
 
 function googleUser(): Record<string, unknown> {
@@ -39,13 +39,16 @@ function googleUser(): Record<string, unknown> {
 }
 
 function reset(): void {
+  process.env.ACCOUNT_DELETION_HMAC_KEY = "test-hmac-key";
   state.user = emailUser();
-  state.correctPassword = CURRENT;
-  state.probeSignIns = [];
-  state.sessionSignIns = [];
-  state.probeSignOutScopes = [];
+  state.cookies = new Map();
+  state.sent = [];
+  state.channelConfigured = true;
+  state.sendFails = false;
+  state.limiter = "allow";
+  state.limiterBuckets = [];
   state.updateError = null;
-  state.updatedPassword = null;
+  state.updatedPasswords = [];
   state.signOutScopes = [];
 }
 
@@ -55,6 +58,20 @@ vi.mock("next/navigation", () => ({
   },
 }));
 
+vi.mock("next/headers", () => ({
+  headers: async () => new Headers(),
+  cookies: async () => ({
+    get: (name: string) =>
+      state.cookies.has(name) ? { value: state.cookies.get(name) } : undefined,
+    set: (name: string, value: string) => {
+      state.cookies.set(name, value);
+    },
+    delete: (name: string) => {
+      state.cookies.delete(name);
+    },
+  }),
+}));
+
 vi.mock("@/lib/auth/origin", () => ({
   requestOrigin: async () => "https://denarius.app",
   safeNextPath: (value: string | null) => value ?? "/",
@@ -62,43 +79,41 @@ vi.mock("@/lib/auth/origin", () => ({
 
 vi.mock("@/lib/auth/recovery", () => ({
   RECOVERY_PATH: "/auth/nova-senha",
+  RECOVERY_RESPONSE_FLOOR_MS: 0,
   hasRecoveryGrant: async () => false,
   clearRecoveryGrant: async () => {},
 }));
 
 vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: () => ({}) }));
 
-// The throwaway verification client. It must never write a session — if the
-// action ever swapped it for the request-scoped one, `sessionSignIns` below
-// would be the thing that fills up instead.
-vi.mock("@supabase/supabase-js", () => ({
-  createClient: () => ({
-    auth: {
-      signInWithPassword: async (creds: { email: string; password: string }) => {
-        state.probeSignIns.push(creds);
-        return creds.password === state.correctPassword
-          ? { data: {}, error: null }
-          : { data: {}, error: { code: "invalid_credentials" } };
-      },
-      signOut: async (options?: { scope?: string }) => {
-        state.probeSignOutScopes.push(options?.scope);
-        return { error: null };
-      },
-    },
-  }),
+vi.mock("@/lib/db/admin", () => ({
+  rateLimitTake: async ({ p_bucket }: { p_bucket: string }) => {
+    state.limiterBuckets.push(p_bucket);
+    if (state.limiter === "throw") throw new Error("rpc unavailable");
+    return state.limiter === "allow";
+  },
+}));
+
+vi.mock("@/lib/notify/channel", () => ({
+  emailChannel: () =>
+    state.channelConfigured
+      ? {
+          send: async (message: { to: string[]; text: string; html: string }) => {
+            if (state.sendFails) return { ok: false, error: "resend responded 500" };
+            state.sent.push(message);
+            return { ok: true };
+          },
+        }
+      : null,
 }));
 
 vi.mock("@/lib/supabase/server", () => ({
   createClient: async () => ({
     auth: {
       getUser: async () => ({ data: { user: state.user }, error: null }),
-      signInWithPassword: async (creds: { email: string; password: string }) => {
-        state.sessionSignIns.push(creds);
-        return { data: {}, error: null };
-      },
       updateUser: async ({ password }: { password: string }) => {
         if (state.updateError) return { data: {}, error: state.updateError };
-        state.updatedPassword = password;
+        state.updatedPasswords.push(password);
         return { data: { user: state.user }, error: null };
       },
       signOut: async (options?: { scope?: string }) => {
@@ -109,7 +124,12 @@ vi.mock("@/lib/supabase/server", () => ({
   }),
 }));
 
-const { changePassword } = await import("@/lib/auth/actions");
+const { changePassword, requestPasswordChangeCode } = await import(
+  "@/lib/auth/actions"
+);
+const { PASSWORD_CHANGE_COOKIE, PASSWORD_CHANGE_TTL_SECONDS } = await import(
+  "@/lib/auth/password-change"
+);
 
 function form(entries: Record<string, string>): FormData {
   const data = new FormData();
@@ -117,162 +137,265 @@ function form(entries: Record<string, string>): FormData {
   return data;
 }
 
-const good = {
-  currentPassword: CURRENT,
-  password: NEXT,
-  confirmation: NEXT,
-};
+/** Requests a code and reads it back out of the e-mail, the only place it goes. */
+async function requestCode(): Promise<string> {
+  const result = await requestPasswordChangeCode({}, form({}));
+  expect(result.error).toBeUndefined();
+  const code = /\b(\d{6})\b/.exec(state.sent.at(-1)?.text ?? "")?.[1];
+  expect(code).toMatch(/^\d{6}$/);
+  return code!;
+}
 
-describe("changing your own password", () => {
+function otherCode(code: string): string {
+  return code === "000000" ? "000001" : "000000";
+}
+
+function change(code: string, password = NEXT, confirmation = password) {
+  return changePassword({}, form({ code, password, confirmation }));
+}
+
+describe("requesting a password-change code", () => {
   beforeEach(reset);
 
-  it("changes it and evicts every other session", async () => {
-    const result = await changePassword({}, form(good));
+  it("e-mails a six-digit code to the account's own address", async () => {
+    const result = await requestPasswordChangeCode({}, form({}));
 
     expect(result.notice).toBeTruthy();
-    expect(result.error).toBeUndefined();
-    expect(state.updatedPassword).toBe(NEXT);
-    expect(state.signOutScopes).toEqual(["others"]);
+    expect(state.sent).toHaveLength(1);
+    expect(state.sent[0].to).toEqual([EMAIL]);
+    expect(state.sent[0].text).toMatch(/\b\d{6}\b/);
+    expect(state.cookies.has(PASSWORD_CHANGE_COOKIE)).toBe(true);
   });
 
-  it("refuses a wrong current password, on that field, changing nothing", async () => {
-    const result = await changePassword(
-      {},
-      form({ ...good, currentPassword: "nao e a minha senha" }),
-    );
+  it("keeps the code out of the cookie and out of the response", async () => {
+    const result = await requestPasswordChangeCode({}, form({}));
+    const code = /\b(\d{6})\b/.exec(state.sent[0].text)![1];
 
-    expect(result.fieldErrors?.currentPassword).toBeTruthy();
-    expect(state.updatedPassword).toBeNull();
-    expect(state.signOutScopes).toEqual([]);
+    expect(JSON.stringify(result)).not.toContain(code);
+    expect(state.cookies.get(PASSWORD_CHANGE_COOKIE)).not.toContain(code);
   });
 
-  it("verifies on a throwaway client, never on the caller's session", async () => {
-    // Verifying with the request-scoped client would rewrite the session
-    // cookies as a side effect of a *check*. It must not be the one used.
-    await changePassword({}, form(good));
+  it("refuses when the limiter says no, sending nothing", async () => {
+    state.limiter = "deny";
+    const result = await requestPasswordChangeCode({}, form({}));
 
-    expect(state.probeSignIns).toEqual([{ email: EMAIL, password: CURRENT }]);
-    expect(state.sessionSignIns).toEqual([]);
+    expect(result.error).toMatch(/Aguarde/);
+    expect(state.sent).toEqual([]);
+    expect(state.cookies.size).toBe(0);
   });
 
-  it("does not leave the verification session alive when the change then fails", async () => {
-    // Checking a password mints a REAL session server-side. Leaning on the
-    // later `scope: "others"` sweep only works when the change succeeds; on
-    // this path the action returns early, and without the probe's own sign out
-    // that token would stay valid — one live session per failed attempt, none
-    // of which the owner created or can see.
-    state.updateError = { code: "weak_password", reasons: ["pwned"] };
-    await changePassword({}, form(good));
+  it("fails closed when the limiter itself is unavailable", async () => {
+    // An unthrottled sender would be a mailer aimed at our own customer.
+    state.limiter = "throw";
+    const result = await requestPasswordChangeCode({}, form({}));
 
-    expect(state.probeSignIns).toHaveLength(1);
-    expect(state.probeSignOutScopes).toEqual(["local"]);
-    // "local" and nothing else: a broader scope here would sign the person out
-    // of the very tab they are standing in.
-    expect(state.signOutScopes).toEqual([]);
+    expect(result.error).toBeTruthy();
+    expect(state.sent).toEqual([]);
   });
 
-  it("cleans up the verification session on the success path too", async () => {
-    await changePassword({}, form(good));
-    expect(state.probeSignOutScopes).toEqual(["local"]);
-    expect(state.signOutScopes).toEqual(["others"]);
+  it("fails closed without a mail channel, leaving no challenge behind", async () => {
+    state.channelConfigured = false;
+    const result = await requestPasswordChangeCode({}, form({}));
+
+    expect(result.error).toBeTruthy();
+    expect(state.cookies.size).toBe(0);
   });
 
-  it("has nothing to clean up when the current password was wrong", async () => {
-    await changePassword({}, form({ ...good, currentPassword: "errada" }));
-    expect(state.probeSignOutScopes).toEqual([]);
+  it("leaves no challenge behind when the e-mail fails to send", async () => {
+    state.sendFails = true;
+    const result = await requestPasswordChangeCode({}, form({}));
+
+    expect(result.error).toBeTruthy();
+    expect(state.cookies.size).toBe(0);
   });
 
-  it("verifies BEFORE it changes anything", async () => {
-    // Ordering is the whole defence: a change that happened and was then
-    // rolled back would still have been a change.
-    state.updateError = { code: "unexpected_failure" };
-    await changePassword(
-      {},
-      form({ ...good, currentPassword: "errada demais" }),
-    );
-    expect(state.updatedPassword).toBeNull();
-    expect(state.probeSignIns).toHaveLength(1);
-  });
-
-  it("applies the shared password rule to the new password", async () => {
-    const result = await changePassword(
-      {},
-      form({ currentPassword: CURRENT, password: "curta", confirmation: "curta" }),
-    );
-
-    expect(result.fieldErrors?.password).toBeTruthy();
-    expect(state.updatedPassword).toBeNull();
-    // Rejected by the schema, so the current password was never even probed.
-    expect(state.probeSignIns).toEqual([]);
-  });
-
-  it("reports a mismatched confirmation on the confirmation field", async () => {
-    const result = await changePassword(
-      {},
-      form({ ...good, confirmation: `${NEXT}!` }),
-    );
-
-    expect(result.fieldErrors?.confirmation).toBeTruthy();
-    expect(state.updatedPassword).toBeNull();
-  });
-
-  it("asks for the current password instead of silently accepting a blank one", async () => {
-    const result = await changePassword(
-      {},
-      form({ ...good, currentPassword: "" }),
-    );
-
-    expect(result.fieldErrors?.currentPassword).toBeTruthy();
-    expect(state.probeSignIns).toEqual([]);
-  });
-
-  it("refuses a Google-only account with an explanation, not a credential error", async () => {
+  it("refuses a Google-only account with an explanation", async () => {
     state.user = googleUser();
-    const result = await changePassword({}, form(good));
+    const result = await requestPasswordChangeCode({}, form({}));
 
-    // The screen hides the form for these accounts; the action refuses again,
-    // because a server action never trusts the UI that called it.
     expect(result.error).toContain("Google");
-    expect(result.fieldErrors).toBeUndefined();
-    expect(state.probeSignIns).toEqual([]);
-    expect(state.updatedPassword).toBeNull();
+    expect(state.sent).toEqual([]);
   });
 
   it("refuses when the session is gone", async () => {
     state.user = null;
-    const result = await changePassword({}, form(good));
+    const result = await requestPasswordChangeCode({}, form({}));
 
     expect(result.error).toBeTruthy();
-    expect(state.updatedPassword).toBeNull();
+    expect(state.sent).toEqual([]);
+  });
+});
+
+describe("changing the password with the code", () => {
+  beforeEach(reset);
+
+  it("changes it, evicts every other session and burns the challenge", async () => {
+    const code = await requestCode();
+    const result = await change(code);
+
+    expect(result.notice).toBeTruthy();
+    expect(result.error).toBeUndefined();
+    expect(state.updatedPasswords).toEqual([NEXT]);
+    expect(state.signOutScopes).toEqual(["others"]);
+    expect(state.cookies.has(PASSWORD_CHANGE_COOKIE)).toBe(false);
   });
 
-  it("surfaces a leaked password on the password field", async () => {
-    state.updateError = { code: "weak_password", reasons: ["pwned"] };
-    const result = await changePassword({}, form(good));
+  it("refuses a wrong code, on that field, changing nothing", async () => {
+    const code = await requestCode();
+    const result = await change(otherCode(code));
 
-    expect(result.fieldErrors?.password).toContain("vazamentos");
+    expect(result.fieldErrors?.code).toBeTruthy();
+    expect(state.updatedPasswords).toEqual([]);
     expect(state.signOutScopes).toEqual([]);
+    // The right code still works afterwards — a typo does not cost an e-mail.
+    expect((await change(code)).notice).toBeTruthy();
+  });
+
+  it("refuses a code nobody requested", async () => {
+    const result = await change("123456");
+
+    expect(result.fieldErrors?.code).toBeTruthy();
+    expect(state.updatedPasswords).toEqual([]);
+  });
+
+  it("refuses an expired code", async () => {
+    vi.useFakeTimers();
+    try {
+      const code = await requestCode();
+      vi.advanceTimersByTime(PASSWORD_CHANGE_TTL_SECONDS * 1000 + 1);
+      const result = await change(code);
+
+      expect(result.fieldErrors?.code).toBeTruthy();
+      expect(state.updatedPasswords).toEqual([]);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("binds the code to the account that requested it", async () => {
+    const code = await requestCode();
+    state.user = emailUser("user-3");
+    const result = await change(code);
+
+    expect(result.fieldErrors?.code).toBeTruthy();
+    expect(state.updatedPasswords).toEqual([]);
+  });
+
+  it("refuses a tampered challenge", async () => {
+    const code = await requestCode();
+    const sealed = state.cookies.get(PASSWORD_CHANGE_COOKIE)!;
+    const [expiresAt, mac] = sealed.split(".");
+    // Pushing the expiry out without the server key must not keep it alive.
+    state.cookies.set(
+      PASSWORD_CHANGE_COOKIE,
+      `${Number(expiresAt) + 3_600_000}.${mac}`,
+    );
+
+    expect((await change(code)).fieldErrors?.code).toBeTruthy();
+    expect(state.updatedPasswords).toEqual([]);
+  });
+
+  it("stops accepting an older code once a new one is requested", async () => {
+    const first = await requestCode();
+    const second = await requestCode();
+    if (first === second) return;
+
+    expect((await change(first)).fieldErrors?.code).toBeTruthy();
+    expect((await change(second)).notice).toBeTruthy();
+  });
+
+  it("checks the schema before spending a limiter slot or the code", async () => {
+    const code = await requestCode();
+    const slotsBefore = state.limiterBuckets.length;
+    const result = await change(code, "curta");
+
+    expect(result.fieldErrors?.password).toBeTruthy();
+    expect(state.limiterBuckets).toHaveLength(slotsBefore);
+    expect(state.updatedPasswords).toEqual([]);
+  });
+
+  it("reports a mismatched confirmation on the confirmation field", async () => {
+    const code = await requestCode();
+    const result = await change(code, NEXT, `${NEXT}!`);
+
+    expect(result.fieldErrors?.confirmation).toBeTruthy();
+    expect(state.updatedPasswords).toEqual([]);
+  });
+
+  it("asks for the six digits instead of accepting a blank or malformed code", async () => {
+    await requestCode();
+    for (const code of ["", "12345", "abcdef", "1234567"]) {
+      const result = await change(code);
+      expect(result.fieldErrors?.code).toBeTruthy();
+    }
+    expect(state.updatedPasswords).toEqual([]);
+  });
+
+  it("refuses when the limiter says no — or cannot answer", async () => {
+    const code = await requestCode();
+    for (const limiter of ["deny", "throw"] as const) {
+      state.limiter = limiter;
+      const result = await change(code);
+      expect(result.error).toBeTruthy();
+      expect(result.fieldErrors).toBeUndefined();
+    }
+    expect(state.updatedPasswords).toEqual([]);
+  });
+
+  it("keeps the challenge alive when the new password is refused", async () => {
+    // A leaked password is the password's fault, not the code's: the person
+    // picks another one without waiting for a new e-mail.
+    const code = await requestCode();
+    state.updateError = { code: "weak_password", reasons: ["pwned"] };
+    const refused = await change(code);
+
+    expect(refused.fieldErrors?.password).toContain("vazamentos");
+    expect(state.signOutScopes).toEqual([]);
+    expect(state.cookies.has(PASSWORD_CHANGE_COOKIE)).toBe(true);
+
+    state.updateError = null;
+    expect((await change(code, "outra senha bem longa")).notice).toBeTruthy();
   });
 
   it("says plainly when the new password is the old one", async () => {
+    const code = await requestCode();
     state.updateError = { code: "same_password" };
-    const result = await changePassword({}, form(good));
+    const result = await change(code);
 
     expect(result.fieldErrors?.password).toMatch(/diferente/i);
   });
 
-  it("never echoes a password back to the client", async () => {
+  it("refuses a Google-only account with an explanation, not a code error", async () => {
+    const code = await requestCode();
+    state.user = googleUser();
+    const result = await change(code);
+
+    expect(result.error).toContain("Google");
+    expect(result.fieldErrors).toBeUndefined();
+    expect(state.updatedPasswords).toEqual([]);
+  });
+
+  it("refuses when the session is gone", async () => {
+    const code = await requestCode();
+    state.user = null;
+    const result = await change(code);
+
+    expect(result.error).toBeTruthy();
+    expect(state.updatedPasswords).toEqual([]);
+  });
+
+  it("never echoes the password or the code back to the client", async () => {
     for (const scenario of [
       () => {},
       () => { state.updateError = { code: "unexpected_failure" }; },
-      () => { state.correctPassword = "outra coisa"; },
+      () => { state.limiter = "deny"; },
     ]) {
       reset();
+      const code = await requestCode();
       scenario();
-      const result = await changePassword({}, form(good));
-      const serialized = JSON.stringify(result);
+      const serialized = JSON.stringify(await change(code));
       expect(serialized).not.toContain(NEXT);
-      expect(serialized).not.toContain(CURRENT);
+      expect(serialized).not.toContain(code);
     }
   });
 });

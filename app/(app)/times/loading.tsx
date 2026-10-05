@@ -14,7 +14,7 @@ export default function TimesLoading() {
         {[3, 4].map((rows) => (
           <section key={rows} className="flex flex-col gap-2">
             <Skeleton className="h-4 w-32" />
-            <div className="overflow-hidden rounded-xl ring-1 ring-foreground/10">
+            <div className="overflow-hidden rounded-lg ring-1 ring-foreground/6">
               <Skeleton className="h-8 w-full rounded-none" />
               {Array.from({ length: rows }, (_, index) => (
                 <div

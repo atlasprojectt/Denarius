@@ -20,7 +20,7 @@
 2. **Read-only governance.** Denarius warns and recommends; it cannot block or cap usage. Never write code or copy that implies enforcement.
 3. **Honest numbers or no numbers.** Every key figure is defensible: "as of <date>" stamps, "uncosted" for unknown models, stale-sync banners, disclosed frozen FX, reconciliation notices. Show the gap, never a guess.
 4. **Budgets & the verdict are the hero.** Everything on screen exists to answer "am I in control?" — features that don't serve that answer are scope creep.
-5. **Semaphore discipline.** Green/amber/red are reserved for budget status only. Deltas ("+18% vs May") stay neutral — spending more isn't inherently bad.
+5. **Semaphore discipline.** Green/amber/red are reserved for budget status. Deltas ("+18% vs May") stay neutral — spending more isn't inherently bad — with one founder-directed exception (2026-10-04): the Home spend card's week-over-week figure is red when spend rose and green when it fell.
 6. **Calm by default.** Alarm language only for warnings; apontamentos observe, never alarm. Anti-fatigue rules are sacred: one alert per (team, threshold-level, period), escalation-only re-fire.
 
 ### 3. Decision criteria — conflict resolution, in order
@@ -121,6 +121,7 @@ Work is dependency-ordered. The implemented beta, remaining limits, and unresolv
 - **When to create:** a domain component when used by 2+ screens; a hook only when stateful logic repeats; a util as a pure function in `lib/`. Reuse before creating.
 - **Required states per screen:** cold-start (CTA, never empty), collecting-pace (before day 5), all-clear (affirmative, not blank), stale-data (banner), breached. Loading via RSC streaming/skeletons — no client spinners for daily data.
 - **Numbers:** always `tabular-nums`; one `money()` helper; sentence case everywhere.
+- **Relations as symbols:** a figure's relation to another is a symbol, not a word — `+R$ 1.200,00` / `−R$ 300,00` via `signedMoney()`/`signedPercent()` (never "R$ 1.200 acima"), `X` for versus, `/` for rates, `≈` for approximations. Sentences written to be read (verdict, digest, e-mails, help) keep words. Rules in [docs/frontend.md](docs/frontend.md).
 
 ### 12. Backend standards
 

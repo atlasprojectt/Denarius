@@ -55,7 +55,7 @@ export function VerdictLine({
         />
       </span>
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
-        <p className="text-xl/snug font-semibold tracking-tight text-balance">
+        <p className="text-xl text-balance">
           {verdict.sentence}
         </p>
         {action !== null && (

@@ -15,7 +15,7 @@ export default function AppLoading() {
       </div>
 
       <div className="grid items-stretch gap-3 lg:grid-cols-2 xl:grid-cols-[minmax(0,1.55fr)_minmax(18rem,24rem)_minmax(0,1.45fr)]">
-        <div className="flex flex-col gap-5 rounded-xl border p-6 lg:col-span-2 xl:col-span-1">
+        <div className="flex flex-col gap-5 rounded-lg border p-6 lg:col-span-2 xl:col-span-1">
           <div className="flex flex-col gap-2">
             <Skeleton className="h-4 w-28" />
             <Skeleton className="h-10 w-64" />
@@ -27,14 +27,14 @@ export default function AppLoading() {
             <Skeleton className="h-10" />
           </div>
         </div>
-        <div className="flex flex-col gap-4 rounded-xl border p-6 lg:self-stretch xl:aspect-[1.16/1] xl:max-w-[24rem] xl:self-start">
+        <div className="flex flex-col gap-4 rounded-lg border p-6 lg:self-stretch xl:aspect-[1.16/1] xl:max-w-[24rem] xl:self-start">
           <Skeleton className="h-4 w-40" />
           <Skeleton className="h-7 w-32" />
           <Skeleton className="h-2 w-full" />
           <Skeleton className="h-2 w-full" />
           <Skeleton className="h-2 w-full" />
         </div>
-        <div className="flex min-h-full flex-col gap-4 rounded-xl border p-6">
+        <div className="flex min-h-full flex-col gap-4 rounded-lg border p-6">
           <Skeleton className="h-4 w-32" />
           <div className="flex flex-1 flex-col justify-center gap-2.5">
             <Skeleton className="h-4 w-full" />
@@ -46,11 +46,11 @@ export default function AppLoading() {
       </div>
 
       <div className="grid flex-1 items-stretch gap-3 lg:grid-cols-2">
-        <div className="flex min-h-[220px] flex-col gap-4 rounded-xl border p-6">
+        <div className="flex min-h-[220px] flex-col gap-4 rounded-lg border p-6">
           <Skeleton className="h-4 w-32" />
           <Skeleton className="h-44 w-full" />
         </div>
-        <div className="flex flex-col gap-3 rounded-xl border p-6">
+        <div className="flex flex-col gap-3 rounded-lg border p-6">
           <Skeleton className="h-4 w-44" />
           <Skeleton className="h-4 w-full" />
           <Skeleton className="h-10 w-full" />

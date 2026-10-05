@@ -95,11 +95,11 @@ function PanelHeader({
   count: number;
 }) {
   const title = mobile ? (
-    <SheetTitle id={titleId} className="text-sm font-semibold">
+    <SheetTitle id={titleId} className="text-sm font-medium">
       {copy.title}
     </SheetTitle>
   ) : (
-    <p id={titleId} className="text-sm font-semibold">
+    <p id={titleId} className="text-sm font-medium">
       {copy.title}
     </p>
   );
@@ -207,7 +207,7 @@ function NotificationsPanel({
                       <StateBadge icon={meta.icon} tone={meta.tone}>
                         {meta.label}
                       </StateBadge>
-                      <span className="mt-2 block text-sm font-semibold text-foreground">
+                      <span className="mt-2 block text-sm font-medium text-foreground">
                         {item.title}
                       </span>
                       <span className="mt-1 block text-xs/relaxed text-muted-foreground tabular-nums">
@@ -215,7 +215,7 @@ function NotificationsPanel({
                       </span>
                     </span>
                     <HugeiconsIcon icon={ChevronRightIcon}
-                      className="mt-1 size-4 shrink-0 self-center text-muted-foreground/55 transition-transform duration-(--motion-duration-fast) group-hover:translate-x-0.5"
+                      className="mt-1 size-4 shrink-0 self-center text-ink-faint transition-transform duration-(--motion-duration-fast) group-hover:translate-x-0.5"
                       aria-hidden
                     />
                   </Link>
@@ -392,7 +392,7 @@ export function NotificationsButton() {
       {count > 0 && (
         <Badge
           aria-hidden
-          className={`absolute -top-1 -right-1 h-5 min-w-5 border-0 px-1 py-0 text-[10px] font-bold leading-none shadow-sm ring-2 ring-background tabular-nums ${countTone}`}
+          className={`absolute -top-1 -right-1 h-5 min-w-5 border-0 px-1 py-0 text-2xs font-semibold leading-none shadow-sm ring-2 ring-background tabular-nums ${countTone}`}
         >
           {compactNotificationCount(count)}
         </Badge>
@@ -436,7 +436,7 @@ export function NotificationsButton() {
         align="end"
         aria-labelledby={`${panelId}-title`}
         aria-describedby={`${panelId}-description`}
-        className="notifications-popover flex max-h-[min(70vh,640px)] w-[400px] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-xl border-border bg-popover p-0 shadow-lg"
+        className="notifications-popover flex max-h-[min(70vh,640px)] w-[400px] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-md border-border bg-popover p-0 shadow-lg"
       >
         {panel}
       </PopoverContent>

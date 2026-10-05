@@ -15,17 +15,17 @@ const buttonVariants = cva(
         secondary:
           "border-border bg-secondary text-foreground hover:border-border hover:bg-surface-hover hover:text-foreground active:bg-surface-selected",
         tertiary:
-          "border-border bg-transparent text-muted-foreground [transition-duration:var(--motion-duration-fast)] hover:border-border hover:bg-surface-hover hover:text-foreground hover:[&_svg]:text-brand-accent-light active:bg-surface-selected",
+          "border-border bg-transparent text-muted-foreground [transition-duration:var(--motion-duration-fast)] hover:border-border hover:bg-surface-hover hover:text-foreground hover:[&_svg]:text-foreground active:bg-surface-selected",
         ghost:
           "bg-transparent text-muted-foreground hover:bg-surface-hover hover:text-foreground active:bg-surface-selected",
         destructive:
           "border-destructive/25 bg-destructive/10 text-destructive hover:bg-destructive/20 active:bg-destructive/25 focus-visible:border-destructive/50 focus-visible:ring-destructive/25 dark:bg-destructive/20 dark:hover:bg-destructive/30",
         outline:
           "border-border bg-transparent text-foreground hover:bg-surface-hover active:bg-surface-selected",
-        link: "rounded-none text-primary underline-offset-4 hover:underline dark:text-primary-hover",
+        link: "rounded-none text-foreground underline decoration-foreground/30 underline-offset-4 hover:decoration-foreground",
       },
       size: {
-        sm: "h-7 min-w-20 gap-1.5 px-3 text-xs [&_svg:not([class*='size-'])]:size-3.5",
+        sm: "h-7 min-w-20 gap-1.5 px-3 text-ui [&_svg:not([class*='size-'])]:size-3.5",
         default: "h-9 min-w-24 gap-2 px-4 text-sm [&_svg:not([class*='size-'])]:size-4",
         lg: "h-10 min-w-28 gap-2 px-5 text-sm [&_svg:not([class*='size-'])]:size-4",
         icon: "size-9 p-0 [&_svg:not([class*='size-'])]:size-4",
@@ -36,7 +36,7 @@ const buttonVariants = cva(
         "icon-lg": "size-10 p-0 [&_svg:not([class*='size-'])]:size-4",
       },
       shape: {
-        standard: "rounded-standard",
+        standard: "rounded-sm",
         full: "rounded-full",
       },
     },

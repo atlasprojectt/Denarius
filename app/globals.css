@@ -8,8 +8,17 @@
   border-radius: var(--radius-pill);
 }
 
-@utility rounded-standard {
-  border-radius: var(--radius-standard);
+/* The one uppercase role (DESIGN.md › label-caps): caps pay for their
+   attention with a smaller size, open tracking and a quiet ink set by the
+   caller. Copy stays sentence case; the transform lives here. Set in DM Mono
+   (founder-directed, 2026-10-05). */
+@utility label-caps {
+  font-family: var(--font-dm-mono), ui-monospace, monospace;
+  font-size: 0.6875rem;
+  line-height: 1.3;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 @theme inline {
@@ -36,6 +45,10 @@
   --color-badge-positive-soft: var(--badge-positive-soft);
   --color-badge-destructive: var(--badge-destructive);
   --color-badge-destructive-soft: var(--badge-destructive-soft);
+  --color-pace-spent: var(--pace-spent);
+  --color-pace-projected: var(--pace-projected);
+  --color-pace-over: var(--pace-over);
+  --color-pace-leftover: var(--pace-leftover);
   --color-brand-accent: var(--brand-accent);
   --color-brand-accent-light: var(--brand-accent-light);
   --color-brand-accent-muted: var(--brand-accent-muted);
@@ -64,6 +77,9 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
+  --color-ink-secondary: var(--ink-secondary);
+  --color-ink-faint: var(--ink-faint);
+  --color-sidebar-ink-subtle: var(--sidebar-ink-subtle);
   --color-muted: var(--muted);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-secondary: var(--secondary);
@@ -82,15 +98,42 @@
   --color-surface-hover: var(--surface-hover);
   --color-surface-selected: var(--surface-selected);
   --color-tab-active: var(--tab-active);
-  --radius-sm: 0.375rem;
-  --radius-md: 0.625rem;
-  --radius-lg: 0.875rem;
-  --radius-xl: 0.875rem;
-  --radius-2xl: 1rem;
-  --radius-3xl: 1.25rem;
-  --radius-4xl: 1.5rem;
+  /* Radius ladder (DESIGN.md › Shapes): xs data marks, sm controls, md nested
+     and floating containers, lg top-level surfaces, pill for press and state.
+     xl stays as an alias of lg for generated primitives. */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
+  --radius-xl: 12px;
   --radius-pill: 9999px;
-  --radius-standard: 0.625rem;
+  /* Type scale (DESIGN.md › Typography): fixed rem steps. Each size carries
+     its line height and tracking; weight and ink are set by the style. */
+  --text-2xs: 0.6875rem;
+  --text-2xs--line-height: 1.3;
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1.5;
+  --text-ui: 0.8125rem;
+  --text-ui--line-height: 1.4;
+  --text-sm: 0.875rem;
+  --text-sm--line-height: 1.5;
+  --text-base: 1rem;
+  --text-base--line-height: 1.5;
+  --text-lg: 1.125rem;
+  --text-lg--line-height: 1.25;
+  --text-lg--letter-spacing: -0.01em;
+  --text-xl: 1.375rem;
+  --text-xl--line-height: 1.3;
+  --text-xl--letter-spacing: -0.01em;
+  --text-2xl: 1.75rem;
+  --text-2xl--line-height: 1.2;
+  --text-2xl--letter-spacing: -0.02em;
+  --text-display-sm: 2.25rem;
+  --text-display-sm--line-height: 1.08;
+  --text-display-sm--letter-spacing: -0.025em;
+  --text-display: 2.75rem;
+  --text-display--line-height: 1.08;
+  --text-display--letter-spacing: -0.025em;
 }
 
 :root {
@@ -159,7 +202,7 @@ input[type="number"]::-webkit-outer-spin-button {
   }
 
   [data-slot="button"][data-motion="disclosure"]:not(:disabled):not([aria-disabled="true"]):not([data-disabled]):not([data-loading="true"]):hover [data-icon="disclosure"] {
-    color: var(--brand-accent-light);
+    color: var(--foreground);
   }
 }
 
@@ -409,25 +452,25 @@ input[type="number"]::-webkit-outer-spin-button {
   }
 }
 
-/* Times changes from compact comparison cards to the dense eight-column
+/* Times changes from compact comparison cards to the dense seven-column
    table based on the width the surface actually receives after the sidebar,
    not on the browser viewport. */
 .team-index-card {
   container: team-index / inline-size;
 }
 
-@container team-index (min-width: 1180px) {
+@container team-index (min-width: 960px) {
   .team-index-header {
     display: grid;
     grid-template-columns:
-      minmax(170px, 1.35fr) 104px 108px 108px 118px 138px
-      minmax(110px, 0.8fr) 172px;
+      minmax(170px, 1.35fr) 104px 108px 108px 118px
+      minmax(110px, 0.8fr) 16px;
   }
 
   .team-index-row-grid {
     grid-template-columns:
-      minmax(170px, 1.35fr) 104px 108px 108px 118px 138px
-      minmax(110px, 0.8fr) 172px;
+      minmax(170px, 1.35fr) 104px 108px 108px 118px
+      minmax(110px, 0.8fr) 16px;
     align-items: center;
     gap: 1rem;
   }
@@ -557,39 +600,45 @@ input[type="number"]::-webkit-outer-spin-button {
   --popover-foreground: oklch(0.18 0 0);
   --brand-accent: #ff6524;
   --brand-accent-light: #ff9a70;
-  /* Action is the most vivid orange that still holds white-text AA (base 4.78,
-     hover 4.58 — both pass). The signature accent stays out of solid button
-     fills behind text (white ~3.0). */
+  /* Monochrome by default (founder-directed, 2026-10-04): the interface is
+     neutral ink and orange is a punctual signal for an ON state (checked
+     switch, selected theme, unread dot) and the logo coin. --brand-action is
+     the orange those controls fill with: it holds 4.78:1 against white. */
   --brand-action: #c7480d;
   --brand-accent-muted: color-mix(in oklab, var(--brand-accent) 12%, transparent);
   --brand-accent-border: color-mix(in oklab, var(--brand-accent) 28%, transparent);
-  --focus-ring: var(--brand-accent-light);
-  --primary: var(--brand-action);
-  --primary-foreground: oklch(0.98 0.016 73.684);
-  /* Action hover brightens one controlled step while keeping AA contrast.
-     The signature accent remains separate because it is too light for 14px
-     text on a solid button. */
-  --primary-hover: #cc4a0a;
+  --focus-ring: oklch(0.55 0 0);
+  --primary: oklch(0.2 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  /* Primary actions are ink, not orange; hover lifts one neutral step. */
+  --primary-hover: oklch(0.3 0 0);
   --secondary: var(--surface-control);
   --secondary-foreground: oklch(0.24 0 0);
   --muted: var(--surface-control);
-  --muted-foreground: oklch(0.53 0 0);
+  /* Ink ladder (DESIGN.md › Colors): primary is --foreground, subtle is
+     --muted-foreground. Subtle sits at the 4.5:1 floor on the in-content
+     surfaces (hover rows are the tightest), so light mode cannot go quieter;
+     the rail gets its own darker subtle, and faint is never used for words. */
+  --muted-foreground: oklch(0.528 0 0);
+  --ink-secondary: oklch(0.4 0 0);
+  --ink-faint: oklch(0.63 0 0);
+  --sidebar-ink-subtle: oklch(0.505 0 0);
   --accent: var(--surface-hover);
   --accent-foreground: oklch(0.24 0 0);
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.9 0 0);
   --input: oklch(0.9 0 0);
   --ring: var(--focus-ring);
-  --chart-1: var(--brand-accent);
-  --chart-2: var(--brand-accent-light);
+  --chart-1: var(--foreground);
+  --chart-2: color-mix(in oklab, var(--foreground) 58%, transparent);
   --chart-3: color-mix(in oklab, var(--foreground) 70%, transparent);
   --chart-4: color-mix(in oklab, var(--foreground) 52%, transparent);
   --chart-5: color-mix(in oklab, var(--foreground) 36%, transparent);
   --radius: 0.875rem;
   --sidebar: var(--surface-deep);
   --sidebar-foreground: oklch(0.18 0 0);
-  --sidebar-primary: oklch(0.646 0.222 41.116);
-  --sidebar-primary-foreground: oklch(0.98 0.016 73.684);
+  --sidebar-primary: oklch(0.2 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
   --sidebar-accent: oklch(0.95 0 0);
   --sidebar-selected: oklch(0.89 0 0);
   --sidebar-hover: oklch(0.91 0 0);
@@ -621,6 +670,16 @@ input[type="number"]::-webkit-outer-spin-button {
   --badge-positive-soft: color-mix(in oklab, var(--badge-positive) 10%, transparent);
   --badge-destructive: #dc2626;
   --badge-destructive-soft: color-mix(in oklab, var(--badge-destructive) 10%, transparent);
+
+  /* Hero pacing bar (founder-directed, 2026-10-05): colors that carry their
+     meaning. Hue says where the money sits (orange inside the budget, red
+     above it, a quiet gray for budget left free); lightness says when
+     (strong = already spent, light = still to come). The realized overrun
+     reuses --status-red, so only the projected overrun needs its own red. */
+  --pace-spent: oklch(0.65 0.19 45);
+  --pace-projected: oklch(0.82 0.09 55);
+  --pace-over: oklch(0.74 0.11 25);
+  --pace-leftover: oklch(0.88 0 0);
 }
 
 .dark {
@@ -645,24 +704,27 @@ input[type="number"]::-webkit-outer-spin-button {
   --brand-action: #c7480d;
   --brand-accent-muted: color-mix(in oklab, var(--brand-accent) 14%, transparent);
   --brand-accent-border: color-mix(in oklab, var(--brand-accent) 30%, transparent);
-  --focus-ring: var(--brand-accent-light);
-  --primary: var(--brand-action);
-  --primary-foreground: oklch(0.98 0.016 73.684);
-  /* Action matches light (identical across themes); hover brightens one step
-     while keeping white-text AA. */
-  --primary-hover: #cc4a0a;
+  --focus-ring: oklch(0.7 0 0);
+  --primary: oklch(0.94 0 0);
+  --primary-foreground: oklch(0.18 0 0);
+  --primary-hover: oklch(0.86 0 0);
   --secondary: var(--surface-control);
   --secondary-foreground: oklch(0.97 0 0);
   --muted: var(--surface-control);
-  --muted-foreground: oklch(0.71 0 0);
+  /* Dark has room above the floor: subtle drops from 0.71 to 0.62 (5.1:1 on
+     cards, 4.6:1 on popovers) so commentary recedes visibly. */
+  --muted-foreground: oklch(0.62 0 0);
+  --ink-secondary: oklch(0.8 0 0);
+  --ink-faint: oklch(0.52 0 0);
+  --sidebar-ink-subtle: oklch(0.62 0 0);
   --accent: var(--surface-hover);
   --accent-foreground: oklch(0.97 0 0);
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 7%);
   --input: oklch(1 0 0 / 11%);
   --ring: var(--focus-ring);
-  --chart-1: var(--brand-accent);
-  --chart-2: var(--brand-accent-light);
+  --chart-1: var(--foreground);
+  --chart-2: color-mix(in oklab, var(--foreground) 58%, transparent);
   --chart-3: color-mix(in oklab, var(--foreground) 70%, transparent);
   --chart-4: color-mix(in oklab, var(--foreground) 52%, transparent);
   --chart-5: color-mix(in oklab, var(--foreground) 36%, transparent);
@@ -670,8 +732,8 @@ input[type="number"]::-webkit-outer-spin-button {
      controls and transient surfaces. */
   --sidebar: var(--surface-deep);
   --sidebar-foreground: oklch(0.97 0 0);
-  --sidebar-primary: oklch(0.705 0.213 47.604);
-  --sidebar-primary-foreground: oklch(0.98 0.016 73.684);
+  --sidebar-primary: oklch(0.94 0 0);
+  --sidebar-primary-foreground: oklch(0.18 0 0);
   --sidebar-accent: oklch(0.19 0 0);
   --sidebar-selected: var(--sidebar-accent);
   --sidebar-hover: var(--surface-hover);
@@ -697,6 +759,11 @@ input[type="number"]::-webkit-outer-spin-button {
   --badge-positive-soft: color-mix(in oklab, var(--badge-positive) 10%, transparent);
   --badge-destructive: #fb2c36;
   --badge-destructive-soft: color-mix(in oklab, var(--badge-destructive) 10%, transparent);
+
+  --pace-spent: oklch(0.72 0.17 50);
+  --pace-projected: oklch(0.56 0.1 55);
+  --pace-over: oklch(0.47 0.12 25);
+  --pace-leftover: oklch(0.36 0 0);
 }
 
 /* Description links inside the empty/field/item primitives hover in the brand
@@ -1118,7 +1185,7 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 
 .report-section-number {
-  color: #ff5100;
+  color: #78716c;
 }
 
 .report-summary {

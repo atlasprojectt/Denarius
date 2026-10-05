@@ -29,7 +29,7 @@ import {
 } from "@/components/ui/table";
 import type { CockpitTeam } from "@/lib/engine/cockpit";
 import { percent } from "@/lib/format";
-import { money } from "@/lib/money";
+import { money, signedMoney } from "@/lib/money";
 
 // The teams section (frontend §3.5, redesign 2026-07): ONE stable table for
 // every budgeted team, at-risk first — no expanding rows, no collapsed groups,
@@ -64,11 +64,9 @@ const c = {
   colProjection: "Projeção",
   detail: (team: string) => `Ver detalhe de ${team}`,
   collecting: "—",
-  warnBreach: (spent: string, budget: string, pct: string) =>
-    `Estourou o orçamento: ${spent} de ${budget} (${pct}).`,
-  warnProjected: (projection: string, over: string) =>
-    `No ritmo atual, fecha em ${projection} — ${over} acima do orçamento.`,
-  warnThreshold: (pct: string) => `Já em ${pct} do orçamento neste ponto do mês.`,
+  warnBreach: (delta: string) => `Gasto X orçamento: ${delta}`,
+  warnProjected: (delta: string) => `Projeção X orçamento: ${delta}`,
+  warnThreshold: (pct: string) => `Já em ${pct} do orçamento neste ponto do mês`,
   emptyBody:
     "Defina orçamentos por time para ver aqui quem está dentro do ritmo e quem precisa de atenção.",
   emptyCta: "Definir orçamentos por time",
@@ -79,15 +77,10 @@ function warningLine(team: CockpitTeam, currency: string): string | null {
   if (f === null) return null;
   const ev = team.evaluation;
   if (f.level === "breach") {
-    return c.warnBreach(
-      money(ev.spent, currency),
-      money(ev.budget, currency),
-      percent(ev.pctSpent),
-    );
+    return c.warnBreach(signedMoney(ev.spent - ev.budget, currency));
   }
   if (f.level === "projected_breach" && ev.projection !== null) {
-    const over = money(ev.projection - ev.budget, currency);
-    return c.warnProjected(money(ev.projection, currency), over);
+    return c.warnProjected(signedMoney(ev.projection - ev.budget, currency));
   }
   return c.warnThreshold(percent(ev.pctSpent));
 }
@@ -123,9 +116,9 @@ export function TeamBudgetTable({
     // past the row into the observations footer. `xl:h-full` locks it to the
     // constrained grid track so the page stays fixed and only this list scrolls.
     <Card className="min-h-full xl:h-full">
-      <CardHeader className="border-b border-border">
+      <CardHeader>
         <CardTitle as="h2" id="team-budget-title" className="flex items-center gap-2 text-sm">
-          <HugeiconsIcon icon={UsersIcon} className="size-4 text-muted-foreground" aria-hidden />
+          <HugeiconsIcon icon={UsersIcon} className="size-4 text-ink-faint" aria-hidden />
           {c.title}
         </CardTitle>
         <CardDescription>
@@ -159,13 +152,13 @@ export function TeamBudgetTable({
                   key={team.teamId}
                   href={`/times/${team.teamId}`}
                   aria-label={c.detail(team.teamName)}
-                  className="group min-h-11 rounded-lg border p-3 outline-none transition-colors hover:border-border hover:bg-surface-hover focus-visible:ring-2 focus-visible:ring-ring/40"
+                  className="group min-h-11 rounded-md border p-3 outline-none transition-colors hover:border-border hover:bg-surface-hover focus-visible:ring-2 focus-visible:ring-ring/40"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <p className="min-w-0 truncate font-medium">{team.teamName}</p>
                     <TeamStatus team={team} currency={currency} />
                   </div>
-                  <dl className="mt-2.5 grid grid-cols-3 gap-2 text-[11px] leading-relaxed">
+                  <dl className="mt-2.5 grid grid-cols-3 gap-2 text-xs leading-relaxed">
                     <div>
                       <dt className="text-muted-foreground">{c.colSpent}</dt>
                       <dd className="mt-0.5 font-medium tabular-nums">
@@ -192,10 +185,10 @@ export function TeamBudgetTable({
                       pctProjected={team.pctProjected}
                       status={team.status}
                     />
-                    <span className="text-xs font-light tabular-nums text-muted-foreground">
+                    <span className="text-xs tabular-nums text-muted-foreground">
                       {percent(ev.pctSpent)}
                     </span>
-                    <HugeiconsIcon icon={ChevronRightIcon} className="size-4 text-muted-foreground transition-transform duration-(--motion-duration-fast) ease-(--motion-ease-standard) group-hover:translate-x-0.5" />
+                    <HugeiconsIcon icon={ChevronRightIcon} className="size-4 text-ink-faint transition-transform duration-(--motion-duration-fast) ease-(--motion-ease-standard) group-hover:translate-x-0.5" />
                   </div>
                 </Link>
               );
@@ -229,7 +222,7 @@ export function TeamBudgetTable({
                       <Link
                         href={`/times/${team.teamId}`}
                         aria-label={c.detail(team.teamName)}
-                        className="relative z-10 block truncate font-medium outline-none after:absolute after:inset-0 after:z-[-1] after:w-[calc(100vw-2rem)] after:max-w-[calc(100%+1000px)] after:rounded-md after:transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/40"
+                        className="relative z-10 block truncate font-medium outline-none after:absolute after:inset-0 after:z-[-1] after:w-[calc(100vw-2rem)] after:max-w-[calc(100%+1000px)] after:rounded-sm after:transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/40"
                       >
                         {team.teamName}
                       </Link>
@@ -251,7 +244,7 @@ export function TeamBudgetTable({
                           pctProjected={team.pctProjected}
                           status={team.status}
                         />
-                        <span className="w-10 shrink-0 text-right text-xs font-light tabular-nums text-muted-foreground">
+                        <span className="w-10 shrink-0 text-right text-xs tabular-nums text-muted-foreground">
                           {percent(ev.pctSpent)}
                         </span>
                       </div>
@@ -262,7 +255,7 @@ export function TeamBudgetTable({
                         : money(ev.projection, currency)}
                     </TableCell>
                     <TableCell className="p-0 pr-2 text-right">
-                      <HugeiconsIcon icon={ChevronRightIcon} className="ml-auto size-4 text-muted-foreground transition-transform duration-(--motion-duration-fast) ease-(--motion-ease-standard) group-hover:translate-x-0.5" />
+                      <HugeiconsIcon icon={ChevronRightIcon} className="ml-auto size-4 text-ink-faint transition-transform duration-(--motion-duration-fast) ease-(--motion-ease-standard) group-hover:translate-x-0.5" />
                     </TableCell>
                   </TableRow>
                 );

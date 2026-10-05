@@ -113,7 +113,7 @@ export default function ButtonShowcasePage() {
       <Card>
         <CardHeader><CardTitle>Composição</CardTitle></CardHeader>
         <CardContent className="grid gap-4 text-sm sm:grid-cols-2">
-          <div className="rounded-lg border border-border bg-muted p-4">
+          <div className="rounded-md border border-border bg-muted p-4">
             <p className="font-medium">Correto</p>
             <p className="mt-1 text-xs text-muted-foreground">
               Uma ação primária por contexto; alternativas neutras e ações contextuais terciárias.
@@ -123,7 +123,7 @@ export default function ButtonShowcasePage() {
               <Button variant="outline">Cancelar</Button>
             </div>
           </div>
-          <div className="rounded-lg border border-border bg-muted p-4">
+          <div className="rounded-md border border-border bg-muted p-4">
             <p className="font-medium">Evitar</p>
             <p className="mt-1 text-xs text-muted-foreground">
               Várias ações laranja, raio estrutural em ações autônomas ou vermelho em ações reversíveis.

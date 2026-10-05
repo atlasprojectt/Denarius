@@ -63,6 +63,20 @@ export const ACCOUNT_DELETION_VERIFY: RateLimitRule = {
   windowSeconds: 15 * 60,
 };
 
+/** Password change sends a credential-bearing code too, and the verify bucket
+ *  is the only brake on guessing it — both fail closed, like deletion. */
+export const PASSWORD_CHANGE_REQUEST: RateLimitRule = {
+  name: "password-change:request",
+  limit: 3,
+  windowSeconds: 15 * 60,
+};
+
+export const PASSWORD_CHANGE_VERIFY: RateLimitRule = {
+  name: "password-change:verify",
+  limit: 10,
+  windowSeconds: 15 * 60,
+};
+
 /**
  * Hashes whatever identifies the caller before it is stored. The bucket keys an
  * IP address or a tenant; an IP is personal data under the LGPD, and this table
@@ -140,7 +154,8 @@ export async function takeRateLimitSlot(
   }
 }
 
-/** Strict counterpart used by destructive account deletion. */
+/** Strict counterpart used by the e-mail code paths (account deletion,
+ *  password change). */
 export async function takeRateLimitSlotFailClosed(
   rule: RateLimitRule,
   subject: string,

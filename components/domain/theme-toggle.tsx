@@ -160,7 +160,7 @@ function WindowPreview({ dark }: { dark: boolean }) {
     <span aria-hidden className={cn("flex h-full min-h-0 flex-1 p-2", shell)}>
       <span
         className={cn(
-          "flex min-h-0 min-w-0 flex-1 gap-2 rounded-[5px] p-2",
+          "flex min-h-0 min-w-0 flex-1 gap-2 rounded-sm p-2",
           pane,
         )}
       >
@@ -170,10 +170,10 @@ function WindowPreview({ dark }: { dark: boolean }) {
           <span className={cn("h-1 w-2/3 rounded-full", shape)} />
         </span>
         <span className="grid min-h-0 min-w-0 flex-1 grid-cols-2 grid-rows-2 gap-1.5">
-          <span className={cn("min-h-0 rounded-[3px]", shape)} />
-          <span className={cn("min-h-0 rounded-[3px]", shape)} />
-          <span className={cn("min-h-0 rounded-[3px]", shape)} />
-          <span className={cn("min-h-0 rounded-[3px]", shape)} />
+          <span className={cn("min-h-0 rounded-xs", shape)} />
+          <span className={cn("min-h-0 rounded-xs", shape)} />
+          <span className={cn("min-h-0 rounded-xs", shape)} />
+          <span className={cn("min-h-0 rounded-xs", shape)} />
         </span>
       </span>
     </span>
@@ -187,7 +187,7 @@ function ThemePreview({ variant }: { variant: ThemePreference }) {
     return (
       <span
         aria-hidden
-        className="grid h-24 grid-cols-2 overflow-hidden rounded-md border border-stone-300"
+        className="grid h-24 grid-cols-2 overflow-hidden rounded-sm border border-stone-300"
       >
         <span className="flex min-h-0 min-w-0">
           <WindowPreview dark={false} />
@@ -204,7 +204,7 @@ function ThemePreview({ variant }: { variant: ThemePreference }) {
     <span
       aria-hidden
       className={cn(
-        "flex h-24 overflow-hidden rounded-md border",
+        "flex h-24 overflow-hidden rounded-sm border",
         dark ? "border-stone-800" : "border-stone-300",
       )}
     >
@@ -231,7 +231,7 @@ function ThemeOption({
   return (
     <div
       className={cn(
-        "group relative min-h-32 min-w-0 rounded-lg border p-3 transition-[border-color,background-color] duration-(--motion-duration-standard) ease-(--motion-ease-standard)",
+        "group relative min-h-32 min-w-0 rounded-md border p-3 transition-[border-color,background-color] duration-(--motion-duration-standard) ease-(--motion-ease-standard)",
         selected
           ? "border-brand-accent/50 bg-brand-accent-muted"
           : "border-border bg-card hover:border-border hover:bg-surface-hover",
@@ -241,7 +241,7 @@ function ThemeOption({
         value={variant}
         aria-label={label}
         aria-describedby={descriptionId}
-        className="absolute inset-0 z-10 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        className="absolute inset-0 z-10 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
       />
 
       <div className="flex flex-col gap-3">
@@ -256,10 +256,10 @@ function ThemeOption({
           {icon}
         </span>
         <span className="min-w-0">
-          <span className="block text-sm font-semibold">{label}</span>
+          <span className="block text-sm font-medium">{label}</span>
           <span
             id={descriptionId}
-            className="mt-0.5 block text-xs/relaxed font-light text-muted-foreground"
+            className="mt-0.5 block text-xs/relaxed text-muted-foreground"
           >
             {hint}
           </span>

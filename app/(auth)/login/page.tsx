@@ -33,8 +33,8 @@ export default async function LoginPage({
         : undefined;
 
   return (
-    <div className="grid min-h-svh bg-surface-canvas lg:grid-cols-[minmax(28rem,0.82fr)_minmax(0,1.18fr)]">
-      <div className="flex min-w-0 flex-col gap-4 bg-surface-card px-5 py-6 sm:px-8 md:px-12 md:py-10 lg:px-[clamp(3rem,6vw,6.5rem)]">
+    <div className="grid min-h-svh bg-surface-card lg:grid-cols-[minmax(28rem,0.82fr)_minmax(0,1.18fr)]">
+      <div className="flex min-w-0 flex-col gap-4 px-5 py-6 sm:px-8 md:px-12 md:py-10 lg:px-[clamp(3rem,6vw,6.5rem)]">
         {/* On desktop the wordmark lives on the cover; keep it here for small
             screens where the cover column is hidden. */}
         <div className="flex items-center gap-2 lg:hidden">
@@ -47,7 +47,7 @@ export default async function LoginPage({
         </div>
         {/* The legal pages are public and have to be reachable from the only
             screen a stranger sees (issue #57). */}
-        <nav className="flex items-center justify-center gap-2 border-t border-border pt-3 text-xs font-light text-muted-foreground">
+        <nav className="flex items-center justify-center gap-2 border-t border-border pt-3 text-xs text-muted-foreground">
           <Link
             href="/privacidade"
             className="inline-flex min-h-11 items-center underline-offset-4 hover:text-foreground hover:underline"

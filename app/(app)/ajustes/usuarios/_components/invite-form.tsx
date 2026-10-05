@@ -51,7 +51,7 @@ function CopyLink({ url }: { url: string }) {
 
   return (
     <div className="flex items-center gap-2">
-      <code className="min-w-0 flex-1 truncate rounded-md bg-muted px-2 py-1.5 text-xs">
+      <code className="min-w-0 flex-1 truncate rounded-sm bg-muted px-2 py-1.5 text-xs">
         {url}
       </code>
       <Button
@@ -137,7 +137,7 @@ export function InviteForm() {
       {/* The token is hashed at rest — this render is the only chance to read
           the link, so it stays on screen until the next submit. */}
       {state.inviteUrl && (
-        <div className="flex flex-col gap-1.5 rounded-lg border p-3">
+        <div className="flex flex-col gap-1.5 rounded-md border p-3">
           <p className="text-xs font-medium">{copy.linkTitle}</p>
           <p className="text-xs text-muted-foreground">
             {state.emailed ? copy.linkEmailed : copy.linkNotEmailed}

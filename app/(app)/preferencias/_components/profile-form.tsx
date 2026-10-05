@@ -13,7 +13,7 @@ import {
 
 const copy = {
   name: "Nome de exibição",
-  hint: "Este nome será exibido dentro do Denarius.",
+  hint: "É assim que a equipe vê você dentro do Denarius.",
   save: "Salvar nome",
   saving: "Salvando…",
 };
@@ -30,28 +30,20 @@ export function ProfileForm({ displayName }: { displayName: string }) {
   const changed = name.trim() !== displayName.trim();
 
   return (
-    <form action={formAction} className="flex flex-col gap-4">
-      <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
-        <div className="flex min-w-0 flex-col gap-1.5">
-          <Label htmlFor="displayName">{copy.name}</Label>
-          <Input
-            id="displayName"
-            name="displayName"
-            required
-            minLength={2}
-            maxLength={80}
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-            aria-describedby="display-name-description"
-            className="h-10"
-          />
-          <p
-            id="display-name-description"
-            className="text-xs/relaxed text-muted-foreground"
-          >
-            {copy.hint}
-          </p>
-        </div>
+    <form action={formAction} className="flex flex-col gap-1.5">
+      <Label htmlFor="displayName">{copy.name}</Label>
+      <div className="flex flex-col gap-3 sm:flex-row">
+        <Input
+          id="displayName"
+          name="displayName"
+          required
+          minLength={2}
+          maxLength={80}
+          value={name}
+          onChange={(event) => setName(event.target.value)}
+          aria-describedby="display-name-description"
+          className="h-9 sm:max-w-sm"
+        />
         <Button
           type="submit"
           loading={pending}
@@ -62,6 +54,12 @@ export function ProfileForm({ displayName }: { displayName: string }) {
           {copy.save}
         </Button>
       </div>
+      <p
+        id="display-name-description"
+        className="text-xs/relaxed text-muted-foreground"
+      >
+        {copy.hint}
+      </p>
 
       <ActionToast
         id="profile-preference"

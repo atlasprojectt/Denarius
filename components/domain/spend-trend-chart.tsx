@@ -376,7 +376,7 @@ function HoverFocus({
     if (point !== null) {
       dot.style.setProperty(
         "--focus-dot-color",
-        seriesColor[point.key] ?? "var(--brand-accent)",
+        seriesColor[point.key] ?? "var(--foreground)",
       );
       place(
         dot,
@@ -598,7 +598,7 @@ export function SpendTrendChart<Row extends object>({
         style={{
           clipPath: `polygon(50% 0, 100% ${HAIRLINE_TIP}px, 100% calc(100% - ${HAIRLINE_TIP}px), 50% 100%, 0 calc(100% - ${HAIRLINE_TIP}px), 0 ${HAIRLINE_TIP}px)`,
         }}
-        className="denarius-chart-focus pointer-events-none absolute left-0 w-[2px] bg-[color-mix(in_oklab,var(--brand-accent)_82%,transparent)]"
+        className="denarius-chart-focus pointer-events-none absolute left-0 w-[2px] bg-[color-mix(in_oklab,var(--foreground)_82%,transparent)]"
       />
       <div
         ref={pillRef}

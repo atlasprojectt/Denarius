@@ -89,7 +89,7 @@ export function UsersTable({
             <Item key={u.id} variant="outline">
               <ItemMedia>
                 <Avatar size="sm">
-                  <AvatarFallback className="text-[10px] font-semibold">
+                  <AvatarFallback className="text-2xs font-semibold">
                     {initialsOf(u.email)}
                   </AvatarFallback>
                 </Avatar>
@@ -98,7 +98,7 @@ export function UsersTable({
                 <ItemTitle>
                   {u.email}
                   {isSelf && (
-                    <span className="text-xs font-light text-muted-foreground">
+                    <span className="text-xs text-muted-foreground">
                       ({copy.you})
                     </span>
                   )}
@@ -120,7 +120,7 @@ export function UsersTable({
         })}
       </ItemGroup>
       {!isAdmin && (
-        <p className="text-sm text-muted-foreground">{copy.adminOnly}</p>
+        <p className="text-sm text-ink-secondary">{copy.adminOnly}</p>
       )}
     </div>
   );

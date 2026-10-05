@@ -202,7 +202,7 @@ export function ReportsHost({
     <div className="grid gap-10">
       <section aria-labelledby="reports-agora" className="grid gap-4">
         <div className="grid gap-1">
-          <h2 id="reports-agora" className="font-heading text-[15px] font-semibold tracking-tight">
+          <h2 id="reports-agora" className="font-heading text-base font-medium">
             {copy.liveCardTitle}
           </h2>
           <p className="text-xs text-muted-foreground">{copy.liveCardBody}</p>
@@ -241,7 +241,7 @@ export function ReportsHost({
         className="grid gap-4 border-t border-border pt-8"
       >
         <div className="grid gap-1">
-          <h2 id="reports-closing" className="font-heading text-[15px] font-semibold tracking-tight">
+          <h2 id="reports-closing" className="font-heading text-base font-medium">
             {copy.closingTitle}
           </h2>
         </div>
@@ -288,7 +288,7 @@ export function ReportsHost({
         className="grid gap-4 border-t border-border pt-8"
       >
         <div className="grid gap-1">
-          <h2 id="reports-history" className="font-heading text-[15px] font-semibold tracking-tight">
+          <h2 id="reports-history" className="font-heading text-base font-medium">
             {copy.closedListTitle}
           </h2>
           <p className="text-xs text-muted-foreground">

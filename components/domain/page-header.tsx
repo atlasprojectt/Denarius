@@ -28,17 +28,17 @@ export function PageHeader({
         {backHref && (
           <Link
             href={backHref}
-            className="mb-1 inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
+            className="mb-1 inline-flex items-center gap-1 text-ui text-ink-secondary transition-colors hover:text-foreground"
           >
             <HugeiconsIcon icon={ChevronLeftIcon} className="size-3.5" />
             {backLabel}
           </Link>
         )}
-        <h1 className="text-2xl font-semibold tracking-tight text-balance">
+        <h1 className="text-2xl text-balance">
           {title}
         </h1>
         {description && (
-          <p className="mt-1 max-w-2xl text-sm/relaxed text-muted-foreground">
+          <p className="mt-2 max-w-2xl text-sm text-ink-secondary">
             {description}
           </p>
         )}
@@ -51,7 +51,7 @@ export function PageHeader({
             </div>
           )}
           {meta && (
-            <p className="text-xs font-light text-muted-foreground tabular-nums">{meta}</p>
+            <p className="text-xs text-muted-foreground tabular-nums">{meta}</p>
           )}
         </div>
       )}

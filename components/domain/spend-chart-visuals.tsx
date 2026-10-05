@@ -12,7 +12,7 @@ export function SpendChartGrid() {
 
 export function SpendAreaGradient({
   id,
-  color = "var(--brand-accent)",
+  color = "var(--foreground)",
 }: {
   id: string;
   color?: string;

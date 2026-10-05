@@ -8,11 +8,12 @@ export const homeCopy = {
     morning: "Bom dia",
     afternoon: "Boa tarde",
     evening: "Boa noite",
+    // `verdict` is the emphasized word; `lead` is the quiet phrase before it.
     status: {
-      green: "Tudo sob controle",
-      amber: "Atenção",
-      red: "Orçamento estourado",
-      collecting: "Coletando ritmo",
+      green: { lead: "Tudo", verdict: "sob controle" },
+      amber: { lead: "", verdict: "Atenção" },
+      red: { lead: "Orçamento", verdict: "estourado" },
+      collecting: { lead: "", verdict: "Coletando ritmo" },
     },
   },
   digest: {
@@ -54,23 +55,24 @@ export const homeCopy = {
   hero: {
     title: "Gasto do mês",
     ofBudget: (budget: string) => `de ${budget}`,
-    weekDelta: (pct: string) => `${pct} vs semana anterior`,
+    weekDeltaLabel: "X semana anterior",
     kpiProjection: "Projeção de fechamento",
     collectingShort: "coletando ritmo",
     unconverted: (usd: string) =>
       `+ ${usd} de API ainda sem câmbio congelado — fora do total até o câmbio ser capturado.`,
     // Pacing bar. The meta row pairs the two figures the bar exists to
-    // compare: how much of the budget is gone against how much of the month.
-    periodDay: (day: number, days: number, elapsed: string) =>
-      `dia ${day} de ${days} · ${elapsed} do mês`,
+    // compare: how far into the month against how much of the budget is gone.
     pace: {
+      periodDay: (day: number, days: number) => `dia ${day} de ${days}`,
       spent: "Gasto",
       projected: "Projeção",
-      budget: "Orçamento",
-      legend: "Gasto, projeção de fechamento e orçamento mensal.",
-      /** Always present for assistive tech — the visual legend is hover-only. */
-      description: (spent: string, elapsed: string) =>
-        `Barra de ritmo: ${spent} do orçamento gasto, com ${elapsed} do mês decorrido. A parte cheia é o gasto, a parte clara é a projeção de fechamento e a linha marca o orçamento.`,
+      over: "Acima do orçamento",
+      leftover: "Sobra",
+      legend:
+        "Da esquerda para a direita: gasto, projeção até o fechamento, o que passa do orçamento (em vermelho) e a sobra. Tom forte é o que já foi gasto; tom claro, o que ainda vai ser.",
+      /** Always present for assistive tech — the visual legend is md-and-up. */
+      description: (spent: string, day: number, days: number) =>
+        `Barra de ritmo: ${spent} do orçamento gasto no dia ${day} de ${days}. Da esquerda para a direita: o gasto, a projeção do que ainda será gasto até o fechamento, a parte que passa do orçamento, em vermelho, e a sobra do orçamento. O tom forte é o que já foi gasto e o tom claro, o que ainda vai ser.`,
     },
   },
 
@@ -79,7 +81,7 @@ export const homeCopy = {
     infoLabel: "Mais informações sobre gasto por fonte",
     info: "O mesmo gasto do período, agrupado por fonte — o total da empresa é a soma dos times mais o não atribuído. Tokens e modelos ficam em Composição.",
     empty: "Sem gasto de API convertido ainda neste período.",
-    entryValue: (amount: string, pct: string) => `${amount} (${pct})`,
+    entryShare: (pct: string) => `(${pct})`,
     unattributed: (amount: string) => `${amount} sem atribuição`,
     unattributedNoFx: (seats: string, usd: string) =>
       `${seats} sem atribuição (+ ${usd} de API sem câmbio do período)`,
@@ -111,9 +113,8 @@ export const homeCopy = {
     projected: "Projeção",
     budget: "Orçamento",
     cumulative: "Acumulado",
-    versusBudget: "Vs. orçamento",
-    aboveBudget: (delta: string, pct: string) => `+${delta} · ${pct}`,
-    belowBudget: (delta: string, pct: string) => `${delta} · ${pct}`,
+    versusBudget: "Projeção X orçamento",
+    budgetDelta: (delta: string, pct: string) => `${delta} · ${pct}`,
     closingDate: "Fechamento",
     estimatedBreach: "Estouro estimado",
     dayLabel: (day: number, month: string) => `${day} de ${month}`,

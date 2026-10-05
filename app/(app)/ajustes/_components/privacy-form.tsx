@@ -46,7 +46,7 @@ function Toggle({
     <div className="flex items-start justify-between gap-4">
       <div className="flex flex-col gap-0.5">
         <Label htmlFor={name}>{label}</Label>
-        <p className="text-sm/relaxed text-muted-foreground">{hint}</p>
+        <p className="text-sm/relaxed text-ink-secondary">{hint}</p>
       </div>
       <Switch
         id={name}
@@ -89,7 +89,7 @@ export function PrivacyForm({
         disabled={!isAdmin}
       />
 
-      <p className="flex items-start gap-2 rounded-lg bg-muted p-3 text-xs/relaxed text-muted-foreground">
+      <p className="flex items-start gap-2 rounded-md bg-muted p-3 text-xs/relaxed text-muted-foreground">
         <HugeiconsIcon icon={ShieldCheckIcon} className="mt-0.5 size-4 shrink-0" aria-hidden />
         {copy.neverStored}
       </p>
@@ -102,7 +102,7 @@ export function PrivacyForm({
           <ActionStatus error={state.error} success={state.success} />
         </div>
       ) : (
-        <p className="text-sm text-muted-foreground">{copy.adminOnly}</p>
+        <p className="text-sm text-ink-secondary">{copy.adminOnly}</p>
       )}
     </form>
   );

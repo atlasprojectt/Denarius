@@ -38,7 +38,7 @@ describe("buttonVariants", () => {
       buttonVariants({ variant: "tertiary", size: "sm", shape: "full" }),
     ).toContain("rounded-full");
     expect(buttonVariants({ variant: "secondary", shape: "standard" })).toContain(
-      "rounded-standard",
+      "rounded-sm",
     );
     expect(buttonVariants({ variant: "primary" })).not.toContain("rounded-standard");
   });

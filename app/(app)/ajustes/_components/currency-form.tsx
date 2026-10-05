@@ -51,7 +51,7 @@ export function CurrencyForm({
         <p className="text-sm font-medium">{copy.label}</p>
         <p className="flex items-center gap-1.5 text-sm tabular-nums">
           {currency}
-          <HugeiconsIcon icon={LockIcon} className="size-3.5 text-muted-foreground" aria-hidden />
+          <HugeiconsIcon icon={LockIcon} className="size-3.5 text-ink-faint" aria-hidden />
         </p>
         <p className="text-xs/relaxed text-muted-foreground">{copy.lockedNote}</p>
       </div>

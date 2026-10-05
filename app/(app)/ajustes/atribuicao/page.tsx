@@ -84,7 +84,7 @@ export default async function AttributionPage() {
               fx={periodFx(budgets)}
             />
           </CardContent>
-          <CardFooter className="text-xs/relaxed font-light text-muted-foreground">
+          <CardFooter className="text-xs/relaxed text-muted-foreground">
             <p className="flex items-start gap-2">
               <HugeiconsIcon icon={LightbulbIcon} className="mt-0.5 size-4 shrink-0" aria-hidden />
               {copy.tip}

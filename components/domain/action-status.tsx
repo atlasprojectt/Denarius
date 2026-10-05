@@ -25,7 +25,7 @@ export function ActionStatus({
   }
   if (success) {
     return (
-      <p role="status" className="flex items-center gap-1.5 text-sm text-muted-foreground">
+      <p role="status" className="flex items-center gap-1.5 text-sm text-ink-secondary">
         <HugeiconsIcon icon={CheckmarkCircle01Icon} className="size-4 shrink-0" />
         {success}
       </p>
