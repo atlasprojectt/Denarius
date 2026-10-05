@@ -121,7 +121,7 @@ test("Home cards use divided headers and cards remain darker than the shell", as
   await expect(cards.locator('[data-slot="card-header"]')).toHaveCount(4);
 
   for (const header of await cards.locator('[data-slot="card-header"]').all()) {
-    expect(await header.evaluate((node) => getComputedStyle(node).borderBottomWidth)).toBe("1px");
+    expect(await header.evaluate((node) => getComputedStyle(node).borderBottomWidth)).toBe("0px");
   }
 
   for (const dark of [false, true]) {

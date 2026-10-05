@@ -97,3 +97,49 @@ export function barGeometry(
     marker,
   };
 }
+
+/** A [from..to] stretch of a track, both 0..1. */
+export type Span = { from: number; to: number };
+
+export type PacingSegments = {
+  /** Spent inside the budget ("gasto"). */
+  spent: Span;
+  /** Spent above the budget: a realized overrun. */
+  overspent: Span | null;
+  /** What the current pace will still spend inside the budget ("projeção"). */
+  projected: Span | null;
+  /** What the current pace will still spend above the budget. */
+  projectedOver: Span | null;
+  /** Budget left free ("sobra"): at the close when there is a pace, or right
+   *  now before the day-5 guard, when nothing is projected. */
+  leftover: Span | null;
+};
+
+/**
+ * Splits the hero pacing track into adjacent, non-overlapping segments in
+ * reading order: spent and projected inside the budget, then spent and
+ * projected above it, or the leftover. The budget is the ruler, so the limit
+ * is exactly where the overrun begins; overrun and leftover are mutually
+ * exclusive, and together the segments always tile the track. Fractions of
+ * budget in (1 = exactly on budget); the track scales like `barGeometry`.
+ * Before the day-5 guard (`pctProjected` null) nothing is projected, so the
+ * rest of the budget is simply left free.
+ */
+export function pacingSegments(
+  pctSpent: number,
+  pctProjected: number | null,
+): PacingSegments {
+  const spent = Math.max(0, pctSpent);
+  const close = pctProjected === null ? spent : Math.max(spent, pctProjected);
+  const scale = Math.max(1, close);
+  const span = (from: number, to: number): Span | null =>
+    to > from ? { from: from / scale, to: to / scale } : null;
+
+  return {
+    spent: { from: 0, to: Math.min(spent, 1) / scale },
+    overspent: span(1, spent),
+    projected: span(spent, Math.min(close, 1)),
+    projectedOver: span(Math.max(spent, 1), close),
+    leftover: span(close, 1),
+  };
+}

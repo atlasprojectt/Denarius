@@ -14,8 +14,8 @@ import {
 } from "@/components/ui/card";
 import type { ChartConfig } from "@/components/ui/chart";
 import type { MonthlyPace, MonthlyPaceRow } from "@/lib/engine/monthly-pace";
-import { percent } from "@/lib/format";
-import { compactMoney, money } from "@/lib/money";
+import { signedPercent } from "@/lib/format";
+import { compactMoney, money, signedMoney } from "@/lib/money";
 import {
   Label,
   ReferenceDot,
@@ -37,22 +37,24 @@ import { InfoTip } from "./info-tip";
 const c = homeCopy.monthlyPace;
 
 const chartConfig = {
-  realized: { label: c.spent, color: "var(--brand-accent)" },
+  realized: { label: c.spent, color: "var(--foreground)" },
   projected: {
     label: c.projected,
-    color: "color-mix(in oklab, var(--brand-accent) 58%, transparent)",
+    color: "color-mix(in oklab, var(--foreground) 58%, transparent)",
   },
 } satisfies ChartConfig;
 
 const trendLines = [{ key: "projected", dash: "6 6", width: 1.8 }];
 
+/** One header figure: a quiet label over a larger value, so the eye reads
+ *  the numbers first and the labels only on demand. */
 function Metric({ label, value, className = "" }: { label: string; value: string; className?: string }) {
   return (
-    <div className={`flex min-w-28 flex-col gap-0.5 ${className}`}>
-      <span className="text-xs text-muted-foreground">{label}</span>
-      <span className="text-sm font-medium text-foreground tabular-nums">
+    <div className={`flex min-w-0 flex-col gap-1 ${className}`}>
+      <dt className="text-xs text-muted-foreground">{label}</dt>
+      <dd className="text-lg font-medium text-foreground tabular-nums">
         {value}
-      </span>
+      </dd>
     </div>
   );
 }
@@ -145,17 +147,17 @@ export function MonthlyPaceChart({
   if (todayValue <= 0) {
     return (
       <Card data-monthly-pace className="min-h-full [--chart-surface:var(--card)]" aria-labelledby="home-pace-title-empty">
-        <CardHeader className="border-b border-border">
+        <CardHeader>
           <div className="flex items-center gap-2">
             <CardTitle as="h2" id="home-pace-title-empty" className="flex items-center gap-2 text-sm font-medium">
-              <HugeiconsIcon icon={ChartLineIcon} className="size-4 text-muted-foreground" aria-hidden />
+              <HugeiconsIcon icon={ChartLineIcon} className="size-4 text-ink-faint" aria-hidden />
               {c.title}
             </CardTitle>
             <InfoTip label={c.infoLabel}>{c.info}</InfoTip>
           </div>
         </CardHeader>
         <CardContent className="flex flex-1 items-center justify-center">
-          <p className="py-8 text-center text-sm text-muted-foreground">
+          <p className="py-8 text-center text-sm text-ink-secondary">
             {c.empty}
           </p>
         </CardContent>
@@ -193,15 +195,17 @@ export function MonthlyPaceChart({
 
   return (
     <Card data-monthly-pace className="min-h-full [--chart-surface:var(--card)]" aria-labelledby="home-pace-title">
-      <CardHeader className="gap-2 border-b border-border">
+      <CardHeader className="gap-0">
         <div className="flex items-center gap-2">
           <CardTitle as="h2" id="home-pace-title" className="flex items-center gap-2 text-sm font-medium">
-            <HugeiconsIcon icon={ChartLineIcon} className="size-4 text-muted-foreground" aria-hidden />
+            <HugeiconsIcon icon={ChartLineIcon} className="size-4 text-ink-faint" aria-hidden />
             {c.title}
           </CardTitle>
           <InfoTip label={c.infoLabel}>{c.info}</InfoTip>
         </div>
-        <div className="flex flex-wrap gap-x-5 gap-y-1.5">
+        {/* Title → figures gets the larger gap and figures → footnote the
+            smaller one, so the footnote reads as part of the figures. */}
+        <dl className="mt-4 grid grid-cols-2 gap-x-8 gap-y-3 sm:flex sm:flex-wrap sm:gap-x-10">
           <Metric label={c.realizedLabel} value={money(todayValue, currency)} />
           <Metric
             label={c.paceTodayLabel}
@@ -209,9 +213,9 @@ export function MonthlyPaceChart({
           />
           <Metric label={c.projectionLabel} value={projectionText} />
           <Metric label={c.rangeLabel} value={rangeText} className="hidden sm:flex" />
-        </div>
+        </dl>
         {(confidenceText || refStamp) && (
-          <p className="text-[11px] font-light text-muted-foreground tabular-nums">
+          <p className="mt-2.5 text-xs text-muted-foreground tabular-nums">
             {confidenceText ? c.confidence(confidenceText) : null}
             {confidenceText && refStamp ? " · " : null}
             {refStamp ? c.rangeRef(refStamp) : null}
@@ -258,7 +262,7 @@ export function MonthlyPaceChart({
               y={todayValue}
               r={4}
               fill="var(--chart-surface, var(--background))"
-              stroke="var(--brand-accent)"
+              stroke="var(--foreground)"
               strokeWidth={2.5}
             >
               <Label
@@ -276,7 +280,7 @@ export function MonthlyPaceChart({
                 x={crossing.day}
                 y={budget}
                 r={2.5}
-                fill="var(--brand-accent)"
+                fill="var(--foreground)"
                 fillOpacity={0.58}
                 stroke="var(--chart-surface, var(--background))"
                 strokeWidth={1}
@@ -289,7 +293,7 @@ export function MonthlyPaceChart({
                 x={daysInPeriod}
                 y={projection}
                 r={4.5}
-                fill="var(--brand-accent)"
+                fill="var(--foreground)"
                 stroke="var(--chart-surface, var(--background))"
                 strokeWidth={1.5}
                 ifOverflow="visible"
@@ -340,7 +344,7 @@ function PaceTooltip({
       <p className="mb-1.5 pl-0.5 text-xs font-medium text-foreground">
         {c.dayLabel(row.day, monthLabel)}
       </p>
-      <div className="rounded-lg border border-border bg-popover px-3 py-2.5 text-xs text-popover-foreground shadow-lg">
+      <div className="rounded-md border border-border bg-popover px-3 py-2.5 text-xs text-popover-foreground shadow-lg">
         <div className="grid grid-cols-[1fr_auto] gap-x-5 gap-y-1.5">
           {row.realized !== null && (
             <TooltipRow
@@ -360,17 +364,10 @@ function PaceTooltip({
             projectionBudgetDeltaRatio !== null && (
             <TooltipRow
               label={c.versusBudget}
-              value={
-                projectionBudgetDelta >= 0
-                  ? c.aboveBudget(
-                      money(projectionBudgetDelta, currency),
-                      percent(projectionBudgetDeltaRatio, 1),
-                    )
-                  : c.belowBudget(
-                      money(projectionBudgetDelta, currency),
-                      percent(projectionBudgetDeltaRatio, 1),
-                    )
-              }
+              value={c.budgetDelta(
+                signedMoney(projectionBudgetDelta, currency),
+                signedPercent(projectionBudgetDeltaRatio, 1),
+              )}
               muted
             />
           )}
@@ -409,7 +406,7 @@ function TooltipRow({
     <>
       <span className="flex items-center gap-1.5 text-muted-foreground">
         {marker && (
-          <span aria-hidden className="size-2 rounded-full bg-brand-accent" />
+          <span aria-hidden className="size-2 rounded-full bg-foreground" />
         )}
         {label}
       </span>

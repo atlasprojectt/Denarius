@@ -42,16 +42,16 @@ export function NewPasswordForm({ email }: { email: string }) {
   const [state, formAction, pending] = useActionState(resetPassword, initialState);
   const [showPassword, setShowPassword] = useState(false);
 
-  const inputClassName = "h-11 bg-background pl-10 text-[15px]";
+  const inputClassName = "h-11 bg-background pl-10 text-base";
 
   return (
     <form action={formAction} className="flex flex-col gap-6">
       <FieldGroup>
         <div className="denarius-auth-enter flex flex-col gap-2">
-          <h1 className="text-3xl font-semibold tracking-tight text-balance">
+          <h1 className="text-display-sm font-light text-balance md:text-display">
             {copy.title}
           </h1>
-          <p className="text-sm/relaxed text-balance text-muted-foreground">
+          <p className="text-sm/relaxed text-balance text-ink-secondary">
             {email ? copy.subtitle(email) : copy.subtitleAnonymous}
           </p>
         </div>

@@ -1,11 +1,6 @@
 import { HugeiconsIcon } from "@hugeicons/react";
-import {
-  ArrowDown01Icon,
-  ArrowUp01Icon,
-  Wallet03Icon,
-} from "@hugeicons/core-free-icons";
+import { Wallet03Icon } from "@hugeicons/core-free-icons";
 
-import { StateBadge } from "@/components/domain/state-badge";
 import {
   Card,
   CardContent,
@@ -13,35 +8,38 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import type { BudgetEvaluation } from "@/lib/engine/budget";
-import { percent } from "@/lib/format";
+import { signedPercent } from "@/lib/format";
 import { money } from "@/lib/money";
 import { PacingBar } from "./pacing-bar";
 import { homeCopy } from "./copy";
 
 // The hero (frontend §3.4, de-noise 2026-07-17): org spend as the big money
 // number — the product's identity, dominant by SUBTRACTION — over one pacing
-// bar with the "hoje" time marker, and a single KPI (projeção de fechamento;
+// bar read against the day of the period, and a single KPI (projeção de fechamento;
 // the projected margin's home is now the verdict sentence). Read-only by
 // design: budget editing lives in /ajustes/orcamentos. The unconverted-USD
 // note (invariant #4) stays as the card's honesty footer — never a tooltip.
 
 const c = homeCopy.hero;
 
-/** Below this |Δ| the week-over-week pill says nothing and hides (display
- *  threshold, not engine state — a "0,0%" chip is noise). */
+/** Below this |Δ| the week-over-week line says nothing and hides (display
+ *  threshold, not engine state — a "0,0%" line is noise). */
 const WEEK_DELTA_MIN = 0.005;
 
-/** Week-over-week pill under the big number. Deliberately NEUTRAL (principle
- *  #5): spending more isn't inherently bad, so the arrow informs direction
- *  without judging it — the signed percent carries it for screen readers. */
+/** Week-over-week line under the big number: plain text, no pill. The figure
+ *  is the one delta allowed to carry the semaphore (founder exception to
+ *  principle #5, 2026-10-04): red when spend rose, green when it fell. The
+ *  sign states the direction, so color is never the only cue. */
 function WeekDelta({ pct }: { pct: number | null }) {
   if (pct === null || Math.abs(pct) < WEEK_DELTA_MIN) return null;
-  const Arrow = pct < 0 ? ArrowDown01Icon : ArrowUp01Icon;
-  const signed = `${pct > 0 ? "+" : ""}${percent(pct, 1)}`;
+  const tone = pct > 0 ? "text-status-red-fg" : "text-status-green-fg";
   return (
-    <StateBadge icon={Arrow} className="mt-1">
-      <span className="tabular-nums">{c.weekDelta(signed)}</span>
-    </StateBadge>
+    <p className="mt-1 flex flex-wrap items-baseline gap-x-1.5 text-sm">
+      <span className={`font-medium tabular-nums ${tone}`}>
+        {signedPercent(pct, 1)}
+      </span>
+      <span className="text-ink-secondary">{c.weekDeltaLabel}</span>
+    </p>
   );
 }
 
@@ -60,7 +58,7 @@ export function Hero({
   currency: string;
   dayOfPeriod: number;
   daysInPeriod: number;
-  /** Org week-over-week API cost change; null hides the chip. */
+  /** Org week-over-week API cost change; null hides the line. */
   weekPct: number | null;
 }) {
   const projectionValue = org.collecting
@@ -69,14 +67,14 @@ export function Hero({
 
   return (
     <Card className="min-h-full" aria-labelledby="home-hero-title">
-      <CardHeader className="border-b border-border">
+      <CardHeader>
         <CardTitle as="h2" id="home-hero-title" className="flex items-center gap-2 text-sm font-medium">
-          <HugeiconsIcon icon={Wallet03Icon} className="size-4 text-muted-foreground" aria-hidden />
+          <HugeiconsIcon icon={Wallet03Icon} className="size-4 text-ink-faint" aria-hidden />
           {c.title}
         </CardTitle>
-        <p className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1 pt-1.5 text-[clamp(2rem,4vw,2.5rem)] font-medium tracking-tight tabular-nums [overflow-wrap:anywhere]">
+        <p className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1 pt-1.5 text-display-sm font-normal tabular-nums [overflow-wrap:anywhere] md:text-display">
           {money(org.spent, currency)}
-          <span className="basis-full text-base font-normal tracking-normal text-muted-foreground sm:basis-auto">
+          <span className="basis-full text-base font-normal tracking-normal text-ink-secondary sm:basis-auto">
             {c.ofBudget(money(org.budget, currency))}
           </span>
         </p>
@@ -88,7 +86,6 @@ export function Hero({
         <PacingBar
           pctSpent={org.pctSpent}
           pctProjected={pctProjected}
-          pctElapsed={org.pctElapsed}
           dayOfPeriod={dayOfPeriod}
           daysInPeriod={daysInPeriod}
         />
@@ -99,12 +96,12 @@ export function Hero({
         <dl className="border-t pt-3">
           <div className="min-w-0">
             <dt className="truncate text-xs text-muted-foreground">{c.kpiProjection}</dt>
-            <dd className="mt-0.5 text-base font-semibold tabular-nums">{projectionValue}</dd>
+            <dd className="mt-1 text-lg font-medium tabular-nums">{projectionValue}</dd>
           </div>
         </dl>
 
         {unconvertedUsd > 0 && (
-          <p className="text-xs/relaxed font-light text-muted-foreground">
+          <p className="text-xs text-muted-foreground">
             {c.unconverted(money(unconvertedUsd, "USD"))}
           </p>
         )}

@@ -17,14 +17,14 @@ export default function TeamDetailLoading() {
         <div className="flex shrink-0 flex-col items-end gap-1.5">
           <div className="flex items-center gap-2">
             <Skeleton className="h-6 w-24 rounded-full" />
-            <Skeleton className="h-8 w-32 rounded-md" />
+            <Skeleton className="h-8 w-32 rounded-sm" />
           </div>
           <Skeleton className="h-3 w-36" />
         </div>
       </header>
 
       <div className="flex flex-col gap-5">
-        <div className="flex flex-col gap-4 rounded-xl border p-6">
+        <div className="flex flex-col gap-4 rounded-lg border p-6">
           <div className="flex flex-col gap-2">
             <Skeleton className="h-4 w-40" />
             <Skeleton className="h-4 w-64 max-w-full" />
@@ -44,7 +44,7 @@ export default function TeamDetailLoading() {
           <Skeleton className="h-4 w-3/4 border-t border-border pt-3" />
         </div>
 
-        <div className="flex flex-col gap-4 rounded-xl border p-6">
+        <div className="flex flex-col gap-4 rounded-lg border p-6">
           <div className="flex flex-col gap-2">
             <Skeleton className="h-4 w-32" />
             <Skeleton className="h-4 w-80 max-w-full" />
@@ -57,12 +57,12 @@ export default function TeamDetailLoading() {
           <TableCardSkeleton rows={4} />
         </div>
 
-        <div className="flex flex-col gap-4 rounded-xl border p-6">
+        <div className="flex flex-col gap-4 rounded-lg border p-6">
           <div className="flex flex-col gap-2">
             <Skeleton className="h-4 w-32" />
             <Skeleton className="h-4 w-72 max-w-full" />
           </div>
-          <div className="divide-y divide-border rounded-md border border-border">
+          <div className="divide-y divide-border rounded-sm border border-border">
             {Array.from({ length: 3 }).map((_, index) => (
               <div key={index} className="flex items-center gap-3 px-3 py-3">
                 <Skeleton className="size-5 shrink-0 rounded-full" />

@@ -56,7 +56,7 @@ export function CompanyForm({
           <ActionStatus error={state.error} success={state.success} />
         </div>
       ) : (
-        <p className="text-sm text-muted-foreground">{copy.adminOnly}</p>
+        <p className="text-sm text-ink-secondary">{copy.adminOnly}</p>
       )}
     </form>
   );

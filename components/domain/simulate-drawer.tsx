@@ -19,8 +19,8 @@ import {
   type ScenarioInput,
   type ScopeOutcome,
 } from "@/lib/engine/scenario";
-import { money } from "@/lib/money";
-import { percent } from "@/lib/format";
+import { money, signedMoney } from "@/lib/money";
+import { signedPercent } from "@/lib/format";
 
 // The contextual scenario simulator (#21, PRD story 36): a right-side drawer
 // opened from a team with that team pre-loaded (domain component, frontend
@@ -40,8 +40,6 @@ const copy = {
   budget: "Orçamento do time",
   lever: "Variação do ritmo do time até o fim do mês",
   deltaZero: "ritmo atual",
-  deltaSlower: (pct: string) => `${pct} mais devagar`,
-  deltaFaster: (pct: string) => `${pct} mais rápido`,
   presetCurrent: "Ritmo atual",
   presetBreakEven: "Fechar no orçamento",
   presetCut: "−30%",
@@ -50,10 +48,8 @@ const copy = {
   resultTitle: "Neste cenário",
   teamCloses: "Time fecha em",
   orgCloses: "Empresa fecha em",
-  teamUnder: (amount: string) => `${amount} abaixo do orçamento do time.`,
-  teamOver: (amount: string) => `${amount} acima do orçamento do time.`,
-  orgUnder: (amount: string) => `${amount} abaixo do orçamento da empresa.`,
-  orgOver: (amount: string) => `${amount} acima do orçamento da empresa.`,
+  teamVsBudget: (delta: string) => `${delta} X orçamento do time`,
+  orgVsBudget: (delta: string) => `${delta} X orçamento da empresa`,
   collecting:
     "Coletando ritmo — a simulação usa a projeção de fechamento, disponível a partir do dia 5 do período.",
   disclaimer:
@@ -71,9 +67,7 @@ export type SimulateDrawerProps = {
 };
 
 function deltaLabel(deltaPct: number): string {
-  if (deltaPct === 0) return copy.deltaZero;
-  const formatted = percent(Math.abs(deltaPct) / 100);
-  return deltaPct < 0 ? copy.deltaSlower(formatted) : copy.deltaFaster(formatted);
+  return deltaPct === 0 ? copy.deltaZero : signedPercent(deltaPct / 100);
 }
 
 export function SimulateDrawer(props: SimulateDrawerProps) {
@@ -107,7 +101,7 @@ export function SimulateDrawer(props: SimulateDrawerProps) {
                 [copy.budget, money(team.budget, currency)],
               ]}
             />
-            <p className="rounded-lg bg-muted p-3 text-xs/relaxed text-muted-foreground">
+            <p className="rounded-md bg-muted p-3 text-xs/relaxed text-muted-foreground">
               {copy.collecting}
             </p>
           </div>
@@ -166,7 +160,7 @@ function Simulation({
           <label htmlFor="pace-delta" className="text-sm font-medium">
             {copy.lever}
           </label>
-          <span className="text-sm tabular-nums text-muted-foreground">
+          <span className="text-sm tabular-nums text-ink-secondary">
             {deltaLabel(Math.round(deltaPct))}
           </span>
         </div>
@@ -208,12 +202,12 @@ function Simulation({
           </Button>
         </div>
         {breakEvenPct === null && (
-          <p className="text-xs font-light text-muted-foreground">{copy.breakEvenUnreachable}</p>
+          <p className="text-xs text-muted-foreground">{copy.breakEvenUnreachable}</p>
         )}
       </div>
 
-      <div className="rounded-lg border bg-muted p-4">
-        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+      <div className="rounded-md border bg-muted p-4">
+        <p className="label-caps text-muted-foreground">
           {copy.resultTitle}
         </p>
         <dl className="mt-3 flex flex-col gap-4 text-sm">
@@ -221,20 +215,18 @@ function Simulation({
             label={copy.teamCloses}
             outcome={result.team}
             currency={currency}
-            under={copy.teamUnder}
-            over={copy.teamOver}
+            versus={copy.teamVsBudget}
           />
           <OutcomeRow
             label={copy.orgCloses}
             outcome={result.org}
             currency={currency}
-            under={copy.orgUnder}
-            over={copy.orgOver}
+            versus={copy.orgVsBudget}
           />
         </dl>
       </div>
 
-      <p className="text-xs/relaxed font-light text-muted-foreground">{copy.disclaimer}</p>
+      <p className="text-xs/relaxed text-muted-foreground">{copy.disclaimer}</p>
     </div>
   );
 }
@@ -245,27 +237,23 @@ function OutcomeRow({
   label,
   outcome,
   currency,
-  under,
-  over,
+  versus,
 }: {
   label: string;
   outcome: ScopeOutcome;
   currency: string;
-  under: (amount: string) => string;
-  over: (amount: string) => string;
+  versus: (delta: string) => string;
 }) {
   return (
     <div className="flex flex-col gap-0.5">
       <div className="flex items-baseline justify-between gap-4">
         <dt className="text-muted-foreground">{label}</dt>
-        <dd className="text-base font-semibold tabular-nums">
+        <dd className="text-lg font-medium tabular-nums">
           {money(outcome.close, currency)}
         </dd>
       </div>
-      <p className="text-right text-xs/relaxed font-light text-muted-foreground tabular-nums">
-        {outcome.withinBudget
-          ? under(money(outcome.margin, currency))
-          : over(money(-outcome.margin, currency))}
+      <p className="text-right text-xs/relaxed text-muted-foreground tabular-nums">
+        {versus(signedMoney(-outcome.margin, currency))}
       </p>
     </div>
   );
@@ -274,7 +262,7 @@ function OutcomeRow({
 function Facts({ rows }: { rows: [string, string][] }) {
   return (
     <div>
-      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+      <p className="label-caps text-muted-foreground">
         {copy.currentPace}
       </p>
       <dl className="mt-2 flex flex-col gap-2 text-sm">

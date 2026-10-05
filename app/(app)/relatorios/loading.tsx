@@ -5,7 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 function FileRowSkeleton() {
   return (
     <div className="flex min-h-16 items-center gap-3 px-4 py-3">
-      <Skeleton className="size-10 shrink-0 rounded-lg" />
+      <Skeleton className="size-10 shrink-0 rounded-sm" />
       <div className="grid min-w-0 flex-1 gap-1.5">
         <Skeleton className="h-4 w-40 max-w-full" />
         <Skeleton className="h-3 w-56 max-w-full" />

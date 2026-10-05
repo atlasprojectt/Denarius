@@ -86,7 +86,7 @@ export default async function AuditSettingsPage() {
                         <ItemTitle>
                           {ACTION_LABEL[entry.action] ?? entry.action}
                           {target && (
-                            <span className="text-xs font-light text-muted-foreground">
+                            <span className="text-xs text-muted-foreground">
                               {target}
                             </span>
                           )}
@@ -95,7 +95,7 @@ export default async function AuditSettingsPage() {
                       </ItemContent>
                       <time
                         dateTime={entry.createdAt}
-                        className="text-xs font-light text-muted-foreground tabular-nums"
+                        className="text-xs text-muted-foreground tabular-nums"
                       >
                         {absoluteStamp(entry.createdAt)}
                       </time>
@@ -104,7 +104,7 @@ export default async function AuditSettingsPage() {
                 })}
               </ItemGroup>
               {entries.length === AUDIT_PAGE_SIZE && (
-                <p className="text-xs font-light text-muted-foreground">
+                <p className="text-xs text-muted-foreground">
                   {copy.limitNote(AUDIT_PAGE_SIZE)}
                 </p>
               )}

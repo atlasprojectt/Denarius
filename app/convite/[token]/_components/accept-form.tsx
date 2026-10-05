@@ -50,13 +50,13 @@ export function AcceptForm({
       <input type="hidden" name="token" value={token} />
       <FieldGroup>
         <div className="flex flex-col items-center gap-1 text-center">
-          <h1 className="text-2xl font-bold text-balance">{copy.title(companyName)}</h1>
-          <p className="text-sm text-balance text-muted-foreground">
+          <h1 className="text-2xl text-balance">{copy.title(companyName)}</h1>
+          <p className="text-sm text-balance text-ink-secondary">
             {copy.subtitle}
           </p>
         </div>
 
-        <div className="rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8">
+        <div className="rounded-lg border border-border bg-card p-6 shadow-sm sm:p-8">
           <div className="flex flex-col gap-4">
             <Field>
               <FieldLabel htmlFor="email">{copy.email}</FieldLabel>

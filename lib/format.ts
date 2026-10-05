@@ -22,7 +22,7 @@ const DATE_FORMAT = new Intl.DateTimeFormat("pt-BR", {
   month: "2-digit",
   day: "2-digit",
 });
-const percentFormatters = new Map<number, Intl.NumberFormat>();
+const percentFormatters = new Map<string, Intl.NumberFormat>();
 
 /** Human sync stamp: "hoje, às 03:59" in the product's operating timezone. */
 export function syncStamp(iso: string, now = new Date()): string {
@@ -42,16 +42,38 @@ export function absoluteStamp(iso: string): string {
   return `${DATE_FORMAT.format(at)}, às ${TIME_FORMAT.format(at)}`;
 }
 
-/** A fraction (0.9) as a whole-number percent ("90%"). Pair with tabular-nums. */
-export function percent(fraction: number, fractionDigits = 0): string {
-  let formatter = percentFormatters.get(fractionDigits);
+function percentFormatter(
+  fractionDigits: number,
+  signed: boolean,
+): Intl.NumberFormat {
+  const key = `${fractionDigits}:${signed}`;
+  let formatter = percentFormatters.get(key);
   if (!formatter) {
     formatter = new Intl.NumberFormat("pt-BR", {
       style: "percent",
       minimumFractionDigits: fractionDigits,
       maximumFractionDigits: fractionDigits,
+      signDisplay: signed ? "exceptZero" : "auto",
     });
-    percentFormatters.set(fractionDigits, formatter);
+    percentFormatters.set(key, formatter);
   }
-  return formatter.format(fraction);
+  return formatter;
+}
+
+/** A fraction (0.9) as a whole-number percent ("90%"). Pair with tabular-nums. */
+export function percent(fraction: number, fractionDigits = 0): string {
+  return percentFormatter(fractionDigits, false).format(fraction);
+}
+
+/** A difference against a reference the copy names ("+12,4%", "−3,1%"): the
+ *  sign states above/below, so the copy never adds "acima" or "abaixo"
+ *  (frontend "Relations as symbols"). A value that rounds to zero is unsigned. */
+export function signedPercent(fraction: number, fractionDigits = 0): string {
+  return trueMinus(percentFormatter(fractionDigits, true).format(fraction));
+}
+
+/** Intl writes a hyphen-minus; signed figures use the true minus (U+2212),
+ *  which matches the plus sign's width in tabular columns. */
+export function trueMinus(formatted: string): string {
+  return formatted.replace("-", "−");
 }

@@ -12,6 +12,7 @@ import {
   Tag01Icon,
 } from "@hugeicons/core-free-icons";
 
+import { ProviderIcon, type ProviderIconName } from "@/components/domain/provider-icon";
 import { StateBadge } from "@/components/domain/state-badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,6 +37,7 @@ export type ExploreRowState = "default" | "unpriced" | "unattributed";
 export type ExploreRow = {
   id: string;
   label: string;
+  provider?: ProviderIconName;
   amount: number | null;
   originalUsd?: number;
   tokens?: number;
@@ -84,13 +86,11 @@ function sortRows(rows: ExploreRow[], sort: SortState): ExploreRow[] {
 function SortButton({
   field,
   sort,
-  align = "left",
   onSort,
   children,
 }: {
   field: SortKey;
   sort: SortState;
-  align?: "left" | "right";
   onSort: (key: SortKey) => void;
   children: React.ReactNode;
 }) {
@@ -103,8 +103,7 @@ function SortButton({
       size="xs"
       onClick={() => onSort(field)}
       className={cn(
-        "group/sort h-9 w-full px-2 text-[11px] font-medium hover:bg-surface-hover",
-        align === "right" ? "justify-end" : "justify-start",
+        "group/sort h-7 px-2 label-caps hover:bg-surface-hover",
         active ? "text-foreground" : "text-muted-foreground",
       )}
     >
@@ -142,7 +141,7 @@ function RankBar({ row, index }: { row: ExploreRow; index: number }) {
       <div
         data-reveal-bar
         aria-hidden
-        className="absolute inset-0 text-brand-accent"
+        className="absolute inset-0 text-foreground/80"
         style={{
           ...TICKS,
           clipPath: cut(0, share),
@@ -179,9 +178,9 @@ function MoneyValue({
 
   return (
     <div className="text-right tabular-nums">
-      <p className="text-[13px] font-medium text-foreground">{primary}</p>
+      <p className="text-ui font-medium text-foreground">{primary}</p>
       {row.amount !== null && row.originalUsd !== undefined && (
-        <p className="mt-0.5 text-[11px] font-light text-muted-foreground">
+        <p className="mt-0.5 text-xs text-muted-foreground">
           {money(row.originalUsd, "USD")}
         </p>
       )}
@@ -225,7 +224,7 @@ function DesktopRows({
           key={row.id}
           className="h-12 border-border hover:bg-surface-hover"
         >
-          <TableCell className="min-w-64 py-2 text-[13px] whitespace-normal">
+          <TableCell className="min-w-64 py-2 text-ui whitespace-normal">
             <div className="flex items-center gap-2">
               {row.state === "unattributed" && (
                 <span
@@ -233,24 +232,27 @@ function DesktopRows({
                   aria-hidden
                 />
               )}
+              {row.provider && (
+                <ProviderIcon provider={row.provider} className="size-5 shrink-0" />
+              )}
               <p className="truncate font-medium text-foreground">{row.label}</p>
             </div>
             {row.state !== "unpriced" && (
               <RankBar row={row} index={index} />
             )}
             {row.note && (
-              <p className="mt-1 text-[11px] font-light text-muted-foreground">{row.note}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{row.note}</p>
             )}
           </TableCell>
           {showTokens && (
-            <TableCell className="w-32 text-right text-xs font-light text-muted-foreground tabular-nums">
+            <TableCell className="w-24 text-right text-xs text-muted-foreground tabular-nums">
               {compact.format(row.tokens ?? 0)}
             </TableCell>
           )}
-          <TableCell className="w-44 text-right">
+          <TableCell className="w-32 text-right">
             <MoneyValue row={row} currency={currency} />
           </TableCell>
-          <TableCell className="w-24 text-right">
+          <TableCell className="w-32 text-right">
             {row.comparison ? <ModelComparisonDrawer source={row.comparison} usage={row.comparison.usage} prices={row.comparison.prices} budgetUsd={row.comparison.budgetUsd} projectedCostUsd={row.comparison.projectedCostUsd} expectedDays={row.comparison.expectedDays} currency={row.comparison.currency} fxRate={row.comparison.fxRate} fxDate={row.comparison.fxDate} lastSyncAt={row.comparison.lastSyncAt} dayOfPeriod={row.comparison.dayOfPeriod} periodLabel={row.comparison.periodLabel} economics={row.comparison.economics} /> : <RowAction row={row} />}
           </TableCell>
         </TableRow>
@@ -273,7 +275,7 @@ function MobileRows({
       {rows.map((row, index) => (
         <article
           key={row.id}
-          className="rounded-xl border border-border p-3 text-[13px]"
+          className="rounded-md border border-border p-3 text-ui"
         >
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
@@ -284,10 +286,13 @@ function MobileRows({
                     aria-hidden
                   />
                 )}
+                {row.provider && (
+                  <ProviderIcon provider={row.provider} className="size-5 shrink-0" />
+                )}
                 <h3 className="truncate font-medium text-foreground">{row.label}</h3>
               </div>
               {showTokens && (
-                <p className="mt-1 text-[11px] font-light text-muted-foreground tabular-nums">
+                <p className="mt-1 text-xs text-muted-foreground tabular-nums">
                   {compact.format(row.tokens ?? 0)} tokens
                 </p>
               )}
@@ -298,7 +303,7 @@ function MobileRows({
             <RankBar row={row} index={index} />
           )}
           {row.note && (
-            <p className="mt-2 text-[11px] font-light text-muted-foreground">{row.note}</p>
+            <p className="mt-2 text-xs text-muted-foreground">{row.note}</p>
           )}
           {row.href && row.actionLabel && (
             <div className="mt-2 flex justify-end">
@@ -368,19 +373,19 @@ export function ExploreTable({
       {rows.length > 10 && (
         <label className="relative block max-w-sm">
           <span className="sr-only">{copy.search}</span>
-          <HugeiconsIcon icon={Search01Icon} className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+          <HugeiconsIcon icon={Search01Icon} className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-ink-faint" />
           <Input
             type="search"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder={copy.search}
-            className="h-8 rounded-lg pl-9 text-xs"
+            className="h-8 rounded-sm pl-9 text-xs"
           />
         </label>
       )}
 
       {visible.length === 0 ? (
-        <p className="rounded-xl border border-dashed p-5 text-sm text-muted-foreground">
+        <p className="rounded-md border border-dashed p-5 text-sm text-ink-secondary">
           {copy.noResults}
         </p>
       ) : (
@@ -393,7 +398,7 @@ export function ExploreTable({
                 showTokens={Boolean(tokensHeader)}
               />
               <div className="hidden md:block">
-                <Table className="table-fixed">
+                <Table className="min-w-152 table-fixed">
                   <TableHeader>
                     <TableRow className="border-border hover:bg-transparent">
                       <TableHead aria-sort={ariaSort("label")} className="h-9 p-0">
@@ -404,12 +409,11 @@ export function ExploreTable({
                       {tokensHeader && (
                         <TableHead
                           aria-sort={ariaSort("tokens")}
-                          className="h-9 w-32 p-0 text-right"
+                          className="h-9 w-24 p-0 text-right"
                         >
                           <SortButton
                             field="tokens"
                             sort={sort}
-                            align="right"
                             onSort={changeSort}
                           >
                             {tokensHeader}
@@ -418,18 +422,17 @@ export function ExploreTable({
                       )}
                       <TableHead
                         aria-sort={ariaSort("amount")}
-                        className="h-9 w-44 p-0 text-right"
+                        className="h-9 w-32 p-0 text-right"
                       >
                         <SortButton
                           field="amount"
                           sort={sort}
-                          align="right"
                           onSort={changeSort}
                         >
                           {amountHeader}
                         </SortButton>
                       </TableHead>
-                      <TableHead className="h-9 w-24 p-0" />
+                      <TableHead className="h-9 w-32 p-0" />
                     </TableRow>
                   </TableHeader>
                   <DesktopRows
@@ -457,7 +460,7 @@ export function ExploreTable({
                 showTokens={Boolean(tokensHeader)}
               />
               <div className="hidden md:block">
-                <Table className="table-fixed">
+                <Table className="min-w-152 table-fixed">
                   <DesktopRows
                     rows={unpricedRows}
                     currency={currency}

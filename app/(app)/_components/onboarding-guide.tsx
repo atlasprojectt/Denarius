@@ -44,9 +44,9 @@ function StepIcon({ icon, active = false }: { icon: IconSvgElement; active?: boo
     <span
       aria-hidden
       className={cn(
-        "grid size-9 shrink-0 place-items-center rounded-standard",
+        "grid size-9 shrink-0 place-items-center rounded-sm",
         active
-          ? "bg-brand-accent-muted text-brand-accent-light"
+          ? "bg-foreground/10 text-foreground"
           : "bg-muted text-muted-foreground",
       )}
     >
@@ -68,7 +68,7 @@ function StepList({
   return (
     <div className="grid gap-2">
       {laterSteps.length === 0 && (
-        <p className="rounded-standard border border-dashed border-border px-3 py-3 text-sm text-muted-foreground">
+        <p className="rounded-md border border-dashed border-border px-3 py-3 text-sm text-ink-secondary">
           {homeCopy.setup.afterEmpty}
         </p>
       )}
@@ -76,12 +76,12 @@ function StepList({
         <Link
           key={step.key}
           href={step.href}
-          className="flex items-center gap-3 rounded-standard border border-border px-3 py-2.5 text-sm outline-none transition-colors duration-(--motion-duration-fast) ease-(--motion-ease-standard) hover:bg-surface-hover focus-visible:ring-2 focus-visible:ring-ring/40"
+          className="flex items-center gap-3 rounded-md border border-border px-3 py-2.5 text-sm outline-none transition-colors duration-(--motion-duration-fast) ease-(--motion-ease-standard) hover:bg-surface-hover focus-visible:ring-2 focus-visible:ring-ring/40"
         >
           <StepIcon icon={step.icon} />
           <span className="min-w-0 flex-1">
             <span className="block font-medium">{homeCopy.setup[step.key]}</span>
-            <span className="block text-xs/relaxed font-light text-muted-foreground">
+            <span className="block text-xs/relaxed text-muted-foreground">
               {homeCopy.setup[`${step.key}Detail`]}
             </span>
           </span>
@@ -111,8 +111,8 @@ export function OnboardingGuide({
       <Card className="py-3">
         <CardContent className="flex flex-wrap items-center gap-x-5 gap-y-2.5 px-4">
           <div className="min-w-0">
-            <p className="text-[13px] font-medium">{homeCopy.setup.compactTitle}</p>
-            <p className="mt-0.5 text-[11px] font-light text-muted-foreground tabular-nums">
+            <p className="text-ui font-medium">{homeCopy.setup.compactTitle}</p>
+            <p className="mt-0.5 text-xs text-muted-foreground tabular-nums">
               {homeCopy.setup.progress(doneCount, steps.length)}
             </p>
           </div>
@@ -130,9 +130,9 @@ export function OnboardingGuide({
 
   return (
     <Card className="overflow-visible">
-      <CardHeader className="border-b border-border">
+      <CardHeader>
         <StateBadge icon={Plug01Icon}>{homeCopy.setup.eyebrow}</StateBadge>
-        <CardTitle as="h2" className="mt-1 text-lg tracking-tight">
+        <CardTitle as="h2" className="mt-1 text-xl font-normal text-foreground">
           {homeCopy.setup.title}
         </CardTitle>
         <CardDescription className="max-w-2xl text-sm/relaxed">
@@ -144,11 +144,11 @@ export function OnboardingGuide({
             className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted"
           >
             <div
-              className="h-full rounded-full bg-brand-accent transition-[width] duration-(--motion-duration-standard) ease-(--motion-ease-standard)"
+              className="h-full rounded-full bg-foreground transition-[width] duration-(--motion-duration-standard) ease-(--motion-ease-standard)"
               style={{ width: `${(doneCount / steps.length) * 100}%` }}
             />
           </div>
-          <span className="text-xs font-light text-muted-foreground tabular-nums">
+          <span className="text-xs text-muted-foreground tabular-nums">
             {homeCopy.setup.progress(doneCount, steps.length)}
           </span>
         </div>
@@ -156,14 +156,14 @@ export function OnboardingGuide({
 
       <CardContent className="grid gap-6 pt-5 lg:grid-cols-[minmax(0,1.25fr)_minmax(16rem,0.75fr)]">
         <section aria-labelledby="onboarding-now" className="min-w-0">
-          <p id="onboarding-now" className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+          <p id="onboarding-now" className="label-caps text-muted-foreground">
             {homeCopy.setup.nowLabel}
           </p>
-          <div className="mt-2 flex items-start gap-3 rounded-xl border border-brand-accent-border bg-brand-accent-muted/40 p-4">
+          <div className="mt-2 flex items-start gap-3 rounded-md border border-border bg-muted/40 p-4">
             <StepIcon icon={next.icon} active />
             <div className="min-w-0 flex-1">
-              <h3 className="text-base font-semibold tracking-tight">{homeCopy.setup[next.key]}</h3>
-              <p className="mt-1 text-sm/relaxed text-muted-foreground">
+              <h3 className="text-base font-medium">{homeCopy.setup[next.key]}</h3>
+              <p className="mt-1 text-sm/relaxed text-ink-secondary">
                 {homeCopy.setup[`${next.key}Detail`]}
               </p>
               <Button asChild className="mt-4">
@@ -174,13 +174,13 @@ export function OnboardingGuide({
         </section>
 
         <section aria-labelledby="onboarding-after" className="min-w-0">
-          <p id="onboarding-after" className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+          <p id="onboarding-after" className="label-caps text-muted-foreground">
             {homeCopy.setup.afterLabel}
           </p>
           <div className="mt-2">
             <StepList state={state} next={next} />
             {steps.slice(0, steps.findIndex((step) => step.key === next.key)).length > 0 && (
-              <p className="mt-3 text-xs font-light text-muted-foreground">
+              <p className="mt-3 text-xs text-muted-foreground">
                 {homeCopy.setup.completedBefore(doneCount)}
               </p>
             )}
@@ -188,14 +188,14 @@ export function OnboardingGuide({
         </section>
 
         <section className="border-t border-border pt-5 lg:col-span-2" aria-labelledby="onboarding-complete">
-          <p id="onboarding-complete" className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+          <p id="onboarding-complete" className="label-caps text-muted-foreground">
             {homeCopy.setup.completeLabel}
           </p>
-          <p className="mt-2 text-sm/relaxed text-muted-foreground">{homeCopy.setup.completeBody}</p>
-          <ul className="mt-3 grid gap-2 text-sm text-muted-foreground sm:grid-cols-3">
+          <p className="mt-2 text-sm/relaxed text-ink-secondary">{homeCopy.setup.completeBody}</p>
+          <ul className="mt-3 grid gap-2 text-sm text-ink-secondary sm:grid-cols-3">
             {homeCopy.setup.outcomes.map((outcome) => (
               <li key={outcome} className="flex items-start gap-2">
-                <HugeiconsIcon icon={Tick01Icon} className="mt-0.5 size-4 shrink-0 text-brand-accent-light" aria-hidden />
+                <HugeiconsIcon icon={Tick01Icon} className="mt-0.5 size-4 shrink-0 text-foreground" aria-hidden />
                 <span>{outcome}</span>
               </li>
             ))}

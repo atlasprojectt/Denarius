@@ -33,10 +33,10 @@ const copy = {
 };
 
 const chartConfig = {
-  spent: { label: copy.spent, color: "var(--brand-accent)" },
+  spent: { label: copy.spent, color: "var(--foreground)" },
   projected: {
     label: copy.projected,
-    color: "color-mix(in oklab, var(--brand-accent) 58%, transparent)",
+    color: "color-mix(in oklab, var(--foreground) 58%, transparent)",
   },
   pace: {
     label: copy.pace,
@@ -84,7 +84,7 @@ export function CumulativeChart({
 
   if (!hasSpend || !today) {
     return (
-      <p className="py-12 text-center text-sm text-muted-foreground">
+      <p className="py-12 text-center text-sm text-ink-secondary">
         {emptyLabel}
       </p>
     );
@@ -120,7 +120,7 @@ export function CumulativeChart({
           y={today.spent}
           r={4}
           fill="var(--chart-surface, var(--background))"
-          stroke="var(--brand-accent)"
+          stroke="var(--foreground)"
           strokeWidth={2.5}
         >
           <Label
@@ -138,7 +138,7 @@ export function CumulativeChart({
             x={daysInPeriod}
             y={projection}
             r={3.5}
-            fill="var(--brand-accent)"
+            fill="var(--foreground)"
             fillOpacity={0.7}
             stroke="var(--chart-surface, var(--background))"
             strokeWidth={1.25}
@@ -166,7 +166,7 @@ function ComparisonTooltip({
       <p className="mb-1.5 pl-0.5 text-xs font-medium text-foreground">
         {copy.dayTick(row.day)}
       </p>
-      <div className="rounded-lg border border-white/10 bg-zinc-950 px-3 py-2.5 text-xs text-zinc-50 shadow-lg">
+      <div className="rounded-md border border-white/10 bg-zinc-950 px-3 py-2.5 text-xs text-zinc-50 shadow-lg">
         <div className="grid grid-cols-[1fr_auto] gap-x-5 gap-y-1.5">
           {row.spent !== null && (
             <TooltipRow
@@ -205,8 +205,8 @@ function TooltipRow({
   tone: "spent" | "projected" | "pace";
 }) {
   const marker = {
-    spent: "bg-brand-accent",
-    projected: "bg-brand-accent/60",
+    spent: "bg-foreground",
+    projected: "bg-foreground/60",
     pace: "bg-zinc-500",
   }[tone];
 

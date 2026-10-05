@@ -36,9 +36,9 @@ const c = homeCopy.composition;
 
 // Known composition keys → marks; unknown keys render without an icon.
 const entryIcon: Record<string, ReactNode> = {
-  openai: <ProviderIcon provider="openai" className="size-4" />,
-  anthropic: <ProviderIcon provider="anthropic" className="size-4" />,
-  seats: <HugeiconsIcon icon={UserGroupIcon} className="size-4 text-muted-foreground" aria-hidden />,
+  openai: <ProviderIcon provider="openai" className="size-5" />,
+  anthropic: <ProviderIcon provider="anthropic" className="size-5" />,
+  seats: <HugeiconsIcon icon={UserGroupIcon} className="size-5 text-ink-secondary" aria-hidden />,
 };
 
 export function ProviderComposition({
@@ -67,9 +67,9 @@ export function ProviderComposition({
 
   return (
     <Card size="sm" className="min-h-full" aria-labelledby="home-composition-title">
-      <CardHeader className="border-b border-border">
+      <CardHeader>
         <CardTitle as="h2" id="home-composition-title" className="flex items-center gap-2 text-sm">
-          <HugeiconsIcon icon={PieChart02Icon} className="size-4 text-muted-foreground" aria-hidden />
+          <HugeiconsIcon icon={PieChart02Icon} className="size-4 text-ink-faint" aria-hidden />
           {c.title}
           <span className="-ml-0.5">
             <InfoTip label={c.infoLabel}>{c.info}</InfoTip>
@@ -79,7 +79,7 @@ export function ProviderComposition({
       </CardHeader>
       <CardContent className="flex flex-1 flex-col">
         {entries.length === 0 ? (
-          <p className="text-sm text-muted-foreground">{c.empty}</p>
+          <p className="text-sm text-ink-secondary">{c.empty}</p>
         ) : (
           <div
             data-reveal="composition"
@@ -95,10 +95,8 @@ export function ProviderComposition({
                 key: entry.key,
                 icon: entryIcon[entry.key],
                 label: entry.label,
-                value: c.entryValue(
-                  money(entry.amount, currency),
-                  percent(entry.share),
-                ),
+                value: money(entry.amount, currency),
+                detail: c.entryShare(percent(entry.share)),
                 share: entry.share,
               }))}
             />
@@ -106,7 +104,7 @@ export function ProviderComposition({
         )}
       </CardContent>
       {unattributedLine !== null && (
-        <CardFooter className="text-xs/relaxed font-light text-muted-foreground">
+        <CardFooter className="text-xs text-muted-foreground">
           <p className="tabular-nums">
             {unattributedLine} —{" "}
             <Button
@@ -115,7 +113,7 @@ export function ProviderComposition({
               size="sm"
               shape="full"
               motion="forward"
-              className="ml-1 text-foreground/80"
+              className="ml-1"
             >
               <Link href="/ajustes/atribuicao">
                 {c.mapCta}

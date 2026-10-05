@@ -68,7 +68,7 @@ const copy = {
   uncostedNote:
     "Modelos sem preço aparecem como não precificados em vez de desaparecer do total.",
   fxNote: (rate: string, date: string) =>
-    `Valores em US$ convertidos pelo câmbio congelado do período (${rate} por US$ 1, capturado em ${date}).`,
+    `Valores em US$ convertidos pelo câmbio congelado do período (${rate}/US$, capturado em ${date}).`,
   fxMissingNote:
     "Câmbio do período indisponível: valores de API permanecem em US$ e não são somados aos assentos.",
   contributorsTitle: "Contribuintes do gasto",
@@ -106,7 +106,7 @@ const compactTokens = new Intl.NumberFormat("pt-BR", {
 function Metric({ label, value }: { label: string; value: string }) {
   return (
     <div className="min-w-0">
-      <dt className="text-[11px] text-muted-foreground">{label}</dt>
+      <dt className="text-xs text-muted-foreground">{label}</dt>
       <dd className="mt-1 truncate text-base font-medium tabular-nums">{value}</dd>
     </div>
   );
@@ -147,7 +147,7 @@ function ExecutiveSummary({
             <Metric label={copy.spent} value={currentSpend} />
             <Metric label={copy.budget} value="—" />
           </dl>
-          <p className="mt-4 border-t border-border pt-3 text-sm text-muted-foreground">
+          <p className="mt-4 border-t border-border pt-3 text-sm text-ink-secondary">
             {copy.noBudget}
           </p>
         </CardContent>
@@ -190,7 +190,7 @@ function ExecutiveSummary({
             pctProjected={team.pctProjected}
             status={team.status}
           />
-          <span className="shrink-0 text-xs font-light text-muted-foreground tabular-nums">
+          <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
             {copy.consumption(percent(evaluation.pctSpent))}
           </span>
         </div>
@@ -267,7 +267,7 @@ function MixSection({
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         {rows.length === 0 ? (
-          <p className="py-6 text-center text-sm text-muted-foreground">
+          <p className="py-6 text-center text-sm text-ink-secondary">
             {copy.mixZero}
           </p>
         ) : (
@@ -278,11 +278,11 @@ function MixSection({
                 <li key={row.key}>
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex min-w-0 items-center gap-2">
-                      <span className="w-4 shrink-0 text-[11px] font-light text-muted-foreground tabular-nums">
+                      <span className="w-4 shrink-0 text-xs text-muted-foreground tabular-nums">
                         {index + 1}
                       </span>
                       {row.icon && (
-                        <ProviderIcon provider={row.icon} className="size-4" />
+                        <ProviderIcon provider={row.icon} className="size-5 shrink-0" />
                       )}
                       <span className="truncate text-sm">{row.label}</span>
                     </div>
@@ -299,7 +299,7 @@ function MixSection({
                       />
                       <div
                         data-reveal-bar
-                        className="absolute inset-0 text-brand-accent/70"
+                        className="absolute inset-0 text-foreground/60"
                         style={{
                           ...TICKS,
                           clipPath: cut(0, share),
@@ -371,11 +371,11 @@ function ContributorsSection({
       </CardHeader>
       <CardContent>
         {!isAdmin ? (
-          <p className="py-6 text-sm/relaxed text-muted-foreground">
+          <p className="py-6 text-sm/relaxed text-ink-secondary">
             {copy.adminOnly}
           </p>
         ) : persons.length === 0 ? (
-          <div className="py-6 text-sm text-muted-foreground">
+          <div className="py-6 text-sm text-ink-secondary">
             <p>{copy.contributorsEmpty}</p>
             <Link
               href="/ajustes/atribuicao"
@@ -387,7 +387,7 @@ function ContributorsSection({
         ) : (
           <>
             <div className="hidden md:block">
-              <div className="grid grid-cols-[minmax(0,1fr)_100px_132px] gap-4 border-b border-border pb-2 text-[11px] font-medium text-muted-foreground">
+              <div className="grid grid-cols-[minmax(0,1fr)_100px_132px] gap-4 border-b border-border pb-2 text-xs font-medium text-muted-foreground">
                 <span>{copy.person}</span>
                 <span className="text-right">{copy.tokens}</span>
                 <span className="text-right">{copy.derived}</span>
@@ -406,7 +406,7 @@ function ContributorsSection({
                         <StateBadge icon={Key02Icon}>{copy.sharedKey}</StateBadge>
                       )}
                     </div>
-                    <span className="text-right text-xs font-light text-muted-foreground tabular-nums">
+                    <span className="text-right text-xs text-muted-foreground tabular-nums">
                       {compactTokens.format(person.inputTokens + person.outputTokens)}
                     </span>
                     <span className="text-right text-sm font-medium tabular-nums">
@@ -429,7 +429,7 @@ function ContributorsSection({
                       <p className="truncate text-sm font-medium">
                         {person.isShared ? copy.sharedKey : person.userId}
                       </p>
-                      <p className="mt-0.5 text-[11px] font-light text-muted-foreground tabular-nums">
+                      <p className="mt-0.5 text-xs text-muted-foreground tabular-nums">
                         {compactTokens.format(person.inputTokens + person.outputTokens)} {copy.tokens.toLocaleLowerCase("pt-BR")}
                       </p>
                     </div>
@@ -448,16 +448,16 @@ function ContributorsSection({
             <div className="mt-2 flex items-center justify-between gap-4 border-t border-border pt-3">
               <div>
                 <p className="text-xs font-medium">{copy.total}</p>
-                <p className="mt-0.5 text-[11px] font-light text-muted-foreground tabular-nums">
+                <p className="mt-0.5 text-xs text-muted-foreground tabular-nums">
                   {copy.asOf(period.monthLabel, period.dayOfPeriod, period.daysInPeriod)}
                 </p>
               </div>
-              <span className="text-sm font-semibold tabular-nums">
+              <span className="text-sm font-medium tabular-nums">
                 <UsdValue value={usdDisplay(diagnosis?.totalUsd ?? 0, currency, fx)} />
               </span>
             </div>
             {namesHidden && persons.some((person) => !person.isShared) && (
-              <p className="mt-3 text-[11px]/relaxed font-light text-muted-foreground">
+              <p className="mt-3 text-xs/relaxed text-muted-foreground">
                 {copy.namesHiddenNote}
               </p>
             )}
@@ -492,17 +492,17 @@ function ControlPlanSection({ team }: { team: CockpitTeam }) {
             const href = controlPlanHref(action.id, action.href, team.teamId);
             const content = (
               <>
-                <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-medium tabular-nums">
+                <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-muted text-2xs font-medium tabular-nums">
                   {index + 1}
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block text-sm font-medium">{action.title}</span>
-                  <span className="mt-0.5 block text-xs/relaxed font-light text-muted-foreground">
+                  <span className="mt-0.5 block text-xs/relaxed text-muted-foreground">
                     {action.detail}
                   </span>
                 </span>
                 {href && (
-                  <HugeiconsIcon icon={ArrowRight01Icon} className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+                  <HugeiconsIcon icon={ArrowRight01Icon} className="size-4 shrink-0 text-ink-faint transition-transform group-hover:translate-x-0.5" />
                 )}
               </>
             );
@@ -605,7 +605,7 @@ export function DiagnosisBody({
             emptyLabel={copy.chartEmpty}
           />
           {evaluation !== null && evaluation.projection === null && (
-            <p className="mt-2 text-xs/relaxed font-light text-muted-foreground">
+            <p className="mt-2 text-xs/relaxed text-muted-foreground">
               {copy.collectingNote}
             </p>
           )}

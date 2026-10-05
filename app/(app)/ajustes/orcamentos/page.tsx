@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/card";
 import { currentRole } from "@/lib/auth/session";
 import { currentPeriod } from "@/lib/engine/period";
-import { money } from "@/lib/money";
+import { money, signedMoney } from "@/lib/money";
 import { listBudgets, type Budget } from "@/lib/budgets/queries";
 import { canEditCompanySettings } from "@/lib/settings/account";
 import { listTeams } from "@/lib/teams/queries";
@@ -39,10 +39,8 @@ const copy = {
   noTeamsBody:
     "Importe o roster para definir orçamentos por time. O orçamento da empresa acima já funciona sozinho.",
   noTeamsCta: "Importar roster",
-  mismatchOver: (delta: string) =>
-    `A soma dos orçamentos dos times está ${delta} acima do orçamento da empresa. Guardrails independentes — apenas um aviso.`,
-  mismatchUnder: (delta: string) =>
-    `A soma dos orçamentos dos times está ${delta} abaixo do orçamento da empresa. Guardrails independentes — apenas um aviso.`,
+  mismatch: (delta: string) =>
+    `Soma dos times X orçamento da empresa: ${delta}. Guardrails independentes — apenas um aviso.`,
   fxDisclosure: (rate: string, source: string, date: string) =>
     `Gasto em dólar convertido a ${rate}/US$ — cotação de ${source}, congelada em ${date}.`,
   fxMissing:
@@ -99,9 +97,7 @@ export default async function BudgetsPage() {
         <CardContent className="flex flex-col gap-4">
           {org && mismatch !== 0 && (
             <Notice icon={<HugeiconsIcon icon={InformationCircleIcon} />}>
-              {mismatch > 0
-                ? copy.mismatchOver(money(mismatch, currency))
-                : copy.mismatchUnder(money(-mismatch, currency))}
+              {copy.mismatch(signedMoney(mismatch, currency))}
             </Notice>
           )}
           {org && org.currency !== "USD" && org.frozenFxRate === null && (
@@ -122,7 +118,7 @@ export default async function BudgetsPage() {
           )}
         </CardContent>
         {org && org.currency !== "USD" && org.frozenFxRate !== null && (
-          <CardFooter className="text-xs/relaxed font-light text-muted-foreground">
+          <CardFooter className="text-xs/relaxed text-muted-foreground">
             <p>
               {copy.fxDisclosure(money(org.frozenFxRate, org.currency), org.fxRateSource ?? "—", org.fxRateDate ?? "—")}
             </p>

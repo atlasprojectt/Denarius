@@ -2,7 +2,9 @@
 
 > **Finalidade:** reunir o produto inteiro em uma visão não técnica, orientada à análise de problema, proposta de valor, experiência, fluxos, regras, limites e evidências necessárias para decidir se o Denarius resolve o problema a que se propõe.
 >
-> **Escopo desta fotografia:** tudo o que a pessoa encontra, configura, consulta e consegue fazer no produto em 28 de setembro de 2026, incluindo seus limites e as condições necessárias para entregar valor.
+> **Escopo desta fotografia:** tudo o que a pessoa encontra, configura, consulta e consegue fazer no produto em 4 de outubro de 2026, incluindo seus limites e as condições necessárias para entregar valor. O documento descreve o código local; não confirma configuração de produção.
+>
+> Para a diferença entre promessa, implementação e riscos operacionais, consulte [current-state.md](current-state.md).
 
 ---
 
@@ -169,6 +171,8 @@ O produto autenticado possui cinco destinos principais:
 
 O menu da conta também dá acesso às preferências pessoais e à saída da sessão.
 
+A Pesquisa abre como um modal pelo controle da barra lateral ou por `Ctrl+P`. Ela pesquisa rotas e recursos autorizados da empresa. Consultas recentes ficam apenas no armazenamento do navegador.
+
 ### Áreas de Ajustes
 
 - **Organização:** Empresa e moeda; Pessoas e times; Acessos e usuários.
@@ -215,7 +219,7 @@ O menu da conta também dá acesso às preferências pessoais e à saída da ses
 2. Se esquecer a senha, informa seu e-mail para receber um link de recuperação.
 3. A resposta não revela se aquele e-mail possui conta.
 4. Pelo link recebido, escolhe uma nova senha.
-5. Em Preferências, quem usa senha pode trocá-la informando a senha atual; as demais sessões são encerradas.
+5. Em Preferências, quem usa senha pode trocá-la confirmando um código de seis dígitos enviado ao seu e-mail; as demais sessões são encerradas.
 6. Quem entra apenas com Google vê a explicação de que senha e verificação pertencem à conta Google.
 7. O menu da conta permite encerrar a sessão.
 

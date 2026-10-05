@@ -51,14 +51,16 @@ export default async function HomePage() {
 
   return (
     <PageContainer variant="full" className="flex-1 gap-3 xl:min-h-0">
-      <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-2">
+      {/* The margin tops the row gap (gap-3) up to the shell's top inset
+          (16px, 20px from md), so the greeting has equal air above and below. */}
+      <div className="mb-1 flex flex-wrap items-start justify-between gap-x-6 gap-y-2 md:mb-2">
         <HomeGreeting name={profileLabel(user)} status={cockpit.verdict.status} />
         {/* Freshness stamp (principle #3): same rule and format as Explore
             (oldest active sync + syncStamp) — one mechanism, two screens. The
             day-of-month meta left this corner (de-noise 2026-07-17): it now
             lives at the hero bar's "hoje" marker, its one canonical home. */}
         {lastSyncAt !== null && (
-          <p className="mt-1 shrink-0 text-xs font-light text-muted-foreground tabular-nums">
+          <p className="mt-1 shrink-0 text-xs text-muted-foreground tabular-nums">
             {homeCopy.dataAsOf(syncStamp(lastSyncAt))}
           </p>
         )}

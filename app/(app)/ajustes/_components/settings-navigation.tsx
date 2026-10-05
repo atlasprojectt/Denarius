@@ -14,7 +14,7 @@ export function SettingsItemStatus({
   indicator?: boolean;
 }) {
   return (
-    <span className="inline-flex items-center gap-2 text-xs font-light whitespace-nowrap text-muted-foreground tabular-nums">
+    <span className="inline-flex items-center gap-2 text-xs whitespace-nowrap text-muted-foreground tabular-nums">
       {indicator && (
         <span
           aria-hidden
@@ -55,7 +55,7 @@ export function SettingsNavigationItem({
       </span>
 
       <span className="col-start-2 row-start-1 min-w-0">
-        <span className="block text-[13px] font-medium text-foreground transition-colors duration-(--motion-duration-standard) ease-(--motion-ease-standard) group-hover/item:text-foreground motion-reduce:transition-none">
+        <span className="block text-ui font-medium text-foreground transition-colors duration-(--motion-duration-standard) ease-(--motion-ease-standard) group-hover/item:text-foreground motion-reduce:transition-none">
           {title}
         </span>
         <span className="mt-0.5 block text-xs/relaxed text-muted-foreground">
@@ -106,7 +106,7 @@ export function SettingsSection({
     <section aria-labelledby={id} className="flex flex-col gap-2.5">
       <h2
         id={id}
-        className="text-[11px] font-medium tracking-wide text-muted-foreground"
+        className="label-caps text-muted-foreground"
       >
         {title}
       </h2>

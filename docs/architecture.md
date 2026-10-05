@@ -1,6 +1,6 @@
 # Denarius — Architecture
 
-> Derives from [prd.md](prd.md) (source of truth). This doc organizes the *system shape* for whoever builds it.
+> Derives from [prd.md](prd.md) (product source of truth). This doc describes the system in the repository as of 2026-10-04.
 
 ## 1. System overview
 
@@ -19,6 +19,9 @@
                      │              │              │
               Supabase Postgres   Vercel Cron    Resend (email)
               (Auth + RLS)        (daily sync)
+                      │
+                 Neon backend
+                (privileged SQL)
                      ▲
                      │  read-only Admin keys (encrypted at rest)
          ┌───────────┴───────────┐
@@ -30,24 +33,25 @@
 - **Single repo, single Next.js app** — monolith, not a monorepo. No Turborepo/Nx.
 - Denarius is **read-only** toward providers: it observes and warns, never blocks or mutates anything on their side.
 
-## 2. Stack (locked)
+## 2. Stack
 
 | Layer | Choice |
 |---|---|
 | Language | TypeScript everywhere (no Python) |
-| Framework | Next.js (App Router) + Tailwind + shadcn/ui + Recharts |
+| Framework | Next.js 16 App Router + Tailwind CSS 4 + generated UI primitives + Recharts |
 | Backend | Next API routes / server actions (same deploy) |
-| DB / Auth | Supabase (Postgres + Auth + RLS); login e-mail/senha + Google |
+| Database / Auth | Supabase Postgres + Auth + RLS; login email/password + Google |
 | Hosting / jobs | Vercel + Vercel Cron (daily sync) |
 | Email | Resend (event alerts + weekly digest) behind a pluggable channel interface |
 | LLM | Claude Haiku 4.5 (`claude-haiku-4-5`), swappable via config, narration-only |
-| Schema | Migrations as code in `supabase/migrations`, auto-deployed via Supabase↔GitHub integration |
+| Privileged database | Neon serverless Postgres through named helpers in `lib/db/admin.ts`; its migration and deployment path is not defined in this repository |
+| Schema | Versioned files in `supabase/migrations`; CI applies the Supabase chain from zero |
 
-## 3. Planned repo layout
+## 3. Repository layout
 
 ```
-/                     Next.js app (created in issue #12)
-├── app/              routes: (auth), home, explore, settings + API routes
+/                     Next.js application
+├── app/              route segments, screen components, and API routes
 ├── lib/
 │   ├── connectors/   UsageProvider seam: openai.ts, anthropic.ts, fake.ts
 │   ├── engine/       pure functions: projection, margin, thresholds, verdict
@@ -56,13 +60,16 @@
 │   ├── notify/       channel interface, resend impl, dedup (notification_log)
 │   └── snapshot/     pure freeze builder, closed-window reads, closing job
 ├── supabase/
-│   └── migrations/   schema + RLS policies (versioned, auto-deployed)
+│   └── migrations/   Supabase schema, RLS, and storage policies (versioned)
+├── tests/            engine, connector, security, database, and UI contract tests
 └── docs/             this folder
 ```
 
+The app has two privileged database adapters. `lib/supabase/admin.ts` uses the Supabase service role for provider sync, budgets, audit, invitations, notifications, privacy, and settings. `lib/db/admin.ts` uses `NEON_BACKEND_DATABASE_URL` for named direct SQL helpers used by rate limiting, roster and subscription mutations, attribution, employee edits, and closed-month snapshot work. Authenticated page reads use the RLS-scoped Supabase client. This split is an operational risk until one store or a documented replication path becomes authoritative. Track it in [current-state.md](current-state.md).
+
 ## 4. Multi-tenancy & security (the due-diligence spine)
 
-- Shared Postgres with **`tenant_id` on every table** + **Row-Level Security policies** as second layer: a query bug cannot leak across customers.
+- Product data uses shared Postgres with **`tenant_id` on every tenant-owned table** + **Row-Level Security policies** as a second layer. Catalog and system tables are explicit exceptions: `model_price` is a global read-only catalog, while `notification_log`, `rate_limit_hit`, and `account_deletion_challenge` are server-only state with no browser policy. See [current-state.md](current-state.md) for the exact migration audit.
 - RLS policies live in versioned migrations → an acquirer can audit the isolation history commit by commit.
 - Data API privileges are explicit in migrations, not inherited from a Supabase project default: authenticated sessions receive only the reads/RPCs the app uses, browser table writes stay revoked, and `service_role` owns the server-side mutation surface. Every new table/function migration must grant its intended role in the same file; RLS and SQL privileges are two independent controls.
 - Provider credentials: read-only Admin keys, **encrypted at rest**, never in plaintext/logs, rotatable/revocable. `service_role` key only in server-side env (never `NEXT_PUBLIC_`).
@@ -122,11 +129,11 @@ Forms whose selections must survive a racing revalidation (attribution mapping) 
 
 | Env | What |
 |---|---|
-| Local | Next dev + Supabase project (or local CLI); `.env.local` (gitignored) |
+| Local | Next dev + local or hosted Supabase; optional Neon backend; `.env.local` (gitignored) |
 | CI | An **ephemeral** Supabase stack raised by `supabase start` inside the job (`supabase/config.toml`, issue #78), with every migration applied from scratch. Lives for one run; keys are read back from the stack, never written down |
-| Production | Vercel project linked to repo; Supabase project; secrets as Vercel env vars |
+| Production | Vercel project `denarius`; Supabase project; optional Neon backend; secrets as Vercel environment variables |
 
-MVP runs on free tiers; DB/secret rigor from day one. Move off free tier at first paying customer. Supabase Storage is enabled locally and in production for private profile avatars only; all other product data remains database metadata.
+MVP runs on free tiers; DB and secret rigor applies from day one. Move off free tiers at the first paying customer. Supabase Storage is enabled locally and in production for private profile avatars only. All other product data remains database metadata. The repository does not prove that the hosted Neon schema and Supabase data are synchronized.
 
 ## 9. Testing strategy (summary)
 
@@ -162,5 +169,4 @@ No npm flag fixes this from Windows. `--package-lock-only`, a delete-and-regener
 
 ## 11. Global workspace search
 
-`/search` is a small client interaction island over a Server Action. The action resolves the authenticated membership with `requireSession()` and passes the server-derived tenant and role to independent providers for app routes, the company, teams, employees, users, budgets, closed reports, subscriptions and provider connections. Each database query repeats the tenant predicate explicitly and still runs through the signed-in Supabase client under RLS. Admin-only providers are excluded before execution; independent providers run in parallel and a single failure degrades only its category. The browser receives only the common, bounded `SearchResult` projection, never source rows or credentials. The idle scope pills are direct links to their destination, so choosing a scope always produces a navigation outcome instead of searching the scope label as data.
-
+The search modal is a small client interaction island over a Server Action. The action resolves the authenticated membership with `requireSession()` and passes the server-derived tenant and role to independent providers for app routes, the company, teams, employees, users, budgets, closed reports, subscriptions and provider connections. Each database query repeats the tenant predicate explicitly and still runs through the signed-in Supabase client under RLS. Admin-only providers are excluded before execution; independent providers run in parallel and a single failure degrades only its category. The browser receives only the common, bounded `SearchResult` projection, never source rows or credentials. The idle scope pills are direct links to their destination, so choosing a scope always produces a navigation outcome instead of searching the scope label as data.

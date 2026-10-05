@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <img alt="status" src="https://img.shields.io/badge/status-MVP%20em%20desenvolvimento-FF5100" />
+  <img alt="status" src="https://img.shields.io/badge/status-beta%20pré--lançamento-FF5100" />
   <img alt="next" src="https://img.shields.io/badge/Next.js-16-000" />
   <img alt="react" src="https://img.shields.io/badge/React-19-000" />
   <img alt="typescript" src="https://img.shields.io/badge/TypeScript-strict-000" />
@@ -51,7 +51,7 @@ engenheiro, que dedica ~10 segundos por visita.
 
 - **Next.js 16** (App Router, RSC) · **React 19** · **TypeScript** estrito
 - **Tailwind CSS 4** · **shadcn/ui** (Base UI) · **Recharts** (só a linha cumulativa)
-- **Supabase** — Postgres + Auth + **RLS** (isolamento por tenant em toda tabela)
+- **Supabase** — Postgres + Auth + **RLS** (isolamento por tenant nas tabelas de dados; catálogos e estado interno têm acesso restrito)
 - **Vercel** + Vercel Cron (sync diário, digest semanal) · **Resend** (e-mail)
 - **Claude Haiku 4.5** — narração apenas; **a IA nunca calcula**
 
@@ -90,7 +90,7 @@ Ele responde a partir de fixtures canônicas — nunca chama API de verdade.
 ```
 app/
   (auth)/         login
-  (app)/          início · times · explorar · ajustes  (Server Components)
+  (app)/          início · times · explorar · relatórios · ajustes · preferências  (Server Components)
   api/cron/       sync diário + digest semanal (protegidos por CRON_SECRET)
   convite/        aceite de convite (rota pública)
 components/
@@ -102,7 +102,7 @@ lib/
   findings/       apontamentos, desperdício de assentos, planos de controle
   notify/         canais de notificação · narrate/ · privacy/ · fx/
 supabase/
-  migrations/     schema como código (auto-deploy no merge para main)
+  migrations/     schema como código (CI aplica a cadeia; produção exige aplicar migrações)
 tests/            engine, RLS, privacidade   ·   e2e/  Playwright
 docs/             documentação do projeto — comece por docs/README.md
 ```
@@ -112,7 +112,7 @@ exibe. Leitura via RSC, escrita via server action — sem REST interno, sem esta
 
 ## Invariantes (nunca quebrar)
 
-1. **Isolamento por tenant** — toda tabela tem `tenant_id` + política RLS. Sem exceção.
+1. **Isolamento por tenant** — toda tabela de dados do cliente tem `tenant_id` + política RLS. Catálogos globais e estados internos do servidor são exceções explícitas e não têm leitura pelo navegador.
 2. **A IA nunca calcula** — todo número vem de código determinístico e é *injetado* na narração;
    ações de plano de controle saem de um catálogo curado. Testes rejeitam qualquer figura não injetada.
 3. **Reconciliação** — `total da org = Σ times + Não atribuído`. Gasto nunca some em silêncio;
@@ -126,10 +126,11 @@ exibe. Leitura via RSC, escrita via server action — sem REST interno, sem esta
 
 Todo o contexto de produto e engenharia está em [`docs/`](docs/README.md), nesta ordem:
 
-1. [`docs/prd.md`](docs/prd.md) — **fonte da verdade**: stories, escopo, decisões P1–P16
-2. [`docs/architecture.md`](docs/architecture.md) — shape do sistema, tenancy, modelo de dados
-3. [`docs/backend.md`](docs/backend.md) — contratos de módulo, fórmulas do engine, env vars
-4. [`docs/frontend.md`](docs/frontend.md) — telas, tokens, padrões de UI
+1. [`docs/current-state.md`](docs/current-state.md) — fotografia auditada do que o código já faz e dos riscos conhecidos
+2. [`docs/prd.md`](docs/prd.md) — **fonte da verdade**: stories, regras de produto e escopo
+3. [`docs/architecture.md`](docs/architecture.md) — shape do sistema, tenancy, modelo de dados
+4. [`docs/backend.md`](docs/backend.md) — contratos de módulo, fórmulas do engine, env vars
+5. [`docs/frontend.md`](docs/frontend.md) — contratos de tela, estados e acessibilidade; design visual em reformulação
 
 [`CLAUDE.md`](CLAUDE.md) / [`AGENTS.md`](AGENTS.md) são a **constituição** do projeto para agentes
 de IA: como pensar antes de escrever a primeira linha de código.

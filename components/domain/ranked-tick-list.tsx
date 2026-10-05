@@ -8,8 +8,8 @@ import { cn } from "@/lib/utils";
 // row thickens and brightens its bar, so the eye lands on one source at a time
 // without the list ever moving.
 //
-// The bars are brand-accent, not semaphore: composition is not budget status,
-// and orange is the brand's accent rather than a verdict color (principle #5).
+// The bars are neutral ink, not semaphore: composition is not budget status
+// (principle #5), and orange is kept for punctual ON states.
 // Values arrive pre-formatted — this component never phrases and never
 // computes (F2, invariant #2). The hover is pure CSS, so it stays a Server
 // Component; entrance animation rides the existing RevealController hooks.
@@ -19,8 +19,11 @@ export type RankedTickRow = {
   /** Optional leading mark (provider logo, seat icon). */
   icon?: ReactNode;
   label: string;
-  /** Pre-formatted by the caller (money, share). */
+  /** Pre-formatted by the caller: the amount, in primary ink. */
   value: string;
+  /** Optional supporting figure after the amount (the share), one ink step
+   *  quieter. Data is never subtle (DESIGN.md › Typography). */
+  detail?: string;
   /** Portion of the track to fill, 0..1. */
   share: number;
 };
@@ -46,10 +49,13 @@ export function RankedTickList({
               {row.icon && (
                 <span className="shrink-0 self-center">{row.icon}</span>
               )}
-              <span className="truncate font-medium">{row.label}</span>
+              <span className="truncate text-ui font-medium">{row.label}</span>
             </span>
-            <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
+            <span className="shrink-0 text-ui text-foreground tabular-nums">
               {row.value}
+              {row.detail && (
+                <span className="ml-1 text-ink-secondary">{row.detail}</span>
+              )}
             </span>
           </div>
           <div className="relative mt-1.5 h-2 w-full">
@@ -60,7 +66,7 @@ export function RankedTickList({
             />
             <div
               data-reveal-bar
-              className="absolute inset-0 origin-center text-brand-accent group-hover/row:scale-y-[1.5] group-hover/row:brightness-115 motion-safe:transition-[filter,transform] motion-safe:duration-(--motion-duration-max) motion-safe:ease-(--motion-ease-standard)"
+              className="absolute inset-0 origin-center text-foreground/80 group-hover/row:scale-y-[1.5] group-hover/row:brightness-115 motion-safe:transition-[filter,transform] motion-safe:duration-(--motion-duration-max) motion-safe:ease-(--motion-ease-standard)"
               style={{
                 ...TICKS,
                 clipPath: cut(0, row.share),

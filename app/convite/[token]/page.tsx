@@ -66,23 +66,23 @@ export default async function InvitePage({
   if (!usable) {
     return (
       <Shell>
-        <div className="flex flex-col items-center rounded-2xl border border-border bg-card p-6 text-center shadow-sm sm:p-8">
+        <div className="flex flex-col items-center rounded-lg border border-border bg-card p-6 text-center shadow-sm sm:p-8">
           <div
             aria-hidden
             className="flex size-12 items-center justify-center rounded-full bg-muted text-muted-foreground"
           >
             <HugeiconsIcon icon={MailXIcon} className="size-5" />
           </div>
-          <p className="mt-5 text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+          <p className="mt-5 text-xs text-muted-foreground">
             {copy.deadKicker}
           </p>
-          <h1 className="mt-2 text-2xl font-semibold tracking-tight text-balance">
+          <h1 className="mt-2 text-2xl text-balance">
             {copy.deadTitle}
           </h1>
-          <p className="mt-3 max-w-sm text-sm/relaxed text-muted-foreground">
+          <p className="mt-3 max-w-sm text-sm/relaxed text-ink-secondary">
             {copy.deadBody}
           </p>
-          <div className="mt-6 w-full rounded-xl bg-muted/60 p-4 text-left">
+          <div className="mt-6 w-full rounded-md bg-muted/60 p-4 text-left">
             <p className="text-sm font-medium">{copy.helpTitle}</p>
             <p className="mt-1 text-xs/relaxed text-muted-foreground">
               {copy.helpBody}

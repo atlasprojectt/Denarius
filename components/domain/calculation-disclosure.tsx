@@ -25,7 +25,7 @@ export function CalculationDisclosure({
 
   return (
     <Collapsible open={open} onOpenChange={setOpen}>
-      <CollapsibleTrigger className="group flex w-full items-center justify-between gap-3 rounded-standard px-3 py-2 text-left text-xs font-medium text-muted-foreground outline-none transition-colors duration-(--motion-duration-standard) ease-(--motion-ease-standard) hover:bg-surface-hover hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/40">
+      <CollapsibleTrigger className="group flex w-full items-center justify-between gap-3 rounded-sm px-3 py-2 text-left text-xs font-medium text-muted-foreground outline-none transition-colors duration-(--motion-duration-standard) ease-(--motion-ease-standard) hover:bg-surface-hover hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/40">
         {title}
         <HugeiconsIcon icon={ChevronDownIcon}
           aria-hidden
@@ -36,7 +36,7 @@ export function CalculationDisclosure({
         />
       </CollapsibleTrigger>
       <CollapsibleContent>
-        <div className="mx-3 border-t border-border pt-3 pb-1 text-xs/relaxed font-light text-muted-foreground">
+        <div className="mx-3 border-t border-border pt-3 pb-1 text-xs/relaxed text-muted-foreground">
           {children}
         </div>
       </CollapsibleContent>

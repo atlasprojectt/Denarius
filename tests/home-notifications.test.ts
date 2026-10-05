@@ -47,12 +47,13 @@ describe("buildBudgetNotifications", () => {
 
     expect(notifications).toHaveLength(1);
     expect(notifications[0]).toMatchObject({
-      title: "Marketing estourou o orçamento em 20%",
+      title: "Marketing: gasto +20% X orçamento",
       href: "/times/marketing",
       level: "breach",
     });
-    expect(notifications[0].detail).toContain("600,00");
-    expect(notifications[0].detail).toContain("500,00");
+    expect(notifications[0].detail).toBe(
+      "Gasto R$ 600,00 X orçamento R$ 500,00",
+    );
   });
 
   it("surfaces an org projected breach with deterministic numbers", () => {
@@ -61,11 +62,13 @@ describe("buildBudgetNotifications", () => {
     const notifications = buildBudgetNotifications(cockpit);
 
     expect(notifications[0]).toMatchObject({
-      title: "Empresa pode fechar 20% acima do orçamento",
+      title: "Empresa: projeção +20% X orçamento",
       href: "/",
       level: "projected_breach",
     });
-    expect(notifications[0].detail).toContain("1.200,00");
+    expect(notifications[0].detail).toBe(
+      "Projeção R$ 1.200,00 X orçamento R$ 1.000,00",
+    );
   });
 
   it("uses the active warning threshold without inventing a recommendation", () => {
@@ -84,8 +87,27 @@ describe("buildBudgetNotifications", () => {
 
     const notifications = buildBudgetNotifications(cockpit);
 
-    expect(notifications[0].title).toBe("Data atingiu 80% do orçamento");
+    expect(notifications[0].title).toBe("Data: 80% do orçamento");
     expect(notifications[0].level).toBe("warning");
+  });
+
+  it("states a breach exactly at the limit as the share, never +0%", () => {
+    const cockpit = buildCockpit(
+      input({
+        teams: [
+          {
+            ...scope(500, 500),
+            teamId: "ops",
+            teamName: "Ops",
+          },
+        ],
+      }),
+    );
+
+    const [notification] = buildBudgetNotifications(cockpit);
+
+    expect(notification.level).toBe("breach");
+    expect(notification.title).toBe("Ops: 100% do orçamento");
   });
 
   it("returns no notifications during cold start", () => {

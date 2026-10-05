@@ -1,128 +1,110 @@
-import { barGeometry, cut, TICKS_BOLD } from "@/lib/bars";
+import { cut, pacingSegments, TICKS_BOLD, type Span } from "@/lib/bars";
 import { percent } from "@/lib/format";
 import { homeCopy } from "./copy";
 
 // The pacing bar (frontend §3.4, de-noise 2026-07-17): ONE bar where the pair
-// used to stack two. Geometry comes from barGeometry; the segmented tick
-// texture from lib/bars.
+// used to stack two. The segmented tick texture comes from lib/bars.
 //
-// Three tones (2026-08-01, founder-directed): spent at full accent, the
-// run-rate projection at the SAME hue weakened — matching what SpendTrendChart
-// already does for its projected series, so bar and chart read as one language
-// — and the remaining budget neutral. They are an accent ramp rather than three
-// hues on purpose: docs §4 caps orange at a few anchors per area and reserves
-// green/amber/red for budget status (principle #5). Red enters only on a
-// REALIZED breach, and then the projection follows the fill: a red bar trailing
-// an orange projection would read as two different claims.
-//
-// The budget rule is the bar's ONE reference mark. The elapsed-time position
-// was drawn as a second rule and removed (2026-08-01, founder-directed): the
-// comparison it served now lives in the meta row above, where `dia N de M` sits
-// beside `% gasto` — the two figures side by side instead of a mark to decode.
-// `pctElapsed` still feeds the accessible description, which states both.
+// Colors side by side inside the bar (2026-10-05, founder-directed), in
+// reading order: what was spent and what the current pace will still spend
+// inside the budget (orange, strong then light), what goes above the budget
+// (red, solid when already spent, lighter when still to come) and the budget
+// left free (a quiet gray). The budget is the ruler, so the limit
+// shows as the turn to red in every state, never as a line. pacingSegments
+// makes the segments adjacent and exclusive, so they never overlap and always
+// tile the track. The meta row above pairs `dia N de M` with the spent
+// percentage, the two figures the bar exists to compare.
 
 const c = homeCopy.hero;
 
 export function PacingBar({
   pctSpent,
   pctProjected,
-  pctElapsed,
   dayOfPeriod,
   daysInPeriod,
 }: {
   pctSpent: number;
   pctProjected: number | null;
-  pctElapsed: number;
   dayOfPeriod: number;
   daysInPeriod: number;
 }) {
-  const g = barGeometry(pctSpent, pctProjected);
-  const pct = (n: number) => `${(n * 100).toFixed(2)}%`;
+  const s = pacingSegments(pctSpent, pctProjected);
+  const collecting = pctProjected === null;
 
+  // The legend's overrun swatch follows the strongest red on the bar: solid
+  // once the budget is already gone, the lighter projected red before that.
   // Literal class strings, never interpolated: Tailwind only emits what it can
-  // scan in the source. The projection sits well below the fill (38%, not the
-  // 55% first tried) because two tones of one hue separate by LIGHTNESS alone —
-  // at 55% the two halves of the bar blended into one smear. The track drops
-  // with it so the whole ramp stays legible end to end.
-  const breached = pctSpent > 1;
-  const fillTone = breached ? "text-status-red" : "text-brand-accent";
-  const ghostTone = breached ? "text-status-red/38" : "text-brand-accent/38";
-  const swatchTone = breached ? "bg-status-red" : "bg-brand-accent";
-  const swatchGhostTone = breached ? "bg-status-red/38" : "bg-brand-accent/38";
+  // scan in the source.
+  const overSwatch = s.overspent ? "bg-status-red" : "bg-pace-over";
 
   return (
     // data-reveal-state is stamped by the RevealController pre-hydration.
-    <div data-reveal="pacing-bar" suppressHydrationWarning className="group/bar">
+    <div data-reveal="pacing-bar" suppressHydrationWarning>
       <p className="sr-only">
-        {c.pace.description(percent(pctSpent), percent(pctElapsed))}
+        {collecting
+          ? c.pace.descriptionCollecting(percent(pctSpent), dayOfPeriod, daysInPeriod)
+          : c.pace.description(percent(pctSpent), dayOfPeriod, daysInPeriod)}
       </p>
 
-      <div className="mb-1 flex items-baseline justify-between gap-3 text-xs">
-        <span className="font-light text-muted-foreground tabular-nums">
-          {c.periodDay(dayOfPeriod, daysInPeriod, percent(pctElapsed))}
+      <div aria-hidden className="mb-1.5 flex items-baseline justify-between gap-3 text-xs tabular-nums">
+        <span className="text-muted-foreground">
+          {c.pace.periodDay(dayOfPeriod, daysInPeriod)}
         </span>
-        <span className="font-medium tabular-nums">{percent(pctSpent)}</span>
+        <span className="font-medium text-foreground">{percent(pctSpent)}</span>
       </div>
 
       {/* Taller than the app's other bars (founder-directed): this is the
           hero's own bar and carries the month's headline. */}
-      <div className="relative h-8 w-full">
-        <div aria-hidden className="absolute inset-0 text-foreground/15" style={TICKS_BOLD} />
-        {g.ghostStart !== null && g.ghostEnd !== null && (
-          <div
-            data-reveal-bar
-            className={`absolute inset-0 ${ghostTone}`}
-            style={{
-              ...TICKS_BOLD,
-              clipPath: cut(g.ghostStart, g.ghostEnd),
-              animationDelay: "260ms",
-            }}
-          />
+      <div aria-hidden className="relative h-8 w-full">
+        <div className="absolute inset-0 text-foreground/8" style={TICKS_BOLD} />
+        {s.leftover && (
+          <Segment span={s.leftover} tone="text-pace-leftover" delay="340ms" />
         )}
-        <div
-          data-reveal-bar
-          className={`absolute inset-0 ${fillTone}`}
-          style={{ ...TICKS_BOLD, clipPath: cut(0, g.fill), animationDelay: "80ms" }}
-        />
-        {g.marker < 1 && (
-          <div
-            aria-hidden
-            className="absolute inset-y-0 w-0.5 bg-foreground/80"
-            style={{ left: pct(g.marker) }}
-          />
+        {s.projectedOver && (
+          <Segment span={s.projectedOver} tone="text-pace-over" delay="260ms" />
         )}
+        {s.projected && (
+          <Segment span={s.projected} tone="text-pace-projected" delay="160ms" />
+        )}
+        {s.overspent && (
+          <Segment span={s.overspent} tone="text-status-red" delay="120ms" />
+        )}
+        <Segment span={s.spent} tone="text-pace-spent" delay="80ms" />
       </div>
 
-      <p className="mt-1.5 text-xs font-light text-muted-foreground md:hidden">
-        {c.pace.legend}
+      <p className="mt-2 text-xs text-muted-foreground md:hidden">
+        {collecting ? c.pace.legendCollecting : c.pace.legend}
       </p>
-      <div className="relative mt-1.5 hidden h-4 md:block">
-        <div
-          className="absolute inset-0 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-light text-muted-foreground opacity-70 transition-opacity group-hover/bar:opacity-100 group-focus-within/bar:opacity-100"
-        >
-          <LegendItem swatch={`${SWATCH} ${swatchTone}`} label={c.pace.spent} />
-          <LegendItem
-            swatch={`${SWATCH} ${swatchGhostTone}`}
-            label={c.pace.projected}
-          />
-          {/* The rules are drawn AS rules — a swatch should look like the mark
-              it stands for. The budget is the strong line, not the neutral
-              track: labelling that grey "Orçamento" would name two different
-              marks the same thing, when the grey is simply room not yet
-              claimed by either of the two above. */}
-          <LegendItem
-            swatch="h-2.5 w-0.5 shrink-0 bg-foreground/80"
-            label={c.pace.budget}
-          />
-        </div>
+      <div
+        aria-hidden
+        className="mt-2 hidden flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground md:flex"
+      >
+        <LegendItem swatch={`${SWATCH} bg-pace-spent`} label={c.pace.spent} />
+        {!collecting && (
+          <LegendItem swatch={`${SWATCH} bg-pace-projected`} label={c.pace.projected} />
+        )}
+        <LegendItem swatch={`${SWATCH} ${overSwatch}`} label={c.pace.over} />
+        <LegendItem swatch={`${SWATCH} bg-pace-leftover`} label={c.pace.leftover} />
       </div>
     </div>
   );
 }
 
+/** One colored stretch of the tick track: the shared full-width grid, cut to
+ *  its span so tick columns align across segments. */
+function Segment({ span, tone, delay }: { span: Span; tone: string; delay: string }) {
+  return (
+    <div
+      data-reveal-bar
+      className={`absolute inset-0 ${tone}`}
+      style={{ ...TICKS_BOLD, clipPath: cut(span.from, span.to), animationDelay: delay }}
+    />
+  );
+}
+
 /** Shared swatch geometry. Each caller passes the FULL class list rather than
  *  composing widths, so no two width utilities can collide. */
-const SWATCH = "h-2.5 w-2 shrink-0 rounded-[1.5px]";
+const SWATCH = "h-2.5 w-2 shrink-0 rounded-xs";
 
 function LegendItem({ swatch, label }: { swatch: string; label: string }) {
   return (

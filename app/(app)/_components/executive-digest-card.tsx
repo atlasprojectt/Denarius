@@ -8,7 +8,7 @@ import { buildHomeDigest, type DigestSegment } from "@/lib/narrate/digest";
 import { homeCopy } from "./copy";
 
 function renderSegment(segment: DigestSegment, index: number) {
-  const emphasisClass = segment.emphasis ? "font-semibold text-foreground" : "";
+  const emphasisClass = segment.emphasis ? "font-medium text-foreground" : "";
   if (segment.type === "text") {
     return (
       <span key={index} className={emphasisClass}>
@@ -20,7 +20,7 @@ function renderSegment(segment: DigestSegment, index: number) {
     <Link
       key={index}
       href={segment.href}
-      className={`rounded-sm text-foreground underline decoration-border underline-offset-4 transition-colors hover:text-brand-accent-light focus-visible:text-brand-accent-light focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 ${emphasisClass}`}
+      className={`rounded-sm text-foreground underline decoration-border underline-offset-4 transition-colors hover:decoration-brand-accent focus-visible:decoration-brand-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 ${emphasisClass}`}
     >
       {segment.value}
     </Link>
@@ -75,13 +75,13 @@ export function ExecutiveDigestCard({
       className="w-full min-w-0 lg:self-stretch xl:aspect-[1.16/1] xl:min-h-0 xl:max-w-[24rem] xl:self-start"
       aria-labelledby="home-digest-title"
     >
-      <CardHeader className="border-b border-border px-4">
+      <CardHeader className="px-4">
         <CardTitle as="h2" id="home-digest-title" className="flex items-center gap-2 text-sm">
-          <HugeiconsIcon icon={SparklesIcon} className="size-4 text-muted-foreground" aria-hidden />
+          <HugeiconsIcon icon={SparklesIcon} className="size-4 text-ink-faint" aria-hidden />
           {homeCopy.digest.title}
         </CardTitle>
       </CardHeader>
-      <CardContent className="flex min-h-[10rem] flex-1 flex-col justify-center px-8 py-4 text-[17px]/[1.6] font-medium text-muted-foreground sm:px-10">
+      <CardContent className="flex min-h-[10rem] flex-1 flex-col justify-center px-8 py-4 text-lg/[1.6] text-ink-secondary sm:px-10">
         {cockpit.state === "cold-start" && (
           <p
             data-digest-lines

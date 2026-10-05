@@ -111,18 +111,18 @@ export function OtpDialog({
             maxLength={6}
             required
             autoFocus
-            className="h-12 bg-background text-center text-2xl font-medium tracking-[0.5em] tabular-nums"
+            className="h-12 bg-background text-center text-xl font-medium tracking-[0.5em] tabular-nums"
           />
           {error && (
             <p
               role="alert"
-              className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+              className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
             >
               {error}
             </p>
           )}
           {resendState.notice && !error && (
-            <p role="status" className="text-sm text-muted-foreground">
+            <p role="status" className="text-sm text-ink-secondary">
               {resendState.notice}
             </p>
           )}
@@ -149,7 +149,7 @@ export function OtpDialog({
               {cooldown > 0 ? copy.resendIn(cooldown) : copy.resend}
             </Button>
           </form>
-          <p className="text-center text-xs font-light text-muted-foreground">
+          <p className="text-center text-xs text-muted-foreground">
             {copy.dismissHint}
           </p>
         </div>

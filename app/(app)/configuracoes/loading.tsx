@@ -9,7 +9,7 @@ export default function PersonalSettingsLoading() {
         <Skeleton className="h-4 w-96 max-w-full" />
       </div>
 
-      <div className="overflow-hidden rounded-md ring-1 ring-foreground/10">
+      <div className="overflow-hidden rounded-md ring-1 ring-foreground/6">
         <section className="px-5 py-6 sm:px-6">
           <Skeleton className="h-4 w-14" />
           <Skeleton className="mt-2 h-3 w-80 max-w-full" />
@@ -63,9 +63,9 @@ export default function PersonalSettingsLoading() {
           <Skeleton className="h-4 w-20" />
           <Skeleton className="mt-2 h-3 w-96 max-w-full" />
           <div className="mt-5 grid gap-3 md:grid-cols-3">
-            <Skeleton className="h-32 rounded-lg" />
-            <Skeleton className="h-32 rounded-lg" />
-            <Skeleton className="h-32 rounded-lg" />
+            <Skeleton className="h-32 rounded-md" />
+            <Skeleton className="h-32 rounded-md" />
+            <Skeleton className="h-32 rounded-md" />
           </div>
         </section>
 

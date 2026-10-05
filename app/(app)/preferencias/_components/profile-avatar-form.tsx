@@ -1,8 +1,6 @@
 "use client";
 
-import {
-  ImageUpload01Icon,
-} from "@hugeicons/core-free-icons";
+import { Camera01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   useActionState,
@@ -13,28 +11,29 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 
+import { Spokes } from "@/components/loading-ui/spokes";
 import { ActionToast } from "@/components/domain/toast-provider";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { PROFILE_AVATAR_MIME_TYPES } from "@/lib/settings/avatar";
 import {
   updateProfileAvatar,
   type SettingsFormState,
 } from "@/lib/settings/actions";
+import { profileAvatarSchema } from "@/lib/validation";
 
 const copy = {
-  label: "Foto de perfil",
-  hint: "JPG, PNG ou WebP · até 3 MB.",
-  choose: "Arquivo da foto de perfil",
-  chooseAction: "Escolher imagem",
-  noFile: "Nenhuma imagem selecionada",
-  save: "Atualizar foto",
-  saving: "Enviando…",
+  change: "Trocar foto de perfil",
+  overlay: "Trocar",
+  uploading: "Enviando foto…",
 };
 
 const initialState: SettingsFormState = {};
 
+/**
+ * The avatar is its own control: hovering (or focusing) it reveals a camera
+ * overlay, a click opens the file picker and choosing a file uploads it right
+ * away. Touch screens have no hover, so they get a permanent camera badge.
+ */
 export function ProfileAvatarForm({
   initials,
   avatarUrl,
@@ -47,9 +46,17 @@ export function ProfileAvatarForm({
     initialState,
   );
   const [previewUrl, setPreviewUrl] = useState<string | null>(avatarUrl);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  // A fresh object per rejection, so the same message toasts again.
+  const [rejected, setRejected] = useState<{ error: string } | null>(null);
+  const formRef = useRef<HTMLFormElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
+
+  const [prevState, setPrevState] = useState(state);
+  if (state !== prevState) {
+    setPrevState(state);
+    if (state.error) setPreviewUrl(avatarUrl);
+  }
 
   useEffect(() => {
     if (!state.success) return;
@@ -64,66 +71,69 @@ export function ProfileAvatarForm({
   );
 
   function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0] ?? null;
-    setSelectedFile(file);
-    setPreviewUrl(file ? URL.createObjectURL(file) : avatarUrl);
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // The server validates again; checking here first keeps an oversized file
+    // from ever reaching the action's body limit.
+    const parsed = profileAvatarSchema.safeParse({ avatar: file });
+    if (!parsed.success) {
+      event.target.value = "";
+      setRejected({ error: parsed.error.issues[0]?.message ?? "" });
+      return;
+    }
+
+    setPreviewUrl(URL.createObjectURL(file));
+    formRef.current?.requestSubmit();
   }
 
   return (
-    <form action={formAction} className="flex flex-col gap-3">
-      <div className="flex flex-col gap-3 rounded-lg border bg-muted/20 p-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex min-w-0 items-center gap-3">
-          <Avatar size="lg" className="size-10 shrink-0">
-            {previewUrl && <AvatarImage src={previewUrl} alt="" />}
-            <AvatarFallback className="text-xs font-semibold">
-              {initials}
-            </AvatarFallback>
-          </Avatar>
-          <div className="min-w-0">
-            <Label htmlFor="profile-avatar" className="text-sm font-medium">
-              {copy.label}
-            </Label>
-            <p className="mt-0.5 truncate text-xs/relaxed text-muted-foreground">
-              {selectedFile?.name ?? copy.noFile}
-            </p>
-            <p className="mt-0.5 text-xs/relaxed text-muted-foreground">
-              {copy.hint}
-            </p>
-          </div>
-        </div>
-
-        <div className="flex shrink-0 flex-col gap-2 sm:items-end">
-          <Input
-            ref={inputRef}
-            id="profile-avatar"
-            name="avatar"
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            onChange={handleFileChange}
-            aria-label={copy.choose}
-            className="sr-only"
-          />
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => inputRef.current?.click()}
-          >
-            <HugeiconsIcon icon={ImageUpload01Icon} aria-hidden />
-            {copy.chooseAction}
-          </Button>
-          <Button
-            type="submit"
-            size="sm"
-            loading={pending}
-            loadingText={copy.saving}
-            disabled={!selectedFile || pending}
-            className="w-full sm:w-auto"
-          >
-            {copy.save}
-          </Button>
-        </div>
-      </div>
+    <form ref={formRef} action={formAction} className="shrink-0">
+      <input
+        ref={inputRef}
+        type="file"
+        name="avatar"
+        accept={PROFILE_AVATAR_MIME_TYPES.join(",")}
+        onChange={handleFileChange}
+        tabIndex={-1}
+        aria-hidden
+        className="sr-only"
+      />
+      <button
+        type="button"
+        onClick={() => inputRef.current?.click()}
+        disabled={pending}
+        aria-label={pending ? copy.uploading : copy.change}
+        title={copy.change}
+        className="group/avatar-picker relative block size-20 cursor-pointer rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:ring-offset-2 focus-visible:ring-offset-card disabled:cursor-progress"
+      >
+        <Avatar className="size-20">
+          {previewUrl && <AvatarImage src={previewUrl} alt="" />}
+          <AvatarFallback className="text-xl font-medium">
+            {initials}
+          </AvatarFallback>
+        </Avatar>
+        <span
+          aria-hidden
+          data-pending={pending || undefined}
+          className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-0.5 rounded-full bg-black/60 text-white opacity-0 backdrop-blur-[2px] transition-opacity duration-(--motion-duration-fast) ease-(--motion-ease-standard) group-hover/avatar-picker:opacity-100 group-focus-visible/avatar-picker:opacity-100 data-pending:opacity-100"
+        >
+          {pending ? (
+            <Spokes className="size-5" />
+          ) : (
+            <>
+              <HugeiconsIcon icon={Camera01Icon} className="size-5" />
+              <span className="text-2xs font-medium">{copy.overlay}</span>
+            </>
+          )}
+        </span>
+        <span
+          aria-hidden
+          className="absolute right-0 bottom-0 z-20 flex size-7 items-center justify-center rounded-full border-2 border-card bg-foreground text-background pointer-fine:hidden"
+        >
+          <HugeiconsIcon icon={Camera01Icon} className="size-3.5" />
+        </span>
+      </button>
 
       <ActionToast
         id="profile-avatar"
@@ -131,6 +141,13 @@ export function ProfileAvatarForm({
         success={state.success}
         error={state.error}
       />
+      {rejected && (
+        <ActionToast
+          id="profile-avatar-rejected"
+          state={rejected}
+          error={rejected.error}
+        />
+      )}
     </form>
   );
 }

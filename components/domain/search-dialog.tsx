@@ -23,7 +23,6 @@ import { Card } from "@/components/ui/card";
 import { Spokes } from "@/components/loading-ui/spokes";
 import {
   Dialog,
-  DialogClose,
   DialogContent,
   DialogDescription,
   DialogHeader,
@@ -58,7 +57,6 @@ const copy = {
   errorHint: "Tente novamente em alguns instantes.",
   retry: "Tentar novamente",
   results: "Resultados da pesquisa",
-  close: "Fechar pesquisa",
   scopes: "Pesquisar em",
   recent: "Pesquisas recentes",
   clearRecent: "Limpar histórico",
@@ -358,24 +356,11 @@ export function SearchDialog({ historyScope }: { historyScope: string }) {
 
         <div
           className={cn(
-            "relative p-4 pr-12 transition-colors duration-(--motion-duration-standard) ease-(--motion-ease-standard)",
+            "relative p-4 transition-colors duration-(--motion-duration-standard) ease-(--motion-ease-standard)",
             showResults && "border-b border-border",
           )}
         >
-          <DialogClose
-            render={
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon-sm"
-                aria-label={copy.close}
-                className="absolute top-1/2 right-4 z-10 -translate-y-1/2"
-              />
-            }
-          >
-            <HugeiconsIcon icon={Cancel01Icon} />
-          </DialogClose>
-          <HugeiconsIcon icon={Search01Icon} className="pointer-events-none absolute top-1/2 left-7 size-4 -translate-y-1/2 text-muted-foreground" />
+          <HugeiconsIcon icon={Search01Icon} className="pointer-events-none absolute top-1/2 left-7 size-4 -translate-y-1/2 text-ink-faint" />
           <Input
             ref={inputRef}
             autoFocus
@@ -404,10 +389,10 @@ export function SearchDialog({ historyScope }: { historyScope: string }) {
               }
             }}
             onKeyDown={handleKeyDown}
-            className="h-12 rounded-xl bg-card pr-28 pl-10 text-sm shadow-none focus-visible:border-ring/30 focus-visible:ring-1 focus-visible:ring-ring/10 md:text-sm"
+            className="h-12 rounded-md bg-card pr-28 pl-10 text-sm shadow-none focus-visible:border-ring/30 focus-visible:ring-1 focus-visible:ring-ring/10 md:text-sm [&::-webkit-search-cancel-button]:appearance-none"
           />
           <span
-            className="absolute top-1/2 right-16 flex -translate-y-1/2 items-center gap-1.5 text-xs text-muted-foreground"
+            className="absolute top-1/2 right-7 flex -translate-y-1/2 items-center gap-1.5 text-xs text-muted-foreground"
             aria-live="polite"
           >
             {loading ? (
@@ -499,7 +484,7 @@ export function SearchDialog({ historyScope }: { historyScope: string }) {
                       <section key={group.type} aria-labelledby={`search-dialog-group-${group.type}`}>
                         <h2
                           id={`search-dialog-group-${group.type}`}
-                          className="mb-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase"
+                          className="mb-2 label-caps text-muted-foreground"
                         >
                           {group.label}
                         </h2>
@@ -575,7 +560,7 @@ function IdlePanel({
       className="max-h-[min(34rem,calc(100dvh-7rem))] overflow-y-auto px-4 pb-3"
     >
       <section aria-labelledby="search-dialog-scopes" className="border-b border-border py-3">
-        <h2 id="search-dialog-scopes" className="mb-2 text-xs font-semibold text-muted-foreground">
+        <h2 id="search-dialog-scopes" className="mb-2 label-caps text-muted-foreground">
           {copy.scopes}
         </h2>
         <div className="flex flex-wrap gap-2">
@@ -605,7 +590,7 @@ function IdlePanel({
       {recentQueries.length > 0 && (
         <section aria-labelledby="search-dialog-recent" className="border-b border-border py-3">
           <div className="mb-1.5 flex items-center justify-between gap-3">
-            <h2 id="search-dialog-recent" className="text-xs font-semibold text-muted-foreground">
+            <h2 id="search-dialog-recent" className="label-caps text-muted-foreground">
               {copy.recent}
             </h2>
             <button
@@ -627,7 +612,7 @@ function IdlePanel({
                   aria-selected={activeIndex === index}
                   onMouseEnter={() => onActive(index)}
                   className={cn(
-                    "flex min-h-10 items-center gap-2 rounded-lg px-2 transition-colors",
+                    "flex min-h-10 items-center gap-2 rounded-sm px-2 transition-colors",
                     activeIndex === index && "bg-surface-selected",
                   )}
                 >
@@ -636,14 +621,14 @@ function IdlePanel({
                     onClick={() => onSelect(item)}
                     className="flex min-w-0 flex-1 items-center gap-2 text-left text-sm outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/40"
                   >
-                    <HugeiconsIcon icon={Search01Icon} className="size-4 shrink-0 text-muted-foreground" />
+                    <HugeiconsIcon icon={Search01Icon} className="size-4 shrink-0 text-ink-faint" />
                     <span className="truncate">{item.label}</span>
                   </button>
                   <button
                     type="button"
                     aria-label={copy.removeRecent(item.label)}
                     onClick={() => onRemoveRecent(item.query)}
-                    className="flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-surface-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+                    className="flex size-7 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-surface-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
                   >
                     <HugeiconsIcon icon={Cancel01Icon} className="size-3.5" />
                   </button>
@@ -655,7 +640,7 @@ function IdlePanel({
       )}
 
       <section aria-labelledby="search-dialog-actions" className="pt-3">
-        <h2 id="search-dialog-actions" className="mb-1.5 text-xs font-semibold text-muted-foreground">
+        <h2 id="search-dialog-actions" className="mb-1.5 label-caps text-muted-foreground">
           {copy.quickActions}
         </h2>
         <div className="grid gap-0.5">
@@ -671,11 +656,11 @@ function IdlePanel({
                 onClick={() => onSelect(item)}
                 onMouseEnter={() => onActive(index)}
                 className={cn(
-                  "group flex min-h-12 items-center gap-3 rounded-lg px-2 text-left outline-none transition-colors hover:bg-surface-hover focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/40",
+                  "group flex min-h-12 items-center gap-3 rounded-sm px-2 text-left outline-none transition-colors hover:bg-surface-hover focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/40",
                   activeIndex === index && "bg-surface-selected",
                 )}
               >
-                <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
+                <span className="flex size-8 shrink-0 items-center justify-center rounded-sm bg-muted text-muted-foreground">
                   <HugeiconsIcon icon={item.icon} className="size-4" />
                 </span>
                 <span className="min-w-0 flex-1">
@@ -719,7 +704,7 @@ function KeyboardHints() {
 
 function KeyHint({ value }: { value: string }) {
   return (
-    <kbd className="inline-flex min-w-6 items-center justify-center rounded-md border border-border bg-surface-elevated px-1.5 py-1 text-[10px] font-medium leading-none text-foreground">
+    <kbd className="inline-flex min-w-6 items-center justify-center rounded-sm border border-border bg-surface-elevated px-1.5 py-1 text-2xs font-medium leading-none text-foreground">
       {value}
     </kbd>
   );
@@ -753,7 +738,7 @@ function ResultRow({
         active && "bg-surface-selected",
       )}
     >
-      <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+      <span className="flex size-9 shrink-0 items-center justify-center rounded-sm bg-muted text-muted-foreground">
         <HugeiconsIcon icon={Icon} className="size-4" />
       </span>
       <span className="min-w-0 flex-1">
@@ -765,11 +750,11 @@ function ResultRow({
         )}
       </span>
       {result.metadata && (
-        <span className="hidden text-xs font-light text-muted-foreground tabular-nums sm:block">
+        <span className="hidden text-xs text-muted-foreground tabular-nums sm:block">
           {result.metadata}
         </span>
       )}
-      <HugeiconsIcon icon={ChevronRightIcon} className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+      <HugeiconsIcon icon={ChevronRightIcon} className="size-4 shrink-0 text-ink-faint transition-transform group-hover:translate-x-0.5" />
     </Link>
   );
 }
@@ -784,10 +769,10 @@ function QuietState({
   children?: React.ReactNode;
 }) {
   return (
-    <div className="flex min-h-52 flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border px-6 text-center">
+    <div className="flex min-h-52 flex-col items-center justify-center gap-3 rounded-md border border-dashed border-border px-6 text-center">
       <div>
         <p className="text-sm font-medium">{title}</p>
-        <p className="mt-1 max-w-lg text-sm text-muted-foreground">{description}</p>
+        <p className="mt-1 max-w-lg text-sm text-ink-secondary">{description}</p>
       </div>
       {children}
     </div>

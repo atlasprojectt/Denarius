@@ -5,8 +5,21 @@ import {
   orderFindings,
   type BudgetThresholdFinding,
 } from "@/lib/findings/budget-threshold";
-import { percent } from "@/lib/format";
+import { percent, signedPercent } from "@/lib/format";
 import { money } from "@/lib/money";
+
+// The badge above each item already names the event (limit reached, projected
+// risk, breached), so the title is the scope plus its figure.
+const copy = {
+  share: (scope: string, pct: string) => `${scope}: ${pct} do orçamento`,
+  projected: (scope: string, delta: string) =>
+    `${scope}: projeção ${delta} X orçamento`,
+  breach: (scope: string, delta: string) => `${scope}: gasto ${delta} X orçamento`,
+  projectionDetail: (projection: string, budget: string) =>
+    `Projeção ${projection} X orçamento ${budget}`,
+  spentDetail: (spent: string, budget: string) =>
+    `Gasto ${spent} X orçamento ${budget}`,
+};
 
 export type BudgetNotification = {
   id: string;
@@ -33,10 +46,11 @@ export function notificationTriggerTone(
   return items.length > 0 ? "amber" : null;
 }
 
-function positivePercent(fraction: number): string {
+/** "+20%", with enough precision that a real overrun never reads as zero. */
+function overrunPercent(fraction: number): string {
   for (const digits of [0, 1, 2]) {
     if (Math.round(fraction * 100 * 10 ** digits) > 0) {
-      return percent(fraction, digits);
+      return signedPercent(fraction, digits);
     }
   }
   return percent(0);
@@ -53,19 +67,19 @@ export function budgetNotificationFromFinding(
         : Math.max(0, numbers.pctSpent - 1)
       : 0;
 
+  // A breach below display granularity states the share reached, never "+0%".
   const title =
-    level === "warning"
-      ? `${targetName} atingiu ${percent(numbers.pctSpent)} do orçamento`
-      : level === "projected_breach"
-        ? `${targetName} pode fechar ${positivePercent(overFraction)} acima do orçamento`
-        : overFraction > 0
-          ? `${targetName} estourou o orçamento em ${positivePercent(overFraction)}`
-          : `${targetName} atingiu o limite do orçamento`;
+    level === "projected_breach"
+      ? copy.projected(targetName, overrunPercent(overFraction))
+      : level === "breach" && overFraction > 0
+        ? copy.breach(targetName, overrunPercent(overFraction))
+        : copy.share(targetName, percent(numbers.pctSpent));
 
+  const budget = money(numbers.budget, currency);
   const detail =
     level === "projected_breach" && numbers.projection !== null
-      ? `Projeção de ${money(numbers.projection, currency)} para um orçamento de ${money(numbers.budget, currency)}`
-      : `${money(numbers.spent, currency)} gastos de ${money(numbers.budget, currency)}`;
+      ? copy.projectionDetail(money(numbers.projection, currency), budget)
+      : copy.spentDetail(money(numbers.spent, currency), budget);
 
   return {
     id: `budget:${targetId ?? "org"}:${level}`,

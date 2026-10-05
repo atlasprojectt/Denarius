@@ -25,7 +25,13 @@ export function localHour(now = new Date()): number {
   return Number.isFinite(hour) ? hour % 24 : now.getHours();
 }
 
-const statusCopy: Record<VerdictStatus, string> = homeCopy.greeting.status;
+const statusCopy: Record<VerdictStatus, { lead: string; verdict: string }> =
+  homeCopy.greeting.status;
+
+function statusLabel(status: VerdictStatus): string {
+  const { lead, verdict } = statusCopy[status];
+  return lead ? `${lead} ${verdict}` : verdict;
+}
 
 const dot: Record<VerdictStatus, string> = {
   green: "bg-status-green",
@@ -68,22 +74,29 @@ export function HomeGreeting({
 
   return (
     <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-2">
-      <h1 className="text-xl font-semibold leading-7 tracking-[-0.02em]">{greeting}, {name}</h1>
+      <h1 className="text-base text-ink-secondary">{greeting}, {name}</h1>
+      {/* No pill (2026-10-04, founder-directed): the pulsing dot and the
+          verdict words are the whole indicator. The greeting and the words
+          sit quieter than the cards — secondary on Home — while the dot keeps
+          its full semaphore color; only the verdict word itself is bolder. */}
       {status !== null && (
-        <span className="inline-flex items-center gap-3 text-sm font-medium">
-          <span aria-hidden className="h-5 w-px bg-border" />
-          <span
-            role="status"
-            className="inline-flex min-h-8 items-center gap-2 rounded-full border border-border bg-surface-control px-2.5 py-1 text-foreground"
-            aria-label={`Situação: ${statusCopy[status]}`}
-          >
-            <span aria-hidden className={`relative flex size-4 items-center justify-center rounded-full ${indicator?.halo}`}>
-              {indicator?.ping && (
-                <span aria-hidden className={`absolute inset-0 rounded-full opacity-0 ${indicator.ping} ${dot[status]}`} />
-              )}
-              <span aria-hidden className={`size-2 rounded-full ${indicator?.dot}`} />
-            </span>
-            {statusCopy[status]}
+        <span aria-hidden className="h-4 w-px bg-ink-secondary/40" />
+      )}
+      {status !== null && (
+        <span
+          role="status"
+          className="inline-flex items-center gap-2 text-sm text-ink-secondary"
+          aria-label={`Situação: ${statusLabel(status)}`}
+        >
+          <span aria-hidden className={`relative flex size-4 items-center justify-center rounded-full ${indicator?.halo}`}>
+            {indicator?.ping && (
+              <span aria-hidden className={`absolute inset-0 rounded-full opacity-0 ${indicator.ping} ${dot[status]}`} />
+            )}
+            <span aria-hidden className={`size-2 rounded-full ${indicator?.dot}`} />
+          </span>
+          <span>
+            {statusCopy[status].lead && `${statusCopy[status].lead} `}
+            <span className="font-semibold">{statusCopy[status].verdict}</span>
           </span>
         </span>
       )}

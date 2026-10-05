@@ -15,7 +15,7 @@ function Block({ block }: { block: LegalBlock }) {
       return (
         <>
           {block.paragraphs.map((paragraph) => (
-            <p key={paragraph} className="text-sm/relaxed text-muted-foreground">
+            <p key={paragraph} className="text-sm/relaxed text-ink-secondary">
               {paragraph}
             </p>
           ))}
@@ -28,7 +28,7 @@ function Block({ block }: { block: LegalBlock }) {
           {block.items.map((item) => (
             <li
               key={item}
-              className="relative pl-4 text-sm/relaxed text-muted-foreground before:absolute before:top-[0.6em] before:left-0 before:size-1.5 before:rounded-full before:bg-border"
+              className="relative pl-4 text-sm/relaxed text-ink-secondary before:absolute before:top-[0.6em] before:left-0 before:size-1.5 before:rounded-full before:bg-border"
             >
               {item}
             </li>
@@ -42,7 +42,7 @@ function Block({ block }: { block: LegalBlock }) {
           {block.items.map((item) => (
             <div key={item.term} className="flex flex-col gap-1">
               <dt className="text-sm font-medium text-foreground">{item.term}</dt>
-              <dd className="text-sm/relaxed text-muted-foreground">
+              <dd className="text-sm/relaxed text-ink-secondary">
                 {item.description}
               </dd>
             </div>
@@ -64,14 +64,14 @@ function Block({ block }: { block: LegalBlock }) {
                 <span className="text-sm font-medium text-foreground">
                   {item.name}
                 </span>
-                <span className="text-xs font-light text-muted-foreground">
+                <span className="text-xs text-muted-foreground">
                   {item.purpose}
                 </span>
               </div>
-              <p className="text-sm/relaxed text-muted-foreground">
+              <p className="text-sm/relaxed text-ink-secondary">
                 {item.receives}
               </p>
-              <p className="text-xs font-light text-muted-foreground">{item.location}</p>
+              <p className="text-xs text-muted-foreground">{item.location}</p>
             </li>
           ))}
         </ul>
@@ -83,15 +83,15 @@ export function LegalDocument({ doc }: { doc: LegalDocumentCopy }) {
   return (
     <article className="flex flex-col gap-10">
       <header className="flex flex-col gap-3">
-        <h1 className="text-3xl font-semibold tracking-tight text-balance">
+        <h1 className="text-2xl text-balance">
           {doc.title}
         </h1>
         {/* text-pretty, not text-balance: the lead is a paragraph, and
             balancing a long body text ragged-rights every line of it. */}
-        <p className="text-sm/relaxed text-pretty text-muted-foreground">
+        <p className="text-sm/relaxed text-pretty text-ink-secondary">
           {doc.lead}
         </p>
-        <p className="text-xs font-light text-muted-foreground">
+        <p className="text-xs text-muted-foreground">
           {legalChrome.updatedPrefix} {LEGAL_UPDATED_AT}
         </p>
       </header>
@@ -102,7 +102,7 @@ export function LegalDocument({ doc }: { doc: LegalDocumentCopy }) {
           id={section.id}
           className="flex scroll-mt-8 flex-col gap-4"
         >
-          <h2 className="text-lg font-semibold tracking-tight">
+          <h2 className="text-base font-medium">
             {section.heading}
           </h2>
           {section.blocks.map((block, index) => (

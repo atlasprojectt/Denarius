@@ -7,23 +7,26 @@ const source = (path: string) =>
   readFileSync(join(process.cwd(), path), "utf8");
 
 describe("interactive geometry contract", () => {
+  it("keeps tabs on the pill radius", () => {
+    expect(source("components/ui/tabs.tsx")).toContain("rounded-full");
+  });
+
   it.each([
-    "components/ui/tabs.tsx",
     "components/ui/dropdown-menu.tsx",
     "components/ui/select.tsx",
-  ])("uses the full radius for autonomous selectors in %s", (path) => {
-    expect(source(path)).toContain("rounded-full");
+  ])("uses the medium radius for %s popovers", (path) => {
+    expect(source(path)).toContain("rounded-md");
   });
 
   it("uses the standard radius for structural navigation", () => {
-    expect(source("components/ui/sidebar.tsx")).toContain("rounded-standard");
-    expect(source("components/domain/app-sidebar.tsx")).toContain("rounded-standard");
+    expect(source("components/ui/sidebar.tsx")).toContain("rounded-lg");
+    expect(source("components/domain/app-sidebar.tsx")).toContain("rounded-md");
   });
 
   it("exposes only standard and full button shapes", () => {
     const button = source("components/ui/button.tsx");
 
-    expect(button).toContain('standard: "rounded-standard"');
+    expect(button).toContain('standard: "rounded-sm"');
     expect(button).toContain('full: "rounded-full"');
     expect(button).not.toContain('control: "');
     expect(button).not.toContain('compact: "');
@@ -69,7 +72,7 @@ describe("sheet geometry contract", () => {
     expect(sheet).toContain("data-[side=right]:sm:inset-y-4");
     expect(sheet).toContain("data-[side=right]:sm:right-4");
     expect(sheet).toContain("data-[side=right]:sm:h-[calc(100dvh-2rem)]");
-    expect(sheet).toContain("data-[side=right]:sm:rounded-xl");
+    expect(sheet).toContain("data-[side=right]:sm:rounded-lg");
     expect(sheet).toContain("data-[side=right]:sm:shadow-2xl");
   });
 });
@@ -86,43 +89,14 @@ describe("helper/footer weight contract", () => {
   });
 
   it("uses font-light only in the helper/footer tier", () => {
-    // New font-light call sites must be a deliberate tier decision (docs §4
-    // Type row), not a drive-by — extend this list in the same PR.
+    // New font-light call sites must be deliberate tier decisions, not drive-by
+    // additions. Extend this list in the same PR.
     const allowed = new Set(
       [
-        "app/(app)/_components/hero.tsx",
-        "app/(app)/_components/monthly-pace-chart.tsx",
-        "app/(app)/_components/pacing-bar.tsx",
-        "app/(app)/_components/provider-composition.tsx",
-        "app/(app)/_components/onboarding-guide.tsx",
-        "app/(app)/ajustes/_components/settings-navigation.tsx",
-        "app/(app)/ajustes/_components/users-table.tsx",
-        "app/(app)/ajustes/assinaturas/_components/subscription-table.tsx",
-        "app/(app)/ajustes/atribuicao/_components/project-map-form.tsx",
-        "app/(app)/ajustes/atribuicao/page.tsx",
-        "app/(app)/ajustes/auditoria/page.tsx",
-        "app/(app)/ajustes/conexoes/_components/provider-connection-card.tsx",
-        "app/(app)/ajustes/orcamentos/page.tsx",
-        "app/(app)/ajustes/roster/_components/employee-table.tsx",
-        "app/(app)/explorar/_components/explore-table.tsx",
-        "app/(app)/explorar/_components/model-comparison-drawer.tsx",
-        "app/(app)/explorar/page.tsx",
-        "app/(app)/page.tsx",
-        "app/(app)/times/_components/diagnosis-sections.tsx",
-        "app/(app)/times/_components/team-index.tsx",
-        "app/(app)/times/page.tsx",
-        "app/(auth)/_components/otp-dialog.tsx",
-        "app/(auth)/login/page.tsx",
-        "app/(legal)/_components/legal-document.tsx",
-        "app/(legal)/layout.tsx",
-        "components/domain/app-sidebar.tsx",
-        "components/domain/calculation-disclosure.tsx",
-        "components/domain/page-header.tsx",
-        "components/domain/search-dialog.tsx",
-        "components/domain/simulate-drawer.tsx",
-        "components/domain/team-budget-table.tsx",
-        "components/domain/theme-toggle.tsx",
-        "components/domain/usd-value.tsx",
+        "app/(auth)/_components/auth-form.tsx",
+        "app/auth/nova-senha/_components/new-password-form.tsx",
+        "app/auth/nova-senha/page.tsx",
+        "app/auth/recuperar/_components/recover-form.tsx",
       ].map((path) => join(process.cwd(), path)),
     );
 

@@ -1,9 +1,9 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 
+import { emailChannel } from "@/lib/notify/channel";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { dbFailure, logFailure, logSkipped } from "@/lib/logging/server-log";
@@ -15,6 +15,7 @@ import {
   signupSchema,
 } from "@/lib/validation";
 
+import { generateEmailCode } from "./email-code";
 import { requestOrigin } from "./origin";
 import {
   hasPasswordIdentity,
@@ -22,6 +23,21 @@ import {
   weakPasswordError,
   withConfirmation,
 } from "./password";
+import {
+  clearPasswordChangeChallenge,
+  passwordChangeCodeMatches,
+  readPasswordChangeChallenge,
+  sealPasswordChangeChallenge,
+  storePasswordChangeChallenge,
+} from "./password-change";
+import { renderPasswordChangeCode } from "./password-change-email";
+import {
+  PASSWORD_CHANGE_REQUEST,
+  PASSWORD_CHANGE_VERIFY,
+  RATE_LIMITED_MESSAGE,
+  hashSubject,
+  takeRateLimitSlotFailClosed,
+} from "./rate-limit";
 import {
   RECOVERY_PATH,
   RECOVERY_RESPONSE_FLOOR_MS,
@@ -279,74 +295,30 @@ export async function resetPassword(
   redirect("/");
 }
 
-const changePasswordSchema = withConfirmation({
-  currentPassword: z.string().min(1, "Informe sua senha atual."),
-});
+const changePasswordSchema = withConfirmation({ code: otpSchema.shape.token });
 
 const CHANGE_SESSION_GONE =
   "Sua sessão expirou. Entre novamente para trocar a senha.";
 const CHANGE_GOOGLE_ONLY =
   "Você entra no Denarius pela sua conta Google, então não há senha do Denarius para trocar.";
-const CHANGE_CURRENT_WRONG = "Senha atual incorreta.";
+const CHANGE_CODE_SENT = "Código enviado. Confira sua caixa de entrada.";
+const CHANGE_CODE_SEND_FAILED =
+  "Não foi possível enviar o código agora. Tente novamente.";
+const CHANGE_CODE_INVALID =
+  "Código inválido ou expirado. Confira o e-mail ou peça um novo código.";
 const CHANGE_SAME_PASSWORD = "A nova senha precisa ser diferente da atual.";
 const CHANGE_FAILED = "Não foi possível alterar a senha. Tente novamente.";
 const CHANGE_DONE =
   "Senha alterada. As outras sessões da sua conta foram encerradas.";
 
 /**
- * Checks a password without touching the caller's session.
- *
- * `signInWithPassword` on the request-scoped client would rewrite the session
- * cookies as a side effect of a *verification*, so this uses a throwaway
- * non-persisting client instead: nothing is stored in the browser.
- *
- * **The probe cleans up after itself.** Checking a password mints a real
- * session server-side — an access token and a refresh token that outlive this
- * request. Relying on the later `scope: "others"` sign out to sweep it only
- * works when the change actually succeeds; when the new password is then
- * refused (leaked, same as the old one, a transient failure) the action returns
- * early and that token would stay valid until it expired. Repeat that and the
- * account accumulates live sessions its owner never created and cannot see. So
- * the probe revokes its own session — `scope: "local"`, which touches nothing
- * else the person has open.
+ * The signed-in account a password change applies to. A Google-only account
+ * has no password to change, so it is refused with an explanation rather than
+ * a failure that would read as a typo. The screen hides the form for those
+ * accounts; both actions refuse again, because a server action never trusts
+ * the UI that called it.
  */
-async function passwordIsCorrect(
-  email: string,
-  password: string,
-): Promise<boolean> {
-  const probe = createSupabaseClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { auth: { persistSession: false, autoRefreshToken: false } },
-  );
-  const { error } = await probe.auth.signInWithPassword({ email, password });
-  if (error) {
-    logSkipped("auth.password_probe", null, { code: error.code ?? "unknown" });
-    return false;
-  }
-
-  await probe.auth.signOut({ scope: "local" });
-  return true;
-}
-
-/**
- * Change your own password from /preferencias (issue #69).
- *
- * **The current password is verified explicitly** — `updateUser` does not check
- * it. Without that step an unlocked laptop or a stolen session cookie is a
- * permanent account takeover: the session would *be* the password. This is the
- * substance of the issue, and it is the same gap the recovery grant closes on
- * the other door (`lib/auth/recovery.ts`).
- *
- * A Google-only account has no password to verify, so it is refused with an
- * explanation rather than an "invalid credentials" error that would read as a
- * typo. The screen hides the form for those accounts; this refuses again,
- * because a server action never trusts the UI that called it.
- */
-export async function changePassword(
-  _prev: AuthFormState,
-  formData: FormData,
-): Promise<AuthFormState> {
+async function passwordAccount() {
   const supabase = await createClient();
   const {
     data: { user },
@@ -355,9 +327,76 @@ export async function changePassword(
   if (userError) logFailure("auth.password_change", null, dbFailure(userError));
   if (!user?.email) return { error: CHANGE_SESSION_GONE };
   if (!hasPasswordIdentity(user)) return { error: CHANGE_GOOGLE_ONLY };
+  return { supabase, userId: user.id, email: user.email };
+}
+
+/**
+ * Step one of changing your own password on /preferencias: e-mail a six-digit
+ * code to the account's address (`lib/auth/password-change.ts` explains why the
+ * code replaced the current-password check of issue #69).
+ *
+ * Every leg fails closed — limiter, missing mail channel, failed send — because
+ * an unthrottled sender is a mailer aimed at our own customer, and a cookie for
+ * a code that never left would leave the person waiting for nothing.
+ */
+export async function requestPasswordChangeCode(
+  _prev: AuthFormState,
+  _formData: FormData,
+): Promise<AuthFormState> {
+  const account = await passwordAccount();
+  if ("error" in account) return { error: account.error };
+
+  const subject = hashSubject(account.userId);
+  if (!(await takeRateLimitSlotFailClosed(PASSWORD_CHANGE_REQUEST, subject))) {
+    return { error: RATE_LIMITED_MESSAGE };
+  }
+
+  const channel = emailChannel();
+  if (!channel) {
+    logSkipped("auth.password_change_code", null, { reason: "email_not_configured" });
+    return { error: CHANGE_CODE_SEND_FAILED };
+  }
+
+  const code = generateEmailCode();
+  let sealed: string;
+  try {
+    sealed = sealPasswordChangeChallenge(account.userId, code, new Date());
+  } catch {
+    logFailure("auth.password_change_code", null, { reason: "hmac_not_configured" });
+    return { error: CHANGE_CODE_SEND_FAILED };
+  }
+
+  const sent = await channel.send(
+    renderPasswordChangeCode({ to: account.email, code }),
+  );
+  if (!sent.ok) {
+    logFailure("auth.password_change_code", null, { reason: sent.error });
+    return { error: CHANGE_CODE_SEND_FAILED };
+  }
+
+  await storePasswordChangeChallenge(sealed);
+  return { notice: CHANGE_CODE_SENT };
+}
+
+/**
+ * Step two: the e-mailed code and the new password, in one action.
+ *
+ * `updateUser` checks nothing about the caller, so without the code an unlocked
+ * laptop or a stolen session cookie is a permanent account takeover. Ordering is
+ * load-bearing and asserted: schema → limiter → code → update → evict, so a
+ * rejected attempt has changed nothing. The challenge survives a refused
+ * *password* (leaked, same as the old one) so the person can pick another one
+ * without a new e-mail; it is burned only on success.
+ */
+export async function changePassword(
+  _prev: AuthFormState,
+  formData: FormData,
+): Promise<AuthFormState> {
+  const account = await passwordAccount();
+  if ("error" in account) return { error: account.error };
 
   const parsed = changePasswordSchema.safeParse({
-    currentPassword: formData.get("currentPassword"),
+    code: formData.get("code"),
     password: formData.get("password"),
     confirmation: formData.get("confirmation"),
   });
@@ -368,14 +407,30 @@ export async function changePassword(
     };
   }
 
-  if (!(await passwordIsCorrect(user.email, parsed.data.currentPassword))) {
+  const subject = hashSubject(account.userId);
+  if (!(await takeRateLimitSlotFailClosed(PASSWORD_CHANGE_VERIFY, subject))) {
+    return { error: RATE_LIMITED_MESSAGE };
+  }
+
+  let codeMatches = false;
+  try {
+    codeMatches = passwordChangeCodeMatches(
+      await readPasswordChangeChallenge(),
+      account.userId,
+      parsed.data.code,
+      new Date(),
+    );
+  } catch {
+    logFailure("auth.password_change", null, { reason: "hmac_not_configured" });
+  }
+  if (!codeMatches) {
     return {
-      error: CHANGE_CURRENT_WRONG,
-      fieldErrors: { currentPassword: CHANGE_CURRENT_WRONG },
+      error: CHANGE_CODE_INVALID,
+      fieldErrors: { code: CHANGE_CODE_INVALID },
     };
   }
 
-  const { error } = await supabase.auth.updateUser({
+  const { error } = await account.supabase.auth.updateUser({
     password: parsed.data.password,
   });
   if (error) {
@@ -392,8 +447,9 @@ export async function changePassword(
   }
 
   // Changing a password is also how someone evicts whoever else is holding a
-  // session on this account — including the throwaway one the check above minted.
-  await supabase.auth.signOut({ scope: "others" });
+  // session on this account. The current session stays signed in.
+  await account.supabase.auth.signOut({ scope: "others" });
+  await clearPasswordChangeChallenge();
 
   return { notice: CHANGE_DONE };
 }

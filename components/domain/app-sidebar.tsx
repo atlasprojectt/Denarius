@@ -7,9 +7,11 @@ import { useFormStatus } from "react-dom";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   ArrowUpDownIcon,
+  ArrowUpRight01Icon,
   Cancel01Icon,
   ChartLineIcon,
   FileChartLineIcon,
+  HelpCircleIcon,
   Home05Icon,
   Logout02Icon,
   Search01Icon,
@@ -86,6 +88,8 @@ const copy = {
   settings: "Ajustes",
   profileMenu: "Perfil",
   profileSettings: "Preferências",
+  support: "Ajuda e suporte",
+  supportHint: "(abre o Gmail em uma nova aba)",
   logout: "Sair",
   logoutTitle: "Sair do Denarius?",
   logoutDescription:
@@ -252,7 +256,7 @@ export function AppSidebar({
                 <SidebarMenuButton
                   asChild
                   tooltip={copy.search}
-                  className="h-11 rounded-standard border border-sidebar-border bg-sidebar px-3 text-sidebar-foreground/65 shadow-none hover:bg-sidebar-accent hover:text-sidebar-accent-foreground data-active:bg-sidebar-accent data-active:text-sidebar-accent-foreground md:h-9 group-data-[collapsible=icon]:border-transparent group-data-[collapsible=icon]:bg-transparent group-data-[collapsible=icon]:px-2"
+                  className="h-11 rounded-md border border-sidebar-border/50 bg-surface-canvas px-3 text-ink-secondary shadow-none hover:bg-sidebar-hover hover:text-sidebar-accent-foreground md:h-9 group-data-[collapsible=icon]:border-transparent group-data-[collapsible=icon]:bg-transparent group-data-[collapsible=icon]:px-2"
                 >
                   <button
                     type="button"
@@ -261,7 +265,7 @@ export function AppSidebar({
                   >
                     <HugeiconsIcon icon={Search01Icon} />
                     <span className="truncate">{copy.search}</span>
-                    <kbd className="ml-auto font-sans text-[10px] leading-none text-sidebar-foreground/65 group-data-[collapsible=icon]:hidden">
+                    <kbd className="ml-auto font-sans text-2xs font-medium leading-none text-sidebar-ink-subtle group-data-[collapsible=icon]:hidden">
                       {copy.searchShortcut}
                     </kbd>
                   </button>
@@ -300,18 +304,18 @@ export function AppSidebar({
                   <span className="grid min-w-0 flex-1 text-left leading-tight">
                     <span className="truncate font-medium">{userLabel}</span>
                     {userLabel !== userEmail && (
-                      <span className="truncate text-xs text-sidebar-foreground/65">
+                      <span className="truncate text-xs text-sidebar-ink-subtle">
                         {userEmail}
                       </span>
                     )}
                   </span>
-                  <HugeiconsIcon icon={ArrowUpDownIcon} className="ml-auto text-sidebar-foreground/65" />
+                  <HugeiconsIcon icon={ArrowUpDownIcon} className="ml-auto text-ink-faint" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
                   side="right"
                   align="end"
                   sideOffset={10}
-                  className="w-64 rounded-xl"
+                  className="w-64"
                 >
                   {/* Identity header as a plain div: Base UI's GroupLabel
                       (DropdownMenuLabel) throws outside <Menu.Group>, which
@@ -324,11 +328,11 @@ export function AppSidebar({
                       </AvatarFallback>
                     </Avatar>
                     <span className="grid min-w-0 leading-tight">
-                      <span className="truncate text-sm font-semibold text-foreground">
+                      <span className="truncate text-sm font-medium text-foreground">
                         {userLabel}
                       </span>
                       {userLabel !== userEmail && (
-                        <span className="break-all text-xs font-light text-muted-foreground">
+                        <span className="break-all text-xs text-muted-foreground">
                           {userEmail}
                         </span>
                       )}
@@ -340,6 +344,21 @@ export function AppSidebar({
                       <HugeiconsIcon icon={UserIcon} />
                       <span>{copy.profileSettings}</span>
                     </Link>
+                  </DropdownMenuItem>
+                  {/* A plain anchor, not next/link: /suporte is a route
+                      handler that redirects to Gmail, so it opens in its own
+                      tab and the user keeps their place in the app. */}
+                  <DropdownMenuItem asChild className="h-9">
+                    <a href="/suporte" target="_blank" rel="noopener noreferrer">
+                      <HugeiconsIcon icon={HelpCircleIcon} />
+                      <span>{copy.support}</span>
+                      <span className="sr-only">{copy.supportHint}</span>
+                      <HugeiconsIcon
+                        icon={ArrowUpRight01Icon}
+                        aria-hidden
+                        className="ml-auto text-muted-foreground"
+                      />
+                    </a>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem

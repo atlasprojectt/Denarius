@@ -32,7 +32,7 @@ export function FileRow({
       <span
         aria-hidden
         className={cn(
-          "grid size-10 shrink-0 place-items-center rounded-lg border border-border",
+          "grid size-10 shrink-0 place-items-center rounded-sm border border-border",
           locked ? "text-muted-foreground" : "text-foreground",
         )}
       >

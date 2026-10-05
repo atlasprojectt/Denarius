@@ -9,6 +9,7 @@ import {
 import { useActionState, useMemo, useState } from "react";
 
 import { ActionStatus } from "@/components/domain/action-status";
+import { OneTimeCodeInput } from "@/components/domain/one-time-code-input";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -35,7 +36,6 @@ import {
   verifyAccountDeletionCode,
   type AccountDeletionState,
 } from "@/lib/privacy/actions";
-import { cn } from "@/lib/utils";
 
 const copy = {
   cardTitle: "Zona de risco",
@@ -128,7 +128,7 @@ export function AccountDeletionCard({
         <CardDescription>{copy.cardDescription}</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
-        <div className="flex flex-col gap-3 rounded-lg border border-destructive/20 bg-background/60 p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-3 rounded-md border border-destructive/20 bg-background/60 p-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="max-w-xl text-xs/relaxed text-muted-foreground">
             {description}
           </p>
@@ -213,7 +213,7 @@ function AccountDeletionFlow({
             </DialogDescription>
           </DialogHeader>
 
-          <div className="flex items-start gap-3 rounded-lg border border-destructive/20 bg-destructive/10 p-3 text-xs/relaxed text-destructive">
+          <div className="flex items-start gap-3 rounded-md border border-destructive/20 bg-destructive/10 p-3 text-xs/relaxed text-destructive">
             <HugeiconsIcon icon={MailSend01Icon} className="mt-0.5 size-4 shrink-0" aria-hidden />
             <p>{copy.dangerNotice}</p>
           </div>
@@ -253,59 +253,18 @@ function AccountDeletionFlow({
           <div className="flex flex-col gap-1.5">
             <ActionStatus success={copy.codeSent} />
             <Label htmlFor="account-deletion-code">{copy.codeLabel}</Label>
-            {/* The real field stays a single sr-only input (native keyboard,
-                paste, autofill and one-time-code keep working); the six boxes
-                below are its visual mirror. */}
-            <Input
+            <OneTimeCodeInput
               id="account-deletion-code"
               name="code"
               value={typedCode}
-              onChange={(event) =>
-                setTypedCode(
-                  event.target.value.replace(/\D/g, "").slice(0, 6),
-                )
-              }
-              inputMode="numeric"
-              autoComplete="one-time-code"
-              pattern="[0-9]{6}"
-              minLength={6}
-              maxLength={6}
+              onValueChange={setTypedCode}
               placeholder={copy.codePlaceholder}
-              required
               autoFocus
-              aria-invalid={
+              invalid={
                 requestState.error !== undefined ||
                 verifyState.error !== undefined
               }
-              className="sr-only"
             />
-            <div
-              aria-hidden
-              onClick={() =>
-                document.getElementById("account-deletion-code")?.focus()
-              }
-              className="grid cursor-text grid-cols-6 gap-2"
-            >
-              {Array.from({ length: 6 }, (_, index) => {
-                const digit = typedCode[index] ?? "";
-                const active =
-                  index === Math.min(typedCode.length, 5);
-                return (
-                  <span
-                    key={index}
-                    className={cn(
-                      "flex h-12 items-center justify-center rounded-lg border text-xl font-medium tabular-nums transition-colors duration-(--motion-duration-fast) ease-(--motion-ease-standard)",
-                      digit
-                        ? "border-border bg-muted text-foreground"
-                        : "border-border bg-input/20 text-muted-foreground",
-                      active && "border-ring ring-2 ring-ring/40",
-                    )}
-                  >
-                    {digit}
-                  </span>
-                );
-              })}
-            </div>
           </div>
 
           <ActionStatus
@@ -342,7 +301,7 @@ function AccountDeletionFlow({
             <DialogDescription>{copy.phraseDescription}</DialogDescription>
           </DialogHeader>
 
-          <p className="rounded-lg border border-destructive/25 bg-destructive/10 p-3 text-sm/relaxed font-medium text-destructive">
+          <p className="rounded-md border border-destructive/25 bg-destructive/10 p-3 text-sm/relaxed font-medium text-destructive">
             “{phrase}”
           </p>
 

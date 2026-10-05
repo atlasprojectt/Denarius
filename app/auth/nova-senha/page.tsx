@@ -9,7 +9,7 @@ import { NewPasswordForm } from "./_components/new-password-form";
 
 // Reachable only through a recovery link: the callback exchanges the code AND
 // stamps the grant, and both are required here. A live session on its own is
-// not enough — that would be a password change with no current password.
+// not enough — that would be a password change with no proof beyond the session.
 
 const copy = {
   deadTitle: "Link de redefinição inválido",
@@ -29,8 +29,8 @@ export default async function NewPasswordPage() {
     return (
       <RecoveryShell>
         <div className="flex flex-col items-center gap-3 text-center">
-          <h1 className="text-2xl font-bold text-balance">{copy.deadTitle}</h1>
-          <p className="text-sm/relaxed text-muted-foreground">{copy.deadBody}</p>
+          <h1 className="text-display-sm font-light text-balance md:text-display">{copy.deadTitle}</h1>
+          <p className="text-sm/relaxed text-ink-secondary">{copy.deadBody}</p>
           <Button asChild variant="outline" className="mt-2">
             <Link href="/auth/recuperar">{copy.request}</Link>
           </Button>

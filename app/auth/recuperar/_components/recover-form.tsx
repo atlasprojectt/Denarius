@@ -42,10 +42,10 @@ export function RecoverForm() {
     <form action={formAction} className="flex flex-col gap-6">
       <FieldGroup>
         <div className="denarius-auth-enter flex flex-col gap-2">
-          <h1 className="text-3xl font-semibold tracking-tight text-balance">
+          <h1 className="text-display-sm font-light text-balance md:text-display">
             {copy.title}
           </h1>
-          <p className="text-sm/relaxed text-balance text-muted-foreground">
+          <p className="text-sm/relaxed text-balance text-ink-secondary">
             {copy.subtitle}
           </p>
         </div>
@@ -67,7 +67,7 @@ export function RecoverForm() {
               autoComplete="email"
               required
               aria-invalid={state.fieldErrors?.email !== undefined}
-              className="h-11 bg-background pl-10 text-[15px]"
+              className="h-11 bg-background pl-10 text-base"
             />
           </div>
           {state.fieldErrors?.email && (

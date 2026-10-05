@@ -98,7 +98,7 @@ export function BudgetTableForm({
           return (
             <div
               key={row.key}
-              className="grid gap-4 rounded-lg border p-4 md:grid-cols-[minmax(10rem,1fr)_minmax(12rem,0.8fr)_minmax(9rem,0.45fr)_auto] md:items-start md:rounded-none md:border-0 md:px-3 md:py-4"
+              className="grid gap-4 rounded-md border p-4 md:grid-cols-[minmax(10rem,1fr)_minmax(12rem,0.8fr)_minmax(9rem,0.45fr)_auto] md:items-start md:rounded-none md:border-0 md:px-3 md:py-4"
             >
               <input type="hidden" name="row" value={row.key} form={FORM_ID} />
               <div>
@@ -155,7 +155,7 @@ export function BudgetTableForm({
           </Button>
         </div>
       ) : (
-        <p className="text-sm text-muted-foreground">{copy.adminOnly}</p>
+        <p className="text-sm text-ink-secondary">{copy.adminOnly}</p>
       )}
     </div>
   );

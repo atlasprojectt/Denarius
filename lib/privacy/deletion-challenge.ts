@@ -1,12 +1,13 @@
 import "server-only";
 
-import {
-  createHmac,
-  randomBytes,
-  randomInt,
-  timingSafeEqual,
-} from "node:crypto";
+import { randomBytes } from "node:crypto";
 import { z } from "zod";
+
+import {
+  emailCodeHmac,
+  generateEmailCode,
+  sameHmac,
+} from "@/lib/auth/email-code";
 
 export const ACCOUNT_DELETION_CHALLENGE_COOKIE =
   "denarius-account-deletion-challenge";
@@ -51,19 +52,7 @@ export function parseAccountDeletionChallenge(
   return parsed.success ? parsed.data : null;
 }
 
-function deletionSecret(): string {
-  const secret =
-    process.env.ACCOUNT_DELETION_HMAC_KEY ??
-    process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!secret) {
-    throw new Error("Account deletion verification is not configured.");
-  }
-  return secret;
-}
-
-export function generateDeletionCode(): string {
-  return randomInt(0, 1_000_000).toString().padStart(6, "0");
-}
+export const generateDeletionCode = generateEmailCode;
 
 export function generateDeletionGrant(): string {
   return randomBytes(32).toString("base64url");
@@ -73,19 +62,10 @@ export function hashDeletionValue(
   kind: "code" | "grant",
   value: string,
 ): string {
-  return createHmac("sha256", deletionSecret())
-    .update(`account-deletion:${kind}:${value}`)
-    .digest("hex");
+  return emailCodeHmac(`account-deletion:${kind}`, value);
 }
 
-export function sameDeletionHash(left: string, right: string): boolean {
-  const leftBytes = Buffer.from(left, "hex");
-  const rightBytes = Buffer.from(right, "hex");
-  return (
-    leftBytes.length === rightBytes.length &&
-    timingSafeEqual(leftBytes, rightBytes)
-  );
-}
+export const sameDeletionHash = sameHmac;
 
 export function deletionPhrase(
   role: AccountDeletionRole,

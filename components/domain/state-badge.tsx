@@ -43,7 +43,7 @@ export function StateBadge({
       data-slot="state-badge"
       data-tone={tone}
       className={cn(
-        "h-5 border-0 font-sans text-xs font-semibold shadow-none opacity-100 [&>svg]:size-3!",
+        "h-5 border-0 font-sans text-2xs font-semibold shadow-none opacity-100 [&>svg]:size-3!",
         toneClasses[tone],
         className,
       )}

@@ -35,14 +35,14 @@ const tones: Record<
   neutral: {
     card: "bg-sidebar-accent",
     hover: "transition-colors hover:bg-surface-hover",
-    description: "text-sidebar-foreground/65",
+    description: "text-ink-secondary",
   },
   // text-status-green colors the icon through the Alert's `*:[svg]:text-current`;
   // the title/description restate their own color on top of it.
   green: {
     card: "bg-status-green-soft text-status-green",
     hover: "transition-colors hover:bg-status-green/15",
-    description: "text-status-green-fg/80",
+    description: "text-status-green-fg",
   },
 };
 
@@ -102,12 +102,12 @@ export function SidebarNotice({
       {icon}
       <AlertTitle className={`leading-4 ${titleTone[tone]}`}>{title}</AlertTitle>
       <AlertDescription
-        className={`col-start-2 line-clamp-3 text-left text-[11px]/4 ${t.description}`}
+        className={`col-start-2 line-clamp-3 text-left text-xs/4 ${t.description}`}
       >
         <p>{description}</p>
       </AlertDescription>
       {cta && (
-        <span className="col-start-2 mt-1 text-[11px] font-medium text-sidebar-foreground">
+        <span className="col-start-2 mt-1 text-xs font-medium text-sidebar-foreground">
           {cta}
         </span>
       )}
@@ -127,7 +127,7 @@ export function SidebarNotice({
           <Link
             href={href}
             aria-label={ariaLabel ?? title}
-            className="block rounded-standard outline-hidden ring-sidebar-ring focus-visible:ring-2"
+            className="block rounded-md outline-hidden ring-sidebar-ring focus-visible:ring-2"
           >
             {card}
           </Link>

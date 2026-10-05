@@ -46,7 +46,7 @@ export const passwordSchema = z
 
 /**
  * A password field plus its confirmation, with any extra fields the screen
- * needs (the change-password form adds `currentPassword`). The mismatch lands
+ * needs (the change-password form adds the e-mailed `code`). The mismatch lands
  * on the confirmation input, which is the one the person should fix.
  */
 const confirmedPassword = z

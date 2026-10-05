@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { DM_Sans, Geist, Geist_Mono } from "next/font/google";
+import { DM_Mono, DM_Sans, Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { THEME_SCRIPT } from "@/lib/theme-script";
 import { cn } from "@/lib/utils";
@@ -7,6 +7,13 @@ import { cn } from "@/lib/utils";
 const dmSans = DM_Sans({
   subsets: ["latin"],
   variable: "--font-dm-sans",
+});
+
+// DM Mono has no variable axis; label-caps is its only role, at 500.
+const dmMono = DM_Mono({
+  subsets: ["latin"],
+  weight: "500",
+  variable: "--font-dm-mono",
 });
 
 const geistSans = Geist({
@@ -39,6 +46,7 @@ export default function RootLayout({
         geistSans.variable,
         geistMono.variable,
         dmSans.variable,
+        dmMono.variable,
       )}
     >
       <head>
