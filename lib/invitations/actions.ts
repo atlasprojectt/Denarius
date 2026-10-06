@@ -331,7 +331,7 @@ export async function acceptInvitation(
     role: invitation.role,
   });
   if (userError) {
-    // Never strand an auth user with no tenant: they would land on /onboarding
+    // Never strand an auth user with no tenant: they would land on /configuracao
     // and create a second company out of an invitation.
     const { error: rollbackError } = await admin.auth.admin.deleteUser(created.user.id);
     logFailure("invitation.accept", invitation.tenant_id, {

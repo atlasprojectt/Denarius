@@ -19,7 +19,7 @@ import { currentRole } from "@/lib/auth/session";
 import { canEditCompanySettings } from "@/lib/settings/account";
 import { createClient } from "@/lib/supabase/server";
 
-import { ProviderConnectionCard } from "./_components/provider-connection-card";
+import { ProviderConnectionCard } from "@/components/domain/provider-connection-card";
 
 const copy = {
   back: "Ajustes",

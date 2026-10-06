@@ -123,7 +123,7 @@ export async function signup(
   }
 
   // With email confirmation enabled there is no session yet — the tenant is
-  // created later by /onboarding on first authenticated visit.
+  // created later by /configuracao on first authenticated visit.
   if (!data.session) {
     return {
       awaitingOtp: true,
@@ -132,7 +132,7 @@ export async function signup(
     };
   }
 
-  redirect("/onboarding");
+  redirect("/configuracao");
 }
 
 /** Confirms a fresh signup with the 6-digit code from the e-mail. On success
@@ -158,7 +158,7 @@ export async function verifyEmailOtp(
     return { error: "Código inválido ou expirado." };
   }
 
-  redirect("/onboarding");
+  redirect("/configuracao");
 }
 
 export async function resendSignupCode(
@@ -539,5 +539,6 @@ export async function completeOnboarding(
     return { error: "Não foi possível concluir o cadastro. Tente novamente." };
   }
 
-  redirect("/");
+  // The tenant exists; the guided setup continues on the same card.
+  redirect("/configuracao");
 }

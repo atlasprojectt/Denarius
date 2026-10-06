@@ -15,6 +15,7 @@ import {
   type BudgetBatchState,
   type BudgetFormState,
 } from "@/lib/budgets/actions";
+import type { BudgetTableRow } from "@/lib/budgets/rows";
 
 const copy = {
   scope: "Escopo",
@@ -34,12 +35,6 @@ const copy = {
 const batchInitial: BudgetBatchState = {};
 const deleteInitial: BudgetFormState = {};
 const FORM_ID = "budget-batch-form";
-
-export type BudgetTableRow = {
-  key: string;
-  label: string;
-  existing: { id: string; amount: number; warnPct: number } | null;
-};
 
 function DeleteBudgetButton({ row }: { row: BudgetTableRow }) {
   const [state, action, pending] = useActionState(deleteBudget, deleteInitial);

@@ -35,7 +35,7 @@ From the user's perspective:
 4. I **set budgets** — for the whole company and per team — and Denarius tracks consumption against them on fresh daily data, always showing the **margin**: how much headroom is left now, and how much will be left (or overrun) at the projected close.
 5. Denarius **warns me early**: "Engineering is at 92% of its $3k budget with 8 days left; at the current pace it will land at ~$3.6k (+20%)." Warnings are generated deterministically; the numbers are never invented.
 6. Each warning comes with a **control plan** — a prioritized, advisory set of actions ("review the 3 users driving 70% of the spike", "consider Haiku for non-critical tasks") — and from any warning or team I can **simulate a scenario** ("if Engineering slows 15%, where do we close?") in a **side panel**, in context, before deciding.
-7. Denarius keeps deterministic **apontamentos** rules for decision-support pointers. The current app does not render a separate Home feed for them. Their placement is deferred while warnings, setup guidance, and investigation remain the visible paths.
+7. Denarius keeps deterministic **apontamentos** rules for decision-support pointers. The current app does not render a separate Home feed for them. Their placement is deferred while warnings, the guided setup, and investigation remain the visible paths.
 8. On the **home dashboard** I see a **one-line verdict** (in control / attention / over budget), the total spend vs. budget with the period pace, the **projected margin** (how much I'll be over/under at close), a stable team table ordered by risk, and where the money goes — default view by team, with a permissioned per-person drill-down.
 9. I get an **executive digest** in natural language summarizing the period (total, change, top drivers, budget status, margin, projection).
 10. *(Secondary)* Denarius flags obvious **waste** — e.g., paying for more seats than the roster has people (seats-vs-roster mismatch).
@@ -230,7 +230,7 @@ presented as a fixed two-page promise.
 
   | Entity | Key fields |
   |---|---|
-  | `tenant` | id, name, display_currency, settings (toggles) |
+  | `tenant` | id, name, display_currency, settings (toggles), setup_completed_at |
   | `user` (app) | id, tenant_id, email, role (Admin/Viewer) |
   | `employee` (roster) | id, tenant_id, email, name, team |
   | `team` | id, tenant_id, name (plus the implicit **Unattributed** node per tenant) |
@@ -275,7 +275,7 @@ Resolved in a dedicated UX grilling (P1–P11), extended by the founder's focus 
 
 **Navigation & screens (P1, P2 — superseded by P15 and P16)**
 - Left sidebar, **5 destinations: Home / Times / Composição / Reports / Settings.** Search is a modal workspace navigator opened from the sidebar or `Ctrl+P`, over real authorized routes and tenant resources. Recent query history stays in browser storage. Budgets and Planning remain excluded as navigation destinations. Personal Preferences is reached from the account menu, next to "Ajuda e suporte", which opens a pre-addressed Gmail message to the support inbox for help and bug reports.
-- **Home** — condensed freshness → verdict → spend hero/composition → pace → one team table. Setup guidance remains visible until complete. Apontamento feeds are not shown here.
+- **Home** — condensed freshness → verdict → spend hero/composition → pace → one team table. Setup lives in the guided `/configuracao` route (P3), not on Home. Apontamento feeds are not shown here.
 - **Composição** — anchored sections for models and fixed costs; sortable tables; threshold-triggered search; explicit reconciliation. The per-team API table and diagnosis remain in Times.
 - **Settings** — a navigation-only index grouped into Organização, Fontes e atribuição, and Governança e confiança. Company/currency, Privacy, and Users live on dedicated subpages alongside Connections, Attribution, Roster, Seats, and Budgets.
 - **Budget editing belongs to Settings:** `/ajustes/orcamentos` owns the organization and team budget forms. Team diagnosis may open a contextual edit dialog for an Admin, but budgets remain a Settings responsibility rather than a cockpit destination.
@@ -285,8 +285,13 @@ Resolved in a dedicated UX grilling (P1–P11), extended by the founder's focus 
 - The hero pairs **% of budget spent against % of the period elapsed** — a percentage of budget is meaningless without the time context; the pairing is the real control signal (spending faster than time passes = trouble). Since the 2026-07-17 de-noise the pairing renders as ONE bar, not two. Since 2026-10-04 (founder-directed) the spend fill is neutral ink (red only after a real org breach), and a muted `▼` above the track points at today on the same scale ("dia" fixed at the left, the day number following the marker): the period maps onto the budget span, so on-pace spend ends right under it. The marker is a low-contrast aid with no line through the bar; the budget rule stays the track's only line. The spent percentage sits under the bar; there is no `dia N de M · X% do mês` row. This visual accent does not replace the green/amber/red semantic verdict and status pills. Under the big number, the week-over-week change is a plain line, not a pill: the signed percent is red when spend rose and green when it fell, followed by a muted "X semana anterior". It is the only delta that carries the semaphore (founder decision, 2026-10-04); every other delta stays neutral.
 - **All-clear is a designed, affirmative state** (the most common state of a healthy account): green verdict + "✓ Everything under control · next digest Friday", never an empty-looking screen.
 
-**Onboarding (P3)**
-- **Non-blocking checklist** (not a blocking wizard): user lands on Home; a persistent guide shows *connect → roster → **set budget*** and disappears after all three steps complete. The **budget step is pushed prominently** (without a budget there is no verdict/warning, i.e. no hero). Supports delegating the technical steps (keys) to a CTO without blocking the CEO. On connect, the sync runs **immediately** (not just the daily cron) so the first "we found R$ X this month" moment happens in seconds, not 24h. A nudge surfaces when meaningful spend sits in **Unattributed**.
+**Onboarding (P3 — guided setup, founder-directed 2026-10-05; supersedes the original non-blocking Home checklist)**
+- Right after the first login a new Admin lands on **`/configuracao`**, a dedicated route outside the app shell: one centered card, a stepper above it, four steps — **Empresa → Fontes de gasto → Times → Orçamento**. The company step creates the tenant; the other three reuse the exact forms from Ajustes (connections, subscriptions, roster, budgets), so the setup is a guided path through existing settings, never a parallel copy.
+- **Fontes de gasto has two options:** connect the provider APIs (OpenAI/Anthropic Admin keys, read-only) **or** register seat subscriptions by hand. Either satisfies the step. On connect, the sync runs **immediately** so the first "we found R$ X this month" moment happens in seconds, not 24h.
+- **Every step can be skipped** ("Fazer depois"). This keeps delegating the technical steps (keys) to a CTO possible without blocking the CEO. Step completion is derived from real data; only the decision to finish is stored (`tenant.setup_completed_at`).
+- Until the setup is finished, an Admin is routed to `/configuracao` instead of the cockpit. Viewers are never routed there — they join a company an Admin configures. Tenants that predate the guided setup are marked finished.
+- Finishing (or skipping the last step) redirects to Home with a **one-time welcome dialog**; closing it leaves the cockpit ready to use. The Home no longer carries a setup guide. If the budget was skipped, Home's cold start says no verdict exists yet and offers "Retomar configuração" to Admins; the setup stays reachable at `/configuracao`.
+- A nudge surfaces when meaningful spend sits in **Unattributed**.
 
 **Budget visualization (P5, P12 — superseded by P15)**
 - The home leads with the **verdict**, then the **org number + a spend-vs-time pacing pair** + **projected margin in money** as the single headline margin figure. **Current margin was removed from the home** (contradictory signal mid-period — P12 half-reverted).
@@ -301,7 +306,7 @@ Resolved in a dedicated UX grilling (P1–P11), extended by the founder's focus 
 - **Control plan is read-only (P6):** shows the recommended actions (from a curated, rule-mapped catalog, phrased by the LLM) + top drivers. **No per-action status tracking, no "resolved" state** — findings are stateless/informational. Keeps the MVP lean; the digest does not report follow-through.
 
 **Planning & apontamentos (P13, P14 — restructured by P15)**
-- **Simulator is a contextual drawer, not a tab (P15):** invoked by **[Simulate]** on a warning or a team (also from Explore's team detail). Opens with that team pre-loaded — the causal chain "this team is at risk → what fixes it?" is never broken by navigation. One lever (team pace ±%), instant recompute of projected close + margin, presets ("current pace", "close on budget" = break-even, fixed cut). Copy makes explicit that scenarios are estimates and the system **does not decide** — it shows effects.
+- **Simulator is a contextual drawer, not a tab (P15):** invoked by **[Simulate]** on a warning or a team (also from Explore's team detail). Opens with that team pre-loaded — the causal chain "this team is at risk → what fixes it?" is never broken by navigation. One lever (team pace ±%), instant recompute of projected close + margin, presets ("current pace", "close on budget" = break-even, fixed cut), and a chart of the scenario — realized spend, then the current-pace and simulated paths to the close against the team budget (founder-directed 2026-10-05). Copy makes explicit that scenarios are estimates and the system **does not decide** — it shows effects.
 - **P14 — Apontamentos ≠ warnings:** the deterministic rules remain available for a future calm surface, but the current app does not render an apontamento feed on Home. They never use urgency styling or email. **Warnings** remain urgent and pushed.
 
 **P16 — 2026-07-11 UI/UX audit (founder-approved; supersedes conflicting UI details)**

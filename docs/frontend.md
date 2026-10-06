@@ -46,9 +46,10 @@ The authenticated shell exposes five primary destinations. Search is a modal, no
 
 | Route | Responsibility |
 |---|---|
-| `/` | Home cockpit: freshness, verdict, setup progress, spend, executive digest, provider composition, current-period pace, and budgeted teams. |
+| `/` | Home cockpit: freshness, verdict, spend, executive digest, provider composition, current-period pace, and budgeted teams. Without an org budget (cold start) it states that no verdict exists yet; Admins get "Retomar configuração". `?bem-vindo=1` opens the one-time welcome dialog after the guided setup; closing it removes the flag from the URL. |
+| `/configuracao` | Guided setup outside the app shell (PRD P3): logo bar with "Sair", a four-step stepper (Empresa → Fontes de gasto → Times → Orçamento), and one centered card. `?etapa=` picks the step (default: first missing step); `?modo=apis` or `?modo=assinaturas` picks the spend-source option. Each step reuses the Ajustes form component (`ProviderConnectionCard`, `SubscriptionForm`, `RosterUpload`, `BudgetTableForm` in `components/domain/`). Footer: "Voltar", then "Fazer depois" until the step is done and "Continuar" after; the last step finishes with "Concluir e abrir o painel" or "Pular e abrir o painel". Admin-only; Viewers are redirected to `/`. |
 | `/times` | Comparable team index (spent, budget, projection, progress). Rows only link to diagnosis; investigation and simulation actions live in `/times/[teamId]`. Keep budgeted, unbudgeted, and unattributed data distinguishable. |
-| `/times/[teamId]` | Team diagnosis: summary, cumulative spend, composition, permitted contributors, calculations, control plan, and scenario drawer. |
+| `/times/[teamId]` | Team diagnosis: summary, cumulative spend, composition, permitted contributors, calculations, control plan, and scenario drawer. The drawer charts the scenario (2026-10-05): realized spend through today, then the current-pace and simulated paths to the close, against the team budget as a flat line, on a y axis fixed to the lever's full range so dragging moves the line and not the scale. |
 | `/explorar` | Composition views for models and fixed costs, with sorting, search where needed, reconciliation, and uncosted disclosures. |
 | `/relatorios` | Current-period report generation and closed-month files. Preview, print, and PDF use the same report document. |
 | `/ajustes` | Navigation index for company, roster, users, connections, attribution, subscriptions, budgets, privacy, and audit. |
@@ -82,6 +83,7 @@ Use the RSC loading boundaries and skeletons for page data. Do not add a client 
 - Put pure formatting, state, and calculation helpers in `lib/`. Reuse an existing helper before adding another one. Do not create barrel files.
 - Use the shared Zod schema for server validation. Use `useActionState` for form actions. Use a native form for a trivial action.
 - Charts are explanatory. Budget and pacing bars may use CSS. Use Recharts only where the current data contract requires a cumulative time series. This rule is subject to the UI reformulation review.
+- Range levers use the `Slider` primitive (`components/ui/slider.tsx`, Base UI): an ink fill up to the thumb over a neutral `--input` track. Do not use a native `<input type="range">` — its dark-mode track renders the same color on both sides of the thumb.
 
 ## Accessibility and responsive behavior
 

@@ -5,14 +5,16 @@ import {
   PROFILE_AVATAR_MAX_BYTES,
   PROFILE_AVATAR_MIME_TYPES,
 } from "@/lib/settings/avatar";
-import { isMissingProfileAvatarColumn } from "@/lib/settings/avatar-schema";
+import { isUndefinedColumn } from "@/lib/db/schema-drift";
 import { profileAvatarSchema } from "@/lib/validation";
 
 describe("profile avatar boundary", () => {
   it("recognizes an unapplied avatar-column migration without treating other errors as schema drift", () => {
-    expect(isMissingProfileAvatarColumn({ code: "42703" })).toBe(true);
-    expect(isMissingProfileAvatarColumn({ code: "PGRST116" })).toBe(false);
-    expect(isMissingProfileAvatarColumn(null)).toBe(false);
+    expect(isUndefinedColumn({ code: "42703" })).toBe(true);
+    // A write naming the missing column fails in PostgREST's schema cache.
+    expect(isUndefinedColumn({ code: "PGRST204" })).toBe(true);
+    expect(isUndefinedColumn({ code: "PGRST116" })).toBe(false);
+    expect(isUndefinedColumn(null)).toBe(false);
   });
 
   it("recognizes only the supported image signatures", () => {

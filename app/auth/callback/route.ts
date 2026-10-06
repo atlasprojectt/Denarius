@@ -11,7 +11,7 @@ import { createClient } from "@/lib/supabase/server";
 /**
  * OAuth/PKCE callback (Google, and Supabase email links). Exchanges the code
  * for a session, then hands off to `next` (default "/") — the app layout routes
- * users without a tenant to /onboarding.
+ * users without a tenant to /configuracao.
  *
  * Behind Vercel's proxy `request.url`'s host is the internal one, so the redirect
  * base is rebuilt from the forwarded host in production; failures (provider error

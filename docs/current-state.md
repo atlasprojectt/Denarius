@@ -7,8 +7,8 @@ Reviewed on 2026-10-04 against the local working tree. This includes uncommitted
 | Area | Current implementation |
 |---|---|
 | Account | Supabase email/password and Google flows, signup confirmation, recovery, password change, company onboarding, Admin and Viewer memberships, invitations |
-| Setup | Roster CSV with atomic import, employee edits and removal, manual subscriptions, provider connections, project/workspace mapping, monthly company and team budgets |
-| Home | Greeting and budget status, deterministic executive summary, spend against budget, provider/seat composition, monthly cumulative chart, budgeted-team table, setup guidance |
+| Setup | Guided first-run setup at `/configuracao` (company → spend sources via APIs or manual subscriptions → roster → budget, every step skippable, welcome dialog on finish); roster CSV with atomic import, employee edits and removal, manual subscriptions, provider connections, project/workspace mapping, monthly company and team budgets |
+| Home | Greeting and budget status, deterministic executive summary, spend against budget, provider/seat composition, monthly cumulative chart, budgeted-team table, cold-start prompt when no budget exists |
 | Investigation | Team index and dedicated diagnosis, contextual contributors for Admins, curated control plans, single-lever remaining-pace simulation |
 | Composition | Model and fixed-cost views, reconciliation and uncosted disclosures, model-cost comparison and current-period usage economics |
 | Reports | On-demand current-month document, closed-month snapshots, preview dialog, browser printing, authenticated PDF downloads |
@@ -40,7 +40,7 @@ These findings remain open. Updating documentation does not approve a change to 
 | Alert severity order | PRD P11 states warning → realized breach → projected breach. `lib/engine/thresholds.ts` ranks warning → projected breach → realized breach. The previously flagged founder decision remains unresolved. |
 | Forecast consistency | `lib/home/queries.ts` supplies `dailySpend`; `lib/notify/snapshot.ts` does not. Home and email may show different projected closes and margins from the same realized totals. |
 | Names in expanded search | The local employee and user providers are Admin-only but do not check `tenant.show_names`. The documentation must not claim that the names switch is enforced in those results. |
-| Chart contract | Recharts is used for cumulative time-series views on Home and team diagnosis. Budget and pacing bars remain CSS. The next visual pass may change presentation without changing the data contract. |
+| Chart contract | Recharts is used for cumulative time-series views on Home, team diagnosis, and the scenario drawer. Budget and pacing bars remain CSS. The next visual pass may change presentation without changing the data contract. |
 | Missing FX and verdict | `combinedSpend()` returns seat-only display spend plus separate USD when FX is absent. The live cockpit still evaluates that partial display amount; closed reports withhold their verdict. This needs review against "honest numbers or no numbers". |
 | Margin sign against signed differences | Since 2026-10-05 the team index and Home team table show `Projeção X orçamento: +R$ 1.200,00` (`+` = above the budget). Team diagnosis still shows "Margem projetada" as budget − projection (PRD story 28), so the same overrun reads `-R$ 1.200,00` there, and its conclusion keeps words to avoid two signs for one fact in one card. One convention needs a founder decision. |
 
@@ -50,6 +50,6 @@ The docs now distinguish shipped code, remaining limits, and operational checks.
 
 ## Operational evidence still needed
 
-Repository configuration does not prove that an environment is ready. Before launch, verify the hosted migration chain and avatar bucket, the destination of every privileged database path, real OpenAI/Anthropic Admin-key sync and reconciliation, cron authorization and execution, Google OAuth and recovery redirects, email delivery, backup/restore, and production/development separation.
+Repository configuration does not prove that an environment is ready. Before launch, verify the hosted migration chain (`20261005120000_setup_completion.sql` was confirmed on the hosted project on 2026-10-06: the column exists and no tenant is left pending; until a migration like it is applied, `lib/db/schema-drift.ts` keeps the pre-migration behavior) and avatar bucket, the destination of every privileged database path, real OpenAI/Anthropic Admin-key sync and reconciliation, cron authorization and execution, Google OAuth and recovery redirects, email delivery, backup/restore, and production/development separation.
 
 CI exercises the Supabase migration chain and its RLS tests. It does not provision Neon or demonstrate that both databases contain the same tenant data. [architecture.md](architecture.md) describes the gate and deployment path.

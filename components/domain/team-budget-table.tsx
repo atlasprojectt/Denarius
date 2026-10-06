@@ -214,15 +214,18 @@ export function TeamBudgetTable({
               {teams.map((team) => {
                 const ev = team.evaluation;
                 return (
+                  // The row is the positioning context, so the link's ::after
+                  // covers every cell (z-10 lifts it over the positioned
+                  // BudgetBar) and the whole row opens the team.
                   <TableRow
                     key={team.teamId}
-                    className="group border-border"
+                    className="group relative cursor-pointer border-border"
                   >
                     <TableCell className="max-w-64">
                       <Link
                         href={`/times/${team.teamId}`}
                         aria-label={c.detail(team.teamName)}
-                        className="relative z-10 block truncate font-medium outline-none after:absolute after:inset-0 after:z-[-1] after:w-[calc(100vw-2rem)] after:max-w-[calc(100%+1000px)] after:rounded-sm after:transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/40"
+                        className="block truncate font-medium outline-none after:absolute after:inset-0 after:z-10 after:rounded-sm hover:text-foreground focus-visible:after:ring-2 focus-visible:after:ring-inset focus-visible:after:ring-ring/40"
                       >
                         {team.teamName}
                       </Link>

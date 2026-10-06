@@ -21,15 +21,17 @@ import {
 import { currentRole } from "@/lib/auth/session";
 import { currentPeriod } from "@/lib/engine/period";
 import { money, signedMoney } from "@/lib/money";
-import { listBudgets, type Budget } from "@/lib/budgets/queries";
+import { listBudgets } from "@/lib/budgets/queries";
+import { budgetTableRows } from "@/lib/budgets/rows";
 import { canEditCompanySettings } from "@/lib/settings/account";
 import { listTeams } from "@/lib/teams/queries";
 
-import { BudgetTableForm, type BudgetTableRow } from "./_components/budget-table-form";
+import { BudgetTableForm } from "@/components/domain/budget-table-form";
 
 const copy = {
   back: "Ajustes",
   title: "Orçamentos",
+  orgRow: "Empresa",
   subtitle:
     "O limite mensal da empresa e de cada time. O orçamento governa o gasto total rastreado (APIs + assinaturas) e destrava o veredito, a projeção de fechamento e os avisos antecipados.",
   periodNote: (label: string) => `Período atual — ${label}`,
@@ -47,17 +49,6 @@ const copy = {
     "Cotação USD→moeda indisponível no momento da criação — o gasto em dólar aparece à parte até haver uma cotação.",
 };
 
-/** Warn threshold as a whole percent for the form (the sub-100% crossing). */
-function warnPctOf(budget: Budget): number {
-  const warn = budget.thresholds.find((t) => t > 0 && t < 1);
-  return warn ? Math.round(warn * 100) : 80;
-}
-
-function toExisting(budget: Budget | undefined): BudgetTableRow["existing"] {
-  if (!budget) return null;
-  return { id: budget.id, amount: budget.amount, warnPct: warnPctOf(budget) };
-}
-
 export default async function BudgetsPage() {
   const period = currentPeriod();
   const [{ org, teams: teamBudgets, currency }, teams, role] = await Promise.all([
@@ -67,17 +58,9 @@ export default async function BudgetsPage() {
   ]);
   const isAdmin = canEditCompanySettings(role ?? "viewer");
 
-  const budgetByTeam = new Map(teamBudgets.map((b) => [b.teamId, b]));
   const teamSum = teamBudgets.reduce((sum, b) => sum + b.amount, 0);
   const mismatch = org ? teamSum - org.amount : 0;
-  const rows: BudgetTableRow[] = [
-    { key: "org", label: "Empresa", existing: toExisting(org ?? undefined) },
-    ...teams.map((team) => ({
-      key: `team:${team.id}`,
-      label: team.name,
-      existing: toExisting(budgetByTeam.get(team.id)),
-    })),
-  ];
+  const rows = budgetTableRows(org, teamBudgets, teams, copy.orgRow);
 
   return (
     <PageContainer variant="settings" className="gap-6">

@@ -35,10 +35,12 @@ export default async function LoginPage({
   return (
     <div className="grid min-h-svh bg-surface-card lg:grid-cols-[minmax(28rem,0.82fr)_minmax(0,1.18fr)]">
       <div className="flex min-w-0 flex-col gap-4 px-5 py-6 sm:px-8 md:px-12 md:py-10 lg:px-[clamp(3rem,6vw,6.5rem)]">
-        {/* On desktop the wordmark lives on the cover; keep it here for small
-            screens where the cover column is hidden. */}
-        <div className="flex items-center gap-2 lg:hidden">
-          <LogoWordmark className="h-6 w-auto" />
+        {/* The wordmark sits in the column's corner on every width as a light
+            signature in faint gray: the cover artwork already carries the
+            brand orange. From lg it escapes the wide form gutter so its left
+            inset matches the top one (md:py-10 = 2.5rem). */}
+        <div className="flex items-center gap-2 lg:-ml-[calc(clamp(3rem,6vw,6.5rem)_-_2.5rem)]">
+          <LogoWordmark monochrome className="h-5 w-auto text-muted-foreground/30" />
         </div>
         <div className="flex flex-1 items-center justify-center py-8 lg:py-12">
           <div className="w-full max-w-[26rem]">

@@ -108,7 +108,7 @@ export default async function SettingsPage() {
     currentRole(),
   ]);
   const tenant = tenantData as TenantRow | null;
-  if (!tenant) redirect("/onboarding");
+  if (!tenant) redirect("/configuracao");
   const isAdmin = canEditCompanySettings(role ?? "viewer");
 
   const budgets = (budgetData ?? []) as { scope: string }[];
