@@ -40,7 +40,6 @@ export type HomeData = CockpitData & {
    *  as the digest, so screen and email can never disagree). Neutral display
    *  only (principle #5); null when the previous week has no spend. */
   orgWeekPct: number | null;
-  setup: { connected: boolean; hasRoster: boolean; hasBudget: boolean };
   /** Spend not yet attributed to any team (shared seats + unmapped API),
    *  combined at the frozen FX for the composition disclosure line —
    *  invariant #3: the amount inside the source slices that the team cut
@@ -121,19 +120,6 @@ async function providerCostToDate(): Promise<{ provider: string; usd: number }[]
   return [...byProvider.entries()].map(([provider, usd]) => ({ provider, usd }));
 }
 
-/** Roster headcount per team — the honest denominator for the seats-vs-roster
- *  check. `employee.team_id` is NOT NULL, so the whole-roster total is exactly
- *  Σ byTeam (derived at the call site — one source of truth). */
-async function rosterHeadcount(): Promise<Map<string, number>> {
-  const supabase = await createClient();
-  const { data } = await supabase.from("employee").select("team_id");
-  const byTeam = new Map<string, number>();
-  for (const row of (data ?? []) as { team_id: string }[]) {
-    byTeam.set(row.team_id, (byTeam.get(row.team_id) ?? 0) + 1);
-  }
-  return byTeam;
-}
-
 /** The cockpit plus raw parts shared by Home, Times and reports. */
 type CockpitAssembly = CockpitData & {
   currency: string;
@@ -160,8 +146,6 @@ type CockpitAssembly = CockpitData & {
   /** The period's budget rows as read — carried so consumers never re-query
    *  them (this assembly is the one memoized read). */
   budgets: BudgetList;
-  connected: boolean;
-  hasOrgBudget: boolean;
   /** Oldest successful sync among active connections — THE freshness stamp
    *  (same rule as Explore via oldestActiveSync); null when nothing synced. */
   lastSyncAt: string | null;
@@ -263,8 +247,6 @@ const assembleCockpit = cache(async function assembleCockpit(): Promise<CockpitA
     hasUncosted: apiTeams.hasUncosted,
     connections,
     budgets,
-    connected: connections.some((connection) => connection.status === "active"),
-    hasOrgBudget: budgets.org !== null,
     lastSyncAt: oldestActiveSync(connections),
   };
 });
@@ -376,16 +358,13 @@ export async function getTimesData(): Promise<TimesData> {
 export async function getHomeData(): Promise<HomeData> {
   const now = new Date();
   // The supplementary Home reads do not depend on the cockpit — one parallel
-  // batch. Roster remains the onboarding guide's source of truth.
-  const [assembly, roster, weekCosts, dailyCosts, user] = await Promise.all([
+  // batch.
+  const [assembly, weekCosts, dailyCosts, user] = await Promise.all([
     assembleCockpit(),
-    rosterHeadcount(),
     orgWeekCosts(now),
     orgDailyCosts(),
     currentUserProfile(),
   ]);
-
-  const rosterTotal = [...roster.values()].reduce((sum, n) => sum + n, 0);
 
   // The pace series only exists once there is an org budget to evaluate against
   // (cockpit.org). Built from the frozen-FX combine, so its today point lands on
@@ -409,11 +388,6 @@ export async function getHomeData(): Promise<HomeData> {
     period: assembly.period,
     fx: assembly.fx,
     orgWeekPct: weekOverWeek(weekCosts, now).pct,
-    setup: {
-      connected: assembly.connected,
-      hasRoster: rosterTotal > 0,
-      hasBudget: assembly.hasOrgBudget,
-    },
     unattributed: combinedSpend({
       seatDisplay: assembly.seatUnattributed,
       apiUsd: assembly.apiUnattributedUsd,

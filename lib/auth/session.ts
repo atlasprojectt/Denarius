@@ -40,7 +40,7 @@ async function resolveSession(): Promise<ResolveResult> {
   const row = data as { tenant_id: string; role: string; email: string } | null;
   if (!row) {
     return {
-      error: "Cadastro incompleto — conclua o onboarding.",
+      error: "Cadastro incompleto — conclua a configuração.",
       authenticated: true,
     };
   }

@@ -22,34 +22,31 @@ export const homeCopy = {
   },
   dataAsOf: (stamp: string) => `Atualizado ${stamp}`,
 
-  setup: {
-    eyebrow: "Configuração inicial",
-    title: "Prepare seu primeiro veredito",
-    subtitle: "Faça o primeiro passo agora. Depois, complete os dois seguintes para acompanhar seu gasto com IA.",
-    progress: (done: number, total: number) => `${done} de ${total} concluídos`,
-    compactTitle: "Próximo passo",
-    nowLabel: "Agora",
-    afterLabel: "Depois",
-    afterEmpty: "Este é o último passo da configuração.",
-    completeLabel: "Quando estiver completo",
-    completeBody: "O painel passa a mostrar uma resposta clara sobre o gasto, com contexto para decidir o que fazer.",
-    completedBefore: (done: number) => `${done} passo${done === 1 ? "" : "s"} já concluído${done === 1 ? "" : "s"}`,
-    stepDoneBadge: "Concluído",
-    connected: "Conectar um provedor",
-    connectedNow: "Conecte uma fonte de gasto",
-    connectedDetail: "OpenAI ou Anthropic, com uma Admin Key somente leitura.",
-    hasRoster: "Importar pessoas",
-    hasRosterNow: "Importe as pessoas e os times",
-    hasRosterDetail: "Times e pessoas para atribuir cada real gasto.",
-    hasBudget: "Definir o orçamento",
-    hasBudgetNow: "Defina o orçamento mensal",
-    hasBudgetDetail: "O limite mensal que destrava veredito e avisos.",
-    openStep: "Abrir configuração",
-    outcomes: [
-      "Veredito diário sobre o controle do gasto",
-      "Projeção de fechamento no ritmo atual",
-      "Avisos antecipados para decidir a tempo",
+  // Cold start: no org budget yet, so there is no verdict to show.
+  noBudget: {
+    title: "Ainda não há orçamento",
+    adminBody:
+      "Sem um orçamento mensal, o painel não consegue dizer se o gasto com IA está sob controle. Termine a configuração para ver o primeiro veredito.",
+    viewerBody:
+      "Sem um orçamento mensal, o painel não consegue dizer se o gasto com IA está sob controle. Um administrador da empresa precisa defini-lo.",
+    resume: "Retomar configuração",
+  },
+
+  // One-time dialog after the guided setup redirects here.
+  welcome: {
+    title: (name: string | null) =>
+      name ? `Boas-vindas ao Denarius, ${name}` : "Boas-vindas ao Denarius",
+    ready:
+      "Tudo pronto. A partir de agora o painel responde, todo dia, se o gasto com IA da empresa está sob controle.",
+    pending:
+      "Sua empresa está criada. Assim que houver um orçamento, o painel passa a responder se o gasto com IA está sob controle.",
+    tourLabel: "Onde encontrar",
+    tour: [
+      { place: "Início", what: "O veredito e o gasto do mês contra o orçamento." },
+      { place: "Times", what: "Onde cada time está e o que pesa no gasto." },
+      { place: "Ajustes", what: "Conexões, pessoas e orçamentos, quando algo mudar." },
     ],
+    start: "Começar a usar",
   },
 
   hero: {

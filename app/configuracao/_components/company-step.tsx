@@ -12,18 +12,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { completeOnboarding, type AuthFormState } from "@/lib/auth/actions";
 
-const copy = {
-  title: "Qual é o nome da sua empresa?",
-  subtitle:
-    "Isso cria o espaço da sua empresa no Denarius — seus dados ficam isolados dos demais clientes.",
-  company: "Nome da empresa",
-  submit: "Concluir cadastro",
-  submitting: "Concluindo…",
-};
+import { setupCopy } from "../copy";
+
+const copy = setupCopy.company;
 
 const initialState: AuthFormState = {};
 
-export function OnboardingForm({
+export function CompanyStep({
   defaultCompanyName,
 }: {
   defaultCompanyName: string;
@@ -34,14 +29,10 @@ export function OnboardingForm({
   );
 
   return (
-    <form action={formAction} className="flex flex-col gap-6">
+    <form action={formAction}>
       <FieldGroup>
-        <div className="flex flex-col gap-1">
-          <h1 className="text-2xl">{copy.title}</h1>
-          <p className="text-sm text-ink-secondary">{copy.subtitle}</p>
-        </div>
         <Field>
-          <FieldLabel htmlFor="companyName">{copy.company}</FieldLabel>
+          <FieldLabel htmlFor="companyName">{copy.field}</FieldLabel>
           <Input
             id="companyName"
             name="companyName"
@@ -49,22 +40,21 @@ export function OnboardingForm({
             autoComplete="organization"
             defaultValue={defaultCompanyName}
             required
+            autoFocus
             className="bg-background"
           />
-          <FieldDescription>
-            Você poderá ajustar isso depois em Ajustes.
-          </FieldDescription>
+          <FieldDescription>{copy.hint}</FieldDescription>
         </Field>
         {state.error && (
           <p role="alert" className="text-sm text-destructive">
             {state.error}
           </p>
         )}
-        <Field>
+        <div className="flex justify-end">
           <Button type="submit" loading={pending} loadingText={copy.submitting}>
             {copy.submit}
           </Button>
-        </Field>
+        </div>
       </FieldGroup>
     </form>
   );

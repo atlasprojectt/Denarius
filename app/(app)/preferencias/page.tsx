@@ -12,7 +12,7 @@ import { ThemePicker } from "@/components/domain/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { hasPasswordIdentity } from "@/lib/auth/password";
 import { profileInitials, profileLabel } from "@/lib/settings/account";
-import { isMissingProfileAvatarColumn } from "@/lib/settings/avatar-schema";
+import { isUndefinedColumn } from "@/lib/db/schema-drift";
 import { profileAvatarUrl } from "@/lib/settings/avatar-url";
 import { createClient } from "@/lib/supabase/server";
 import { DigestForm } from "./_components/digest-form";
@@ -62,7 +62,7 @@ export default async function PersonalSettingsPage() {
     .maybeSingle();
 
   let accountData = profileResult.data;
-  const avatarColumnAvailable = !isMissingProfileAvatarColumn(
+  const avatarColumnAvailable = !isUndefinedColumn(
     profileResult.error,
   );
   if (!avatarColumnAvailable) {
@@ -77,7 +77,7 @@ export default async function PersonalSettingsPage() {
   }
 
   const account = accountData as AccountRow | null;
-  if (!account?.tenant) redirect("/onboarding");
+  if (!account?.tenant) redirect("/configuracao");
 
   const displayName = profileLabel({
     displayName: account.display_name,

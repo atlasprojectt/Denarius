@@ -18,7 +18,7 @@ import { createClient } from "@/lib/supabase/server";
 import { listTeams } from "@/lib/teams/queries";
 
 import { EmployeeTable } from "./_components/employee-table";
-import { RosterUpload } from "./_components/roster-upload";
+import { RosterUpload } from "@/components/domain/roster-upload";
 
 const copy = {
   back: "Ajustes",

@@ -37,7 +37,7 @@ export default async function CompanySettingsPage() {
     supabase.from("subscription").select("id", { count: "exact", head: true }),
   ]);
   const tenant = tenantData as TenantRow | null;
-  if (!tenant) redirect("/onboarding");
+  if (!tenant) redirect("/configuracao");
   const isAdmin = canEditCompanySettings(role ?? "viewer");
   const currencyEditable = isAdmin && (budgetCount ?? 0) === 0 && (subscriptionCount ?? 0) === 0;
 

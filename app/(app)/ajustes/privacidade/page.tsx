@@ -46,7 +46,7 @@ export default async function PrivacySettingsPage() {
     email: string;
     display_name: string | null;
   } | null;
-  if (!tenant || !account) redirect("/onboarding");
+  if (!tenant || !account) redirect("/configuracao");
   const isAdmin = canEditCompanySettings(role ?? "viewer");
   const displayName = profileLabel({
     displayName: account.display_name,

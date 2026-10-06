@@ -22,7 +22,7 @@ import { canEditCompanySettings } from "@/lib/settings/account";
 import { listSubscriptions } from "@/lib/subscriptions/queries";
 import { listTeams } from "@/lib/teams/queries";
 
-import { SubscriptionForm } from "./_components/subscription-form";
+import { SubscriptionForm } from "@/components/domain/subscription-form";
 import { SubscriptionTable } from "./_components/subscription-table";
 
 const copy = {

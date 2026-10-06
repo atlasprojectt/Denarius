@@ -12,6 +12,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
+import { isUndefinedColumn } from "@/lib/db/schema-drift";
 import {
   freshness,
   type ConnectionStatus,
@@ -19,13 +20,14 @@ import {
 import { getCockpitData } from "@/lib/home/queries";
 import { isReportPath } from "@/lib/reports/path";
 import { latestClosedPeriodPath } from "@/lib/reports/queries";
+import { isSetupPending } from "@/lib/setup/queries";
 import { profileInitials, profileLabel } from "@/lib/settings/account";
-import { isMissingProfileAvatarColumn } from "@/lib/settings/avatar-schema";
 import { profileAvatarUrl } from "@/lib/settings/avatar-url";
 import { createClient } from "@/lib/supabase/server";
 
 type AppUserRow = {
   email: string;
+  role: string;
   display_name: string | null;
   avatar_path?: string | null;
   tenant: { name: string } | null;
@@ -50,11 +52,11 @@ export default async function AppLayout({
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const [appUserResult, { data: connectionData }, latestReportPeriod] =
+  const [appUserResult, { data: connectionData }, latestReportPeriod, setupPending] =
     await Promise.all([
       supabase
         .from("app_user")
-        .select("email, display_name, avatar_path, tenant:tenant_id(name)")
+        .select("email, role, display_name, avatar_path, tenant:tenant_id(name)")
         .eq("id", user.id)
         .maybeSingle(),
       renderingReport
@@ -64,17 +66,18 @@ export default async function AppLayout({
             .select("provider, status, last_sync_at"),
       // Snapshot data, not live state — safe beside the frozen surfaces.
       latestClosedPeriodPath().catch(() => null),
+      isSetupPending(),
     ]);
 
   // Profile avatars were added after the first production schema. Keep the
   // app shell usable while that migration is being applied: a missing avatar
   // column must not look like a missing tenant and bounce the user forever
-  // between / and /onboarding. Once the column exists, this stays one query.
+  // between / and /configuracao. Once the column exists, this stays one query.
   let appUserData = appUserResult.data;
-  if (isMissingProfileAvatarColumn(appUserResult.error)) {
+  if (isUndefinedColumn(appUserResult.error)) {
     const fallback = await supabase
       .from("app_user")
-      .select("email, display_name, tenant:tenant_id(name)")
+      .select("email, role, display_name, tenant:tenant_id(name)")
       .eq("id", user.id)
       .maybeSingle();
     appUserData = fallback.data
@@ -84,7 +87,10 @@ export default async function AppLayout({
   const appUser = appUserData as AppUserRow | null;
 
   // Signed in but no tenant yet (e.g. first Google login) → bootstrap.
-  if (!appUser) redirect("/onboarding");
+  if (!appUser) redirect("/configuracao");
+  // A new company finishes (or skips through) the guided setup before the
+  // cockpit. Only an Admin can act on it; a Viewer joined a running company.
+  if (setupPending && appUser.role === "admin") redirect("/configuracao");
   const avatarUrl = await profileAvatarUrl(
     supabase,
     appUser.avatar_path ?? null,
