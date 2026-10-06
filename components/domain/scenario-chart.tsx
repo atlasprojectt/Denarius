@@ -78,7 +78,6 @@ export function ScenarioChart({
 }) {
   const daysInPeriod = rows.length;
   const today = rows.findLast((row) => row.spent !== null);
-  const hasPaths = rows.some((row) => row.simulated !== null);
 
   return (
     <figure className="flex flex-col gap-3 [--chart-surface:var(--popover)]">
@@ -133,18 +132,16 @@ export function ScenarioChart({
             strokeWidth={2}
           />
         )}
-        {hasPaths && (
-          <ReferenceDot
-            zIndex={CHART_ANNOTATION_Z_INDEX}
-            x={daysInPeriod}
-            y={simulatedClose}
-            r={4.5}
-            fill="var(--foreground)"
-            stroke="var(--chart-surface, var(--background))"
-            strokeWidth={1.5}
-            ifOverflow="visible"
-          />
-        )}
+        <ReferenceDot
+          zIndex={CHART_ANNOTATION_Z_INDEX}
+          x={daysInPeriod}
+          y={simulatedClose}
+          r={4.5}
+          fill="var(--foreground)"
+          stroke="var(--chart-surface, var(--background))"
+          strokeWidth={1.5}
+          ifOverflow="visible"
+        />
       </SpendTrendChart>
       <Legend />
     </figure>

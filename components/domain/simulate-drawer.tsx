@@ -178,7 +178,11 @@ function Simulation({
     simulatedClose: result.team.close,
     daysInPeriod,
   });
-  const hasSpend = points.some((point) => point.spent > 0);
+  // No spend, or the period's last day: there is no path to draw, and a chart
+  // of realized spend alone would read as if the lever changed nothing.
+  const showChart =
+    points.some((point) => point.spent > 0) &&
+    chartRows.some((row) => row.simulated !== null);
   // The axis spans the lever's whole range (the +100% close is the ceiling),
   // so the scenario line moves on a fixed scale instead of the scale moving.
   const ceiling = simulatePace(input, LEVER_MAX / 100).team.close;
@@ -246,7 +250,7 @@ function Simulation({
         )}
       </div>
 
-      {hasSpend && (
+      {showChart && (
         <ScenarioChart
           rows={chartRows}
           budget={input.team.budget}
