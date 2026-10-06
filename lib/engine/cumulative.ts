@@ -103,6 +103,52 @@ export function buildCumulativeComparison(input: {
   return rows;
 }
 
+export type ScenarioComparisonRow = {
+  /** Day of the period, 1-based (1..daysInPeriod). */
+  day: number;
+  /** Realized cumulative spend; null after today. */
+  spent: number | null;
+  /** Path to the current-pace close; null before today or on the last day. */
+  projected: number | null;
+  /** Path to the simulated close; null before today or on the last day. */
+  simulated: number | null;
+};
+
+/**
+ * Rows for the simulator drawer's chart: the realized series plus two paths
+ * from today's vertex — one to the current-pace projection, one to the close
+ * the scenario engine (lib/engine/scenario.ts) returned. Both reuse the
+ * comparison's linear interpolation, so the simulated path ends on the close
+ * the drawer prints.
+ */
+export function buildScenarioComparison(input: {
+  points: CumulativePoint[];
+  projection: number;
+  simulatedClose: number;
+  daysInPeriod: number;
+}): ScenarioComparisonRow[] {
+  const { points, projection, simulatedClose, daysInPeriod } = input;
+  const current = buildCumulativeComparison({
+    points,
+    projection,
+    budget: null,
+    daysInPeriod,
+  });
+  const simulated = buildCumulativeComparison({
+    points,
+    projection: simulatedClose,
+    budget: null,
+    daysInPeriod,
+  });
+
+  return current.map((row, index) => ({
+    day: row.day,
+    spent: row.spent,
+    projected: row.projected,
+    simulated: simulated[index]?.projected ?? null,
+  }));
+}
+
 export function buildCumulativeSpend(input: {
   apiByDay: DailyUsd[];
   fxRate: number | null;

@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/card";
 import type { CockpitTeam } from "@/lib/engine/cockpit";
 import { cut, TICKS } from "@/lib/bars";
-import { buildCumulativeSpend } from "@/lib/engine/cumulative";
+import type { CumulativePoint } from "@/lib/engine/cumulative";
 import { costBridge, usdDisplay, type FrozenFx } from "@/lib/engine/money-model";
 import type { Period } from "@/lib/engine/period";
 import { percent } from "@/lib/format";
@@ -535,6 +535,8 @@ export type DiagnosisBodyProps = {
   seatAccrued: number;
   apiUsd: number;
   diagnosis: TeamApiDiagnosis | null;
+  /** Built by the page so the simulator drawer plots the same series. */
+  cumulativePoints: CumulativePoint[];
   cockpitTeam: CockpitTeam | null;
   isAdmin: boolean;
   namesHidden: boolean;
@@ -548,16 +550,11 @@ export function DiagnosisBody({
   seatAccrued,
   apiUsd,
   diagnosis,
+  cumulativePoints,
   cockpitTeam,
   isAdmin,
   namesHidden,
 }: DiagnosisBodyProps) {
-  const cumulativePoints = buildCumulativeSpend({
-    apiByDay: diagnosis?.daily ?? [],
-    fxRate: fx?.rate ?? null,
-    seatAccrued,
-    dayOfPeriod: period.dayOfPeriod,
-  });
   const bridge = costBridge({ currency, seatDisplay: seatAccrued, apiUsd, fx });
   const bridgeLine =
     bridge.apiDisplay !== null

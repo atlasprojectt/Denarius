@@ -7,6 +7,7 @@ import { SimulateDrawer } from "@/components/domain/simulate-drawer";
 import { StateBadge } from "@/components/domain/state-badge";
 import { StatusPill } from "@/components/domain/status-pill";
 import { findCockpitTeam, type CockpitTeam } from "@/lib/engine/cockpit";
+import { buildCumulativeSpend } from "@/lib/engine/cumulative";
 import { getTimesData } from "@/lib/home/queries";
 import { teamsDiagnosis } from "@/lib/usage/attribution";
 import { BudgetEditDialog } from "../_components/budget-edit-dialog";
@@ -47,6 +48,14 @@ export default async function TeamDetailPage({
   if (!team) notFound();
 
   const cockpitTeam = findCockpitTeam(data.cockpit, teamId) ?? null;
+  const teamDiagnosis = diagnosis.byTeam.get(teamId) ?? null;
+  const seatAccrued = data.seatByTeam.get(teamId) ?? 0;
+  const cumulativePoints = buildCumulativeSpend({
+    apiByDay: teamDiagnosis?.daily ?? [],
+    fxRate: data.fx?.rate ?? null,
+    seatAccrued,
+    dayOfPeriod: data.period.dayOfPeriod,
+  });
   const org =
     data.cockpit.state === "ready"
       ? {
@@ -88,6 +97,8 @@ export default async function TeamDetailPage({
                   budget: cockpitTeam.evaluation.budget,
                 }}
                 org={org}
+                points={cumulativePoints}
+                daysInPeriod={data.period.daysInPeriod}
               />
             )}
             {diagnosis.isAdmin && (
@@ -114,9 +125,10 @@ export default async function TeamDetailPage({
         currency={data.currency}
         period={data.period}
         fx={data.fx}
-        seatAccrued={data.seatByTeam.get(teamId) ?? 0}
+        seatAccrued={seatAccrued}
         apiUsd={data.apiUsdByTeam.get(teamId) ?? 0}
-        diagnosis={diagnosis.byTeam.get(teamId) ?? null}
+        diagnosis={teamDiagnosis}
+        cumulativePoints={cumulativePoints}
         cockpitTeam={cockpitTeam}
         isAdmin={diagnosis.isAdmin}
         namesHidden={diagnosis.namesHidden}

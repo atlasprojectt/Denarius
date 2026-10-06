@@ -4,6 +4,7 @@ import { useState } from "react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { SlidersHorizontalIcon } from "@hugeicons/core-free-icons";
 
+import { ScenarioChart } from "@/components/domain/scenario-chart";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -13,6 +14,11 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { Slider } from "@/components/ui/slider";
+import {
+  buildScenarioComparison,
+  type CumulativePoint,
+} from "@/lib/engine/cumulative";
 import {
   breakEvenDelta,
   simulatePace,
@@ -29,7 +35,9 @@ import { signedPercent } from "@/lib/format";
 // estimates, disclosed. Team and company outcomes are stated SEPARATELY, each
 // against its own budget (2026-07-11 audit, QA-04), and the "fechar no
 // orçamento" preset targets the TEAM's budget with the exact delta — no
-// rounding drift between the preset and the numbers shown (QA-10).
+// rounding drift between the preset and the numbers shown (QA-10). The chart
+// (2026-10-05) draws the same outcome: realized spend, then the current-pace
+// and simulated paths to the close, against the team budget.
 
 const copy = {
   title: "Simular",
@@ -57,12 +65,18 @@ const copy = {
 };
 
 const FIXED_CUT = -30; // the "−30%" preset, whole percent
+const LEVER_MIN = -100;
+const LEVER_MAX = 100;
 
 export type SimulateDrawerProps = {
   teamName: string;
   currency: string;
   team: { spent: number; projection: number | null; budget: number };
   org: { projection: number | null; budget: number };
+  /** The team's realized cumulative spend, day 1 through today — the same
+   *  series as the diagnosis chart, so the drawer's chart starts where it ends. */
+  points: CumulativePoint[];
+  daysInPeriod: number;
   triggerLabel?: string;
 };
 
@@ -71,7 +85,15 @@ function deltaLabel(deltaPct: number): string {
 }
 
 export function SimulateDrawer(props: SimulateDrawerProps) {
-  const { teamName, currency, team, org, triggerLabel = copy.title } = props;
+  const {
+    teamName,
+    currency,
+    team,
+    org,
+    points,
+    daysInPeriod,
+    triggerLabel = copy.title,
+  } = props;
   const [deltaPct, setDeltaPct] = useState(0);
 
   // Before day 5 the projection guard holds — nothing honest to simulate.
@@ -115,6 +137,8 @@ export function SimulateDrawer(props: SimulateDrawerProps) {
                 projection: team.projection as number,
               },
             }}
+            points={points}
+            daysInPeriod={daysInPeriod}
             currency={currency}
             deltaPct={deltaPct}
             onDeltaChange={setDeltaPct}
@@ -127,11 +151,15 @@ export function SimulateDrawer(props: SimulateDrawerProps) {
 
 function Simulation({
   input,
+  points,
+  daysInPeriod,
   currency,
   deltaPct,
   onDeltaChange,
 }: {
   input: ScenarioInput;
+  points: CumulativePoint[];
+  daysInPeriod: number;
   currency: string;
   deltaPct: number;
   onDeltaChange: (value: number) => void;
@@ -144,6 +172,18 @@ function Simulation({
     breakEven.reachable && breakEven.delta !== null
       ? breakEven.delta * 100
       : null;
+  const chartRows = buildScenarioComparison({
+    points,
+    projection: input.team.projection,
+    simulatedClose: result.team.close,
+    daysInPeriod,
+  });
+  const hasSpend = points.some((point) => point.spent > 0);
+  // The axis spans the lever's whole range (the +100% close is the ceiling),
+  // so the scenario line moves on a fixed scale instead of the scale moving.
+  const ceiling = simulatePace(input, LEVER_MAX / 100).team.close;
+  const yMax =
+    Math.max(input.team.budget, input.team.projection, ceiling, 1) * 1.08;
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto overscroll-contain p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
@@ -157,22 +197,22 @@ function Simulation({
 
       <div className="flex flex-col gap-2">
         <div className="flex items-baseline justify-between gap-2">
-          <label htmlFor="pace-delta" className="text-sm font-medium">
+          <span id="pace-delta-label" className="text-sm font-medium">
             {copy.lever}
-          </label>
-          <span className="text-sm tabular-nums text-ink-secondary">
+          </span>
+          <span className="shrink-0 text-sm tabular-nums text-ink-secondary">
             {deltaLabel(Math.round(deltaPct))}
           </span>
         </div>
-        <input
-          id="pace-delta"
-          type="range"
-          min={-100}
-          max={100}
+        <Slider
+          aria-labelledby="pace-delta-label"
+          min={LEVER_MIN}
+          max={LEVER_MAX}
           step={5}
           value={deltaPct}
-          onChange={(e) => onDeltaChange(Number(e.target.value))}
-          className="h-11 w-full accent-primary"
+          onValueChange={onDeltaChange}
+          getAriaValueText={(_, value) => deltaLabel(Math.round(value))}
+          className="h-11"
         />
         <div className="flex flex-wrap gap-2">
           <Button
@@ -205,6 +245,17 @@ function Simulation({
           <p className="text-xs text-muted-foreground">{copy.breakEvenUnreachable}</p>
         )}
       </div>
+
+      {hasSpend && (
+        <ScenarioChart
+          rows={chartRows}
+          budget={input.team.budget}
+          projection={input.team.projection}
+          simulatedClose={result.team.close}
+          yMax={yMax}
+          currency={currency}
+        />
+      )}
 
       <div className="rounded-md border bg-muted p-4">
         <p className="label-caps text-muted-foreground">

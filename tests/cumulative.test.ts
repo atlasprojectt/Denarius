@@ -3,8 +3,10 @@ import { describe, expect, it } from "vitest";
 import {
   buildCumulativeComparison,
   buildCumulativeSpend,
+  buildScenarioComparison,
   expectedPaceSegment,
 } from "@/lib/engine/cumulative";
+import { simulatePace } from "@/lib/engine/scenario";
 
 // The drill-down cumulative series must mirror the evaluation combine exactly:
 // frozen-FX conversion, API dropped when FX is missing, seats spread evenly.
@@ -168,5 +170,59 @@ describe("buildCumulativeComparison", () => {
     });
 
     expect(rows.every((row) => row.pace === null)).toBe(true);
+  });
+});
+
+describe("buildScenarioComparison", () => {
+  const points = [
+    { day: 1, spent: 100 },
+    { day: 2, spent: 250 },
+  ];
+
+  it("runs both paths from today's vertex to their own close", () => {
+    const rows = buildScenarioComparison({
+      points,
+      projection: 700,
+      simulatedClose: 400,
+      daysInPeriod: 5,
+    });
+
+    expect(rows).toEqual([
+      { day: 1, spent: 100, projected: null, simulated: null },
+      { day: 2, spent: 250, projected: 250, simulated: 250 },
+      { day: 3, spent: null, projected: 400, simulated: 300 },
+      { day: 4, spent: null, projected: 550, simulated: 350 },
+      { day: 5, spent: null, projected: 700, simulated: 400 },
+    ]);
+  });
+
+  it("lands the simulated path on the scenario engine's close", () => {
+    const result = simulatePace(
+      {
+        org: { budget: 10_000, projection: 12_000 },
+        team: { budget: 500, spent: 250, projection: 700 },
+      },
+      -0.3,
+    );
+    const rows = buildScenarioComparison({
+      points,
+      projection: 700,
+      simulatedClose: result.team.close,
+      daysInPeriod: 5,
+    });
+
+    expect(rows.at(-1)?.simulated).toBeCloseTo(result.team.close, 9);
+  });
+
+  it("draws no future paths on the period's last day", () => {
+    const rows = buildScenarioComparison({
+      points,
+      projection: 250,
+      simulatedClose: 250,
+      daysInPeriod: 2,
+    });
+
+    expect(rows.every((row) => row.projected === null)).toBe(true);
+    expect(rows.every((row) => row.simulated === null)).toBe(true);
   });
 });
