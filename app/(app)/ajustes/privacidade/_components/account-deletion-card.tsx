@@ -9,7 +9,15 @@ import {
 import { useActionState, useMemo, useState } from "react";
 
 import { ActionStatus } from "@/components/domain/action-status";
-import { OneTimeCodeInput } from "@/components/domain/one-time-code-input";
+import {
+  ConfirmationDialogContent,
+  ConfirmationDialogHeader,
+} from "@/components/domain/confirmation-dialog";
+import {
+  EmailCodeField,
+  EmailCodeInstructions,
+  useResendCooldown,
+} from "@/components/domain/email-code-field";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -21,15 +29,12 @@ import {
 import {
   Dialog,
   DialogClose,
-  DialogContent,
-  DialogDescription,
   DialogFooter,
-  DialogHeader,
-  DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { EMAIL_CODE_TTL_MINUTES } from "@/lib/auth/email-code-policy";
 import {
   confirmAccountDeletion,
   requestAccountDeletionCode,
@@ -50,16 +55,13 @@ const copy = {
   dialogViewerTitle: "Sair desta empresa?",
   dialogAdminTitle: "Excluir empresa e conta?",
   codeDescription: (email: string) =>
-    `Enviaremos um código de seis dígitos para ${email}. O código expira em poucos minutos.`,
+    `Enviaremos um código de 6 dígitos para ${email}. Ele expira em ${EMAIL_CODE_TTL_MINUTES} minutos.`,
   requestCode: "Enviar código por e-mail",
   requestingCode: "Enviando…",
   codeTitle: "Confirme seu e-mail",
-  codeLabel: "Código de verificação",
-  codePlaceholder: "000000",
-  verifyCode: "Validar código",
-  verifyingCode: "Validando…",
-  resendCode: "Enviar outro código",
-  phraseTitle: "Confirmação final",
+  codeLifetime: `${EMAIL_CODE_TTL_MINUTES} minutos`,
+  verifyCode: "Confirmar código",
+  verifyingCode: "Confirmando…",
   phraseDescription:
     "Para concluir, digite exatamente a frase abaixo. Não há como desfazer esta ação.",
   phraseLabel: "Digite a frase de confirmação",
@@ -71,7 +73,6 @@ const copy = {
   cancel: "Cancelar",
   dangerNotice:
     "O Denarius é somente leitura: excluir esta conta não cancela nem altera nada na OpenAI ou na Anthropic.",
-  codeSent: "Código enviado. Confira sua caixa de entrada.",
   verified: "E-mail confirmado. Falta apenas a confirmação final.",
 };
 
@@ -167,11 +168,18 @@ function AccountDeletionFlow({
   const [step, setStep] = useState<DeletionStep>("request");
   const [typedCode, setTypedCode] = useState("");
   const [typedPhrase, setTypedPhrase] = useState("");
+  const [codesSent, setCodesSent] = useState(0);
+  const [cooldown, restartCooldown] = useResendCooldown();
 
   const [requestState, requestAction, requestPending] = useActionState(
     async (previous: AccountDeletionState, formData: FormData) => {
       const next = await requestAccountDeletionCode(previous, formData);
-      if (next.step === "sent") setStep("code");
+      if (next.step === "sent") {
+        setStep("code");
+        setTypedCode("");
+        setCodesSent((sent) => sent + 1);
+        restartCooldown();
+      }
       return next;
     },
     initialState,
@@ -203,15 +211,14 @@ function AccountDeletionFlow({
     : copy.confirmingViewer;
 
   return (
-    <DialogContent showCloseButton={false} className="sm:max-w-md">
+    <ConfirmationDialogContent>
       {step === "request" && (
         <form action={requestAction} className="contents">
-          <DialogHeader>
-            <DialogTitle>{title}</DialogTitle>
-            <DialogDescription>
-              {copy.codeDescription(email)}
-            </DialogDescription>
-          </DialogHeader>
+          <ConfirmationDialogHeader
+            title={title}
+            description={copy.codeDescription(email)}
+            icon={<HugeiconsIcon icon={Delete02Icon} />}
+          />
 
           <div className="flex items-start gap-3 rounded-md border border-destructive/20 bg-destructive/10 p-3 text-xs/relaxed text-destructive">
             <HugeiconsIcon icon={MailSend01Icon} className="mt-0.5 size-4 shrink-0" aria-hidden />
@@ -225,7 +232,12 @@ function AccountDeletionFlow({
 
           <DialogFooter>
             <DialogClose asChild>
-              <Button type="button" variant="outline" disabled={requestPending}>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={requestPending}
+                autoFocus
+              >
                 {copy.cancel}
               </Button>
             </DialogClose>
@@ -243,47 +255,35 @@ function AccountDeletionFlow({
 
       {step === "code" && (
         <form action={verifyAction} className="contents">
-          <DialogHeader>
-            <DialogTitle>{copy.codeTitle}</DialogTitle>
-            <DialogDescription>
-              {copy.codeDescription(email)}
-            </DialogDescription>
-          </DialogHeader>
+          <ConfirmationDialogHeader
+            tone="neutral"
+            title={copy.codeTitle}
+            description={<EmailCodeInstructions email={email} />}
+            icon={<HugeiconsIcon icon={MailSend01Icon} />}
+          />
 
-          <div className="flex flex-col gap-1.5">
-            <ActionStatus success={copy.codeSent} />
-            <Label htmlFor="account-deletion-code">{copy.codeLabel}</Label>
-            <OneTimeCodeInput
-              id="account-deletion-code"
-              name="code"
-              value={typedCode}
-              onValueChange={setTypedCode}
-              placeholder={copy.codePlaceholder}
-              autoFocus
-              invalid={
-                requestState.error !== undefined ||
-                verifyState.error !== undefined
-              }
-            />
-          </div>
-
-          <ActionStatus
-            error={verifyState.error}
-            success={verifyState.success}
+          <EmailCodeField
+            id="account-deletion-code"
+            name="code"
+            value={typedCode}
+            onValueChange={setTypedCode}
+            lifetime={copy.codeLifetime}
+            error={verifyState.error ?? requestState.error}
+            resent={codesSent > 1}
+            resendAction={requestAction}
+            resending={requestPending}
+            cooldown={cooldown}
+            disabled={verifyPending}
           />
 
           <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              disabled={verifyPending || requestPending}
-              onClick={() => setStep("request")}
-            >
-              {copy.resendCode}
-            </Button>
+            <DialogClose asChild>
+              <Button type="button" variant="outline" disabled={verifyPending}>
+                {copy.cancel}
+              </Button>
+            </DialogClose>
             <Button
               type="submit"
-              variant="destructive"
               disabled={typedCode.length !== 6}
               loading={verifyPending}
               loadingText={copy.verifyingCode}
@@ -296,10 +296,11 @@ function AccountDeletionFlow({
 
       {step === "phrase" && (
         <form action={confirmAction} className="contents">
-          <DialogHeader>
-            <DialogTitle>{copy.phraseTitle}</DialogTitle>
-            <DialogDescription>{copy.phraseDescription}</DialogDescription>
-          </DialogHeader>
+          <ConfirmationDialogHeader
+            title={title}
+            description={copy.phraseDescription}
+            icon={<HugeiconsIcon icon={Delete02Icon} />}
+          />
 
           <p className="rounded-md border border-destructive/25 bg-destructive/10 p-3 text-sm/relaxed font-medium text-destructive">
             “{phrase}”
@@ -344,6 +345,6 @@ function AccountDeletionFlow({
           </DialogFooter>
         </form>
       )}
-    </DialogContent>
+    </ConfirmationDialogContent>
   );
 }

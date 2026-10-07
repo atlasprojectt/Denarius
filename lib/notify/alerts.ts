@@ -2,13 +2,14 @@ import "server-only";
 
 import { activeLevels, type ThresholdLevel } from "@/lib/engine/thresholds";
 import { monthStartUtc } from "@/lib/engine/period";
+import { appBaseUrl } from "@/lib/email/layout";
 import { buildBudgetThresholdFinding } from "@/lib/findings/budget-threshold";
 import { dbFailure, logFailure, logSkipped } from "@/lib/logging/server-log";
 
 import type { NotificationChannel } from "./channel";
 import { planAlert } from "./plan";
 import { alertRecipients } from "./recipients";
-import { appBaseUrl, renderAlertEmail } from "./render";
+import { renderAlertEmail } from "./render";
 import { ORG_TARGET, tenantSnapshot } from "./snapshot";
 import { findNotificationLogLevels, insertNotificationLogIfAbsent } from "./supabase";
 

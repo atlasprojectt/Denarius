@@ -1,17 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { Fragment, useState } from "react";
 
-import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
 const CODE_LENGTH = 6;
 
 /**
- * The six-digit e-mail code field shared by the verification flows (account
- * deletion, password change). The real field stays a single sr-only input, so
- * native keyboard, paste, autofill and one-time-code keep working; the six
- * boxes are only its visual mirror.
+ * The six-digit e-mail code field shared by the verification flows (signup,
+ * account deletion, password change). The real field stays a single sr-only
+ * input, so native keyboard, paste, autofill and one-time-code keep working;
+ * the six boxes are only its visual mirror. It is a bare <input>, not the
+ * Input primitive: that one's w-full/h-8/padding outrank sr-only, and a
+ * full-width hidden field scrolls a dialog sideways when it takes focus.
  */
 export function OneTimeCodeInput({
   id,
@@ -22,7 +23,6 @@ export function OneTimeCodeInput({
   invalid = false,
   autoFocus = false,
   describedBy,
-  className,
 }: {
   id: string;
   name: string;
@@ -32,13 +32,12 @@ export function OneTimeCodeInput({
   invalid?: boolean;
   autoFocus?: boolean;
   describedBy?: string;
-  className?: string;
 }) {
   const [focused, setFocused] = useState(autoFocus);
 
   return (
     <>
-      <Input
+      <input
         id={id}
         name={name}
         value={value}
@@ -64,26 +63,34 @@ export function OneTimeCodeInput({
       <div
         aria-hidden
         onClick={() => document.getElementById(id)?.focus()}
-        className={cn("grid cursor-text grid-cols-6 gap-2", className)}
+        className="flex cursor-text items-center gap-2"
       >
         {Array.from({ length: CODE_LENGTH }, (_, index) => {
           const digit = value[index] ?? "";
           const active =
             focused && index === Math.min(value.length, CODE_LENGTH - 1);
           return (
-            <span
-              key={index}
-              className={cn(
-                "flex h-12 items-center justify-center rounded-sm border text-xl font-medium tabular-nums transition-colors duration-(--motion-duration-fast) ease-(--motion-ease-standard)",
-                digit
-                  ? "border-border bg-muted text-foreground"
-                  : "border-border bg-input/20 text-muted-foreground",
-                invalid && "border-destructive/60",
-                active && "border-ring ring-2 ring-ring/40",
+            <Fragment key={index}>
+              {/* Two groups of three are easier to check against the e-mail. */}
+              {index === CODE_LENGTH / 2 && (
+                <span className="h-px w-2.5 shrink-0 bg-ink-faint" />
               )}
-            >
-              {digit}
-            </span>
+              <span
+                className={cn(
+                  "flex h-12 min-w-0 flex-1 items-center justify-center rounded-sm border bg-input/20 text-[1.375rem] leading-none font-normal text-foreground tabular-nums transition-[border-color,box-shadow] duration-(--motion-duration-fast) ease-(--motion-ease-standard)",
+                  invalid ? "border-destructive/60" : "border-input",
+                  active &&
+                    (invalid
+                      ? "border-destructive ring-2 ring-destructive/20"
+                      : "border-ring ring-2 ring-ring/40"),
+                )}
+              >
+                {digit ||
+                  (active && (
+                    <span className="denarius-caret h-6 w-px bg-foreground" />
+                  ))}
+              </span>
+            </Fragment>
           );
         })}
       </div>

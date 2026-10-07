@@ -8,12 +8,13 @@ import {
   generateEmailCode,
   sameHmac,
 } from "@/lib/auth/email-code";
+import { EMAIL_CODE_TTL_MINUTES } from "@/lib/auth/email-code-policy";
 
 export const ACCOUNT_DELETION_CHALLENGE_COOKIE =
   "denarius-account-deletion-challenge";
 export const ACCOUNT_DELETION_GRANT_COOKIE =
   "denarius-account-deletion-grant";
-export const ACCOUNT_DELETION_TTL_SECONDS = 10 * 60;
+export const ACCOUNT_DELETION_TTL_SECONDS = EMAIL_CODE_TTL_MINUTES * 60;
 export const ACCOUNT_DELETION_MAX_ATTEMPTS = 5;
 
 export const accountDeletionCookieOptions = {

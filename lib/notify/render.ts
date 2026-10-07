@@ -3,6 +3,15 @@
 // money()/percent() (deterministic display — the LLM never touches alerts),
 // and a deep link that lands on the Home (mobile-legible target, PRD P4).
 
+import {
+  emailButton,
+  emailFacts,
+  emailList,
+  emailPanel,
+  emailPanelNote,
+  emailParagraph,
+  renderEmailLayout,
+} from "@/lib/email/layout";
 import type { BudgetThresholdFinding } from "@/lib/findings/budget-threshold";
 import type { ThresholdLevel } from "@/lib/engine/thresholds";
 import { percent } from "@/lib/format";
@@ -11,17 +20,20 @@ import { money } from "@/lib/money";
 import type { RenderedNotification } from "./channel";
 
 const copy = {
-  subjectByLevel: {
-    warning: (name: string) => `Aviso de orçamento — ${name}`,
-    projected_breach: (name: string) => `Projeção acima do orçamento — ${name}`,
-    breach: (name: string) => `Orçamento estourado — ${name}`,
-  } satisfies Record<ThresholdLevel, (name: string) => string>,
+  titleByLevel: {
+    warning: "Aviso de orçamento",
+    projected_breach: "Projeção acima do orçamento",
+    breach: "Orçamento estourado",
+  } satisfies Record<ThresholdLevel, string>,
+  subject: (title: string, name: string) => `${title} — ${name}`,
+  alertEyebrow: (name: string) => `Alerta de orçamento · ${name}`,
   headlineByLevel: {
     warning: (pct: string) => `atingiu ${pct} do orçamento do período.`,
     projected_breach: (over: string, end: string) =>
       `no ritmo atual, fecha ${over} acima do orçamento em ${end}.`,
     breach: (over: string) => `já passou o orçamento do período em ${over}.`,
   },
+  facts: "Situação do período",
   spent: "Gasto até agora",
   budget: "Orçamento",
   projection: "Projeção de fechamento",
@@ -32,28 +44,10 @@ const copy = {
     "Recomendações — o Denarius aponta, a decisão é sua. Nada é aplicado automaticamente.",
   open: "Abrir o Denarius",
   digestSubject: (month: string) => `Resumo semanal do Denarius — ${month}`,
-  footer: "Você recebe este e-mail por ser administrador no Denarius.",
+  digestEyebrow: "Resumo semanal",
+  digestTitle: (month: string) => `Seu gasto com IA em ${month}`,
+  footerNote: "Você recebe este e-mail por ser administrador no Denarius.",
 };
-
-/** Minimal single-column HTML shell — legible on a phone, no CSS framework. */
-function htmlShell(title: string, bodyHtml: string, appUrl: string): string {
-  const logoUrl = new URL("/brand/denarius-avatar.png", appUrl).toString();
-  return `<div style="max-width:480px;margin:0 auto;padding:24px 16px;font-family:system-ui,-apple-system,sans-serif;color:#1a1a1a">
-<p style="margin:0 0 16px"><img src="${escapeHtml(logoUrl)}" width="48" height="48" alt="Denarius" style="display:block;width:48px;height:48px;border:0;border-radius:12px"></p>
-<p style="font-weight:700;font-size:14px;letter-spacing:0.02em;margin:0">Denarius</p>
-<h1 style="font-size:18px;line-height:1.4;margin:16px 0">${title}</h1>
-${bodyHtml}
-<p style="margin:24px 0"><a href="${appUrl}" style="display:inline-block;background:#1a1a1a;color:#ffffff;text-decoration:none;padding:10px 20px;border-radius:8px;font-size:14px">${copy.open}</a></p>
-<p style="font-size:12px;color:#6b7280">${copy.footer}</p>
-</div>`;
-}
-
-function escapeHtml(value: string): string {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;");
-}
 
 export type AlertRenderInput = {
   finding: BudgetThresholdFinding;
@@ -108,30 +102,28 @@ export function renderAlertEmail(input: AlertRenderInput): RenderedNotification 
   }
   textParts.push("", appUrl);
 
-  const factsHtml = facts
-    .map(
-      ([label, value]) =>
-        `<tr><td style="padding:4px 12px 4px 0;color:#6b7280;font-size:14px">${escapeHtml(label)}</td><td style="padding:4px 0;font-size:14px;font-variant-numeric:tabular-nums"><strong>${escapeHtml(value)}</strong></td></tr>`,
-    )
-    .join("");
-  const driversHtml =
-    driverLines.length > 0
-      ? `<p style="font-size:14px;margin:16px 0 4px;color:#6b7280">${copy.drivers}</p><ul style="margin:0;padding-left:20px;font-size:14px">${driverLines.map((l) => `<li>${escapeHtml(l)}</li>`).join("")}</ul>`
-      : "";
-  const planHtml =
+  const body = [
+    emailParagraph(headline),
+    emailPanel(copy.facts, emailFacts(facts)),
+    driverLines.length > 0 ? emailPanel(copy.drivers, emailList(driverLines)) : "",
     planLines.length > 0
-      ? `<p style="font-size:14px;margin:16px 0 4px;color:#6b7280">${copy.plan}</p><ul style="margin:0;padding-left:20px;font-size:14px">${planLines.map((l) => `<li>${escapeHtml(l)}</li>`).join("")}</ul><p style="font-size:12px;color:#6b7280">${copy.planNote}</p>`
-      : "";
+      ? emailPanel(copy.plan, emailList(planLines) + emailPanelNote(copy.planNote))
+      : "",
+    emailButton(appUrl, copy.open),
+  ].join("");
 
+  const title = copy.titleByLevel[level];
   return {
     to,
-    subject: copy.subjectByLevel[level](targetName),
+    subject: copy.subject(title, targetName),
     text: textParts.join("\n"),
-    html: htmlShell(
-      escapeHtml(headline),
-      `<table style="border-collapse:collapse">${factsHtml}</table>${driversHtml}${planHtml}`,
-      appUrl,
-    ),
+    html: renderEmailLayout({
+      preheader: headline,
+      eyebrow: copy.alertEyebrow(targetName),
+      title,
+      body,
+      footerNote: copy.footerNote,
+    }),
   };
 }
 
@@ -148,18 +140,19 @@ export function renderDigestEmail(input: DigestRenderInput): RenderedNotificatio
   const { body, monthLabel, to, appUrl } = input;
   const paragraphs = body
     .split(/\n{2,}/)
-    .map((p) => `<p style="font-size:14px;line-height:1.6;white-space:pre-line">${escapeHtml(p.trim())}</p>`)
-    .join("");
+    .map((p) => p.trim())
+    .filter((p) => p.length > 0);
 
   return {
     to,
     subject: copy.digestSubject(monthLabel),
     text: `${body}\n\n${appUrl}`,
-    html: htmlShell(escapeHtml(copy.digestSubject(monthLabel)), paragraphs, appUrl),
+    html: renderEmailLayout({
+      preheader: paragraphs[0] ?? copy.digestSubject(monthLabel),
+      eyebrow: copy.digestEyebrow,
+      title: copy.digestTitle(monthLabel),
+      body: paragraphs.map(emailParagraph).join("") + emailButton(appUrl, copy.open),
+      footerNote: copy.footerNote,
+    }),
   };
-}
-
-/** Deep-link base, disclosed nowhere client-side; prod default is the live app. */
-export function appBaseUrl(): string {
-  return process.env.APP_BASE_URL ?? "https://app.usedenarius.pro";
 }

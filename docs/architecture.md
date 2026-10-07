@@ -165,6 +165,8 @@ No npm flag fixes this from Windows. `--package-lock-only`, a delete-and-regener
 
 **The consequence to remember:** running `npm install` on Windows can silently re-prune the lockfile and reintroduce the gap. The safety net is that `ci.yml` now runs `npm ci` on every pull request, so a re-pruned lockfile fails in review instead of at deploy. If it happens, do not hand-edit the file — regenerate it on Linux. Nothing about this is Windows' fault or npm's version; assume it recurs.
 
+**A targeted bump is the one change that works from Windows (2026-10-07).** `npm update <package> --package-lock-only` starts from the committed lockfile instead of rebuilding the tree, so it keeps the entries Windows cannot walk. It carried `sharp` from 0.35.4 to 0.35.5 for GHSA-wq5f-xc86-pv6w, a high advisory that failed the audit gate: only `sharp` and its `@img/*` platform entries changed, and `@emnapi/runtime@1.11.3` stayed. Before committing such a bump, check exactly that (no entry added or removed, changes confined to the bumped package's tree, its ranges still resolving), then let `npm ci` on `ubuntu-latest` confirm it. A fresh install or a regeneration still belongs on Linux.
+
 **Node version.** CI pins Node 22 in `setup-node`; the Vercel project must stay on the same major. Not enforced by `engines` yet.
 
 ## 11. Global workspace search

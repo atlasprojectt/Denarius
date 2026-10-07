@@ -143,7 +143,7 @@ describe("renderAlertEmail", () => {
       expect(msg.text).toContain(action.title);
     }
     expect(msg.html).toContain("https://denarius.example");
-    expect(msg.html).toContain('src="https://denarius.example/brand/denarius-avatar.png"');
+    expect(msg.html).toContain('src="https://app.usedenarius.pro/brand/denarius-avatar.png"');
     expect(msg.to).toEqual(["ceo@acme.dev"]);
   });
 

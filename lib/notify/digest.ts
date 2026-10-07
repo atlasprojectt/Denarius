@@ -2,6 +2,7 @@ import "server-only";
 
 import { weekOverWeek } from "@/lib/engine/week-change";
 import { topDrivers } from "@/lib/engine/drivers";
+import { appBaseUrl } from "@/lib/email/layout";
 import { dbFailure, logFailure, logSkipped } from "@/lib/logging/server-log";
 import type { Narrator } from "@/lib/narrate/client";
 import {
@@ -14,7 +15,7 @@ import {
 
 import type { NotificationChannel } from "./channel";
 import { digestRecipients } from "./recipients";
-import { appBaseUrl, renderDigestEmail } from "./render";
+import { renderDigestEmail } from "./render";
 import { tenantSnapshot } from "./snapshot";
 
 // Weekly digest for ONE tenant (issue #20): assemble deterministic facts from

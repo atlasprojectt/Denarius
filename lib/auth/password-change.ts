@@ -3,6 +3,7 @@ import "server-only";
 import { cookies } from "next/headers";
 
 import { emailCodeHmac, sameHmac } from "./email-code";
+import { EMAIL_CODE_TTL_MINUTES } from "./email-code-policy";
 
 /**
  * Password change by e-mail code (founder direction, 2026-10-05).
@@ -21,7 +22,7 @@ import { emailCodeHmac, sameHmac } from "./email-code";
  */
 export const PASSWORD_CHANGE_COOKIE = "denarius-password-change";
 
-export const PASSWORD_CHANGE_TTL_SECONDS = 10 * 60;
+export const PASSWORD_CHANGE_TTL_SECONDS = EMAIL_CODE_TTL_MINUTES * 60;
 
 const NAMESPACE = "password-change";
 

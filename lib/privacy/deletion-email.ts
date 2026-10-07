@@ -1,18 +1,24 @@
+import { EMAIL_CODE_TTL_MINUTES } from "@/lib/auth/email-code-policy";
+import {
+  emailCode,
+  emailFinePrint,
+  emailParagraph,
+  renderEmailLayout,
+} from "@/lib/email/layout";
 import type { RenderedNotification } from "@/lib/notify/channel";
 
-function escapeHtml(value: string): string {
-  return value.replace(
-    /[&<>\"']/g,
-    (character) =>
-      ({
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        '"': "&quot;",
-        "'": "&#39;",
-      })[character] ?? character,
-  );
-}
+const copy = {
+  subject: "Seu código para excluir a conta — Denarius",
+  preheader: (code: string) =>
+    `Seu código para excluir a conta do Denarius é ${code}.`,
+  eyebrow: "Exclusão de conta",
+  title: "Confirme a exclusão da conta",
+  intro: "Você solicitou a exclusão da sua conta no Denarius. Digite este código para continuar:",
+  codeLabel: "Código de verificação",
+  expiry: `Este código expira em ${EMAIL_CODE_TTL_MINUTES} minutos e só pode ser usado uma vez.`,
+  security:
+    "Se você não fez essa solicitação, ignore este e-mail. Nada é excluído sem o código.",
+};
 
 export type AccountDeletionCodeEmail = {
   to: string;
@@ -24,24 +30,26 @@ export type AccountDeletionCodeEmail = {
 export function renderAccountDeletionCode(
   input: AccountDeletionCodeEmail,
 ): RenderedNotification {
-  const code = escapeHtml(input.code);
   return {
     to: [input.to],
-    subject: "Seu código para excluir a conta — Denarius",
+    subject: copy.subject,
     text: [
-      "Você solicitou a exclusão da sua conta no Denarius.",
+      copy.intro,
       "",
-      `Código de confirmação: ${input.code}`,
+      `${copy.codeLabel}: ${input.code}`,
       "",
-      "Esse código expira em 10 minutos. Se você não fez essa solicitação, ignore este e-mail.",
+      copy.expiry,
+      copy.security,
     ].join("\n"),
-    html: [
-      '<div style="font-family:Arial,sans-serif;max-width:560px;color:#292524;line-height:1.55">',
-      "<p>Você solicitou a exclusão da sua conta no Denarius.</p>",
-      `<p style="font-size:30px;letter-spacing:8px;font-weight:700">${code}</p>`,
-      "<p>Esse código expira em 10 minutos. Se você não fez essa solicitação, ignore este e-mail.</p>",
-      "</div>",
-    ].join(""),
+    html: renderEmailLayout({
+      preheader: copy.preheader(input.code),
+      eyebrow: copy.eyebrow,
+      title: copy.title,
+      body: [
+        emailParagraph(copy.intro),
+        emailCode(copy.codeLabel, input.code),
+        emailFinePrint([copy.expiry, copy.security]),
+      ].join(""),
+    }),
   };
 }
-
