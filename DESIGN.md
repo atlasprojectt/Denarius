@@ -483,9 +483,9 @@ Each style is a fixed combination. Change the style, never one property of it.
 #### `display-money`: the answer
 
 - **When:** the single figure the screen exists to answer.
-- **Where:** the Home hero spend ("Gasto no período"), and nowhere else.
+- **Where:** the Home hero spend ("Gasto no período"), and the team's spend leading its executive summary on `/times/[teamId]` (founder-directed 2026-10-07: that card answers the same question for one team).
 - **Pairs with:** the budget suffix ("de R$ 80.000") in `lead` secondary on the same baseline, and the week-over-week line below it in `body`.
-- **Never:** twice on a screen; for projections, deltas or team values; above weight 400. The size already makes it the hero; 400 (founder, 2026-10-05, up from 350) gives the figure a little more body over the 300 of `display`.
+- **Never:** twice on a screen; for projections, deltas, or team values outside the team's own summary; above weight 400. The size already makes it the hero; 400 (founder, 2026-10-05, up from 350) gives the figure a little more body over the 300 of `display`.
 
 #### `display`: the threshold heading
 
@@ -503,13 +503,13 @@ Each style is a fixed combination. Change the style, never one property of it.
 
 - **When:** a standalone sentence that states the verdict or the first-use promise.
 - **Where:** the onboarding guide heading on a cold start, and the `VerdictLine` sentence wherever a verdict is stated on its own. The component lives in `components/domain/` and is not mounted on any screen today.
-- **Never:** for drawer or dialog titles (use `title`); for a conclusion inside a card, such as the team summary's closing line (that is `body`); for labels; above weight 400.
+- **Never:** for drawer or dialog titles (use `title`); for a conclusion inside a card, such as the sentence under the team summary's figure; for labels; above weight 400.
 
 #### `metric-lg`: the lead figure of a non-Home screen
 
 - **When:** a screen other than Home has one figure that leads its summary.
 - **Where:** the emphasized total in Composição's summary row.
-- **Never:** on Home (the hero owns the large figure there); more than once per screen; in a row of equal figures, such as the team summary's four metrics, which all stay `metric`.
+- **Never:** on Home (the hero owns the large figure there); more than once per screen; in a row of equal figures, such as the team summary's projected close and margin, which stay `metric`.
 
 #### `narrative`: the executive read
 
@@ -809,7 +809,7 @@ The hierarchy reads in three clear steps: the quiet caps divider, then the reada
 ### Verdict
 
 - **Standalone verdict (`VerdictLine`):** a 16px status halo with an 8px pulsing semaphore dot, the `title-lg` sentence in primary, and an optional tertiary `sm` action.
-- **Team summary card:** the closing conclusion stays a `body` sentence in primary under a `hairline` rule. The card's figures carry the weight.
+- **Team summary card** (founder-directed 2026-10-07): the team's spend leads in `display-money` with the budget suffix, and the conclusion sentence sits directly under it in primary, with no rule between them, so figure and sentence read as one answer. The projected close and the signed projected margin sit apart in `metric` behind a `hairline` divider (beside on wide screens, above on narrow ones). The shared pacing bar closes the card.
 - **Home (founder decision, kept):** no pill. The greeting in `lead` secondary, then the pulsing dot and the verdict words in `body` secondary. The dot keeps its full semaphore color. The freshness stamp sits on the right in `caption` subtle.
 
 ### Page header
@@ -833,7 +833,7 @@ The hierarchy reads in three clear steps: the quiet caps divider, then the reada
 | Spend | `display-money` (400, 44px from md) |
 | "de R$ 80.000" | `lead` secondary, same baseline |
 | "+12,4% X semana anterior" | figure in `body-strong` `status-*-fg` (founder exception) + label in `body` secondary |
-| Pacing bar | meta row: "dia 5 de 31" in `caption` subtle, "% gasto" in `caption-strong`; colored segments (gasto, projeção, acima do orçamento, sobra), see Charts and bars |
+| Pacing bar | meta row: "dia 5 de 31" in `caption` subtle, "% gasto" in `caption-strong`; three layers from zero (gasto, projeção, orçamento), the shorter of projection and budget in front, see Charts and bars |
 | "Projeção de fechamento" | KPI: `caption` subtle over `metric` primary |
 | Unconverted-USD footer | `caption` subtle |
 
