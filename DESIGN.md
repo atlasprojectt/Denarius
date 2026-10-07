@@ -37,10 +37,13 @@ colors:
   badge-positive: "#15803d"
   badge-destructive: "#dc2626"
   destructive: "oklch(0.577 0.245 27.325)"
-  pace-spent: "oklch(0.65 0.19 45)"
-  pace-projected: "oklch(0.82 0.09 55)"
-  pace-over: "oklch(0.74 0.11 25)"
-  pace-leftover: "oklch(0.88 0 0)"
+  pace-orange-base: "#f67a12"
+  pace-red-base: "#e5303c"
+  pace-spent: "pace-orange-base"
+  pace-projected: "color-mix(in srgb, pace-orange-base, white 60%)"
+  pace-overspent: "pace-red-base"
+  pace-over: "color-mix(in srgb, pace-red-base, white 60%)"
+  pace-budget: "oklch(0.88 0 0)"
 typography:
   display-money:
     fontFamily: "DM Sans, ui-sans-serif, system-ui, sans-serif"
@@ -347,7 +350,7 @@ The palette is neutral ink on neutral surfaces, with one orange signal and a sem
 
 - **Semaphore** (`status-green|amber|red`, each with `-soft` and `-fg`): budget status only. Strong values paint graphics (bar fills, verdict dots, chart strokes). `-soft` paints pill and callout backgrounds. `-fg` is the only semaphore color allowed on text, because it holds AA at 11–12px. The one founder exception (2026-10-04): the Home week-over-week figure uses `status-red-fg` when spend rose and `status-green-fg` when it fell.
 - **State tones** (`badge-neutral|amber|positive|destructive` over a 10% wash of the same ink): state badges that are *not* budget status, such as connection state, sync state and invite state.
-- **Pacing hues** (`pace-spent|projected|over|leftover`, founder-directed 2026-10-05): the hero pacing bar only. Hue says where the money sits: orange inside the budget, red above it, a quiet gray for budget left free. Lightness says when: strong is already spent (`pace-spent`, and `status-red` for a realized overrun), light is still to come (`pace-projected`, `pace-over`). The segments therefore separate without color vision too. Never reuse these tokens outside that bar.
+- **Pacing hues** (`pace-spent|projected|overspent|over|budget`, founder-directed 2026-10-05, layered 2026-10-07): the pacing bar only (Home hero and the team executive summary, which share `PacingBar`). Built like a palette scale: each hue has ONE vivid base per theme (`pace-orange-base`, `pace-red-base`; dark lifts each 10% toward white), and every other step is that base mixed with white or black in fixed 20% steps, never a hand-picked tone. The spend is the orange base and turns the red base past the budget; the two bases sit apart in hue and lightness without going dark (darkening them for separation read as heavy in light mode). What is still to come is the base pushed toward the surface: 60% white in light (`pace-projected`, `pace-over`), 60% black in dark. The budget is a quiet gray (`pace-budget`). Strong is already spent, light is still to come, so the segments separate without color vision too. Never reuse these tokens outside that bar.
 - **Destructive** (`destructive`): irreversible actions and failures only (delete, sign-out confirmation, failed mutation).
 
 ### Neutral: surfaces
@@ -801,7 +804,7 @@ The hierarchy reads in three clear steps: the quiet caps divider, then the reada
 - **Tooltip:** `md`, `surface-elevated`, `shadow-lg`, header in `caption-strong`, labels in `caption` subtle and values in `caption-strong`.
 - **Date focus pill:** `pill`, `surface-control`, `caption-strong` with tabular figures.
 - **Budget and pacing bars:** square tick grids. The track is ink at 15%. The fill is the semaphore (budget) or ink at 80% (composition). The budget marker is a 1px line at 70–80% ink.
-- **Hero pacing bar (colored segments):** the tick track is split into adjacent segments in the pacing hues, in reading order: gasto (spent, orange), projeção (what the current pace will still spend inside the budget, light orange), acima do orçamento (red: solid for spend already above the budget, light for what the pace will still add above it) and sobra (budget left free, gray). The budget is the ruler, so the limit is exactly where the bar turns red, in every state; no lines, no overlays. Overrun and leftover never show together, and the segments always tile the track. Four legend entries in `caption` subtle; the overrun swatch shows the strongest red on the bar. The meta row above holds `dia N de M` in `caption` subtle and the "% gasto" readout in `caption-strong`.
+- **Pacing bar (layers):** three layers measured from zero — gasto, projeção and orçamento — with the shorter of projection and budget in front, so the order adapts: a close that fits the budget reads gasto → projeção → orçamento; one that passes it reads gasto → orçamento → projeção (red). A realized overrun turns the spend the red base past the limit. No lines, no overlays; the visible stretches always tile the track. The legend lists the layers in the order the bar paints them, in `caption` subtle. The meta row above holds `dia N de M` in `caption` subtle and the "% gasto" readout in `caption-strong`.
 
 ### Verdict
 

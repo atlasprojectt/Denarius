@@ -48,52 +48,52 @@ describe("barGeometry — budget bar positioning", () => {
   });
 });
 
-describe("pacingSegments — the hero bar's colors", () => {
+describe("pacingSegments — layered pacing bar, shorter layer in front", () => {
   const width = (span: { from: number; to: number } | null) =>
     span === null ? 0 : span.to - span.from;
 
-  it("under budget: spent, the projection inside the budget, then leftover", () => {
+  it("close fits the budget: spent, then the projection in front of the budget's tail", () => {
     const s = pacingSegments(0.22, 0.71);
     expect(s.spent).toEqual({ from: 0, to: 0.22 });
     expect(s.overspent).toBeNull();
+    expect(s.projectionOver).toBe(false);
     expect(s.projected?.from).toBeCloseTo(0.22);
     expect(s.projected?.to).toBeCloseTo(0.71);
-    expect(s.projectedOver).toBeNull();
-    expect(s.leftover?.from).toBeCloseTo(0.71);
-    expect(s.leftover?.to).toBe(1);
+    expect(s.budget?.from).toBeCloseTo(0.71);
+    expect(s.budget?.to).toBe(1);
   });
 
-  it("projected overrun: the projection runs to the limit and the overrun follows", () => {
+  it("close passes the budget: the budget comes forward and the projection shows past it", () => {
     // Track scales to the projection: the limit lands at 1/1.35.
     const s = pacingSegments(0.48, 1.35);
-    expect(s.projected?.from).toBeCloseTo(0.48 / 1.35);
-    expect(s.projected?.to).toBeCloseTo(1 / 1.35);
-    expect(s.projectedOver?.from).toBeCloseTo(1 / 1.35);
-    expect(s.projectedOver?.to).toBeCloseTo(1);
+    expect(s.projectionOver).toBe(true);
+    expect(s.budget?.from).toBeCloseTo(0.48 / 1.35);
+    expect(s.budget?.to).toBeCloseTo(1 / 1.35);
+    expect(s.projected?.from).toBeCloseTo(1 / 1.35);
+    expect(s.projected?.to).toBeCloseTo(1);
     expect(s.overspent).toBeNull();
-    expect(s.leftover).toBeNull();
   });
 
-  it("realized breach: the spend stops at the limit and the overrun is split into done and to come", () => {
+  it("realized breach: the spend covers the budget, its overrun follows, then the projection", () => {
     const s = pacingSegments(1.31, 1.9);
     expect(s.spent.to).toBeCloseTo(1 / 1.9);
     expect(s.overspent?.from).toBeCloseTo(1 / 1.9);
     expect(s.overspent?.to).toBeCloseTo(1.31 / 1.9);
-    expect(s.projected).toBeNull();
-    expect(s.projectedOver?.from).toBeCloseTo(1.31 / 1.9);
-    expect(s.projectedOver?.to).toBeCloseTo(1);
-    expect(s.leftover).toBeNull();
+    expect(s.budget).toBeNull();
+    expect(s.projectionOver).toBe(true);
+    expect(s.projected?.from).toBeCloseTo(1.31 / 1.9);
+    expect(s.projected?.to).toBeCloseTo(1);
   });
 
-  it("before the day-5 guard: nothing is projected, the rest of the budget is free", () => {
+  it("before the day-5 guard: no projection layer, the budget follows the spend", () => {
     const s = pacingSegments(0.08, null);
     expect(s.projected).toBeNull();
-    expect(s.projectedOver).toBeNull();
-    expect(s.leftover?.from).toBeCloseTo(0.08);
-    expect(s.leftover?.to).toBe(1);
+    expect(s.projectionOver).toBe(false);
+    expect(s.budget?.from).toBeCloseTo(0.08);
+    expect(s.budget?.to).toBe(1);
   });
 
-  it("never paints overrun and leftover together, and always tiles the track", () => {
+  it("always tiles the track without overlap", () => {
     for (const [spent, projected] of [
       [0.22, 0.71],
       [0.48, 1.35],
@@ -104,14 +104,8 @@ describe("pacingSegments — the hero bar's colors", () => {
       [0, 0],
     ] as const) {
       const s = pacingSegments(spent, projected);
-      const overrun = s.overspent !== null || s.projectedOver !== null;
-      expect(overrun && s.leftover !== null).toBe(false);
       const total =
-        width(s.spent) +
-        width(s.overspent) +
-        width(s.projected) +
-        width(s.projectedOver) +
-        width(s.leftover);
+        width(s.spent) + width(s.overspent) + width(s.projected) + width(s.budget);
       expect(total).toBeCloseTo(1);
     }
   });
