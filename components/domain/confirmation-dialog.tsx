@@ -7,6 +7,7 @@ import {
   type ReactElement,
   type ReactNode,
 } from "react";
+import { useFormStatus } from "react-dom";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Alert02Icon } from "@hugeicons/core-free-icons";
 
@@ -23,8 +24,82 @@ import {
 
 const copy = { cancel: "Cancelar" };
 
+/** The shell every confirmation shares: no corner close (Cancel is the exit),
+ *  scrollable on short screens, 44px touch targets on phones. */
+export function ConfirmationDialogContent({ children }: { children: ReactNode }) {
+  return (
+    <DialogContent
+      showCloseButton={false}
+      className="max-h-[calc(100dvh-2rem)] overflow-y-auto overscroll-contain max-sm:[&_[data-slot=button]]:min-h-11"
+    >
+      {children}
+    </DialogContent>
+  );
+}
+
+/** Destructive medallion + title + description. */
+export function ConfirmationDialogHeader({
+  title,
+  description,
+  icon,
+}: {
+  title: string;
+  description: ReactNode;
+  /** Per-action icon for the medallion; defaults to a generic alert. */
+  icon?: ReactNode;
+}) {
+  return (
+    <DialogHeader className="flex-row items-start gap-3">
+      <span
+        aria-hidden
+        className="grid size-10 shrink-0 place-items-center rounded-full bg-destructive/10 text-destructive [&>svg]:size-5"
+      >
+        {icon ?? <HugeiconsIcon icon={Alert02Icon} />}
+      </span>
+      <div className="flex min-w-0 flex-col gap-1 pt-0.5">
+        <DialogTitle>{title}</DialogTitle>
+        <DialogDescription>{description}</DialogDescription>
+      </div>
+    </DialogHeader>
+  );
+}
+
+function ConfirmationFooter({
+  confirmLabel,
+  pendingLabel,
+  pending,
+}: {
+  confirmLabel: string;
+  pendingLabel?: string;
+  pending?: boolean;
+}) {
+  // useActionState callers pass their own `pending`; a bare server action
+  // (logout) has no such state and relies on the form status.
+  const status = useFormStatus();
+  const busy = pending ?? status.pending;
+  return (
+    <DialogFooter>
+      <DialogClose asChild>
+        <Button type="button" variant="outline" disabled={busy} autoFocus>
+          {copy.cancel}
+        </Button>
+      </DialogClose>
+      <Button
+        type="submit"
+        variant="destructive"
+        loading={busy}
+        loadingText={pendingLabel ?? confirmLabel}
+      >
+        {confirmLabel}
+      </Button>
+    </DialogFooter>
+  );
+}
+
 export function ConfirmationDialog({
   trigger,
+  open: controlledOpen,
+  onOpenChange,
   title,
   description,
   confirmLabel,
@@ -35,19 +110,25 @@ export function ConfirmationDialog({
   icon,
   children,
 }: {
-  trigger: ReactElement<{ onClick?: MouseEventHandler }>;
+  /** Opens the dialog on click. Omit it and control `open` when the opener
+   *  unmounts before the dialog shows (e.g. a dropdown item). */
+  trigger?: ReactElement<{ onClick?: MouseEventHandler }>;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
   title: string;
   description: string;
   confirmLabel: string;
   pendingLabel?: string;
-  action: (payload: FormData) => void;
-  pending: boolean;
+  action: (payload: FormData) => void | Promise<void>;
+  pending?: boolean;
   success?: string;
   /** Per-action icon for the destructive header medallion. */
   icon?: ReactNode;
   children?: ReactNode;
 }) {
-  const [open, setOpen] = useState(false);
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
+  const open = controlledOpen ?? uncontrolledOpen;
+  const setOpen = onOpenChange ?? setUncontrolledOpen;
 
   // Close on a landed success (React's "adjust state during render" pattern —
   // the action returns a fresh success string identity on every dispatch).
@@ -57,51 +138,33 @@ export function ConfirmationDialog({
     if (success) setOpen(false);
   }
 
-  const triggerWithOpen = cloneElement(trigger, {
-    onClick: (event) => {
-      trigger.props.onClick?.(event);
-      if (!event.defaultPrevented) setOpen(true);
-    },
-  });
+  const triggerWithOpen = trigger
+    ? cloneElement(trigger, {
+        onClick: (event) => {
+          trigger.props.onClick?.(event);
+          if (!event.defaultPrevented) setOpen(true);
+        },
+      })
+    : null;
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       {triggerWithOpen}
-      <DialogContent
-        showCloseButton={false}
-        className="max-h-[calc(100dvh-2rem)] overflow-y-auto overscroll-contain max-sm:[&_[data-slot=button]]:min-h-11"
-      >
+      <ConfirmationDialogContent>
         <form action={action} className="contents">
-          <DialogHeader className="flex-row items-start gap-3">
-            <span
-              aria-hidden
-              className="grid size-10 shrink-0 place-items-center rounded-full bg-destructive/10 text-destructive [&>svg]:size-5"
-            >
-              {icon ?? <HugeiconsIcon icon={Alert02Icon} />}
-            </span>
-            <div className="flex min-w-0 flex-col gap-1 pt-0.5">
-              <DialogTitle>{title}</DialogTitle>
-              <DialogDescription>{description}</DialogDescription>
-            </div>
-          </DialogHeader>
+          <ConfirmationDialogHeader
+            title={title}
+            description={description}
+            icon={icon}
+          />
           {children}
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button type="button" variant="outline" disabled={pending} autoFocus>
-                {copy.cancel}
-              </Button>
-            </DialogClose>
-            <Button
-              type="submit"
-              variant="destructive"
-              loading={pending}
-              loadingText={pendingLabel ?? confirmLabel}
-            >
-              {confirmLabel}
-            </Button>
-          </DialogFooter>
+          <ConfirmationFooter
+            confirmLabel={confirmLabel}
+            pendingLabel={pendingLabel}
+            pending={pending}
+          />
         </form>
-      </DialogContent>
+      </ConfirmationDialogContent>
     </Dialog>
   );
 }

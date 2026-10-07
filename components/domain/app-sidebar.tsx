@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { useFormStatus } from "react-dom";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   ArrowUpDownIcon,
@@ -21,6 +20,7 @@ import {
 } from "@hugeicons/core-free-icons";
 
 import { AllClear } from "@/components/domain/all-clear";
+import { ConfirmationDialog } from "@/components/domain/confirmation-dialog";
 import { LogoMark, LogoWordmark } from "@/components/domain/logo";
 import {
   NavGroup,
@@ -48,15 +48,6 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { logout } from "@/lib/auth/actions";
 import type { ConnectionFreshness } from "@/lib/engine/freshness";
@@ -94,26 +85,10 @@ const copy = {
   logoutTitle: "Sair do Denarius?",
   logoutDescription:
     "Você precisará entrar novamente para acessar os dados da sua empresa.",
-  logoutCancel: "Continuar no app",
   logoutConfirm: "Sair",
   logoutPending: "Saindo…",
   closeMenu: "Fechar menu",
 };
-
-function LogoutSubmitButton() {
-  const { pending } = useFormStatus();
-
-  return (
-    <Button
-      type="submit"
-      variant="destructive"
-      loading={pending}
-      loadingText={copy.logoutPending}
-    >
-      {copy.logoutConfirm}
-    </Button>
-  );
-}
 
 const navigation: { label: string; items: { title: string; path: string; icon: React.ReactNode }[] }[] = [
   {
@@ -377,37 +352,16 @@ export function AppSidebar({
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-              <Dialog open={logoutOpen} onOpenChange={setLogoutOpen}>
-                <DialogContent
-                  showCloseButton={false}
-                  className="max-h-[calc(100dvh-2rem)] overflow-y-auto overscroll-contain max-sm:[&_[data-slot=button]]:min-h-11"
-                >
-                  <form action={logout} className="contents">
-                    <DialogHeader className="flex-row items-start gap-3">
-                      <span
-                        aria-hidden
-                        className="grid size-10 shrink-0 place-items-center rounded-full bg-destructive/10 text-destructive [&>svg]:size-5"
-                      >
-                        <HugeiconsIcon icon={Logout02Icon} />
-                      </span>
-                      <div className="flex min-w-0 flex-col gap-1 pt-0.5">
-                        <DialogTitle>{copy.logoutTitle}</DialogTitle>
-                        <DialogDescription>
-                          {copy.logoutDescription}
-                        </DialogDescription>
-                      </div>
-                    </DialogHeader>
-                    <DialogFooter>
-                      <DialogClose asChild>
-                        <Button type="button" variant="outline" autoFocus>
-                          {copy.logoutCancel}
-                        </Button>
-                      </DialogClose>
-                      <LogoutSubmitButton />
-                    </DialogFooter>
-                  </form>
-                </DialogContent>
-              </Dialog>
+              <ConfirmationDialog
+                open={logoutOpen}
+                onOpenChange={setLogoutOpen}
+                title={copy.logoutTitle}
+                description={copy.logoutDescription}
+                confirmLabel={copy.logoutConfirm}
+                pendingLabel={copy.logoutPending}
+                action={logout}
+                icon={<HugeiconsIcon icon={Logout02Icon} />}
+              />
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarFooter>

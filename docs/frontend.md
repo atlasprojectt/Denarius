@@ -16,6 +16,7 @@
 - Person data appears only in an allowed team context. Admin names follow the tenant policy. Viewers receive aggregates or anonymized data.
 - The interface must state when data is stale, collecting, uncosted, unavailable, or only partially reconciled. A missing value is preferable to a guessed value.
 - Destructive actions require explicit confirmation. Actions that change a tenant or provider must state their scope and their read-only boundary.
+- Every confirmation goes through `components/domain/confirmation-dialog.tsx` (#171): destructive medallion with a per-action icon, title as a question, description stating the consequence, footer "Cancelar" (outline, focused on open) + the destructive verb, with a pending label while the action runs. No corner close button; the dialog scrolls on short screens and gives buttons 44px targets on phones. Use `ConfirmationDialog` with a `trigger`, or controlled `open`/`onOpenChange` when the opener unmounts first (the account menu's "Sair"). Multi-step flows (account deletion) compose `ConfirmationDialogContent` + `ConfirmationDialogHeader` and keep the same footer order.
 
 ## Relations as symbols
 
