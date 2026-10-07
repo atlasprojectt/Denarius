@@ -1,10 +1,6 @@
 import Link from "next/link";
 import { HugeiconsIcon } from "@hugeicons/react";
-import {
-  Alert02Icon,
-  InformationCircleIcon,
-  UsersIcon,
-} from "@hugeicons/core-free-icons";
+import { UsersIcon } from "@hugeicons/core-free-icons";
 
 import { EmptyState } from "@/components/domain/empty-state";
 import { Notice } from "@/components/domain/notice";
@@ -79,12 +75,12 @@ export default async function BudgetsPage() {
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           {org && mismatch !== 0 && (
-            <Notice icon={<HugeiconsIcon icon={InformationCircleIcon} />}>
+            <Notice>
               {copy.mismatch(signedMoney(mismatch, currency))}
             </Notice>
           )}
           {org && org.currency !== "USD" && org.frozenFxRate === null && (
-            <Notice tone="amber" icon={<HugeiconsIcon icon={Alert02Icon} />}>
+            <Notice tone="amber">
               {copy.fxMissing}
             </Notice>
           )}

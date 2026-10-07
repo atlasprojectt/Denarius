@@ -4,16 +4,13 @@ import Link from "next/link";
 import { useEffect, useId, useRef, useState } from "react";
 import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react";
 import {
-  AlertCircleIcon,
   BellIcon,
-  CancelCircleIcon,
-  CheckmarkCircle02Icon,
   ChevronRightIcon,
-  Clock01Icon,
   Refresh01Icon,
 } from "@hugeicons/core-free-icons";
 
 import { StateBadge, type StateBadgeTone } from "@/components/domain/state-badge";
+import { stateIcons } from "@/components/domain/state-icons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -69,17 +66,17 @@ const levelMeta: Record<
   warning: {
     label: "Limite atingido",
     tone: "amber",
-    icon: AlertCircleIcon,
+    icon: stateIcons.attention,
   },
   projected_breach: {
     label: "Risco projetado",
     tone: "amber",
-    icon: Clock01Icon,
+    icon: stateIcons.pending,
   },
   breach: {
     label: "Estourado",
     tone: "destructive",
-    icon: CancelCircleIcon,
+    icon: stateIcons.breached,
   },
 };
 
@@ -225,7 +222,7 @@ function NotificationsPanel({
           </ul>
         ) : (
           <div className="px-5 py-5">
-            <StateBadge icon={CheckmarkCircle02Icon} tone="positive">
+            <StateBadge icon={stateIcons.done} tone="positive">
               {copy.allClearBadge}
             </StateBadge>
             <p className="mt-2.5 text-sm font-medium">{copy.allClearTitle}</p>

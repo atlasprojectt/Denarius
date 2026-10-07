@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
+import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react";
 
+import { stateIcons } from "@/components/domain/state-icons";
 import {
   Alert,
   AlertAction,
@@ -13,15 +15,25 @@ import { cn } from "@/lib/utils";
 // it observes, never alarms — amber is the data-quality tint (FX-footer
 // precedent), destructive is reserved for a sync that is actually failing, and
 // green never appears here (semaphore is budget-only, principle #5).
+//
+// It speaks the badge language at block scale: the tone's ink on a 10% wash of
+// itself, so it reads the same on the page and inside a card. The icon defaults
+// to the tone's glyph in the icon grammar (state-icons).
 
 export type NoticeTone = "neutral" | "amber" | "destructive";
 
 const toneClasses: Record<NoticeTone, string> = {
-  neutral: "border-border bg-muted",
+  neutral: "border-badge-neutral/15 bg-badge-neutral-soft",
   amber:
-    "border-status-amber/25 bg-status-amber-soft text-status-amber-fg *:data-[slot=alert-description]:text-status-amber-fg/85",
+    "border-badge-amber/25 bg-badge-amber-soft text-badge-amber *:data-[slot=alert-description]:text-badge-amber",
   destructive:
-    "border-destructive/30 bg-destructive/5 text-destructive dark:bg-destructive/10 *:data-[slot=alert-description]:text-destructive/85",
+    "border-badge-destructive/25 bg-badge-destructive-soft text-badge-destructive *:data-[slot=alert-description]:text-badge-destructive",
+};
+
+const toneIcon: Record<NoticeTone, IconSvgElement> = {
+  neutral: stateIcons.info,
+  amber: stateIcons.attention,
+  destructive: stateIcons.failure,
 };
 
 export function Notice({
@@ -33,8 +45,8 @@ export function Notice({
   children,
 }: {
   tone?: NoticeTone;
-  /** A direct svg icon (Remix icon) — the Alert grid keys off it. */
-  icon?: ReactNode;
+  /** Overrides the tone's glyph with a context icon (e.g. a pie chart). */
+  icon?: IconSvgElement;
   title?: string;
   /** Optional right-aligned action (pass a Button/Link). */
   action?: ReactNode;
@@ -47,16 +59,19 @@ export function Notice({
       // real failure warrants the assertive live region.
       role={tone === "destructive" ? "alert" : "status"}
       className={cn(
-        "px-3 py-2.5 has-data-[slot=alert-action]:pr-28",
+        "px-3 py-2.5",
+        // The action takes its own column, sized by its label, instead of a
+        // fixed right padding the text has to guess around.
+        action && "has-[>svg]:grid-cols-[auto_1fr_auto] has-data-[slot=alert-action]:pr-3",
         toneClasses[tone],
         className,
       )}
     >
-      {icon}
+      <HugeiconsIcon icon={icon ?? toneIcon[tone]} className="size-4" aria-hidden />
       {title && <AlertTitle>{title}</AlertTitle>}
-      <AlertDescription>{children}</AlertDescription>
+      <AlertDescription className="col-start-2">{children}</AlertDescription>
       {action && (
-        <AlertAction className="top-1/2 right-3 -translate-y-1/2">
+        <AlertAction className="static col-start-3 row-span-2 row-start-1 self-center pl-2">
           {action}
         </AlertAction>
       )}

@@ -664,41 +664,55 @@ input[type="number"]::-webkit-outer-spin-button {
   --sidebar-border: oklch(0.89 0 0);
   --sidebar-ring: var(--focus-ring);
 
-  /* Semaphore Ã¢â‚¬â€ budget status only. Strong = bar fills, dots & chart strokes (graphic ink, no running text:
-     identical across themes so light fills read as vivid as dark); soft = pill
-     and callout backgrounds; fg = text on a soft background (kept darker in
-     light mode so 12px labels hold AA). */
-  --status-green: #22c55e;
-  --status-green-soft: #f0faf3;
-  --status-green-fg: #166534;
-  --status-amber: #f59e0b;
-  --status-amber-soft: #fdf6ec;
-  --status-amber-fg: #92400e;
-  --status-red: #ef4444;
-  --status-red-soft: #fdf1f1;
-  --status-red-fg: #991b1b;
+  /* Semaphore — budget status only. Built like a palette scale (2026-10-07,
+     founder-directed): each hue has ONE vivid base, and every other value is
+     that base mixed toward white or black, never a hand-picked tone. Strong =
+     the base: bar fills, dots and chart strokes (graphic ink, no running
+     text). Soft = a 12% tint of strong toward the surface: pill and callout
+     backgrounds. Fg = text on soft: the base mixed toward black by the
+     smallest 5% step that holds 4.5:1 on its wash over every surface
+     (tests/design-system.test.ts), so the ink stays as bright as AA allows. */
+  --green-base: #22c55e;
+  --amber-base: #f59e0b;
+  --red-base: #e5303c;
+  --status-green: var(--green-base);
+  --status-green-soft: color-mix(in oklab, var(--status-green) 12%, transparent);
+  --status-green-fg: color-mix(in srgb, var(--green-base), black 45%);
+  --status-amber: var(--amber-base);
+  --status-amber-soft: color-mix(in oklab, var(--status-amber) 12%, transparent);
+  --status-amber-fg: color-mix(in srgb, var(--amber-base), black 45%);
+  --status-red: var(--red-base);
+  --status-red-soft: color-mix(in oklab, var(--status-red) 12%, transparent);
+  --status-red-fg: color-mix(in srgb, var(--red-base), black 20%);
 
-  /* Icon-led badges: vivid ink repeated as a 10% wash. Light-mode ink is
-     deliberately darker so 12px labels retain readable contrast. */
-  --badge-neutral: #57534e;
-  --badge-neutral-soft: color-mix(in oklab, var(--badge-neutral) 10%, transparent);
-  --badge-amber: #b45309;
-  --badge-amber-soft: color-mix(in oklab, var(--badge-amber) 10%, transparent);
-  --badge-positive: #15803d;
-  --badge-positive-soft: color-mix(in oklab, var(--badge-positive) 10%, transparent);
-  --badge-destructive: #dc2626;
-  --badge-destructive-soft: color-mix(in oklab, var(--badge-destructive) 10%, transparent);
+  /* State tones (badges, notices, inline results, toasts) mirror the semaphore
+     triad: the wash is 12% of the hue's strong value, so it stays a clean tint
+     on any surface, and the text IS the semaphore's -fg in both themes, so
+     each hue has one text color, held at 4.5:1 on its wash over every surface
+     by tests/design-system.test.ts. The names stay apart from status-*
+     because they govern a different meaning (principle #5). Neutral is
+     hue-free, like the rest of the ink ladder. The washes are declared once:
+     .dark only swaps the inks they derive from. */
+  --badge-neutral: oklch(0.43 0 0);
+  --badge-neutral-soft: color-mix(in oklab, var(--badge-neutral) 12%, transparent);
+  --badge-amber: var(--status-amber-fg);
+  --badge-amber-soft: color-mix(in oklab, var(--status-amber) 12%, transparent);
+  --badge-positive: var(--status-green-fg);
+  --badge-positive-soft: color-mix(in oklab, var(--status-green) 12%, transparent);
+  --badge-destructive: var(--status-red-fg);
+  --badge-destructive-soft: color-mix(in oklab, var(--status-red) 12%, transparent);
 
   /* Pacing bar layers (founder-directed 2026-10-05, layered 2026-10-07): one
      hue per layer, built like a palette scale (2026-10-07, founder-directed):
      each hue has ONE vivid base per theme, and every other step is that base
-     mixed with white or black in fixed 20% steps, never a hand-picked tone.
+     mixed toward white or black, never a hand-picked tone. The red base is
+     the semaphore red.
      The spend is the orange base and turns the red base past the budget; the
      two bases sit apart in hue and lightness without going dark. What is
      still to come is the base pushed toward the surface: 60% white here,
      60% black in dark. The budget is a quiet gray. */
   --pace-orange-base: #f67a12;
-  --pace-red-base: #e5303c;
+  --pace-red-base: var(--red-base);
   --pace-orange: var(--pace-orange-base);
   --pace-red: var(--pace-red-base);
   --pace-spent: var(--pace-orange);
@@ -767,24 +781,18 @@ input[type="number"]::-webkit-outer-spin-button {
   --sidebar-border: oklch(1 0 0 / 12%);
   --sidebar-ring: var(--focus-ring);
 
-  --status-green: #22c55e;
-  --status-green-soft: #10231787;
-  --status-green-fg: #86efac;
-  --status-amber: #f59e0b;
-  --status-amber-soft: #2a200e87;
-  --status-amber-fg: #fcd34d;
-  --status-red: #ef4444;
-  --status-red-soft: #2c131387;
-  --status-red-fg: #fca5a5;
+  /* Dark lifts each base 10% toward white (the palette's dark base). The
+     lifted base is already the ink for green and amber; red, darker, needs
+     the next steps toward white to hold 4.5:1. Washes and state-tone inks
+     come from :root and follow these values. */
+  --status-green: color-mix(in srgb, var(--green-base), white 10%);
+  --status-green-fg: var(--status-green);
+  --status-amber: color-mix(in srgb, var(--amber-base), white 10%);
+  --status-amber-fg: var(--status-amber);
+  --status-red: color-mix(in srgb, var(--red-base), white 10%);
+  --status-red-fg: color-mix(in srgb, var(--status-red), white 20%);
 
-  --badge-neutral: #a8a29e;
-  --badge-neutral-soft: color-mix(in oklab, var(--badge-neutral) 10%, transparent);
-  --badge-amber: #f59e0b;
-  --badge-amber-soft: color-mix(in oklab, var(--badge-amber) 10%, transparent);
-  --badge-positive: #22c55e;
-  --badge-positive-soft: color-mix(in oklab, var(--badge-positive) 10%, transparent);
-  --badge-destructive: #fb2c36;
-  --badge-destructive-soft: color-mix(in oklab, var(--badge-destructive) 10%, transparent);
+  --badge-neutral: oklch(0.71 0 0);
 
   /* Dark lifts each base 10% toward white (the palette's dark base) and
      sinks what is still to come 60% toward black. */

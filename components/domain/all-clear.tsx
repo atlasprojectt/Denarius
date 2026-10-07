@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { CheckmarkCircle01Icon } from "@hugeicons/core-free-icons";
 
 import { SidebarNotice } from "@/components/domain/sidebar-notice";
+import { stateIcons } from "@/components/domain/state-icons";
 
 // The all-clear state (frontend §3): affirmative, not a blank screen — shown
 // when nothing needs attention and the verdict is green. It lives in the
@@ -33,7 +33,7 @@ export function AllClear() {
 
   return (
     <SidebarNotice
-      icon={<HugeiconsIcon icon={CheckmarkCircle01Icon} />}
+      icon={<HugeiconsIcon icon={stateIcons.done} />}
       title={copy.title}
       description={copy.body}
       tone="green"

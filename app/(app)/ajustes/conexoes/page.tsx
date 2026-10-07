@@ -1,13 +1,11 @@
 import { HugeiconsIcon } from "@hugeicons/react";
-import {
-  LockIcon,
-  Time01Icon,
-} from "@hugeicons/core-free-icons";
+import { LockIcon } from "@hugeicons/core-free-icons";
 
 import { EmptyState } from "@/components/domain/empty-state";
 import { PageHeader } from "@/components/domain/page-header";
 import { PageContainer } from "@/components/domain/page-container";
 import { StateBadge } from "@/components/domain/state-badge";
+import { stateIcons } from "@/components/domain/state-icons";
 import {
   Item,
   ItemContent,
@@ -107,7 +105,7 @@ export default async function ConnectionsPage() {
               <ItemDescription>{item.description}</ItemDescription>
             </ItemContent>
             <ItemActions>
-              <StateBadge icon={Time01Icon}>
+              <StateBadge icon={stateIcons.pending}>
                 {item.status}
               </StateBadge>
             </ItemActions>

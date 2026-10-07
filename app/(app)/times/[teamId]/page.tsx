@@ -6,7 +6,7 @@ import { PageHeader } from "@/components/domain/page-header";
 import { SimulateDrawer } from "@/components/domain/simulate-drawer";
 import { StateBadge } from "@/components/domain/state-badge";
 import { StatusPill } from "@/components/domain/status-pill";
-import { findCockpitTeam, type CockpitTeam } from "@/lib/engine/cockpit";
+import { findCockpitTeam } from "@/lib/engine/cockpit";
 import { buildCumulativeSpend } from "@/lib/engine/cumulative";
 import { getTimesData } from "@/lib/home/queries";
 import { teamsDiagnosis } from "@/lib/usage/attribution";
@@ -26,12 +26,6 @@ function capitalize(value: string): string {
   return value.length === 0
     ? value
     : value[0].toLocaleUpperCase("pt-BR") + value.slice(1);
-}
-
-function statusLabel(status: CockpitTeam["status"]): string {
-  if (status === "amber") return "Em risco";
-  if (status === "red") return "Estourado";
-  return status === "collecting" ? "Coletando ritmo" : "No controle";
 }
 
 export default async function TeamDetailPage({
@@ -79,10 +73,7 @@ export default async function TeamDetailPage({
         actions={
           <>
             {cockpitTeam !== null ? (
-              <StatusPill
-                status={cockpitTeam.status}
-                label={statusLabel(cockpitTeam.status)}
-              />
+              <StatusPill status={cockpitTeam.status} />
             ) : (
               <StateBadge icon={Wallet03Icon}>{copy.noBudget}</StateBadge>
             )}

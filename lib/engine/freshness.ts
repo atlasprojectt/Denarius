@@ -21,6 +21,8 @@ export type ConnectionFreshness = {
   state: SyncState;
   /** Whole hours since the last successful sync, or null when never synced. */
   ageHours: number | null;
+  /** The last successful sync (ISO), so the banner can say when the data is from. */
+  lastSyncAt: string | null;
 };
 
 /** Default staleness threshold: a connector is stale once >1 day without a
@@ -38,16 +40,17 @@ export function connectionFreshness(
 ): ConnectionFreshness | null {
   if (connection.status === "revoked") return null;
 
+  const { provider, lastSyncAt } = connection;
   if (connection.status === "error") {
-    return { provider: connection.provider, state: "failed", ageHours: ageHoursSince(connection.lastSyncAt, now) };
+    return { provider, state: "failed", ageHours: ageHoursSince(lastSyncAt, now), lastSyncAt };
   }
-  if (connection.lastSyncAt === null) {
-    return { provider: connection.provider, state: "never", ageHours: null };
+  if (lastSyncAt === null) {
+    return { provider, state: "never", ageHours: null, lastSyncAt };
   }
 
-  const ageHours = ageHoursSince(connection.lastSyncAt, now)!;
+  const ageHours = ageHoursSince(lastSyncAt, now)!;
   const state: SyncState = ageHours > staleAfterHours ? "stale" : "fresh";
-  return { provider: connection.provider, state, ageHours };
+  return { provider, state, ageHours, lastSyncAt };
 }
 
 function ageHoursSince(iso: string | null, now: Date): number | null {

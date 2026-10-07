@@ -16,7 +16,12 @@ describe("connectionFreshness — one connection", () => {
       { provider: "openai", status: "active", lastSyncAt: hoursAgo(6) },
       NOW,
     );
-    expect(r).toEqual({ provider: "openai", state: "fresh", ageHours: 6 });
+    expect(r).toEqual({
+      provider: "openai",
+      state: "fresh",
+      ageHours: 6,
+      lastSyncAt: hoursAgo(6),
+    });
   });
 
   it("is stale once more than a day without a successful sync", () => {
@@ -34,6 +39,8 @@ describe("connectionFreshness — one connection", () => {
       NOW,
     );
     expect(r?.state).toBe("failed");
+    // The banner still prints when the data is from: the last SUCCESSFUL sync.
+    expect(r?.lastSyncAt).toBe(hoursAgo(2));
   });
 
   it("is never when there is no successful sync yet", () => {
@@ -41,7 +48,12 @@ describe("connectionFreshness — one connection", () => {
       { provider: "anthropic", status: "active", lastSyncAt: null },
       NOW,
     );
-    expect(r).toEqual({ provider: "anthropic", state: "never", ageHours: null });
+    expect(r).toEqual({
+      provider: "anthropic",
+      state: "never",
+      ageHours: null,
+      lastSyncAt: null,
+    });
   });
 
   it("excludes revoked connections (turned off on purpose)", () => {

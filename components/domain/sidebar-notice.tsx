@@ -3,15 +3,16 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Cancel01Icon } from "@hugeicons/core-free-icons";
+import { Cancel01Icon, ChevronRightIcon } from "@hugeicons/core-free-icons";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import { cn } from "@/lib/utils";
 
 // The sidebar notice (2026-07-15, founder-directed): every chrome-level notice
 // wears this one shape, so the reconnect caveat and the all-clear read as one
@@ -59,7 +60,9 @@ export type SidebarNoticeProps = {
   /** Rendered as the Alert's leading svg — pass an element, e.g. <HugeiconsIcon icon={HistoryIcon} />. */
   icon: ReactNode;
   title: string;
-  description: string;
+  /** The body: a sentence, or richer content such as the stale banner's
+   *  per-provider lines. Never clamped, so nothing in it can be hidden. */
+  description: ReactNode;
   tone?: SidebarNoticeTone;
   /** Makes the whole card a link, and gives it the collapsed-rail icon button. */
   href?: string;
@@ -101,14 +104,19 @@ export function SidebarNotice({
     >
       {icon}
       <AlertTitle className={`leading-4 ${titleTone[tone]}`}>{title}</AlertTitle>
-      <AlertDescription
-        className={`col-start-2 line-clamp-3 text-left text-xs/4 ${t.description}`}
-      >
-        <p>{description}</p>
+      <AlertDescription className={`col-start-2 text-left text-xs/4 ${t.description}`}>
+        {description}
       </AlertDescription>
       {cta && (
-        <span className="col-start-2 mt-1 text-xs font-medium text-sidebar-foreground">
+        // The whole card is the link; the CTA only has to LOOK pressable.
+        <span
+          className={cn(
+            buttonVariants({ variant: "tertiary", size: "xs" }),
+            "col-start-2 mt-2 w-fit text-sidebar-foreground",
+          )}
+        >
           {cta}
+          <HugeiconsIcon icon={ChevronRightIcon} data-icon="inline-end" aria-hidden />
         </span>
       )}
     </Alert>

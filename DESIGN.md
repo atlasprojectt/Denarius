@@ -23,19 +23,22 @@ colors:
   on-action: "oklch(0.985 0 0)"
   coin-orange: "#ff6524"
   signal-orange: "#c7480d"
-  status-green: "#22c55e"
-  status-green-soft: "#f0faf3"
-  status-green-fg: "#166534"
-  status-amber: "#f59e0b"
-  status-amber-soft: "#fdf6ec"
-  status-amber-fg: "#92400e"
-  status-red: "#ef4444"
-  status-red-soft: "#fdf1f1"
-  status-red-fg: "#991b1b"
-  badge-neutral: "#57534e"
-  badge-amber: "#b45309"
-  badge-positive: "#15803d"
-  badge-destructive: "#dc2626"
+  green-base: "#22c55e"
+  amber-base: "#f59e0b"
+  red-base: "#e5303c"
+  status-green: "green-base"
+  status-green-soft: "color-mix(in oklab, status-green 12%, transparent)"
+  status-green-fg: "color-mix(in srgb, green-base, black 45%)"
+  status-amber: "amber-base"
+  status-amber-soft: "color-mix(in oklab, status-amber 12%, transparent)"
+  status-amber-fg: "color-mix(in srgb, amber-base, black 45%)"
+  status-red: "red-base"
+  status-red-soft: "color-mix(in oklab, status-red 12%, transparent)"
+  status-red-fg: "color-mix(in srgb, red-base, black 20%)"
+  badge-neutral: "oklch(0.43 0 0)"
+  badge-amber: "status-amber-fg"
+  badge-positive: "status-green-fg"
+  badge-destructive: "status-red-fg"
   destructive: "oklch(0.577 0.245 27.325)"
   pace-orange-base: "#f67a12"
   pace-red-base: "#e5303c"
@@ -348,10 +351,10 @@ The palette is neutral ink on neutral surfaces, with one orange signal and a sem
 
 ### Semantic
 
-- **Semaphore** (`status-green|amber|red`, each with `-soft` and `-fg`): budget status only. Strong values paint graphics (bar fills, verdict dots, chart strokes). `-soft` paints pill and callout backgrounds. `-fg` is the only semaphore color allowed on text, because it holds AA at 11–12px. The one founder exception (2026-10-04): the Home week-over-week figure uses `status-red-fg` when spend rose and `status-green-fg` when it fell.
-- **State tones** (`badge-neutral|amber|positive|destructive` over a 10% wash of the same ink): state badges that are *not* budget status, such as connection state, sync state and invite state.
+- **Semaphore** (`status-green|amber|red`, each with `-soft` and `-fg`): budget status only. Strong values paint graphics (bar fills, verdict dots, chart strokes). `-soft` paints pill and callout backgrounds. `-fg` is the only semaphore color allowed on text, because it holds AA at 11–12px. Built like a palette scale (2026-10-07, founder-directed): each hue is ONE vivid base (`green-base`, `amber-base`, `red-base`, the same red as the pacing bar), and every other value is that base mixed toward white or black, never a hand-picked tone. Strong is the base (dark lifts it 10% toward white); `-soft` is a 12% tint of strong toward the surface; light-mode `-fg` is the base mixed toward black by the smallest 5% step that holds 4.5:1 on its wash (45% green and amber, 20% red), so the ink stays as bright as AA allows without going heavy. In dark, the lifted base is already the ink for green and amber; red takes 20% more white. The one founder exception (2026-10-04): the Home week-over-week figure uses `status-red-fg` when spend rose and `status-green-fg` when it fell.
+- **State tones** (`badge-neutral|amber|positive|destructive`, each with `-soft`): states that are *not* budget status (connection, sync, invite, data quality, a failed save) in badges, notices, inline results and toasts. They mirror the semaphore triad: the `-soft` wash is 12% of the hue's strong value (neutral tints with its own ink), and the ink is the hue's most legible text color. That ink is exactly the semaphore `-fg` in both themes, so each hue has one text color. Neutral is hue-free, like the rest of the ink ladder. `tests/design-system.test.ts` holds every ink at 4.5:1 on its wash over the page, card, popover and hover surfaces, and keeps `status-*` classes on budget-status surfaces only.
 - **Pacing hues** (`pace-spent|projected|overspent|over|budget`, founder-directed 2026-10-05, layered 2026-10-07): the pacing bar only (Home hero and the team executive summary, which share `PacingBar`). Built like a palette scale: each hue has ONE vivid base per theme (`pace-orange-base`, `pace-red-base`; dark lifts each 10% toward white), and every other step is that base mixed with white or black in fixed 20% steps, never a hand-picked tone. The spend is the orange base and turns the red base past the budget; the two bases sit apart in hue and lightness without going dark (darkening them for separation read as heavy in light mode). What is still to come is the base pushed toward the surface: 60% white in light (`pace-projected`, `pace-over`), 60% black in dark. The budget is a quiet gray (`pace-budget`). Strong is already spent, light is still to come, so the segments separate without color vision too. Never reuse these tokens outside that bar.
-- **Destructive** (`destructive`): irreversible actions and failures only (delete, sign-out confirmation, failed mutation).
+- **Destructive** (`destructive`): irreversible actions and failures only (delete, sign-out confirmation, failed mutation). Failure text in notices, inline results and toasts uses the destructive state tone (`badge-destructive`), which holds AA.
 
 ### Neutral: surfaces
 
@@ -775,15 +778,17 @@ The hierarchy reads in three clear steps: the quiet caps divider, then the reada
 
 ### Badges and status
 
-- **StatusPill** (budget status): `pill`, 20px tall, 8px padding, `badge` type, a 12px icon, semaphore `-soft` fill with `-fg` ink. Always text plus icon; color is never the only cue.
-- **StateBadge** (non-budget state): the same shape with state tones (`badge-*` ink on a 10% wash).
+- **StatusPill** (budget status): `pill`, 20px tall, 8px padding, `badge` type, a 12px icon, drawn by `StateBadge` in the positive, amber and destructive tones (neutral while collecting). Its labels are fixed in the component, No controle · Atenção · Estourado · Coletando ritmo (product-analysis.md), and no screen renames them. Always text plus icon; color is never the only cue.
+- **StateBadge** (non-budget state): the same shape with state tones (`badge-*` ink on its `-soft` wash).
+- **Icon grammar** (`components/domain/state-icons.ts`): one glyph per meaning across badges, notices, toasts and inline results. `done` (checkmark circle: done, under control, connected), `attention` (alert circle: amber, a threshold reached, a data gap), `breached` (cancel circle), `failure` (alert triangle: a sync error, a save that did not go through), `pending` (clock: collecting, pending, coming soon, a projected risk) and `info`. Context glyphs (a lock, a wallet, provider marks) stay at their call sites.
 - **Count:** a `pill` at least 20px wide, `badge` with tabular figures, ringed in the canvas color.
 
 ### Notices and banners
 
-- **Shape:** `md`. **Surface:** `surface-card`, or a tone's soft wash for warnings and failures. 10×12px padding with a 16px icon.
-- **Title:** `caption-strong`. **Message:** `caption` in **secondary**, because inside a notice the message is the content. **Action:** a `sm` button, right-aligned.
-- **Stale banner:** neutral tone (freshness is not budget status) with the last-known timestamp in tabular figures.
+- **Shape:** `md`. **Surface:** the tone's `-soft` wash (neutral for disclosures), so a notice reads the same on the page and inside a card. 10×12px padding with a 16px icon that defaults to the tone's glyph in the icon grammar.
+- **Title:** `caption-strong`. **Message:** `caption` in **secondary** (the tone's ink for amber and destructive), because inside a notice the message is the content. **Action:** right-aligned in its own grid column, sized by its label.
+- **Stale banner:** a neutral card (freshness is not budget status) with one line per provider, failures first, each saying when its data is from (`syncStamp`, tabular figures). Only a failed sync takes the destructive tone, on its own line. The effect on totals is said once and the CTA reads as an `xs` tertiary button. Nothing is clamped, so no failure can hide behind an ellipsis.
+- **Toast:** a 28px tone disc with the grammar glyph before the title: neutral for success (green stays budget-only), destructive for failure, with a destructive hairline.
 - **Calm by default:** alarm wording and destructive tone only for real failures.
 
 ### Empty states
