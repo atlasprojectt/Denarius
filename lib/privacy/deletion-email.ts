@@ -1,3 +1,4 @@
+import { EMAIL_CODE_TTL_MINUTES } from "@/lib/auth/email-code-policy";
 import {
   emailCode,
   emailFinePrint,
@@ -13,8 +14,8 @@ const copy = {
   eyebrow: "Exclusão de conta",
   title: "Confirme a exclusão da conta",
   intro: "Você solicitou a exclusão da sua conta no Denarius. Digite este código para continuar:",
-  codeLabel: "Código de confirmação",
-  expiry: "Este código expira em 10 minutos e só pode ser usado uma vez.",
+  codeLabel: "Código de verificação",
+  expiry: `Este código expira em ${EMAIL_CODE_TTL_MINUTES} minutos e só pode ser usado uma vez.`,
   security:
     "Se você não fez essa solicitação, ignore este e-mail. Nada é excluído sem o código.",
 };

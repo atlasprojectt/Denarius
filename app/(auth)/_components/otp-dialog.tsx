@@ -2,17 +2,19 @@
 
 import { HugeiconsIcon } from "@hugeicons/react";
 import { MailSend01Icon } from "@hugeicons/core-free-icons";
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useState } from "react";
 
-import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
+  ConfirmationDialogContent,
+  ConfirmationDialogHeader,
+} from "@/components/domain/confirmation-dialog";
+import {
+  EmailCodeField,
+  EmailCodeInstructions,
+  useResendCooldown,
+} from "@/components/domain/email-code-field";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogClose, DialogFooter } from "@/components/ui/dialog";
 import {
   resendSignupCode,
   verifyEmailOtp,
@@ -21,23 +23,21 @@ import {
 
 const copy = {
   title: "Confirme seu e-mail",
-  description: (email: string) =>
-    `Enviamos um código de 6 dígitos para ${email}.`,
-  codeLabel: "Código de confirmação",
-  submit: "Confirmar",
+  // Supabase mints this code; its lifetime is the project's e-mail OTP expiry
+  // (3600 s, docs/backend.md §8), the same "1 hora" its e-mail template states.
+  lifetime: "1 hora",
+  cancel: "Cancelar",
+  submit: "Confirmar código",
   submitting: "Confirmando…",
-  resend: "Reenviar código",
-  resending: "Reenviando…",
-  resendIn: (s: number) => `Reenviar em ${s}s`,
-  dismissHint: "Você também pode confirmar depois pelo link do e-mail.",
+  reopenHint: (email: string) => `Enviamos um código para ${email}.`,
+  reopen: "Digitar o código",
 };
 
 const initialState: AuthFormState = {};
-const RESEND_COOLDOWN_S = 60;
 
 /** Collects the signup confirmation code. Opened by the parent whenever a
- *  signup dispatch lands on the awaiting-confirmation branch; dismissible —
- *  the e-mail link (or a later login) still completes the flow. */
+ *  signup dispatch lands on the awaiting-confirmation branch. The e-mail
+ *  carries only the code, no link, so closing the dialog leaves a way back. */
 export function OtpDialog({
   state,
   email,
@@ -46,7 +46,8 @@ export function OtpDialog({
   email: string;
 }) {
   const [open, setOpen] = useState(false);
-  const [cooldown, setCooldown] = useState(0);
+  const [code, setCode] = useState("");
+  const [cooldown, restartCooldown] = useResendCooldown();
 
   // Reopen on every fresh awaiting-confirmation result (the action returns a
   // new state identity per dispatch — the "adjust state during render" pattern).
@@ -55,7 +56,8 @@ export function OtpDialog({
     setPrevState(state);
     if (state.awaitingOtp) {
       setOpen(true);
-      setCooldown(RESEND_COOLDOWN_S);
+      setCode("");
+      restartCooldown();
     }
   }
 
@@ -68,92 +70,73 @@ export function OtpDialog({
     initialState,
   );
 
-  useEffect(() => {
-    if (cooldown <= 0) return;
-    const timer = setTimeout(() => setCooldown((s) => s - 1), 1000);
-    return () => clearTimeout(timer);
-  }, [cooldown]);
-
   // Restart the cooldown after a successful resend.
   const [prevResend, setPrevResend] = useState(resendState);
   if (resendState !== prevResend) {
     setPrevResend(resendState);
-    if (resendState.notice) setCooldown(RESEND_COOLDOWN_S);
+    if (resendState.notice) restartCooldown();
   }
 
-  const error = verifyState.error ?? resendState.error;
-
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto overscroll-contain max-sm:[&_[data-slot=dialog-close]]:size-11 sm:max-w-sm">
-        <DialogHeader>
-          <span
-            aria-hidden
-            className="mb-1 flex size-10 items-center justify-center rounded-full bg-muted text-muted-foreground"
-          >
-            <HugeiconsIcon icon={MailSend01Icon} className="size-5" />
-          </span>
-          <DialogTitle>{copy.title}</DialogTitle>
-          <DialogDescription>{copy.description(email)}</DialogDescription>
-        </DialogHeader>
-        <form action={verifyAction} className="flex flex-col gap-4">
-          <input type="hidden" name="email" value={email} />
-          <label htmlFor="otp-token" className="sr-only">
-            {copy.codeLabel}
-          </label>
-          <Input
-            id="otp-token"
-            name="token"
-            placeholder="••••••"
-            inputMode="numeric"
-            autoComplete="one-time-code"
-            pattern="[0-9]*"
-            maxLength={6}
-            required
-            autoFocus
-            className="h-12 bg-background text-center text-xl font-medium tracking-[0.5em] tabular-nums"
-          />
-          {error && (
-            <p
-              role="alert"
-              className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
-            >
-              {error}
-            </p>
-          )}
-          {resendState.notice && !error && (
-            <p role="status" className="text-sm text-ink-secondary">
-              {resendState.notice}
-            </p>
-          )}
+    <>
+      {state.awaitingOtp && !open && (
+        <p
+          role="status"
+          className="mt-6 flex flex-wrap items-center justify-center gap-x-1.5 text-center text-xs text-muted-foreground"
+        >
+          {copy.reopenHint(email)}
           <Button
-            type="submit"
-            loading={verifying}
-            loadingText={copy.submitting}
-            className="h-11 w-full text-sm"
+            type="button"
+            variant="link"
+            size="sm"
+            onClick={() => setOpen(true)}
+            className="h-auto min-w-0 px-0 text-xs"
           >
-            {copy.submit}
+            {copy.reopen}
           </Button>
-        </form>
-        <div className="flex flex-col items-center gap-1">
-          <form action={resendAction} className="contents">
+        </p>
+      )}
+      <Dialog open={open} onOpenChange={setOpen}>
+        <ConfirmationDialogContent>
+          <form action={verifyAction} className="contents">
+            <ConfirmationDialogHeader
+              tone="neutral"
+              icon={<HugeiconsIcon icon={MailSend01Icon} />}
+              title={copy.title}
+              description={<EmailCodeInstructions email={email} />}
+            />
             <input type="hidden" name="email" value={email} />
-            <Button
-              type="submit"
-              variant="ghost"
-              loading={resending}
-              loadingText={copy.resending}
-              disabled={cooldown > 0}
-              className="h-11 text-sm"
-            >
-              {cooldown > 0 ? copy.resendIn(cooldown) : copy.resend}
-            </Button>
+            <EmailCodeField
+              id="otp-token"
+              name="token"
+              value={code}
+              onValueChange={setCode}
+              lifetime={copy.lifetime}
+              error={verifyState.error ?? resendState.error}
+              resent={resendState.notice !== undefined}
+              resendAction={resendAction}
+              resending={resending}
+              cooldown={cooldown}
+              disabled={verifying}
+            />
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button type="button" variant="outline" disabled={verifying}>
+                  {copy.cancel}
+                </Button>
+              </DialogClose>
+              <Button
+                type="submit"
+                disabled={code.length !== 6}
+                loading={verifying}
+                loadingText={copy.submitting}
+              >
+                {copy.submit}
+              </Button>
+            </DialogFooter>
           </form>
-          <p className="text-center text-xs text-muted-foreground">
-            {copy.dismissHint}
-          </p>
-        </div>
-      </DialogContent>
-    </Dialog>
+        </ConfirmationDialogContent>
+      </Dialog>
+    </>
   );
 }

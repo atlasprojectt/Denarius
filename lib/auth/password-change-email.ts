@@ -1,3 +1,4 @@
+import { EMAIL_CODE_TTL_MINUTES } from "@/lib/auth/email-code-policy";
 import {
   emailCode,
   emailFinePrint,
@@ -14,7 +15,7 @@ const copy = {
   title: "Confirme a alteração de senha",
   intro: "Você pediu para alterar a senha da sua conta no Denarius. Digite este código para continuar:",
   codeLabel: "Código de verificação",
-  expiry: "Este código expira em 10 minutos e só pode ser usado uma vez.",
+  expiry: `Este código expira em ${EMAIL_CODE_TTL_MINUTES} minutos e só pode ser usado uma vez.`,
   security:
     "Se você não fez esse pedido, ignore este e-mail. Sua senha continua a mesma.",
 };

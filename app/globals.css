@@ -540,6 +540,23 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 
 /* ---------------------------------------------------------------------------
+   Code caret: the six-digit code field hides its real input, so it draws the
+   text cursor in the active box itself. It blinks at a native caret's pace;
+   reduced motion leaves it solid.
+--------------------------------------------------------------------------- */
+@keyframes denarius-caret-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .denarius-caret {
+    animation: denarius-caret-blink 1060ms step-end infinite;
+  }
+}
+
+/* ---------------------------------------------------------------------------
    Auth entrance Ã¢â‚¬â€ a calm one-shot rise/fade for the login screen. Elements
    stagger via Tailwind [animation-delay:Ã¢â‚¬Â¦]; reduced motion renders the final
    state instantly (the classes only animate inside the media query).

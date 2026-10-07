@@ -21,6 +21,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
 
 const copy = { cancel: "Cancelar" };
 
@@ -37,22 +38,30 @@ export function ConfirmationDialogContent({ children }: { children: ReactNode })
   );
 }
 
-/** Destructive medallion + title + description. */
+/** Medallion + title + description. Neutral for a step that only verifies
+ *  (the e-mail code), destructive for one that confirms an irreversible act. */
 export function ConfirmationDialogHeader({
   title,
   description,
   icon,
+  tone = "destructive",
 }: {
   title: string;
   description: ReactNode;
   /** Per-action icon for the medallion; defaults to a generic alert. */
   icon?: ReactNode;
+  tone?: "destructive" | "neutral";
 }) {
   return (
     <DialogHeader className="flex-row items-start gap-3">
       <span
         aria-hidden
-        className="grid size-10 shrink-0 place-items-center rounded-full bg-destructive/10 text-destructive [&>svg]:size-5"
+        className={cn(
+          "grid size-10 shrink-0 place-items-center rounded-full [&>svg]:size-5",
+          tone === "destructive"
+            ? "bg-destructive/10 text-destructive"
+            : "bg-foreground/[0.06] text-ink-secondary",
+        )}
       >
         {icon ?? <HugeiconsIcon icon={Alert02Icon} />}
       </span>

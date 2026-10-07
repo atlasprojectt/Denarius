@@ -6,9 +6,13 @@ import {
   EyeOffIcon,
   MailSend01Icon,
 } from "@hugeicons/core-free-icons";
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useState } from "react";
 
-import { OneTimeCodeInput } from "@/components/domain/one-time-code-input";
+import {
+  EmailCodeField,
+  EmailCodeInstructions,
+  useResendCooldown,
+} from "@/components/domain/email-code-field";
 import { ActionToast } from "@/components/domain/toast-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,6 +22,7 @@ import {
   requestPasswordChangeCode,
   type AuthFormState,
 } from "@/lib/auth/actions";
+import { EMAIL_CODE_TTL_MINUTES } from "@/lib/auth/email-code-policy";
 import { PASSWORD_MIN } from "@/lib/auth/password";
 
 const copy = {
@@ -26,13 +31,7 @@ const copy = {
     `Para trocar, confirmamos com um código de 6 dígitos enviado para ${email}.`,
   start: "Alterar senha",
   sending: "Enviando código…",
-  sentTo: (email: string) =>
-    `Enviamos um código de 6 dígitos para ${email}. Ele expira em poucos minutos.`,
-  codeLabel: "Código de verificação",
-  codePlaceholder: "000000",
-  resend: "Reenviar código",
-  resending: "Reenviando…",
-  resendIn: (seconds: number) => `Reenviar em ${seconds}s`,
+  codeLifetime: `${EMAIL_CODE_TTL_MINUTES} minutos`,
   next: "Nova senha",
   confirmation: "Repita a nova senha",
   hint: `Pelo menos ${PASSWORD_MIN} caracteres. Sem exigência de maiúscula, número ou símbolo — o que protege é o comprimento.`,
@@ -46,7 +45,6 @@ const copy = {
 };
 
 const initialState: AuthFormState = {};
-const RESEND_COOLDOWN_S = 60;
 
 /**
  * Two steps, one screen: ask for a code e-mailed to the account's address,
@@ -64,7 +62,8 @@ export function PasswordForm({ email }: { email: string }) {
   );
 
   const [step, setStep] = useState<"idle" | "code">("idle");
-  const [cooldown, setCooldown] = useState(0);
+  const [cooldown, restartCooldown] = useResendCooldown();
+  const [resent, setResent] = useState(false);
   const [code, setCode] = useState("");
   const [password, setPassword] = useState("");
   const [confirmation, setConfirmation] = useState("");
@@ -85,8 +84,10 @@ export function PasswordForm({ email }: { email: string }) {
   if (requestState !== prevRequest) {
     setPrevRequest(requestState);
     if (requestState.notice) {
+      // A send while the code step is already open is a resend.
+      setResent(step === "code");
       setStep("code");
-      setCooldown(RESEND_COOLDOWN_S);
+      restartCooldown();
       setCode("");
       setFieldErrors({});
     }
@@ -102,12 +103,6 @@ export function PasswordForm({ email }: { email: string }) {
       setFieldErrors(changeState.fieldErrors ?? {});
     }
   }
-
-  useEffect(() => {
-    if (cooldown <= 0) return;
-    const timer = setTimeout(() => setCooldown((seconds) => seconds - 1), 1000);
-    return () => clearTimeout(timer);
-  }, [cooldown]);
 
   const type = show ? "text" : "password";
 
@@ -145,46 +140,25 @@ export function PasswordForm({ email }: { email: string }) {
               className="mt-px size-4 shrink-0"
               aria-hidden
             />
-            {copy.sentTo(email)}
+            <span>
+              <EmailCodeInstructions email={email} />
+            </span>
           </p>
 
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="password-change-code">{copy.codeLabel}</Label>
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-              <OneTimeCodeInput
-                id="password-change-code"
-                name="code"
-                value={code}
-                onValueChange={setCode}
-                placeholder={copy.codePlaceholder}
-                autoFocus
-                invalid={fieldErrors.code !== undefined}
-                describedBy={fieldErrors.code ? "password-change-code-error" : undefined}
-                className="w-full sm:w-72"
-              />
-              <Button
-                type="submit"
-                variant="ghost"
-                size="sm"
-                formAction={requestAction}
-                formNoValidate
-                loading={requesting}
-                loadingText={copy.resending}
-                disabled={cooldown > 0 || changing}
-                className="self-start sm:self-center"
-              >
-                {cooldown > 0 ? copy.resendIn(cooldown) : copy.resend}
-              </Button>
-            </div>
-            {fieldErrors.code && (
-              <p
-                id="password-change-code-error"
-                role="alert"
-                className="text-xs/relaxed text-destructive"
-              >
-                {fieldErrors.code}
-              </p>
-            )}
+          <div className="w-full sm:w-80">
+            <EmailCodeField
+              id="password-change-code"
+              name="code"
+              value={code}
+              onValueChange={setCode}
+              lifetime={copy.codeLifetime}
+              error={fieldErrors.code}
+              resent={resent}
+              resendAction={requestAction}
+              resending={requesting}
+              cooldown={cooldown}
+              disabled={changing}
+            />
           </div>
 
           <div className="grid gap-5 md:grid-cols-2">
