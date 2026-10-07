@@ -200,7 +200,7 @@ export default async function TimesPage({
 
       {unattributed && (
         <Notice
-          icon={<HugeiconsIcon icon={PieChartIcon} />}
+          icon={PieChartIcon}
           title={copy.unattributedTitle}
           action={
             <Button asChild variant="tertiary" size="xs" motion="forward">

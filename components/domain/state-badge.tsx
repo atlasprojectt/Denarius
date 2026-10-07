@@ -4,9 +4,10 @@ import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
-// The app's one badge language: a compact icon-led pill whose foreground color
-// is repeated as a 10% wash. The icon is required so every badge communicates
-// its meaning without depending on color alone. StatusPill delegates here too.
+// The app's one badge language: a compact icon-led pill in a state tone (the
+// tone's ink on its -soft wash, DESIGN.md › Semantic). The icon is required so
+// every badge communicates its meaning without depending on color alone; state
+// glyphs come from the icon grammar (state-icons). StatusPill delegates here too.
 //
 // Icons are Hugeicons data — except the provider brand marks (OpenAI/Anthropic
 // in the attribution map), which stay Remix components by explicit request,

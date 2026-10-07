@@ -2,14 +2,11 @@
 
 import { useActionState } from "react";
 import { HugeiconsIcon } from "@hugeicons/react";
-import {
-  Mail01Icon,
-  MailXIcon,
-  Time01Icon,
-} from "@hugeicons/core-free-icons";
+import { Mail01Icon, MailXIcon } from "@hugeicons/core-free-icons";
 
 import { ConfirmationDialog } from "@/components/domain/confirmation-dialog";
 import { StateBadge } from "@/components/domain/state-badge";
+import { stateIcons } from "@/components/domain/state-icons";
 import { ActionToast } from "@/components/domain/toast-provider";
 import { Button } from "@/components/ui/button";
 import {
@@ -100,7 +97,7 @@ export function PendingInvitations({
           <ItemContent>
             <ItemTitle>
               {invitation.email}
-              <StateBadge icon={Time01Icon}>{copy.pending}</StateBadge>
+              <StateBadge icon={stateIcons.pending}>{copy.pending}</StateBadge>
             </ItemTitle>
             <ItemDescription>
               {copy.roleLabel[invitation.role] ?? invitation.role} ·{" "}

@@ -3,9 +3,6 @@
 import { useActionState, useState } from "react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
-  Alert02Icon,
-  AlertCircleIcon,
-  CheckmarkCircle02Icon,
   Key02Icon,
   LightbulbIcon,
   Unlink01Icon,
@@ -16,6 +13,7 @@ import { ConfirmationDialog } from "@/components/domain/confirmation-dialog";
 import { Notice } from "@/components/domain/notice";
 import { ProviderIcon } from "@/components/domain/provider-icon";
 import { StateBadge } from "@/components/domain/state-badge";
+import { stateIcons } from "@/components/domain/state-icons";
 import { ActionToast } from "@/components/domain/toast-provider";
 import { Button } from "@/components/ui/button";
 import {
@@ -115,14 +113,14 @@ function StatusBadge({ status }: { status: string | null }) {
   // 2026-07-21); revoked/not-connected stay neutral chrome.
   if (status === "error") {
     return (
-      <StateBadge icon={AlertCircleIcon} tone="destructive">
+      <StateBadge icon={stateIcons.failure} tone="destructive">
         {statusLabel(status)}
       </StateBadge>
     );
   }
   if (status === "active") {
     return (
-      <StateBadge icon={CheckmarkCircle02Icon} tone="positive">
+      <StateBadge icon={stateIcons.done} tone="positive">
         {statusLabel(status)}
       </StateBadge>
     );
@@ -263,7 +261,7 @@ export function ProviderConnectionCard({
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
         {status === "error" && lastSyncError && (
-          <Notice tone="destructive" icon={<HugeiconsIcon icon={Alert02Icon} />} title={sharedCopy.error}>
+          <Notice tone="destructive" title={sharedCopy.error}>
             {lastSyncError}
           </Notice>
         )}

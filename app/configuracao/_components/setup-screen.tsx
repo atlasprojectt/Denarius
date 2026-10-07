@@ -1,11 +1,10 @@
 import Link from "next/link";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { CheckmarkCircle01Icon } from "@hugeicons/core-free-icons";
 
 import { BudgetTableForm } from "@/components/domain/budget-table-form";
 import { LogoWordmark } from "@/components/domain/logo";
 import { Notice } from "@/components/domain/notice";
 import { RosterUpload } from "@/components/domain/roster-upload";
+import { stateIcons } from "@/components/domain/state-icons";
 import { AppToastProvider } from "@/components/domain/toast-provider";
 import { Button } from "@/components/ui/button";
 import {
@@ -94,7 +93,7 @@ function StepBody({
       return (
         <div className="flex flex-col gap-4">
           {progress.hasRoster && (
-            <Notice icon={<HugeiconsIcon icon={CheckmarkCircle01Icon} />}>
+            <Notice icon={stateIcons.done}>
               {setupCopy.roster.imported(
                 counted(snapshot.rosterCount, "pessoa", "pessoas"),
                 counted(teams.length, "time", "times"),

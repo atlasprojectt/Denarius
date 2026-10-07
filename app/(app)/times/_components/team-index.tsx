@@ -23,12 +23,6 @@ const copy = {
   open: (team: string) => `Abrir diagnóstico de ${team}`,
 };
 
-function statusLabel(team: CockpitTeam): string {
-  if (team.status === "amber") return "Em risco";
-  if (team.status === "red") return "Estourado";
-  return team.status === "collecting" ? "Coletando ritmo" : "No controle";
-}
-
 function contextLine(team: CockpitTeam, currency: string): string {
   const evaluation = team.evaluation;
   if (evaluation.breached) {
@@ -92,7 +86,7 @@ function TeamRow({
         </div>
 
         <div className="w-fit">
-          <StatusPill status={team.status} label={statusLabel(team)} />
+          <StatusPill status={team.status} />
         </div>
 
         <dl className="team-index-metrics grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-3">

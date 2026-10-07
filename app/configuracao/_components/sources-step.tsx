@@ -2,7 +2,6 @@ import Link from "next/link";
 import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react";
 import {
   Coins01Icon,
-  InformationCircleIcon,
   Plug01Icon,
 } from "@hugeicons/core-free-icons";
 
@@ -125,7 +124,7 @@ export function SourcesStep({
             </section>
           )}
           {teams.length === 0 && (
-            <Notice icon={<HugeiconsIcon icon={InformationCircleIcon} />}>
+            <Notice>
               {copy.sharedTeamsNote}
             </Notice>
           )}

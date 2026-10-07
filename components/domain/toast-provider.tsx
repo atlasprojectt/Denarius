@@ -3,12 +3,9 @@
 import { useEffect, useRef } from "react";
 import { Toast } from "@base-ui/react/toast";
 import { HugeiconsIcon } from "@hugeicons/react";
-import {
-  Alert02Icon,
-  Cancel01Icon,
-  Tick01Icon,
-} from "@hugeicons/core-free-icons";
+import { Cancel01Icon } from "@hugeicons/core-free-icons";
 
+import { stateIcons } from "@/components/domain/state-icons";
 import { cn } from "@/lib/utils";
 
 type ToastData = { tone?: "neutral" | "destructive" };
@@ -31,16 +28,27 @@ function ToastList() {
         toast={toast}
         className={cn(
           "[--gap:0.75rem] [--peek:0.75rem] [--scale:calc(max(0,1-(var(--toast-index)*0.08)))] [--shrink:calc(1-var(--scale))] [--height:var(--toast-frontmost-height,var(--toast-height))] [--offset-y:calc(var(--toast-offset-y)*-1+calc(var(--toast-index)*var(--gap)*-1)+var(--toast-swipe-movement-y))] absolute right-0 bottom-0 z-[calc(1000-var(--toast-index))] w-full origin-bottom transform-[translateX(var(--toast-swipe-movement-x))_translateY(calc(var(--toast-swipe-movement-y)-(var(--toast-index)*var(--peek))-(var(--shrink)*var(--height))))_scale(var(--scale))] rounded-md border bg-popover text-popover-foreground shadow-lg select-none after:absolute after:top-full after:left-0 after:h-[calc(var(--gap)+1px)] after:w-full after:content-[''] data-ending-style:opacity-0 data-limited:opacity-0 data-starting-style:transform-[translateY(150%)] [&[data-ending-style]:not([data-limited]):not([data-swipe-direction])]:transform-[translateY(150%)] data-ending-style:data-[swipe-direction=down]:transform-[translateY(calc(var(--toast-swipe-movement-y)+150%))] data-ending-style:data-[swipe-direction=left]:transform-[translateX(calc(var(--toast-swipe-movement-x)-150%))_translateY(var(--offset-y))] data-ending-style:data-[swipe-direction=right]:transform-[translateX(calc(var(--toast-swipe-movement-x)+150%))_translateY(var(--offset-y))] data-ending-style:data-[swipe-direction=up]:transform-[translateY(calc(var(--toast-swipe-movement-y)-150%))] h-(--height) [transition:transform_0.35s_var(--motion-ease-standard),opacity_0.25s,height_0.15s] motion-reduce:transition-none",
-          destructive && "border-destructive/30",
+          destructive && "border-badge-destructive/30",
         )}
       >
         <Toast.Content className="flex min-h-16 items-start gap-3 overflow-hidden p-4 pr-11">
-          {destructive ? (
-            <HugeiconsIcon icon={Alert02Icon} className="mt-0.5 size-4 shrink-0 text-destructive" />
-          ) : (
-            <HugeiconsIcon icon={Tick01Icon} className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-          )}
-          <div className="min-w-0">
+          {/* The outcome reads before the words: a tone disc with the grammar's
+              glyph. Success stays neutral; green is budget-only (principle #5). */}
+          <span
+            aria-hidden
+            className={cn(
+              "grid size-7 shrink-0 place-items-center rounded-full",
+              destructive
+                ? "bg-badge-destructive-soft text-badge-destructive"
+                : "bg-badge-neutral-soft text-badge-neutral",
+            )}
+          >
+            <HugeiconsIcon
+              icon={destructive ? stateIcons.failure : stateIcons.done}
+              className="size-4"
+            />
+          </span>
+          <div className="min-w-0 pt-1">
             <Toast.Title className="text-sm font-medium" />
             <Toast.Description className="mt-0.5 text-xs/relaxed text-muted-foreground" />
           </div>
