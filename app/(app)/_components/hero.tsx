@@ -1,6 +1,7 @@
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Wallet03Icon } from "@hugeicons/core-free-icons";
 
+import { PacingBar } from "@/components/domain/pacing-bar";
 import {
   Card,
   CardContent,
@@ -10,7 +11,6 @@ import {
 import type { BudgetEvaluation } from "@/lib/engine/budget";
 import { signedPercent } from "@/lib/format";
 import { money } from "@/lib/money";
-import { PacingBar } from "./pacing-bar";
 import { homeCopy } from "./copy";
 
 // The hero (frontend §3.4, de-noise 2026-07-17): org spend as the big money

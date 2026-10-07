@@ -48,7 +48,8 @@
   --color-pace-spent: var(--pace-spent);
   --color-pace-projected: var(--pace-projected);
   --color-pace-over: var(--pace-over);
-  --color-pace-leftover: var(--pace-leftover);
+  --color-pace-overspent: var(--pace-overspent);
+  --color-pace-budget: var(--pace-budget);
   --color-brand-accent: var(--brand-accent);
   --color-brand-accent-light: var(--brand-accent-light);
   --color-brand-accent-muted: var(--brand-accent-muted);
@@ -688,15 +689,23 @@ input[type="number"]::-webkit-outer-spin-button {
   --badge-destructive: #dc2626;
   --badge-destructive-soft: color-mix(in oklab, var(--badge-destructive) 10%, transparent);
 
-  /* Hero pacing bar (founder-directed, 2026-10-05): colors that carry their
-     meaning. Hue says where the money sits (orange inside the budget, red
-     above it, a quiet gray for budget left free); lightness says when
-     (strong = already spent, light = still to come). The realized overrun
-     reuses --status-red, so only the projected overrun needs its own red. */
-  --pace-spent: oklch(0.65 0.19 45);
-  --pace-projected: oklch(0.82 0.09 55);
-  --pace-over: oklch(0.74 0.11 25);
-  --pace-leftover: oklch(0.88 0 0);
+  /* Pacing bar layers (founder-directed 2026-10-05, layered 2026-10-07): one
+     hue per layer, built like a palette scale (2026-10-07, founder-directed):
+     each hue has ONE vivid base per theme, and every other step is that base
+     mixed with white or black in fixed 20% steps, never a hand-picked tone.
+     The spend is the orange base and turns the red base past the budget; the
+     two bases sit apart in hue and lightness without going dark. What is
+     still to come is the base pushed toward the surface: 60% white here,
+     60% black in dark. The budget is a quiet gray. */
+  --pace-orange-base: #f67a12;
+  --pace-red-base: #e5303c;
+  --pace-orange: var(--pace-orange-base);
+  --pace-red: var(--pace-red-base);
+  --pace-spent: var(--pace-orange);
+  --pace-overspent: var(--pace-red);
+  --pace-projected: color-mix(in srgb, var(--pace-orange), white 60%);
+  --pace-over: color-mix(in srgb, var(--pace-red), white 60%);
+  --pace-budget: oklch(0.88 0 0);
 }
 
 .dark {
@@ -777,10 +786,13 @@ input[type="number"]::-webkit-outer-spin-button {
   --badge-destructive: #fb2c36;
   --badge-destructive-soft: color-mix(in oklab, var(--badge-destructive) 10%, transparent);
 
-  --pace-spent: oklch(0.72 0.17 50);
-  --pace-projected: oklch(0.56 0.1 55);
-  --pace-over: oklch(0.47 0.12 25);
-  --pace-leftover: oklch(0.36 0 0);
+  /* Dark lifts each base 10% toward white (the palette's dark base) and
+     sinks what is still to come 60% toward black. */
+  --pace-orange: color-mix(in srgb, var(--pace-orange-base), white 10%);
+  --pace-red: color-mix(in srgb, var(--pace-red-base), white 10%);
+  --pace-projected: color-mix(in srgb, var(--pace-orange), black 60%);
+  --pace-over: color-mix(in srgb, var(--pace-red), black 60%);
+  --pace-budget: oklch(0.36 0 0);
 }
 
 /* Description links inside the empty/field/item primitives hover in the brand

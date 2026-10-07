@@ -6,6 +6,7 @@ import {
   Tag01Icon,
 } from "@hugeicons/core-free-icons";
 
+import { PacingBar } from "@/components/domain/pacing-bar";
 import { ProviderIcon, type ProviderIconName } from "@/components/domain/provider-icon";
 import { StateBadge } from "@/components/domain/state-badge";
 import { UsdValue } from "@/components/domain/usd-value";
@@ -21,22 +22,17 @@ import { cut, TICKS } from "@/lib/bars";
 import type { CumulativePoint } from "@/lib/engine/cumulative";
 import { costBridge, usdDisplay, type FrozenFx } from "@/lib/engine/money-model";
 import type { Period } from "@/lib/engine/period";
-import { percent } from "@/lib/format";
-import { money } from "@/lib/money";
+import { money, signedMoney } from "@/lib/money";
 import type { TeamApiDiagnosis } from "@/lib/usage/diagnose";
 import { CumulativeChart } from "./cumulative-chart";
 import { SpendCalculationDetails } from "./spend-calculation-details";
-import { TeamProgress } from "./team-progress";
 
 const copy = {
   summaryTitle: "Resumo executivo",
-  summarySub: "Situação do time no período atual.",
-  spent: "Gasto",
-  budget: "Orçamento",
-  projection: "Projeção",
+  ofBudget: (budget: string) => `de ${budget}`,
+  projection: "Projeção de fechamento",
   projectedMargin: "Margem projetada",
-  collecting: "Coletando ritmo",
-  consumption: (value: string) => `${value} do orçamento consumido`,
+  collecting: "coletando ritmo",
   noBudget: "Este time ainda não tem orçamento definido.",
   conclusionBreach: (amount: string) =>
     `O time já ultrapassou o orçamento em ${amount}.`,
@@ -103,12 +99,27 @@ const compactTokens = new Intl.NumberFormat("pt-BR", {
   maximumFractionDigits: 1,
 });
 
-function Metric({ label, value }: { label: string; value: string }) {
+function SummaryKpi({ label, value }: { label: string; value: string }) {
   return (
     <div className="min-w-0">
-      <dt className="text-xs text-muted-foreground">{label}</dt>
-      <dd className="mt-1 truncate text-base font-medium tabular-nums">{value}</dd>
+      <dt className="truncate text-xs text-muted-foreground">{label}</dt>
+      <dd className="mt-1 text-lg font-medium tabular-nums">{value}</dd>
     </div>
+  );
+}
+
+/** The summary's headline: the team's spend as the big money number, read
+ *  against its budget when there is one (the Home hero's grammar). */
+function SummaryFigure({ spent, budget }: { spent: string; budget: string | null }) {
+  return (
+    <p className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1 text-display-sm font-normal tabular-nums [overflow-wrap:anywhere]">
+      {spent}
+      {budget !== null && (
+        <span className="basis-full text-base font-normal tracking-normal text-ink-secondary sm:basis-auto">
+          {copy.ofBudget(budget)}
+        </span>
+      )}
+    </p>
   );
 }
 
@@ -126,30 +137,31 @@ function conclusion(team: CockpitTeam, currency: string): string {
   return copy.conclusionControl(money(evaluation.projectedMargin, currency));
 }
 
+// Reading order, largest first: the spend against the budget, the sentence
+// that says what it means, the two closing figures beside it, then the same
+// pacing bar the Home hero uses. The status itself is the page header's pill.
 function ExecutiveSummary({
   team,
   currency,
   currentSpend,
+  period,
 }: {
   team: CockpitTeam | null;
   currency: string;
   currentSpend: string;
+  period: Period;
 }) {
   if (team === null) {
     return (
-      <Card data-reveal="team-summary" suppressHydrationWarning>
+      <Card aria-labelledby="team-summary-title">
         <CardHeader>
-          <CardTitle>{copy.summaryTitle}</CardTitle>
-          <CardDescription>{copy.summarySub}</CardDescription>
+          <CardTitle as="h2" id="team-summary-title">
+            {copy.summaryTitle}
+          </CardTitle>
         </CardHeader>
-        <CardContent>
-          <dl className="grid gap-4 sm:grid-cols-2">
-            <Metric label={copy.spent} value={currentSpend} />
-            <Metric label={copy.budget} value="—" />
-          </dl>
-          <p className="mt-4 border-t border-border pt-3 text-sm text-ink-secondary">
-            {copy.noBudget}
-          </p>
+        <CardContent className="flex flex-col gap-2">
+          <SummaryFigure spent={currentSpend} budget={null} />
+          <p className="max-w-2xl text-base text-ink-secondary">{copy.noBudget}</p>
         </CardContent>
       </Card>
     );
@@ -157,46 +169,48 @@ function ExecutiveSummary({
 
   const evaluation = team.evaluation;
   return (
-    <Card data-reveal="team-summary" suppressHydrationWarning>
+    <Card aria-labelledby="team-summary-title">
       <CardHeader>
-        <CardTitle>{copy.summaryTitle}</CardTitle>
-        <CardDescription>{copy.summarySub}</CardDescription>
+        <CardTitle as="h2" id="team-summary-title">
+          {copy.summaryTitle}
+        </CardTitle>
       </CardHeader>
-      <CardContent>
-        <dl className="grid grid-cols-2 gap-x-5 gap-y-4 lg:grid-cols-4">
-          <Metric label={copy.spent} value={money(evaluation.spent, currency)} />
-          <Metric label={copy.budget} value={money(evaluation.budget, currency)} />
-          <Metric
-            label={copy.projection}
-            value={
-              evaluation.projection === null
-                ? "—"
-                : money(evaluation.projection, currency)
-            }
-          />
-          <Metric
-            label={copy.projectedMargin}
-            value={
-              evaluation.projectedMargin === null
-                ? "—"
-                : money(evaluation.projectedMargin, currency)
-            }
-          />
-        </dl>
-        <div className="mt-5 flex items-center gap-3">
-          <TeamProgress
-            className="flex-1"
-            pctSpent={evaluation.pctSpent}
-            pctProjected={team.pctProjected}
-            status={team.status}
-          />
-          <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
-            {copy.consumption(percent(evaluation.pctSpent))}
-          </span>
+      <CardContent className="flex flex-col gap-6">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between lg:gap-10">
+          <div className="min-w-0">
+            <SummaryFigure
+              spent={money(evaluation.spent, currency)}
+              budget={money(evaluation.budget, currency)}
+            />
+            <p className="mt-2 max-w-2xl text-base">{conclusion(team, currency)}</p>
+          </div>
+          {/* Neutral ink (principle #5): the closing figures inform; the
+              status color lives on the bar and the header pill. */}
+          <dl className="grid shrink-0 grid-cols-2 gap-x-8 border-t pt-4 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-8">
+            <SummaryKpi
+              label={copy.projection}
+              value={
+                evaluation.projection === null
+                  ? `— ${copy.collecting}`
+                  : money(evaluation.projection, currency)
+              }
+            />
+            <SummaryKpi
+              label={copy.projectedMargin}
+              value={
+                evaluation.projectedMargin === null
+                  ? "—"
+                  : signedMoney(evaluation.projectedMargin, currency)
+              }
+            />
+          </dl>
         </div>
-        <p className="mt-4 border-t border-border pt-3 text-sm/relaxed">
-          {conclusion(team, currency)}
-        </p>
+        <PacingBar
+          pctSpent={evaluation.pctSpent}
+          pctProjected={team.pctProjected}
+          dayOfPeriod={period.dayOfPeriod}
+          daysInPeriod={period.daysInPeriod}
+        />
       </CardContent>
     </Card>
   );
@@ -579,6 +593,7 @@ export function DiagnosisBody({
         team={cockpitTeam}
         currency={currency}
         currentSpend={currentSpend}
+        period={period}
       />
 
       <Card

@@ -106,24 +106,25 @@ export type PacingSegments = {
   spent: Span;
   /** Spent above the budget: a realized overrun. */
   overspent: Span | null;
-  /** What the current pace will still spend inside the budget ("projeção"). */
+  /** The visible stretch of the projection layer ("projeção"). */
   projected: Span | null;
-  /** What the current pace will still spend above the budget. */
-  projectedOver: Span | null;
-  /** Budget left free ("sobra"): at the close when there is a pace, or right
-   *  now before the day-5 guard, when nothing is projected. */
-  leftover: Span | null;
+  /** The visible stretch of the budget layer ("orçamento"). */
+  budget: Span | null;
+  /** The projected close passes the budget: the projection sits behind the
+   *  budget layer and wears the overrun tone. */
+  projectionOver: boolean;
 };
 
 /**
- * Splits the hero pacing track into adjacent, non-overlapping segments in
- * reading order: spent and projected inside the budget, then spent and
- * projected above it, or the leftover. The budget is the ruler, so the limit
- * is exactly where the overrun begins; overrun and leftover are mutually
- * exclusive, and together the segments always tile the track. Fractions of
- * budget in (1 = exactly on budget); the track scales like `barGeometry`.
- * Before the day-5 guard (`pctProjected` null) nothing is projected, so the
- * rest of the budget is simply left free.
+ * Splits the pacing track into three layers that all start at zero (spent,
+ * projected close, budget), the shorter one in front (2026-10-07,
+ * founder-directed); the spend is always frontmost. When the close fits the
+ * budget, the projection shows first and the budget's tail after it; when the
+ * close passes the budget, the budget shows first and the projection pokes out
+ * behind it. Each layer comes back as the stretch left visible, so the spans
+ * are adjacent, never overlap and always tile the track. Fractions of budget
+ * in (1 = exactly on budget); the track scales like `barGeometry`. Before the
+ * day-5 guard (`pctProjected` null) there is no projection layer.
  */
 export function pacingSegments(
   pctSpent: number,
@@ -134,12 +135,15 @@ export function pacingSegments(
   const scale = Math.max(1, close);
   const span = (from: number, to: number): Span | null =>
     to > from ? { from: from / scale, to: to / scale } : null;
+  const projectionOver = close > 1;
 
   return {
     spent: { from: 0, to: Math.min(spent, 1) / scale },
     overspent: span(1, spent),
-    projected: span(spent, Math.min(close, 1)),
-    projectedOver: span(Math.max(spent, 1), close),
-    leftover: span(close, 1),
+    projected: projectionOver
+      ? span(Math.max(spent, 1), close)
+      : span(spent, close),
+    budget: projectionOver ? span(spent, 1) : span(close, 1),
+    projectionOver,
   };
 }

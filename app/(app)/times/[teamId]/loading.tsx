@@ -24,24 +24,27 @@ export default function TeamDetailLoading() {
       </header>
 
       <div className="flex flex-col gap-5">
-        <div className="flex flex-col gap-4 rounded-lg border p-6">
-          <div className="flex flex-col gap-2">
-            <Skeleton className="h-4 w-40" />
-            <Skeleton className="h-4 w-64 max-w-full" />
+        <div className="flex flex-col gap-6 rounded-lg border p-6">
+          <Skeleton className="h-4 w-32" />
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+            <div className="min-w-0">
+              <Skeleton className="h-10 w-72 max-w-full" />
+              <Skeleton className="mt-3 h-5 w-96 max-w-full" />
+            </div>
+            <div className="grid grid-cols-2 gap-x-8">
+              {Array.from({ length: 2 }).map((_, index) => (
+                <div key={index} className="min-w-0">
+                  <Skeleton className="h-3 w-24" />
+                  <Skeleton className="mt-1.5 h-6 w-28" />
+                </div>
+              ))}
+            </div>
           </div>
-          <div className="grid grid-cols-2 gap-x-5 gap-y-4 lg:grid-cols-4">
-            {Array.from({ length: 4 }).map((_, index) => (
-              <div key={index} className="min-w-0">
-                <Skeleton className="h-3 w-16" />
-                <Skeleton className="mt-1.5 h-5 w-20" />
-              </div>
-            ))}
+          <div>
+            <Skeleton className="mb-1.5 h-3 w-full" />
+            <Skeleton className="h-8 w-full" />
+            <Skeleton className="mt-2 h-3 w-80 max-w-full" />
           </div>
-          <div className="flex items-center gap-3">
-            <Skeleton className="h-2 flex-1" />
-            <Skeleton className="h-3 w-12 shrink-0" />
-          </div>
-          <Skeleton className="h-4 w-3/4 border-t border-border pt-3" />
         </div>
 
         <div className="flex flex-col gap-4 rounded-lg border p-6">
