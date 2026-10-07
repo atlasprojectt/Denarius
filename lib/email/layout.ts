@@ -36,16 +36,19 @@ export function escapeHtml(value: string): string {
     .replaceAll("'", "&#39;");
 }
 
+/** The live app, the one host every mail client can reach. */
+const CANONICAL_ORIGIN = "https://app.usedenarius.pro";
+
 /** Deep-link base, disclosed nowhere client-side; prod default is the live app. */
 export function appBaseUrl(): string {
-  return process.env.APP_BASE_URL ?? "https://app.usedenarius.pro";
+  return process.env.APP_BASE_URL ?? CANONICAL_ORIGIN;
 }
 
-/** Brand images always come from the canonical host: a link may follow the
- *  request origin, but Gmail cannot fetch a localhost (or preview) host, so a
- *  logo derived from it arrives broken. */
+/** Brand images always come from the canonical host, never from
+ *  APP_BASE_URL: links may point at a local or preview deployment, but Gmail
+ *  cannot fetch those hosts, so a logo derived from them arrives broken. */
 function logoUrl(): string {
-  return new URL("/brand/denarius-avatar.png", appBaseUrl()).toString();
+  return new URL("/brand/denarius-avatar.png", CANONICAL_ORIGIN).toString();
 }
 
 export type EmailLayoutInput = {

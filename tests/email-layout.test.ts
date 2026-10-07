@@ -1,10 +1,15 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { renderPasswordChangeCode } from "@/lib/auth/password-change-email";
-import { EMAIL_CARD_STYLE, escapeHtml, renderEmailLayout } from "@/lib/email/layout";
+import {
+  appBaseUrl,
+  EMAIL_CARD_STYLE,
+  escapeHtml,
+  renderEmailLayout,
+} from "@/lib/email/layout";
 import { renderInvite } from "@/lib/invitations/email";
 import { renderAlertEmail, renderDigestEmail } from "@/lib/notify/render";
 import { renderAccountDeletionCode } from "@/lib/privacy/deletion-email";
@@ -30,6 +35,20 @@ describe("e-mail layout", () => {
 
   it("escapes quotes so a value cannot leave an attribute", () => {
     expect(escapeHtml(`"' <>&`)).toBe("&quot;&#39; &lt;&gt;&amp;");
+  });
+
+  it("keeps the logo on the canonical host when APP_BASE_URL is local", () => {
+    // Deep links follow a local or preview APP_BASE_URL; mail clients cannot
+    // fetch those hosts, so the image must not.
+    vi.stubEnv("APP_BASE_URL", "http://localhost:3000");
+    try {
+      expect(appBaseUrl()).toBe("http://localhost:3000");
+      const html = renderEmailLayout({ preheader: "", eyebrow: "", title: "", body: "" });
+      expect(html).toContain(LOGO);
+      expect(html).not.toContain("localhost");
+    } finally {
+      vi.unstubAllEnvs();
+    }
   });
 });
 

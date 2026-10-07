@@ -62,7 +62,6 @@ const copy = {
   codeLifetime: `${EMAIL_CODE_TTL_MINUTES} minutos`,
   verifyCode: "Confirmar código",
   verifyingCode: "Confirmando…",
-  phraseTitle: "Confirmação final",
   phraseDescription:
     "Para concluir, digite exatamente a frase abaixo. Não há como desfazer esta ação.",
   phraseLabel: "Digite a frase de confirmação",
@@ -298,7 +297,7 @@ function AccountDeletionFlow({
       {step === "phrase" && (
         <form action={confirmAction} className="contents">
           <ConfirmationDialogHeader
-            title={copy.phraseTitle}
+            title={title}
             description={copy.phraseDescription}
             icon={<HugeiconsIcon icon={Delete02Icon} />}
           />
